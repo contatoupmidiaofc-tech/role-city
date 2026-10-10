@@ -1,4 +1,4 @@
-# Publica o jogo na HostGator (pasta public_html/role-city) a cada push na main.
+# Publica o jogo na HostGator a cada push na main. A conta FTP aponta direto para public_html/role-city.
 # Precisa de 3 segredos no GitHub: FTP_SERVER, FTP_USERNAME e FTP_PASSWORD.
 # Enquanto eles não existirem, o deploy é pulado sem falhar.
 name: Deploy HostGator
@@ -27,7 +27,7 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: public_html/role-city/
+          server-dir: ./
           exclude: |
             **/.git*
             **/.git*/**

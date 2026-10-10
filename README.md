@@ -6,10 +6,10 @@ Para jogar localmente com os personagens 3D realistas, sirva a pasta por HTTP (o
 
 ## Publicação na HostGator
 
-Cada push na `main` publica o jogo em `public_html/role-city` pela Action `Deploy HostGator` (FTP). Para ligar, cadastre em **Settings → Secrets and variables → Actions** do GitHub:
+Cada push na `main` publica o jogo pela Action `Deploy HostGator` (FTP), usando uma conta FTP exclusiva cujo diretório é `public_html/role-city`. Para ligar, cadastre em **Settings → Secrets and variables → Actions** do GitHub:
 
 - `FTP_SERVER`: servidor FTP da hospedagem (aparece em cPanel → Contas FTP → Configurar cliente FTP)
-- `FTP_USERNAME`: usuário FTP
+- `FTP_USERNAME`: usuário FTP completo (ex.: `rolecity@dominio`)
 - `FTP_PASSWORD`: senha FTP
 
 Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator.com.br/role-city/`
