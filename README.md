@@ -38,6 +38,16 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Caixas** rara e lendária, ganhas em competições (não são vendidas).
 - **Visual**: personagens 3D realistas com esqueleto animado (com personagens simples como reserva), iluminação com tone mapping, céu com nuvens, sombras, pop-ups de manobra estilo adesivo e linhas de velocidade.
 - **Progresso salvo** no navegador (localStorage).
+- **Lojas de roupa variadas** (Drip Store): camisetas com estampas de verdade (listrada, xadrez, camuflada, havaiana, tie-dye, galáxia, raio, camisa de time), calças (jeans, rasgada, camuflada, listra lateral), tênis, chinelo, sandália papete, bota, chapéus (boné, aba reta, gorro, bandana, bucket, palha, viseira, coroa), óculos (escuro, redondo, coração, esportivo, aviador, visor neon) e acessórios (mochila, corrente, fone, asas). **Comum** só com grana de missões/trampos; **raro** com grana ou tokens; **lendário** só com tokens (dinheiro real).
+- **Caminhada suave**: passada por fase ligada à velocidade (joelho dobra no balanço, quadril sobe e desce, braços opostos), respiração parado e transição suave entre andar, skate e emotes.
+- **Missões mais difíceis**: tempo apertado, vidas (cair demais falha), entrega frágil com várias paradas, combos obrigatórios, rota de checkpoints e pódio só em 1º ou 2º.
+- **Profissões** na Agência de Empregos: Entregador RolêFood (mochila térmica nas costas, gorjeta por rapidez), Grafiteiro de Aluguel e Instrutor de Skate. Cada 5 pedidos sobe de nível (+15% de pagamento).
+- **Moradia** na Imobiliária: alugar ou comprar quarto, kitnet, casa ou mansão (mansão também com tokens). Aluguel cobrado por dia do jogo, despejo após 2 dias sem pagar, bônus de grana e XP e nascer em casa.
+- **Dia e noite** sincronizados para todos (1 dia do jogo = 24 min): céu, sol/lua, estrelas, janelas acesas e luz dos postes.
+- **Cidade viva**: pedestres nas calçadas, motos, cachorros que latem, gatos que fogem, pombos que voam quando você passa e bandos de pássaros.
+- **Sons**: motores de carros e motos pela distância, rodinhas no asfalto, vento, passarinhos de dia, grilos à noite, cachorros, buzinas e efeitos das armas.
+- **Pistas urbanas**: vielas estreitas entre casas, curvas fechadas de esquina, escadarias (pule antes ou capota) e muros/casas que exigem descer do skate e escalar pela corda, com bichos de cada país.
+- **Armas de corrida** (Terminal Mundial → Arsenal): banana, estilingue, fumaça, spray de tinta e rojão teleguiado. Uma arma por corrida, 2 usos (tecla G / botão Arma). Bots também usam; funciona na corrida online.
 
 ## Online (Supabase)
 
