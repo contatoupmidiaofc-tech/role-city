@@ -233,6 +233,16 @@ table.res tr.ally td:nth-child(2){color:var(--ok)}
 .ev-chip span{font-size:12px;color:var(--muted)}
 #acc-box.need{outline:3px solid var(--sticker);animation:shake .4s 2}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#chatfeed{position:absolute;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 180px);display:grid;gap:3px;max-width:min(360px,50vw);pointer-events:none}
+#chatfeed div{background:rgba(15,16,20,.62);border-radius:8px;padding:3px 8px;font-size:13px;line-height:1.25;animation:fadeout 9s forwards}
+#chatfeed b{color:var(--wax);margin-right:4px}
+#chatfeed div.real b{color:#7fe3ff}
+@keyframes fadeout{85%{opacity:1}100%{opacity:0}}
+#qchat{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:min(560px,calc(100vw - 24px));background:rgba(21,22,26,.94);border:2px solid var(--line);border-radius:14px;padding:8px;display:grid;gap:6px;pointer-events:auto;z-index:20}
+#qchat .qrow{display:flex;gap:6px}
+#qchat input{flex:1;min-width:0;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--fg);font-size:16px}
+#qchat .chips{display:flex;flex-wrap:wrap;gap:5px}
+#qchat .chips button{background:var(--panel-2);border-radius:99px;padding:4px 10px;font-size:13px}
 .clock-chip{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 222px);background:rgba(21,22,26,.82);border:2px solid var(--line);border-radius:99px;padding:2px 10px;font-family:var(--cond);font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;pointer-events:none}
 #wp-slot{pointer-events:auto;cursor:pointer;position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;align-items:center;gap:8px;background:rgba(21,22,26,.86);border:2px solid #a66bff;border-radius:12px;padding:5px 10px 5px 5px}
 #wp-slot .ic{width:40px;height:40px;border-radius:8px;background:var(--panel-2);display:grid;place-items:center;font-size:22px}
@@ -408,6 +418,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" data-act="phone-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="lbl">Celular</span></button>
     <button class="hud-btn" data-act="open-social"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lbl">Social</span></button>
     <button class="hud-btn" data-act="open-crew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4.5"/></svg><span class="lbl">Crew</span></button>
+    <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
     <button class="hud-btn" data-act="face-cam" aria-label="Câmera de rosto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="lbl">Rosto</span></button>
     <button class="hud-btn" data-act="open-config" aria-label="Configurações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
   </div>
@@ -415,6 +426,8 @@ canvas.swatch{background:#333}
   <div id="waypoint" hidden><svg viewBox="0 0 40 40"><path d="M20 3 34 34 20 26 6 34Z" fill="#ffcf3a" stroke="#15161a" stroke-width="2.5" stroke-linejoin="round"/></svg><span id="wp-dist"></span></div>
   <div id="prompt" hidden></div>
   <div id="feed"></div>
+  <div id="chatfeed" aria-live="polite"></div>
+  <form id="qchat" hidden><div class="chips" id="qchips"></div><div class="qrow"><input id="qchat-in" maxlength="60" placeholder="Escreva e aparece em cima de você" autocomplete="off"><button class="btn sm" type="submit">Enviar</button><button class="btn ghost sm" type="button" data-act="qchat">✕</button></div></form>
 </div>
 
 <!-- HUD CORRIDA -->
@@ -826,7 +839,7 @@ const amb = {
     this.out = ac.createGain(); this.out.gain.value = 0.9; this.out.connect(ac.destination);
     // motor de carro: dente de serra grave filtrado
     const eng = (type, f0, lp) => { const o = ac.createOscillator(); o.type = type; o.frequency.value = f0; const o2 = ac.createOscillator(); o2.type = 'square'; o2.frequency.value = f0 * 1.5; const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; const g = ac.createGain(); g.gain.value = 0; const g2 = ac.createGain(); g2.gain.value = 0.25; o.connect(f); o2.connect(g2); g2.connect(f); f.connect(g); g.connect(this.out); o.start(); o2.start(); return { o, o2, g, f }; };
-    this.car = eng('sawtooth', 48, 380); this.moto = eng('sawtooth', 95, 1400);
+    this.car = eng('sawtooth', 48, 380); this.moto = eng('triangle', 70, 520);
     this.roll = loop('bandpass', 900, 0.6); this.wind = loop('lowpass', 500); this.hum = loop('lowpass', 180); this.hum.g.gain.value = 0.035;
     const cr = ac.createOscillator(); cr.frequency.value = 4300; const crg = ac.createGain(); crg.gain.value = 0; const lfo = ac.createOscillator(); lfo.frequency.value = 22; const lg = ac.createGain(); lg.gain.value = 1; const am = ac.createGain(); am.gain.value = 0;
     lfo.connect(lg); lg.connect(am.gain); cr.connect(am); am.connect(crg); crg.connect(this.out); cr.start(); lfo.start(); this.crick = crg;
@@ -841,7 +854,7 @@ const amb = {
     let dc = 1e9, dm = 1e9, vm = 0;
     for (const c of city.cars) { const d = Math.hypot(c.x - P.x, c.z - P.z); if (c.moto) { if (d < dm) { dm = d; vm = c.spd; } } else if (d < dc) dc = d; }
     this.set(this.car.g, clamp(1 - dc / 30, 0, 1) ** 2 * 0.22); this.car.o.frequency.setTargetAtTime(44 + clamp(1 - dc / 30, 0, 1) * 14, AC.currentTime, 0.2);
-    this.set(this.moto.g, clamp(1 - dm / 35, 0, 1) ** 2 * 0.12); this.moto.o.frequency.setTargetAtTime(90 + vm * 3 + Math.sin(performance.now() / 300) * 6, AC.currentTime, 0.1);
+    this.set(this.moto.g, clamp(1 - dm / 30, 0, 1) ** 2 * 0.045, 0.3); this.moto.o.frequency.setTargetAtTime(62 + vm * 1.2, AC.currentTime, 0.4); this.moto.o2.frequency.setTargetAtTime((62 + vm * 1.2) * 1.5, AC.currentTime, 0.4);
     const rolling = P.onBoard && !P.air && P.fallT <= 0 ? clamp(Math.abs(P.v) / 14, 0, 1) : 0;
     this.set(this.roll.g, rolling * 0.22, 0.08); this.roll.f.frequency.setTargetAtTime(500 + rolling * 900, AC.currentTime, 0.1);
     this.set(this.wind.g, clamp((Math.abs(P.v) - 8) / 10, 0, 1) * 0.12 + (P.air ? 0.05 : 0));
@@ -937,7 +950,7 @@ function textSprite(text, o = {}) {
   return sp;
 }
 function nameTag(text, color) {
-  return textSprite(text, { w: 384, h: 80, bg: 'rgba(15,16,20,0.72)', fg: color || '#ffffff', font: '"Barlow Condensed", "Arial Narrow", sans-serif', weight: 700, size: 52, r: 20, scale: [1.9, 0.4, 1], dy: 3, fog: false });
+  return textSprite(text, { w: 384, h: 80, bg: 'rgba(15,16,20,0.72)', fg: color || '#ffffff', font: '"Barlow Condensed", "Arial Narrow", sans-serif', weight: 700, size: 52, r: 20, scale: [1.0, 0.21, 1], dy: 3, fog: false });
 }
 
 /* ---------------- PERSONAGEM ---------------- */
@@ -1059,7 +1072,7 @@ function makeSkater(look, tagText, tagColor) {
   u.glG = new THREE.Group(); head.add(u.glG);
   u.accG = new THREE.Group(); u.accG.position.set(0, 0.36, 0); torso.add(u.accG);
   buildCap(u, look.cap); buildGlasses(u, look.glasses); buildAcc(u, look.acc, look.bag);
-  if (tagText) { u.tag = nameTag(tagText, tagColor); u.tag.position.y = 2.35; root.add(u.tag); }
+  if (tagText) { u.tag = nameTag(tagText, tagColor); u.tag.position.y = 2.1; root.add(u.tag); }
   return root;
 }
 /* cabelo curto masculino (o avatar vem careca): calota com fios + nuca + franja */
@@ -1247,14 +1260,14 @@ function applyLook(g, look) {
   buildCap(u, look.cap); buildGlasses(u, look.glasses); buildAcc(u, look.acc, look.bag);
   return true;
 }
-function setTag(g, text, color) { const u = g.userData; if (u.tag) { g.remove(u.tag); u.tag.material.map.dispose(); u.tag.material.dispose(); } u.tag = nameTag(text, color); u.tag.position.y = 2.35; g.add(u.tag); }
+function setTag(g, text, color) { const u = g.userData; if (u.tag) { g.remove(u.tag); u.tag.material.map.dispose(); u.tag.material.dispose(); } u.tag = nameTag(text, color); u.tag.position.y = 2.1; g.add(u.tag); }
 /* balão de fala acima da cabeça */
 function bubble(g, text, secs = 4) {
   const u = g.userData;
   if (u.bubble) { g.remove(u.bubble); u.bubble.material.map.dispose(); u.bubble.material.dispose(); }
   const short = text.length > 34 ? text.slice(0, 33) + '…' : text;
-  u.bubble = textSprite(short, { w: 640, h: 96, bg: '#ffffff', fg: '#15161a', font: '"Barlow", system-ui, sans-serif', weight: 600, size: 40, r: 40, scale: [3.4, 0.51, 1], dy: 2, fog: false, stroke: '#15161a' });
-  u.bubble.position.y = 2.85; g.add(u.bubble); u.bubbleT = secs; u.talkT = Math.min(secs, 0.8 + text.length * 0.06);
+  u.bubble = textSprite(short, { w: 640, h: 96, bg: '#ffffff', fg: '#15161a', font: '"Barlow", system-ui, sans-serif', weight: 600, size: 40, r: 40, scale: [2.7, 0.405, 1], dy: 2, fog: false, stroke: '#15161a' });
+  u.bubble.position.y = 2.5; g.add(u.bubble); u.bubbleT = secs; u.talkT = Math.min(secs, 0.8 + text.length * 0.06);
 }
 function tickBubble(g, dt) { const u = g.userData; if (u.bubble && (u.bubbleT -= dt) <= 0) { g.remove(u.bubble); u.bubble.material.map.dispose(); u.bubble.material.dispose(); u.bubble = null; } }
 function poseLeg(L, x, thigh, knee, rz = 0) { L.hip.position.x = x; L.hip.rotation.set(thigh, 0, rz); L.knee.rotation.x = knee; L.ankle.rotation.x = -(thigh + knee); }
@@ -1564,7 +1577,7 @@ function makeRealSkater(look, tagText, tagColor) {
   u.hairM = new THREE.MeshStandardMaterial({ color: look.hair, roughness: 0.62, map: hairTex(), bumpMap: hairTex(), bumpScale: 0.002 });
   if (k === 'm') buildHair(u);
   applyRealLook(root, look);
-  if (tagText) { u.tag = nameTag(tagText, tagColor); u.tag.position.y = 2.35; root.add(u.tag); }
+  if (tagText) { u.tag = nameTag(tagText, tagColor); u.tag.position.y = 2.1; root.add(u.tag); }
   u.walking = false;
   return root;
 }
@@ -1684,6 +1697,7 @@ function lifeLayer(u, o, t, dt, p, walking) {
     if (walking && !u.gest && !o.emote) { const g1 = Math.sin(t * 3.1), g2 = Math.sin(t * 2.3 + 1); p.rArmFwd = (p.rArmFwd || 0) + 0.35 + g1 * 0.18; p.rElbow = (p.rElbow || 0) + 0.9 + g2 * 0.25; p.lArmFwd = (p.lArmFwd || 0) + 0.15 + g2 * 0.1; p.lElbow = (p.lElbow || 0) + 0.5; p.headY += Math.sin(t * 1.7) * 0.1; hands.R = 0.12; hands.L = 0.2; }
   }
   if (o.punchT > 0) { hands.R = 1; hands.L = 0.9; }
+  if (o.wpHold && !o.wpProp) hands.R = 0.8;
   if (o.wpProp) { hands.R = 0.85; Object.assign(p, walking ? { rArmDown: 1.0, rArmFwd: 1.35, rElbow: 0.25, headY: (p.headY || 0) * 0.3 } : { rArmDown: 0.12, rArmFwd: 0.15, rElbow: 0.2 }); }
   if (o.emote === 'wave') hands.R = 0.02;
   if (o.emote === 'cheer') { hands.L = hands.R = 0.95; }
@@ -1706,6 +1720,30 @@ function faceLayer(u, t, dt) {
   }
 }
 const EYE_AX = { x: 1, y: 1 };
+const myWpKind = () => { const it = ITEM[S.equip.weapon]; return it && it.wp !== 'none' && S.owned.includes(it.id) ? it.wp : null; };
+/* arma na cidade: aparece na mão e dá para usar (efeitos de brincadeira, sem gastar) */
+function cityWeapon() {
+  const k = myWpKind(); if (!k) return toast('Você não tem arma. Compre no Terminal Mundial → Arsenal.', 'bad');
+  if (P.wpCd > 0) return; P.wpCd = 2.2; P.wpShowT = 1; P.emote = null;
+  const fx = Math.sin(P.h), fz = Math.cos(P.h);
+  const ahead = (range, cone) => { let best = null, bd = range; for (const o of [...city.bots, ...city.peds]) { const dx = o.x - P.x, dz = o.z - P.z, d = Math.hypot(dx, dz); if (d < bd && d > 0.3 && (dx * fx + dz * fz) / d > cone && !(o.fallT > 0)) { bd = d; best = o; } } return best; };
+  const puff = (x, y, z, col, n, spread, life, up) => { for (let i = 0; i < n; i++) { const m = new THREE.Mesh(SPH(0.25 + Math.random() * 0.35, 8, 6), new THREE.MeshBasicMaterial({ color: Array.isArray(col) ? pick(col) : col, transparent: true, opacity: 0.8, depthWrite: false })); m.position.set(x + rand(-spread, spread), y + rand(-0.3, 0.6), z + rand(-spread, spread)); city.scene.add(m); city.fx.push({ m, vx: rand(-0.6, 0.6), vy: up || rand(0.1, 0.6), vz: rand(-0.6, 0.6), life, max: life }); } };
+  if (k === 'banana') { const m = obstacleMesh({ type: 'banana' }, {}); m.position.set(P.x - fx * 1.5, 0, P.z - fz * 1.5); city.scene.add(m); city.bananas.push({ m, x: m.position.x, z: m.position.z, t: 30 }); sfx('banana'); }
+  else if (k === 'smoke') { puff(P.x, 1, P.z, [0xc9ced6, 0xaab2bd], 18, 2.5, 6, 0.25); sfx('smoke'); }
+  else if (k === 'spray') { puff(P.x + fx * 2, 1.3, P.z + fz * 2, [0xff4f7b, 0xff8ab0, 0xffcf3a], 12, 0.8, 1.2); sfx('spray'); const o = ahead(5, 0.6); if (o) { bubble(o.g, pick(['Ei! Minha roupa!', 'Que isso, mano?!', 'Sujou tudo!']), 3); if (o.b) o.talkT = 2; } }
+  else if (k === 'sling') { sfx('sling'); const o = ahead(24, 0.85); if (o) setTimeout(() => { o.fallT = 1.6; bubble(o.g, pick(['Ai!', 'Quem jogou isso?!', 'Ei!']), 3); sfx('hit'); }, 250); }
+  else if (k === 'rocket') { sfx('rocket'); const m = rocketMesh(); m.rotation.x = -Math.PI / 2; m.position.set(P.x, 1.5, P.z); city.scene.add(m); city.fx.push({ m, vx: 0, vy: 22, vz: 0, life: 0.9, max: 0.9, rocket: true }); }
+}
+function updateCityFx(dt) {
+  for (const f of city.fx) {
+    f.life -= dt; f.m.position.x += f.vx * dt; f.m.position.y += f.vy * dt; f.m.position.z += f.vz * dt;
+    if (f.rocket) { if (f.life <= 0) { sfx('boom'); const p = f.m.position; for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(boxGeo(0.25, 0.25, 0.05), new THREE.MeshBasicMaterial({ color: pick([0xff4f7b, 0xffcf3a, 0x4fc3ff, 0x3ddc84, 0xa66bff]), transparent: true })); m.position.copy(p); city.scene.add(m); const a = Math.random() * TAU, e = Math.random() * Math.PI - Math.PI / 2, s = rand(4, 9); city.fx.push({ m, vx: Math.cos(a) * Math.cos(e) * s, vy: Math.sin(e) * s + 2, vz: Math.sin(a) * Math.cos(e) * s, life: 2.2, max: 2.2, conf: true }); } } }
+    else { if (f.conf) { f.vy -= 6 * dt; f.m.rotation.x += dt * 8; f.m.rotation.y += dt * 6; } else f.m.scale.setScalar(1 + (f.max - f.life) * 0.5); f.m.material.opacity = Math.min(0.8, f.life / f.max * 1.4); }
+  }
+  city.fx = city.fx.filter(f => { if (f.life <= 0) { city.scene.remove(f.m); return false; } return true; });
+  for (const b of city.bananas) { b.t -= dt; for (const o of city.bots) if (!(o.fallT > 0) && Math.hypot(o.x - b.x, o.z - b.z) < 1) { o.fallT = 1.6; bubble(o.g, 'Escorreguei na banana!', 3); b.t = 0; sfx('banana'); } }
+  city.bananas = city.bananas.filter(b => { if (b.t <= 0) { city.scene.remove(b.m); return false; } return true; });
+}
 /* arma na mão na hora de usar */
 function showWeaponProp(u, kind) {
   if (u.wpK !== kind) {
@@ -1801,13 +1839,13 @@ function animReal(u, o, t) {
   fingerPose(u.R, 'L', u.hL, false, false); fingerPose(u.R, 'R', u.hR, hands.pointR, hands.thumbR);
   faceLayer(u, t, dt);
   if (u.phoneOut || u.phone) { const ph = handProp(u); if (ph) ph.visible = !!u.phoneOut; }
-  if (o.wpProp || u.wpM) showWeaponProp(u, o.wpProp);
+  if (o.wpProp || o.wpHold || u.wpM) showWeaponProp(u, o.wpProp || o.wpHold);
   if (u.wings) { const fl = o.air ? Math.sin(t * 14) * 0.6 : Math.sin(t * 2) * 0.12; u.wings[0].rotation.y = 0.3 + fl; u.wings[1].rotation.y = -0.3 - fl; }
 }
 
 /* ---------------- INPUT ---------------- */
 const input = { held: {}, pressed: {}, joy: { x: 0, y: 0 }, tbtn: {} };
-const KEYMAP = { KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
+const KEYMAP = { KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
 addEventListener('keydown', e => {
   if (e.target.matches && e.target.matches('input,textarea')) { if (e.code === 'Escape') e.target.blur(); return; }
   input.held[e.code] = true;
@@ -1817,7 +1855,12 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { input.held[e.code] = false; });
 /* zoom da câmera (rodinha / pinça) e giro na câmera de rosto (arrastar) */
 function camZoom(d) { if (mode !== 'city' || uiBlocking()) return; if (city.faceCam) city.faceDist = clamp(city.faceDist + d * 0.6, 0.45, 2.4); else city.zoom = clamp(city.zoom + d, 0.35, 1.5); }
-function camDrag(dx, dy) { if (mode !== 'city' || !city.faceCam) return; city.faceOrbit += dx * 0.008; city.faceH = clamp(city.faceH - dy * 0.003, -0.5, 0.8); }
+function camDrag(dx, dy) {
+  if (mode === 'race') { input.dragSteer = clamp((input.dragSteer || 0) + dx * 0.012, -1, 1); return; }
+  if (mode !== 'city' || uiBlocking()) return;
+  if (city.faceCam) { city.faceOrbit += dx * 0.008; city.faceH = clamp(city.faceH - dy * 0.003, -0.5, 0.8); return; }
+  city.camYaw -= dx * 0.0075; city.camPitch = clamp(city.camPitch + dy * 0.004, -0.6, 0.9); city.dragT = performance.now();
+}
 $('gl').addEventListener('wheel', e => { camZoom(e.deltaY * 0.0012); e.preventDefault(); }, { passive: false });
 (() => {
   let drag = null; $('gl').addEventListener('mousedown', e => { drag = [e.clientX, e.clientY]; });
@@ -1825,12 +1868,19 @@ $('gl').addEventListener('wheel', e => { camZoom(e.deltaY * 0.0012); e.preventDe
   addEventListener('mouseup', () => { drag = null; });
   let pinch = null, one = null;
   const free = e => !e.target.closest || !e.target.closest('button,.tbtns,#joy-zone,#panel,#phone,input');
-  addEventListener('touchstart', e => { if (e.touches.length === 2) { pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); one = null; } else if (e.touches.length === 1 && free(e)) one = [e.touches[0].clientX, e.touches[0].clientY]; }, { passive: true });
+  let oneId = null;
+  addEventListener('touchstart', e => {
+    const t = e.changedTouches[0];
+    if (free(e) && oneId == null) { oneId = t.identifier; one = [t.clientX, t.clientY]; }
+    const fr = [...e.touches].filter(x => { const el = document.elementFromPoint(x.clientX, x.clientY); return !el || !el.closest('button,.tbtns,#joy-zone,#panel,#phone,input'); });
+    if (fr.length === 2) { pinch = Math.hypot(fr[0].clientX - fr[1].clientX, fr[0].clientY - fr[1].clientY); } }, { passive: true });
   addEventListener('touchmove', e => {
-    if (e.touches.length === 2 && pinch) { const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); camZoom((pinch - d) * 0.004); pinch = d; }
-    else if (e.touches.length === 1 && one) { camDrag(e.touches[0].clientX - one[0], e.touches[0].clientY - one[1]); one = [e.touches[0].clientX, e.touches[0].clientY]; }
+    const fr = [...e.touches].filter(x => x.identifier === oneId || pinch);
+    if (pinch && e.touches.length >= 2 && fr.length >= 2) { const d = Math.hypot(fr[0].clientX - fr[1].clientX, fr[0].clientY - fr[1].clientY); camZoom((pinch - d) * 0.004); pinch = d; return; }
+    for (const t of e.changedTouches) if (t.identifier === oneId && one) { camDrag(t.clientX - one[0], t.clientY - one[1]); one = [t.clientX, t.clientY]; }
   }, { passive: true });
-  addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; if (!e.touches.length) one = null; }, { passive: true });
+  addEventListener('touchend', e => { for (const t of e.changedTouches) if (t.identifier === oneId) { oneId = null; one = null; input.dragSteer = 0; } }, { passive: true });
+  addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; }, { passive: true });
 })();
 addEventListener('blur', () => { input.held = {}; });
 function tap(a) { if (input.pressed[a]) { input.pressed[a] = false; return true; } return false; }
@@ -1910,7 +1960,7 @@ const SPECIAL = {
   '-42,42': { kind: 'agencia', label: 'Agência de Empregos', sub: 'EMPREGOS', color: 0x2ecc71, css: '#2ecc71' },
   '42,-42': { kind: 'imobiliaria', label: 'Imobiliária', sub: 'CASAS', color: 0x00bcd4, css: '#00bcd4' },
 };
-const city = { zoom: 1, faceCam: false, faceDist: 0.85, faceOrbit: 0, faceH: 0, scene: null, blds: [], winMats: [], addrs: [], walls: [], kiosks: [], peds: [], dogs: [], cats: [], pigeons: [], flocks: [], colliders: [], doors: [], ramps: [], cars: [], bots: [], player: null, sun: null, beam: null, mObjs: [], offers: null, checkout: null, rec: [], recT: 0, chatT: 6, chatLog: [], contest: null, socialTarget: null, mapT: 0 };
+const city = { fx: [], bananas: [], camYaw: Math.PI, camPitch: 0, dragT: -9, zoom: 1, faceCam: false, faceDist: 0.85, faceOrbit: 0, faceH: 0, scene: null, blds: [], winMats: [], addrs: [], walls: [], kiosks: [], peds: [], dogs: [], cats: [], pigeons: [], flocks: [], colliders: [], doors: [], ramps: [], cars: [], bots: [], player: null, sun: null, beam: null, mObjs: [], offers: null, checkout: null, rec: [], recT: 0, chatT: 6, chatLog: [], contest: null, socialTarget: null, mapT: 0 };
 const P = { onBoard: false, x: 0, z: 10, y: 0, h: Math.PI, v: 0, vy: 0, air: false, airT: 0, trick: null, combo: [], emote: null, fallT: 0, punchT: 0, punchCd: 0, carry: null };
 
 function buildCity() {
@@ -2470,27 +2520,34 @@ function updateCity(dt, t) {
     else if (!P.air && P.fallT <= 0) { P.onBoard = !P.onBoard; P.emote = null; P.v *= 0.5; sfx('land'); feed(P.onBoard ? 'No skate' : 'A pé'); }
   }
   if (!blocked && tap('emote')) openPanel('social', 'emotes');
+  if (!blocked && tap('chat')) act('qchat', {});
+  P.wpShowT = (P.wpShowT || 0) - dt; P.wpCd = (P.wpCd || 0) - dt;
+  if (!blocked && tap('weapon')) cityWeapon();
+  if (IS_TOUCH) { const wk = myWpKind(); $('tb-wp').hidden = !wk; if (wk) { $('tb-wp').classList.toggle('off', P.wpCd > 0); $('tb-wp-n').textContent = '∞'; } }
+  updateCityFx(dt);
   if (!blocked && tap('map')) openPanel('mapa');
   const st = P.onBoard ? myStats() : { spd: 1, acc: 1, ctl: 1, pop: 1, tec: 1, equ: 0 };
   P.punchT -= dt; P.punchCd -= dt;
   if (P.emote) { P.emote.t -= dt; if (P.emote.t <= 0 || Math.abs(ax.y) > 0.2 || Math.abs(ax.x) > 0.5) P.emote = null; }
   if (P.fallT > 0) { P.fallT -= dt; P.v *= Math.pow(0.1, dt); }
+  // controle direto: o joystick aponta para onde ir, relativo à câmera (o outro dedo gira a câmera)
+  const mag = Math.min(1, Math.hypot(ax.x, ax.y)), cy = city.camYaw;
+  const wantH = Math.atan2(Math.sin(cy) * ax.y - Math.cos(cy) * ax.x, Math.cos(cy) * ax.y + Math.sin(cy) * ax.x);
+  const turnTo = (rate) => { if (mag < 0.15) return; const d = Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)); P.h += clamp(d, -rate * dt, rate * dt); };
+  if (P.fallT > 0) { }
   else if (!P.onBoard) {
     const maxV = 6.2;
-    if (ax.y > 0.1) P.v = lerp(P.v, maxV * ax.y, 1 - Math.exp(-6 * dt));
-    else if (ax.y < -0.1) P.v = lerp(P.v, -2.5 * -ax.y, 1 - Math.exp(-6 * dt));
-    else P.v = lerp(P.v, 0, 1 - Math.exp(-9 * dt));
-    P.h -= ax.x * 3.2 * dt * (P.v < -0.2 ? -1 : 1);
+    turnTo(9);
+    P.v = lerp(P.v, mag > 0.12 ? maxV * mag : 0, 1 - Math.exp(-(mag > 0.12 ? 6 : 9) * dt));
     if (!blocked && tap('jump') && !P.air) { P.vy = 6; P.air = true; P.emote = null; }
   }
   else {
     const maxV = 14 * st.spd;
-    if (ax.y > 0.1) P.v += 11 * st.acc * ax.y * dt * (1 - P.v / (maxV * 1.05));
-    else if (ax.y < -0.1) P.v -= 18 * dt * -ax.y;
-    P.v -= P.v * (ax.y > 0.1 ? 0.15 : 0.7) * dt;
-    P.v = clamp(P.v, -3, maxV);
-    const turn = 2.5 * st.ctl / (1 + Math.abs(P.v) * 0.035);
-    P.h -= ax.x * turn * dt * (P.v < -0.2 ? -1 : 1);
+    if (!P.air) turnTo(4.2 * st.ctl / (1 + Math.abs(P.v) * 0.02));
+    if (mag > 0.15) P.v += 11 * st.acc * mag * dt * (1 - P.v / (maxV * 1.05));
+    P.v -= P.v * (mag > 0.15 ? 0.15 : 0.6) * dt;
+    if (input.held.KeyS || input.held.ArrowDown) P.v -= 14 * dt;
+    P.v = clamp(P.v, 0, maxV);
     const jp = !blocked && tap('jump'), sp = !blocked && tap('item');
     if (jp && !P.air) { P.vy = 7.2 * st.pop; P.air = true; P.airT = 0; sfx('jump'); }
     else if ((jp || sp) && P.air && !P.trick) {
@@ -2531,7 +2588,7 @@ function updateCity(dt, t) {
   socialChatter(dt);
 
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h;
-  animSkater(g, { walk: !P.onBoard, carry: hasSkate(), v: P.v, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: ax.y > 0.1, turn: ax.x, vy: P.vy, spray: P.spray, emote: P.emote && P.emote.id }, t);
+  animSkater(g, { walk: !P.onBoard, carry: hasSkate(), v: P.v, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: myWpKind(), wpProp: P.wpShowT > 0 ? myWpKind() : null, emote: P.emote && P.emote.id }, t);
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
   recordFrame(dt);
@@ -2560,11 +2617,15 @@ function updateCity(dt, t) {
     camera.position.lerp(new THREE.Vector3(P.x + Math.sin(a) * 2.6, 1.6, P.z + Math.cos(a) * 2.6), 1 - Math.exp(-4 * dt));
     camera.lookAt(P.x, 1.05, P.z);
   } else {
-    const fx = Math.sin(P.h), fz = Math.cos(P.h), z = city.zoom;
+    // a câmera volta sozinha para trás do personagem quando ele anda e você não está girando
+    const sinceDrag = (performance.now() - city.dragT) / 1000, dh = Math.atan2(Math.sin(P.h - city.camYaw), Math.cos(P.h - city.camYaw));
+    if (sinceDrag > 1.2 && Math.abs(P.v) > 1 && Math.abs(dh) < 2.2) city.camYaw += dh * (1 - Math.exp(-(P.onBoard ? 2.2 : 1.4) * dt));
+    if (sinceDrag > 3) city.camPitch *= 1 - Math.exp(-1.5 * dt);
+    const fx = Math.sin(city.camYaw), fz = Math.cos(city.camYaw), z = city.zoom;
     let cd = (P.onBoard ? 5.6 : 4.4) * z;
     while (cd > 1.2 && collide(P.x - fx * cd, P.z - fz * cd, 0.4)) cd -= 0.4;
     const hh = lerp(1.75, P.onBoard ? 2.9 : 2.5, clamp((z - 0.35) / 0.65, 0, 1)), side = lerp(0.45, 0, clamp((z - 0.35) / 0.5, 0, 1));
-    const want = new THREE.Vector3(P.x - fx * cd + fz * side, P.y * 0.5 + hh, P.z - fz * cd - fx * side);
+    const want = new THREE.Vector3(P.x - fx * cd + fz * side, P.y * 0.5 + hh + city.camPitch * cd * 0.7, P.z - fz * cd - fx * side);
     camera.position.lerp(want, 1 - Math.exp(-5 * dt));
     const ly = lerp(1.55, 1.25, clamp((z - 0.35) / 0.65, 0, 1));
     camera.lookAt(P.x + fx * 2.5 * z + fz * side * 0.5, P.y * 0.5 + ly, P.z + fz * 2.5 * z - fx * side * 0.5);
@@ -2654,7 +2715,16 @@ function socialChatter(dt) {
   const o = pick(near), msg = pick(CHATTER);
   bubble(o.g, msg, 5); pushChat(o.b.name, msg);
 }
-function pushChat(who, msg, me) { city.chatLog.push({ who, msg, me: !!me, at: Date.now() }); if (city.chatLog.length > 40) city.chatLog.shift(); if (panelKind === 'social' && panelArg === 'chat') renderPanel(); }
+/* fala: balão em cima do personagem, aparece para quem está online e os bots perto respondem */
+function sayChat(txt) {
+  bubble(city.player, txt, 6); pushChat(S.name, txt, true); netChat(txt);
+  const near = city.bots.filter(o => Math.hypot(o.x - P.x, o.z - P.z) < 20);
+  if (near.length && Math.random() < 0.7) setTimeout(() => { const o = pick(near), r = botReply(o.b.id, txt); bubble(o.g, r, 5); pushChat(o.b.name, r); }, 1200 + Math.random() * 1500);
+}
+const QUICK = ['Salve!', 'E aí, suave?', 'Bora correr?', 'Kkkkk', 'Que manobra!', 'Valeu!', 'Me segue', 'Partiu praça'];
+function pushChat(who, msg, me, real) {
+  const cf = $('chatfeed'); if (cf && mode === 'city') { const d = document.createElement('div'); if (real) d.className = 'real'; d.innerHTML = `<b>${esc(who)}</b>${esc(msg)}`; cf.appendChild(d); while (cf.children.length > 4) cf.removeChild(cf.firstChild); setTimeout(() => d.remove(), 9000); }
+  city.chatLog.push({ who, msg, me: !!me, at: Date.now() }); if (city.chatLog.length > 40) city.chatLog.shift(); if (panelKind === 'social' && panelArg === 'chat') renderPanel(); }
 
 /* ---------------- REPLAYS ---------------- */
 function recordFrame(dt) {
@@ -3769,8 +3839,13 @@ function stepRacer(r, ctrl, dt) {
     if (ctrl.throttle && !r.inAir && r.v < mv) r.v += 10 * st.acc * dt * (1 - 0.55 * r.v / mv);
     if (r.turboT > 0) r.v = Math.max(r.v, mv * 0.97);
     if (ctrl.brake) r.v = Math.max(0, r.v - 16 * ctrl.brake * dt);
-    r.rh += ctrl.steer * 2.1 * st.ctl * dt;
-    if (Math.abs(ctrl.steer) < 0.1) r.rh *= (1 - 2.2 * dt);
+    if (r.isPlayer) { // jogador: direção direta e sensível (puxou pro lado, vai pro lado)
+      const s = Math.sign(ctrl.steer) * Math.pow(Math.abs(ctrl.steer), 0.75);
+      r.rh += (s * 0.72 - r.rh) * (1 - Math.exp(-9 * st.ctl * dt));
+    } else {
+      r.rh += ctrl.steer * 2.1 * st.ctl * dt;
+      if (Math.abs(ctrl.steer) < 0.1) r.rh *= (1 - 2.2 * dt);
+    }
     r.rh = clamp(r.rh, -0.7, 0.7);
     if (ctrl.jump && !r.inAir) { r.vy = 7 * (st.pop || 1); r.inAir = true; if (r.isPlayer) sfx('jump'); }
     else if ((ctrl.flip || (ctrl.jump && r.inAir)) && r.inAir && !r.trick) {
@@ -3826,7 +3901,7 @@ function updateRace(dt, t) {
   } else R.t += dt;
   // controle do jogador
   const ax = uiBlocking() ? { x: 0, y: 0 } : axis();
-  const pc = { steer: ax.x, throttle: IS_TOUCH ? (ax.y > -0.35 ? 1 : 0) : (ax.y > 0.2 ? 1 : 0), brake: ax.y < -0.35 ? 1 : 0, jump: false, flip: false, dir: me.inAir ? dirOf(ax) : 'n' };
+  const pc = { steer: clamp(ax.x + (input.dragSteer || 0), -1, 1), throttle: IS_TOUCH ? (ax.y > -0.35 ? 1 : 0) : (ax.y > 0.2 ? 1 : 0), brake: ax.y < -0.35 ? 1 : 0, jump: false, flip: false, dir: me.inAir ? dirOf(ax) : 'n' };
   if (R.state !== 'count') {
     if (tap('jump')) pc.jump = true;
     if (tap('punch')) punch(me);
@@ -3982,7 +4057,7 @@ function backToCity() {
   if (R) disposeRace();
   mode = 'city'; $('race-hud').hidden = true; $('hud').hidden = false; $('banner').hidden = true; $('countdown').hidden = true; $('splat').hidden = true; $('smokeov').hidden = true; $('tb-wp').hidden = true; R_CRIT = null;
   $('tb-act').hidden = true; $('tb-item-l').textContent = 'Truque'; $('tb-board').hidden = false;
-  const d = city.doors.find(d => d.kind === 'arena'); P.x = d.x; P.z = d.z - 6; P.h = Math.PI; P.v = 0; P.y = 0; P.air = false; P.fallT = 0; P.onBoard = true;
+  const d = city.doors.find(d => d.kind === 'arena'); P.x = d.x; P.z = d.z - 6; P.h = Math.PI; city.camYaw = Math.PI; city.camPitch = 0; P.v = 0; P.y = 0; P.air = false; P.fallT = 0; P.onBoard = true;
   applyLook(city.player, myLook()); refreshBotTags(); renderMissionBox(); updateHUD();
 }
 function refreshBotTags() { for (const o of city.bots) setTag(o.g, o.b.name, botTagColor(o.b.id)); setTag(city.player, S.name + (S.crew ? ` [${S.crew.name}]` : ''), '#ffcf3a'); }
@@ -4436,6 +4511,8 @@ function act(a, ds, el) {
     case 'board-col': S.board[ds.k] = ds.c === 'null' ? null : +ds.c; persist(); applyLook(city.player, myLook()); renderPanel(); sfx('ui'); netTrack(); break;
     case 'arena-tab': case 'social-tab': case 'perfil-tab': panelArg = ds.k; if (ds.k !== 'inventario') city.crateResult = null; renderPanel(); if (ds.k === 'ranking') netFetchRank(); break;
     case 'contest': startContest(); break;
+    case 'qchat': { if (mode !== 'city') break; const f = $('qchat'); f.hidden = !f.hidden; if (!f.hidden) { $('qchips').innerHTML = QUICK.map(q => `<button type="button" data-act="qsay" data-t="${esc(q)}">${esc(q)}</button>`).join(''); setTimeout(() => $('qchat-in').focus(), 50); } break; }
+    case 'qsay': sayChat(ds.t); $('qchat').hidden = true; break;
     case 'face-cam': if (mode === 'city') { city.faceCam = !city.faceCam; city.faceDist = 0.7; city.faceOrbit = 0; city.faceH = 0; if (city.faceCam) { P.v = 0; P.emote = null; toast(IS_TOUCH ? 'Câmera de rosto: arraste para girar, pinça para zoom. Ande para sair.' : 'Câmera de rosto: arraste para girar, rodinha para zoom. Ande para sair.'); } } break;
     case 'shift-start': startShift(ds.id); break;
     case 'shift-end': endShift(); if (panelKind) renderPanel(); break;
@@ -4492,9 +4569,10 @@ document.addEventListener('submit', e => {
     })();
   } else if (e.target.id === 'square-form') {
     const txt = $('square-in').value.trim(); if (!txt) return;
-    bubble(city.player, txt, 5); pushChat(S.name, txt, true); $('square-in').value = ''; netChat(txt);
-    const near = city.bots.filter(o => Math.hypot(o.x - P.x, o.z - P.z) < 20);
-    if (near.length) setTimeout(() => { const o = pick(near), r = botReply(o.b.id, txt); bubble(o.g, r, 5); pushChat(o.b.name, r); }, 1200 + Math.random() * 1500);
+    sayChat(txt); $('square-in').value = '';
+  } else if (e.target.id === 'qchat') {
+    const txt = $('qchat-in').value.trim(); if (!txt) return;
+    sayChat(txt); $('qchat-in').value = ''; $('qchat').hidden = true; $('qchat-in').blur();
   } else if (e.target.id === 'chat-form') {
     const txt = $('chat-in').value.trim(); if (!txt) return; const id = phoneState.contact;
     (S.chats[id] = S.chats[id] || []).push({ me: 1, t: txt }); S.chats[id] = S.chats[id].slice(-30); persist(); renderPhone();
@@ -4559,7 +4637,7 @@ setInterval(() => { if (NET.dirty) cloudSave(); }, 10000);
 document.addEventListener('visibilitychange', () => { if (document.hidden && NET.dirty) cloudSave(); });
 
 /* aparência compacta enviada para os outros jogadores */
-const myNetLook = () => ({ g: S.gender, sk: S.skin, h: S.hair, e: { shirt: S.equip.shirt, pants: S.equip.pants, cap: S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print }, b: S.board });
+const myNetLook = () => ({ w: myWpKind(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: S.equip.shirt, pants: S.equip.pants, cap: S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print }, b: S.board });
 const myPresence = () => ({ id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook() });
 function netJoinPlaza() {
   if (!NET.user || NET.ch) return;
@@ -4586,7 +4664,7 @@ function onPresence(state) {
     if (!p) {
       const L = st.look || {}, look = lookOf(L.e || {}, L.sk ?? SKINS[1], L.h ?? HAIRS[0], L.g || 'm', L.b);
       const g = makeSkater(look, (st.crew ? `[${st.crew}] ` : '') + st.name, '#7fe3ff'); g.visible = false; city.scene.add(g);
-      p = NET.peers[st.id] = { id: st.id, name: st.name, g, lookKey, x: 0, y: 0, z: 0, h: 0, t: null, seen: false };
+      p = NET.peers[st.id] = { wp: L.w || null, id: st.id, name: st.name, g, lookKey, x: 0, y: 0, z: 0, h: 0, t: null, seen: false };
       pushChat('Praça', `${st.name} entrou na praça`);
     }
   }
@@ -4598,7 +4676,7 @@ function onPeerPos(d) {
   const p = NET.peers[d.id]; if (!p) return;
   p.t = d; if (!p.seen) { p.seen = true; p.x = d.x; p.y = d.y; p.z = d.z; p.h = d.h; p.g.visible = true; }
 }
-function onPeerChat(d) { const p = NET.peers[d.id]; if (p) bubble(p.g, d.msg, 5); pushChat(d.name, d.msg); }
+function onPeerChat(d) { const p = NET.peers[d.id]; if (p) bubble(p.g, d.msg, 6); pushChat(d.name, d.msg, false, true); }
 function netChat(msg) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'chat', payload: { id: NET.user.id, name: S.name, msg } }); }
 /* chamado todo quadro na cidade: envia posição ~8x por segundo e anima quem está online */
 function netTick(dt, t) {
@@ -4615,7 +4693,7 @@ function netTick(dt, t) {
     p.h += Math.atan2(Math.sin(d.h - p.h), Math.cos(d.h - p.h)) * k;
     p.g.position.set(p.x, p.y, p.z); p.g.rotation.y = p.h;
     p.g.userData.lod = Math.hypot(p.x - camera.position.x, p.z - camera.position.z) > 38;
-    animSkater(p.g, { walk: !d.b, carry: true, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
+    animSkater(p.g, { wpHold: p.wp || null, walk: !d.b, carry: true, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
     tickBubble(p.g, dt);
   }
 }
@@ -4766,7 +4844,7 @@ async function enterGame() {
   if (IS_TOUCH) { $('touch').hidden = false; $('tb-item-l').textContent = 'Truque'; }
   buildCity(); applyQuality(); updateHUD(); rebuildMissionObjs(); renderMissionBox();
   const hd = homeDoor(); if (hd) { P.x = hd.x - 2.5; P.z = hd.z; P.h = -Math.PI / 2; setTimeout(() => toast('Você acordou em casa. Bom rolê!', 'pink'), 1200); }
-  camera.position.set(P.x, 6, P.z + 10);
+  city.camYaw = P.h; camera.position.set(P.x - Math.sin(P.h) * 6, 4, P.z - Math.cos(P.h) * 6);
   P.onBoard = hasSkate();
   if (S.shift && !S.mission) setTimeout(() => { if (S.shift && !S.mission) nextJobTask(); }, 1500);
   if (!S.mission && S.stats.missions === 0) setTimeout(() => toast(hasSkate() ? 'Vá até o Quadro de Missões (marcador amarelo) para fazer sua primeira grana.' : 'Você está a pé. Vá até o Quadro de Missões (marcador amarelo): a primeira missão te dá um skate.', 'pink'), 800);
