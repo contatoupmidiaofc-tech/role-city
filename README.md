@@ -46,7 +46,8 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Save na nuvem:** sincroniza a cada 10 s quando há mudança e ao sair da página.
 - **Praça multiplayer:** canal Realtime `praca` com presença (quem está online e a aparência) e broadcast de posição (~8 por segundo) e chat. Jogadores reais aparecem com nome azul-claro e no minimapa.
 - **Ranking semanal:** junta os jogadores reais da mesma divisão (função `ranking_semana`) com os rivais simulados.
-- **Limitações atuais:** o próprio jogo grava os pontos (falta validação no servidor contra trapaça); corridas ainda são contra bots.
+- **Corrida online:** no Terminal Mundial, "Correr online" entra na fila do país (canal `fila_<país>` com presença). O primeiro da fila dá a largada; todos correm no mesmo mapa (pista e obstáculos gerados pela mesma semente) e trocam estado pelo canal `corrida_<id>` (posição ~10x/s, derrubadas e óleo). Quem fica 12 s sem sinal sai da corrida.
+- **Limitações atuais:** o próprio jogo grava os pontos (falta validação no servidor contra trapaça); na corrida online não há bots, e a pedra de outro jogador só aparece quando acerta.
 
 ## O que falta para virar um jogo online de verdade
 

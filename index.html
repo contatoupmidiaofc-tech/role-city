@@ -1253,7 +1253,7 @@ function updateHUD() {
 }
 let panelKind = null, panelArg = null;
 function openPanel(kind, arg) { panelKind = kind; panelArg = arg; renderPanel(); $('panel').hidden = false; sfx('ui'); }
-function closePanel() { $('panel').hidden = true; if (panelKind === 'results') backToCity(); panelKind = null; }
+function closePanel() { if (panelKind === 'lobby') lobbyLeave(); $('panel').hidden = true; if (panelKind === 'results') backToCity(); panelKind = null; }
 function renderPanel() {
   const [nm, sub] = panelKind.split(':'); const r = PANELS[nm](sub ?? panelArg, panelArg);
   $('panel-title').textContent = r.title; $('panel-body').innerHTML = r.html;
@@ -2007,7 +2007,7 @@ function ribbon(T, d0, y0, d1, y1, step, mat, vScale) {
   const m = new THREE.Mesh(g, mat); m.receiveShadow = true; return m;
 }
 
-function startRace(cid) {
+function startRace(cid, opts = {}) {
   const c = COUNTRIES.find(x => x.id === cid), th = THEMES[cid];
   if (!hasSkate()) return toast('Você precisa de um skate para correr.', 'bad');
   if (S.level < c.lvl) return toast(`Precisa do nível ${c.lvl}.`, 'bad');
@@ -2128,11 +2128,18 @@ function startRace(cid) {
   const grid = shuffle([0, 1, 2, 3, 5, 6, 7]);
   const mk = (look, name, color, o) => { const g = makeSkater(look, name, color); sc.add(g); return Object.assign({ g, name, s: 0, d: 0, rh: 0, v: 0, air: 0, vy: 0, inAir: false, trick: null, combo: [], fallT: 0, invT: 0, item: null, punchCd: 0, punchT: 0, turboT: 0, finished: false, ft: 0, hit: new Set(), laneT: 0, targetD: 0, itemT: 1, idx: racers.length }, o); };
   const slot = k => ({ s: 12 - Math.floor(k / 3) * 3.5, d: ((k % 3) - 1) * 4.2 });
-  const me = mk(myLook(), S.name, '#ffcf3a', Object.assign({ isPlayer: true, ally: true, stats: myStats(), skill: 1 }, slot(4)));
+  const online = opts.online || null;
+  const myIdx = online ? online.players.findIndex(p => p.id === NET.user.id) : 4;
+  const me = mk(myLook(), S.name, '#ffcf3a', Object.assign({ isPlayer: true, ally: true, stats: myStats(), skill: 1, netId: online ? NET.user.id : null }, slot(myIdx)));
   racers.push(me); me.g.userData.tag.visible = false;
-  lineup.forEach((l, i) => { const r = mk(botLook(l.b), l.b.name, l.ally ? '#3ddc84' : '#ffffff', Object.assign({ bot: l.b, ally: l.ally, stats: boardStats(l.b.equip), skill: l.b.skill + c.lvl * 0.012 + (division().mult - 1) * 0.02, aggro: l.b.aggro }, slot(grid[i]))); r.targetD = r.d; r.g.userData.tag.scale.multiplyScalar(0.75); racers.push(r); });
+  if (online) online.players.forEach((p, i) => {
+    if (p.id === NET.user.id) return;
+    const L = p.look || {}, look = lookOf(L.e || {}, L.sk ?? SKINS[1], L.h ?? HAIRS[0], L.g || 'm', L.b);
+    racers.push(mk(look, p.name, '#7fe3ff', Object.assign({ remote: true, netId: p.id, ally: false, stats: { spd: 1, acc: 1, ctl: 1 }, skill: 1 }, slot(i))));
+  });
+  else lineup.forEach((l, i) => { const r = mk(botLook(l.b), l.b.name, l.ally ? '#3ddc84' : '#ffffff', Object.assign({ bot: l.b, ally: l.ally, stats: boardStats(l.b.equip), skill: l.b.skill + c.lvl * 0.012 + (division().mult - 1) * 0.02, aggro: l.b.aggro }, slot(grid[i]))); r.targetD = r.d; r.g.userData.tag.scale.multiplyScalar(0.75); racers.push(r); });
 
-  R = { sky, c, th, T, sc, sun, obst, racers, player: me, proj: [], t: 0, count: 3.99, state: 'count', order: [], arrows: [], arrowT: 0, doneT: 0, oid: 100000 };
+  R = { online: !!online, sky, c, th, T, sc, sun, obst, racers, player: me, proj: [], t: 0, count: 3.99, state: 'count', order: [], arrows: [], arrowT: 0, doneT: 0, oid: 100000 };
   // setas GPS (Pro)
   const chev = new THREE.Shape(); chev.moveTo(-0.9, -0.4); chev.lineTo(0, 0.5); chev.lineTo(0.9, -0.4); chev.lineTo(0.9, -0.9); chev.lineTo(0, 0); chev.lineTo(-0.9, -0.9);
   const chevGeo = new THREE.ShapeGeometry(chev); chevGeo.rotateX(-Math.PI / 2);
@@ -2141,6 +2148,7 @@ function startRace(cid) {
   let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let i = 0; i <= T.N; i += 5) { x0 = Math.min(x0, T.X[i]); x1 = Math.max(x1, T.X[i]); z0 = Math.min(z0, T.Z[i]); z1 = Math.max(z1, T.Z[i]); }
   R.mm = { x0, z0, sc: 260 / Math.max(x1 - x0, z1 - z0), ox: 150 - (x1 - x0) * 0, oz: 0, w: x1 - x0, h: z1 - z0 };
 
+  if (online) raceNetJoin(online.rid);
   mode = 'race';
   $('hud').hidden = true; $('race-hud').hidden = false;
   $('minimap').hidden = phoneTier() < 1;
@@ -2148,7 +2156,7 @@ function startRace(cid) {
   $('progress').querySelectorAll('i').forEach(e => e.remove());
   racers.forEach(r => { const i = document.createElement('i'); if (r.isPlayer) i.className = 'me'; else if (r.ally) i.className = 'ally'; r.dot = i; $('progress').appendChild(i); });
   $('countdown').hidden = false; $('r-of').textContent = `º / ${racers.length}`;
-  toast(`${c.place}${allies.length ? ` · ${allies.length} aliado(s) da crew na pista` : ''}`, 'pink');
+  toast(online ? `Corrida online · ${c.place} · ${racers.length} jogadores` : `${c.place}${allies.length ? ` · ${allies.length} aliado(s) da crew na pista` : ''}`, 'pink');
   updateItemSlot();
 }
 function buildLandmark(sc, T, cid) {
@@ -2196,7 +2204,7 @@ function genObstacles(T, c, th, sc, rng) {
     const r = rng();
     if (r < 0.16) { const n = 3 + Math.floor(rng() * 3); for (let k = 0; k < n; k++) add('cone', s + rng() * 8, -6.5 + rng() * 13); }
     else if (r < 0.34) { const free = Math.floor(rng() * 5); LANES.forEach((L, k) => { if (k !== free && rng() < 0.55) add(th.tables && rng() < .5 ? 'table' : 'barrier', s, L); }); }
-    else if (r < 0.48) { const L = rng() < .5 ? -4.5 : 4.5; add(th.tram ? 'tram' : 'car', s, L + rand(-1, 1)); if (rng() < 0.4) add('cone', s - 6, -L * 0.6); }
+    else if (r < 0.48) { const L = rng() < .5 ? -4.5 : 4.5; add(th.tram ? 'tram' : 'car', s, L + (rng() * 2 - 1)); if (rng() < 0.4) add('cone', s - 6, -L * 0.6); }
     else if (r < 0.6) { const L = lane(); add('ramp', s, L); if (rng() < 0.5) add('barrier', s + 9, L); }
     else if (r < 0.7) add('puddle', s, lane());
     else if (r < 0.82) add('turbo', s, lane());
@@ -2231,6 +2239,12 @@ const friends = (a, b) => (a.ally && b.ally);
 const vmax = r => 26 * r.stats.spd;
 
 function knock(r, by, cause) {
+  if (r.remote) {
+    if (r.fallT > 0 || r.finished || !(by && by.isPlayer)) return false;
+    raceSend('hit', { target: r.netId, by: NET.user.id }); r.fallT = 1;
+    sfx('hit'); toast(`Você derrubou ${r.name}!`, 'good'); S.stats.knocks++;
+    return true;
+  }
   if (r.invT > 0 || r.fallT > 0 || r.finished) return false;
   r.fallT = 1.5 * (1 - (r.stats.equ || 0) * 0.04); r.v *= 0.15; r.inAir = false; r.air = 0; r.trick = null; r.combo = []; r.invT = 3;
   if (r.isPlayer) { sfx('hit'); toast(by ? `${by.name} te derrubou!` : ({ barrier: 'Bateu na barreira! Pule por cima.', car: 'Bateu no carro! Esse não dá pra pular.', bail: 'Caiu! Termine o kickflip antes de pousar.' }[cause] || 'Caiu!'), 'bad'); }
@@ -2262,12 +2276,13 @@ function useItem(r) {
   } else if (it === 'pau') {
     for (const q of R.racers) if (q !== r && !friends(q, r) && q.s - r.s > -1.5 && q.s - r.s < 4.5 && Math.abs(q.d - r.d) < 2.6 && q.air < 1.2) knock(q, r);
   } else if (it === 'turbo') { r.turboT = 2.6; }
-  else if (it === 'oleo') {
-    const s = r.s - 3; const o = { id: R.oid++, type: 'puddle', oil: true, s, d: r.d, w: 3.2, l: 3.2, h: 0 };
-    o.mesh = obstacleMesh(o, R.th); tpos(R.T, s, r.d); o.mesh.position.set(_p.x, _p.y, _p.z); R.sc.add(o.mesh);
-    R.obst.splice(lowerBound(R.obst, s), 0, o);
-  }
+  else if (it === 'oleo') { addOil(r.s - 3, r.d); if (R.online && r.isPlayer) raceSend('oil', { s: r.s - 3, d: r.d }); }
   if (r.isPlayer) { updateItemSlot(); sfx('jump'); }
+}
+function addOil(s, d) {
+  const o = { id: R.oid++, type: 'puddle', oil: true, s, d, w: 3.2, l: 3.2, h: 0 };
+  o.mesh = obstacleMesh(o, R.th); tpos(R.T, s, d); o.mesh.position.set(_p.x, _p.y, _p.z); R.sc.add(o.mesh);
+  R.obst.splice(lowerBound(R.obst, s), 0, o);
 }
 function punch(r) {
   if (r.punchCd > 0 || r.fallT > 0) return;
@@ -2386,11 +2401,12 @@ function updateRace(dt, t) {
     if (tap('punch')) punch(me);
     if (tap('item')) useItem(me);
     if (me.finished) { pc.throttle = 0; pc.brake = 0.4; }
-    for (const r of R.racers) stepRacer(r, r.isPlayer ? pc : botControl(r, dt), dt);
+    for (const r of R.racers) { if (r.remote) { stepRemote(r, dt); continue; } stepRacer(r, r.isPlayer ? pc : botControl(r, dt), dt); }
+    raceNetTick(dt);
     // empurrões entre corredores
     for (let a = 0; a < R.racers.length; a++) for (let b = a + 1; b < R.racers.length; b++) {
       const p = R.racers[a], q = R.racers[b];
-      if (Math.abs(p.s - q.s) < 1.3 && Math.abs(p.d - q.d) < 0.9) { const push = (0.9 - Math.abs(p.d - q.d)) / 2 * (p.d < q.d ? -1 : 1); p.d += push; q.d -= push; }
+      if (Math.abs(p.s - q.s) < 1.3 && Math.abs(p.d - q.d) < 0.9) { const push = (0.9 - Math.abs(p.d - q.d)) / 2 * (p.d < q.d ? -1 : 1); if (!p.remote) p.d += push; if (!q.remote) q.d -= push; }
     }
   }
   tap('act'); tap('phone'); tap('esc');
@@ -2413,7 +2429,7 @@ function updateRace(dt, t) {
   for (const r of R.racers) {
     tpos(T, r.s, r.d); const i = clamp(Math.floor(r.s), 0, T.N - 1);
     r.g.position.set(_p.x, _p.y + r.air, _p.z); r.g.rotation.y = _p.a - r.rh; r.g.rotation.x = r.inAir ? 0 : -Math.atan(T.Y[i + 1] - T.Y[i]);
-    animSkater(r.g, { v: r.v, air: r.inAir, brot: boardRot(r), fallT: r.fallT, punchT: r.punchT, pushing: r.v < vmax(r) * 0.9 && !r.finished && R.state !== 'count' }, t + r.idx);
+    animSkater(r.g, { v: r.v, air: r.inAir, brot: r.remote ? r.netRot : boardRot(r), fallT: r.fallT, punchT: r.punchT, pushing: r.v < vmax(r) * 0.9 && !r.finished && R.state !== 'count' }, t + r.idx);
     r.g.visible = r.invT <= 0 || r.fallT > 0 || Math.floor(t * 12) % 2 === 0;
     r.g.userData.lod = !r.isPlayer && Math.abs(r.s - me.s) > 40;
   }
@@ -2424,7 +2440,7 @@ function updateRace(dt, t) {
   R.sky.position.copy(camera.position);
   R.sun.position.set(_p.x + 30, py + 80, _p.z + 20); R.sun.target.position.set(_p.x, py, _p.z);
   raceHUD(dt);
-  if (R.state === 'done') { R.doneT += dt; if (R.doneT > 6 || R.order.length === R.racers.length) finishRace(); }
+  if (R.state === 'done') { R.doneT += dt; raceNetTick(dt); if (R.doneT > (R.online ? 25 : 6) || R.order.length === R.racers.length) finishRace(); }
 }
 function standings() { return R.racers.slice().sort((a, b) => (a.finished && b.finished) ? a.ft - b.ft : a.finished ? -1 : b.finished ? 1 : b.s - a.s); }
 function raceHUD(dt) {
@@ -2499,6 +2515,7 @@ function finishRace() {
   openPanel('results');
 }
 function disposeRace() {
+  if (R && R.net) { try { NET.sb.removeChannel(R.net.ch); } catch (e) { } R.net = null; }
   R.sc.traverse(o => { if (o.geometry && !Object.values(geoCache).includes(o.geometry) && o.geometry !== WHEEL_GEO) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach(m => { if (m.map) m.map.dispose(); if (!Object.values(matCache).includes(m)) m.dispose(); }); });
   R = null;
 }
@@ -2555,7 +2572,7 @@ const OLD_PANELS = {
       html += `<div class="card ${lock ? 'locked' : ''}"><h4><span class="flag" style="background:linear-gradient(90deg,${c.flag[0]} 50%,${c.flag[1]} 50%)"></span>${esc(c.name)}</h4><div>${esc(c.place)}</div>
       <div class="meta"><span>${(c.len / 1000).toFixed(1).replace('.', ',')} km</span><span>Desnível ${c.drop} m</span><span>Inscrição ${c.fee ? '$ ' + fmt(c.fee) : 'grátis'}</span></div>
       <div class="meta"><span class="coin">1º $ ${fmt(c.prize[0])}</span><span>2º $ ${fmt(c.prize[1])}</span><span>3º $ ${fmt(c.prize[2])}</span>${best ? `<span>Seu melhor: ${best}º</span>` : ''}</div>
-      <div>${lock ? `<span class="pill">Libera no nível ${c.lvl}</span>` : `<button class="btn" data-act="race" data-id="${c.id}" ${S.coins < c.fee || noSk ? 'disabled' : ''}>Viajar e correr</button>`}</div></div>`;
+      <div class="row">${lock ? `<span class="pill">Libera no nível ${c.lvl}</span>` : `<button class="btn" data-act="race" data-id="${c.id}" ${S.coins < c.fee || noSk ? 'disabled' : ''}>Correr contra bots</button><button class="btn tok" data-act="race-online" data-id="${c.id}" ${S.coins < c.fee || noSk || !NET.online ? 'disabled' : ''}>Correr online</button>`}</div></div>`;
     }
     return { title: 'Terminal Mundial', html };
   },
@@ -2615,8 +2632,8 @@ const OLD_PANELS = {
     const t = s => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
     return {
       title: pos === 1 ? 'Campeão!' : `${pos}º lugar`, html: `<p>${esc(c.place)}</p><div class="row"><div><div class="big-num coin">+$ ${fmt(prize)}</div><span class="muted">prêmio</span></div><div><div class="big-num" style="color:var(--sky)">+${xp}</div><span class="muted">XP</span></div></div>
-      <table class="res"><tr><th>#</th><th>Skatista</th><th>Tempo</th></tr>${st.map((r, i) => `<tr class="${r.isPlayer ? 'me' : r.ally ? 'ally' : ''}"><td>${i + 1}º</td><td>${esc(r.name)}${r.ally && !r.isPlayer ? ' · crew' : ''}</td><td>${t(r.ft)}</td></tr>`).join('')}</table>
-      <div class="row"><button class="btn" data-act="panel-close">Voltar para a cidade</button>${S.coins >= c.fee ? `<button class="btn ghost" data-act="race-again" data-id="${c.id}">Correr de novo${c.fee ? ` ($ ${fmt(c.fee)})` : ''}</button>` : ''}</div>`
+      <table class="res"><tr><th>#</th><th>Skatista</th><th>Tempo</th></tr>${st.map((r, i) => `<tr class="${r.isPlayer ? 'me' : r.ally ? 'ally' : ''}"><td>${i + 1}º</td><td>${esc(r.name)}${r.remote ? ' <span class="rar" style="--rc:#7fe3ff">jogador</span>' : ''}${r.ally && !r.isPlayer ? ' · crew' : ''}</td><td>${r.dnf ? 'saiu' : t(r.ft)}</td></tr>`).join('')}</table>
+      <div class="row"><button class="btn" data-act="panel-close">Voltar para a cidade</button>${R.online ? `<button class="btn ghost" data-act="race-online" data-id="${c.id}">Nova corrida online</button>` : (S.coins >= c.fee ? `<button class="btn ghost" data-act="race-again" data-id="${c.id}">Correr de novo${c.fee ? ` ($ ${fmt(c.fee)})` : ''}</button>` : '')}</div>`
     };
   },
 };
@@ -2700,6 +2717,7 @@ const PANELS = {
     if (noSk) html += `<div class="warn-inline">Você precisa de um skate para competir. Complete uma missão no Quadro da praça ou compre um na Shape & Truck.</div>`;
     if (tab === 'corridas') {
       const allies = [...new Set([...(S.invite || []), ...(S.crew ? S.crew.members : [])])].slice(0, 3);
+      html += NET.online ? `<div class="note"><b>Correr online:</b> entra na fila daquele país e corre só com jogadores reais, no mesmo mapa. Quem entra primeiro na fila dá a largada.</div>` : `<div class="note">Entre com uma conta no menu inicial para correr online com outros jogadores.</div>`;
       html += `<p class="muted">Corridas de 8 skatistas em pistas gigantes. Vale tudo: derrubar, jogar pedra, usar óleo. Chegou primeiro, levou o prêmio e pontos da liga.</p>`;
       html += `<div class="note">${allies.length ? `Correm do seu lado: <b>${allies.map(id => esc(BOT[id].name)).join(', ')}</b>.` : 'Sem aliados. Monte uma crew ou ligue para um contato antes da corrida.'}</div>`;
       const rm = evMult('raceMult');
@@ -2708,7 +2726,7 @@ const PANELS = {
         html += `<div class="card ${lock ? 'locked' : ''}"><h4><span class="flag" style="background:linear-gradient(90deg,${c.flag[0]} 50%,${c.flag[1]} 50%)"></span>${esc(c.name)}</h4><div>${esc(c.place)}</div>
         <div class="meta"><span>${(c.len / 1000).toFixed(1).replace('.', ',')} km</span><span>Desnível ${c.drop} m</span><span>Inscrição ${c.fee ? '$ ' + fmt(c.fee) : 'grátis'}</span></div>
         <div class="meta"><span class="coin">1º $ ${fmt(c.prize[0] * rm)}</span><span>2º $ ${fmt(c.prize[1] * rm)}</span><span>3º $ ${fmt(c.prize[2] * rm)}</span>${best ? `<span>Seu melhor: ${best}º</span>` : ''}</div>
-        <div>${lock ? `<span class="pill">Libera no nível ${c.lvl}</span>` : `<button class="btn" data-act="race" data-id="${c.id}" ${S.coins < c.fee || noSk ? 'disabled' : ''}>Viajar e correr</button>`}</div></div>`;
+        <div class="row">${lock ? `<span class="pill">Libera no nível ${c.lvl}</span>` : `<button class="btn" data-act="race" data-id="${c.id}" ${S.coins < c.fee || noSk ? 'disabled' : ''}>Correr contra bots</button><button class="btn tok" data-act="race-online" data-id="${c.id}" ${S.coins < c.fee || noSk || !NET.online ? 'disabled' : ''}>Correr online</button>`}</div></div>`;
       }
     } else if (tab === 'manobras') {
       const fee = Math.round(60 * (dv.mult - 1));
@@ -2726,6 +2744,15 @@ const PANELS = {
         ${NET.user ? '' : '<p class="muted">Entre com uma conta no menu inicial para aparecer no ranking junto com os jogadores reais.</p>'}`;
     }
     return { title: 'Terminal Mundial', html };
+  },
+  lobby() {
+    const c = COUNTRIES.find(x => x.id === LOBBY.cid) || COUNTRIES[0], host = LOBBY.players[0], n = LOBBY.players.length;
+    const list = LOBBY.players.map((p, i) => `<div class="item-card"><span class="av big" style="background:${p.id === NET.user.id ? '#ffcf3a' : '#7fe3ff'}">${esc(p.name[0])}</span><div class="item-info"><b>${esc(p.name)}${p.id === NET.user.id ? ' (você)' : ''}</b><small>${i === 0 ? 'Anfitrião: dá a largada' : 'Pronto'}</small></div></div>`).join('') || '<p class="muted">Entrando na fila…</p>';
+    return { title: 'Corrida online', html: `<div class="card"><h4><span class="flag" style="background:linear-gradient(90deg,${c.flag[0]} 50%,${c.flag[1]} 50%)"></span>${esc(c.name)}</h4><div>${esc(c.place)}</div><div class="meta"><span>Inscrição ${c.fee ? '$ ' + fmt(c.fee) : 'grátis'}</span><span class="coin">1º $ ${fmt(c.prize[0])}</span></div></div>
+      <div class="note">Corrida só entre jogadores reais (até 8), todos no mesmo mapa. Vale derrubar, pedra e óleo. Quem estiver na praça recebe um aviso de que tem fila aberta.</div>
+      <h3>Na fila (${n}/8)</h3><div class="grid-items">${list}</div>
+      ${n < 2 ? '<p class="muted">Precisa de pelo menos 2 jogadores. Chame a galera pelo chat da praça!</p>' : ''}
+      <div class="row">${lobbyIsHost() ? `<button class="btn" data-act="lobby-start" ${n < 2 ? 'disabled' : ''}>Começar corrida</button>` : `<span class="muted">Esperando ${host ? esc(host.name) : '…'} dar a largada</span>`}<button class="btn ghost" data-act="lobby-leave">Sair da fila</button></div>` };
   },
   contest() {
     const c = city.contestResult;
@@ -2913,6 +2940,9 @@ function act(a, ds, el) {
     case 'board-col': S.board[ds.k] = ds.c === 'null' ? null : +ds.c; persist(); applyLook(city.player, myLook()); renderPanel(); sfx('ui'); netTrack(); break;
     case 'arena-tab': case 'social-tab': case 'perfil-tab': panelArg = ds.k; if (ds.k !== 'inventario') city.crateResult = null; renderPanel(); if (ds.k === 'ranking') netFetchRank(); break;
     case 'contest': startContest(); break;
+    case 'race-online': if (mode === 'race') { closePanel(); } lobbyJoin(ds.id); break;
+    case 'lobby-start': lobbyStart(); break;
+    case 'lobby-leave': lobbyLeave(); closePanel(); break;
     case 'like': S.likes[ds.id] = !S.likes[ds.id]; persist(); renderPanel(); break;
     case 'replay': playReplay(ds.id); break;
     case 'post-replay': { const r = S.replays.find(x => String(x.id) === ds.id); if (r) { postFeed(`Olha esse ${r.name}: ${fmt(r.pts)} pontos!`, r.id); toast('Replay postado no Rolêgram!', 'good'); panelArg = 'feed'; renderPanel(); } break; }
@@ -3031,6 +3061,7 @@ function netJoinPlaza() {
   const ch = NET.sb.channel('praca', { config: { presence: { key: NET.user.id }, broadcast: { self: false } } });
   ch.on('broadcast', { event: 'pos' }, ({ payload }) => onPeerPos(payload))
     .on('broadcast', { event: 'chat' }, ({ payload }) => onPeerChat(payload))
+    .on('broadcast', { event: 'fila' }, ({ payload }) => onPeerFila(payload))
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
@@ -3093,6 +3124,87 @@ async function netFetchRank() {
   if (!NET.user) return;
   try { const { data, error } = await NET.sb.rpc('ranking_semana', { p_semana: S.week.id, p_divisao: division().id, p_limite: 30 }); if (!error) NET.rank = data || []; } catch (e) { }
   if (panelKind === 'arena' && panelArg === 'ranking') renderPanel();
+}
+
+/* ---------------- CORRIDA ONLINE: fila por país e corrida entre jogadores reais ---------------- */
+const LOBBY = { ch: null, cid: null, players: [], joinedAt: 0 };
+const lobbyIsHost = () => !!(LOBBY.players.length && NET.user && LOBBY.players[0].id === NET.user.id);
+function lobbyJoin(cid) {
+  if (!NET.online) return toast('Entre com uma conta e fique online para correr com outros jogadores.', 'bad');
+  const c = COUNTRIES.find(x => x.id === cid);
+  if (!hasSkate()) return toast('Você precisa de um skate para correr.', 'bad');
+  if (S.level < c.lvl) return toast(`Precisa do nível ${c.lvl}.`, 'bad');
+  if (S.coins < c.fee) return toast('Grana insuficiente para a inscrição.', 'bad');
+  lobbyLeave();
+  LOBBY.cid = cid; LOBBY.joinedAt = Date.now(); LOBBY.players = [];
+  const ch = NET.sb.channel('fila_' + cid, { config: { presence: { key: NET.user.id }, broadcast: { self: false } } });
+  ch.on('presence', { event: 'sync' }, () => {
+      LOBBY.players = Object.values(ch.presenceState()).map(a => a[0]).filter(Boolean).sort((a, b) => (a.at - b.at) || (a.id < b.id ? -1 : 1));
+      if (panelKind === 'lobby') renderPanel();
+      if (LOBBY.players.length >= 8 && lobbyIsHost()) lobbyStart();
+    })
+    .on('broadcast', { event: 'start' }, ({ payload }) => lobbyOnStart(payload))
+    .subscribe(async st => { if (st === 'SUBSCRIBED') { try { await ch.track({ id: NET.user.id, name: S.name, look: myNetLook(), at: LOBBY.joinedAt }); } catch (e) { } } });
+  LOBBY.ch = ch;
+  if (NET.ch) NET.ch.send({ type: 'broadcast', event: 'fila', payload: { id: NET.user.id, name: S.name, cid } });
+  openPanel('lobby');
+}
+function lobbyLeave() {
+  if (LOBBY.ch) { const ch = LOBBY.ch; LOBBY.ch = null; try { ch.untrack(); } catch (e) { } try { NET.sb.removeChannel(ch); } catch (e) { } }
+  LOBBY.cid = null; LOBBY.players = [];
+}
+function lobbyStart() {
+  if (!lobbyIsHost() || LOBBY.players.length < 2) return;
+  const payload = { rid: NET.user.id.slice(0, 8) + Date.now().toString(36), cid: LOBBY.cid, players: LOBBY.players.slice(0, 8).map(p => ({ id: p.id, name: p.name, look: p.look })) };
+  LOBBY.ch.send({ type: 'broadcast', event: 'start', payload });
+  lobbyOnStart(payload);
+}
+function lobbyOnStart(pl) {
+  if (!NET.user || !pl.players.some(p => p.id === NET.user.id)) return;
+  lobbyLeave(); $('panel').hidden = true; panelKind = null;
+  startRace(pl.cid, { online: pl });
+}
+function onPeerFila(d) {
+  const c = COUNTRIES.find(x => x.id === d.cid); if (!c) return;
+  pushChat('Praça', `${d.name} entrou na fila da corrida online: ${c.name}`);
+  if (mode === 'city') toast(`${d.name} está na fila da corrida online em ${c.name}. Vá ao Terminal Mundial!`, 'pink');
+}
+/* canal da corrida: estado de cada um (~10 por segundo), derrubadas e óleo */
+function raceNetJoin(rid) {
+  const ch = NET.sb.channel('corrida_' + rid, { config: { broadcast: { self: false } } });
+  ch.on('broadcast', { event: 'st' }, ({ payload }) => raceOnState(payload))
+    .on('broadcast', { event: 'hit' }, ({ payload }) => raceOnHit(payload))
+    .on('broadcast', { event: 'oil' }, ({ payload }) => { if (R && R.online) addOil(payload.s, payload.d); })
+    .subscribe();
+  R.net = { ch, sendT: 0 };
+}
+function raceSend(event, payload) { if (R && R.net) try { R.net.ch.send({ type: 'broadcast', event, payload }); } catch (e) { } }
+function raceOnState(d) {
+  if (!R || !R.online) return;
+  const r = R.racers.find(x => x.netId === d.id); if (!r) return;
+  if (!r.net) { r.s = d.s; r.d = d.d; }
+  r.net = d; r.netT = performance.now();
+  if (d.fin && !r.finished) { r.finished = true; r.ft = d.ft; R.order.push(r); }
+}
+function raceOnHit(d) {
+  if (!R || !R.online || d.target !== NET.user.id) return;
+  const by = R.racers.find(x => x.netId === d.by);
+  knock(R.player, by || null, 'hit');
+}
+function stepRemote(r, dt) {
+  const d = r.net; if (!d) return;
+  const k = 1 - Math.exp(-10 * dt);
+  if (!r.finished) { r.s = lerp(r.s, d.s + d.v * 0.06, k); r.d = lerp(r.d, d.d, k); }
+  r.rh = d.rh; r.v = d.v; r.air = d.a; r.inAir = d.a > 0.01; r.fallT = d.f ? 1 : 0;
+  r.netRot = d.r && d.a > 0.01 ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null;
+  if (!r.finished && performance.now() - r.netT > 12000) { r.finished = true; r.dnf = true; r.ft = 9999; R.order.push(r); feed(`${r.name} caiu da conexão`); }
+}
+function raceNetTick(dt) {
+  if (!R.online || !R.net) return;
+  if ((R.net.sendT -= dt) > 0) return;
+  R.net.sendT = 0.1;
+  const me = R.player, br = boardRot(me) || {}, r2 = v => Math.round(v * 100) / 100;
+  raceSend('st', { id: NET.user.id, s: r2(me.s), d: r2(me.d), rh: r2(me.rh), v: r2(me.v), a: r2(me.air), f: me.fallT > 0 ? 1 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)], fin: me.finished ? 1 : 0, ft: r2(me.ft) });
 }
 
 /* ---------------- INÍCIO ---------------- */
