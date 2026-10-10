@@ -109,28 +109,50 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 /* ---------- TOUCH ---------- */
 #touch{position:fixed;inset:0;z-index:12;pointer-events:none}
 #joy-zone{position:absolute;left:0;bottom:0;width:50%;height:60%;pointer-events:auto}
-#joy-base{position:absolute;left:max(96px,calc(env(safe-area-inset-left,0px) + 96px));top:calc(100% - 112px);width:128px;height:128px;margin:-64px 0 0 -64px;border-radius:50%;border:2px solid rgba(255,255,255,.28);background:radial-gradient(circle,rgba(0,0,0,.12),rgba(0,0,0,.32));box-shadow:inset 0 0 18px rgba(255,255,255,.08)}
+#joy-base{position:absolute;left:var(--jx,max(96px,calc(env(safe-area-inset-left,0px) + 96px)));top:calc(100% - var(--jy,112px));width:128px;height:128px;margin:-64px 0 0 -64px;border-radius:50%;border:2px solid rgba(255,255,255,.28);background:radial-gradient(circle,rgba(0,0,0,.12),rgba(0,0,0,.32));box-shadow:inset 0 0 18px rgba(255,255,255,.08)}
 #joy-base::before{content:'';position:absolute;inset:14px;border-radius:50%;border:1px dashed rgba(255,255,255,.14)}
 #joy-knob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.95),rgba(220,226,235,.8));box-shadow:0 3px 10px rgba(0,0,0,.35)}
 #joy-zone.on #joy-base{border-color:rgba(255,207,58,.6)}
-.tbtns{position:absolute;right:max(10px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 10px);width:290px;height:250px;pointer-events:none}
+.tbtns{position:absolute;inset:0;pointer-events:none}
 .tbtn{position:absolute;display:grid;place-items:center;align-content:center;gap:1px;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 50% 35%,rgba(60,64,74,.7),rgba(15,16,20,.72));border:2px solid rgba(255,255,255,.28);color:#fff;font-family:var(--cond);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.04em;pointer-events:auto;box-shadow:0 3px 10px rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent}
 .tbtn svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.tbtn.jump{right:16px;bottom:16px;width:96px;height:96px;background:radial-gradient(circle at 50% 35%,rgba(255,220,100,.95),rgba(230,170,20,.9));color:#1a1405;border-color:rgba(255,255,255,.6);font-size:12px}
+.tbtn{transform:scale(var(--bs,1))}
+.tbtn.jump{right:26px;bottom:26px;width:96px;height:96px;background:radial-gradient(circle at 50% 35%,rgba(255,220,100,.95),rgba(230,170,20,.9));color:#1a1405;border-color:rgba(255,255,255,.6);font-size:12px}
 .tbtn.jump svg{width:38px;height:38px;stroke-width:2.8}
-.tbtn.hit{right:126px;bottom:12px;width:70px;height:70px;border-color:rgba(255,79,123,.8)}
+.tbtn.hit{right:136px;bottom:22px;width:70px;height:70px;border-color:rgba(255,79,123,.8)}
 .tbtn.hit svg{color:#ff6f93}
-#tb-item{right:110px;bottom:98px}
-#tb-wp{right:30px;bottom:124px;border-color:rgba(166,107,255,.9)}
+#tb-item{right:120px;bottom:108px}
+#tb-wp{right:40px;bottom:134px;border-color:rgba(166,107,255,.9)}
 #tb-wp svg{color:#c3a0ff}
 #tb-wp.off{opacity:.45}
 #tb-wp .badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:#a66bff;color:#fff;font-size:12px;display:grid;place-items:center;padding:0 4px}
-#tb-board{right:198px;bottom:92px;width:54px;height:54px}
-#tb-act{right:206px;bottom:16px;width:66px;height:66px;border-color:rgba(61,220,132,.9)}
+#tb-board{right:208px;bottom:102px;width:54px;height:54px}
+#tb-act{right:216px;bottom:26px;width:66px;height:66px;border-color:rgba(61,220,132,.9)}
 #tb-act svg{color:var(--ok)}
 #tb-act.ready{animation:pulse 1s infinite}
 @keyframes pulse{50%{box-shadow:0 0 0 8px rgba(61,220,132,.25)}}
-.tbtn:active,.tbtn.down{transform:scale(.92);filter:brightness(1.25)}
+.tbtn:active,.tbtn.down{transform:scale(calc(var(--bs,1) * .92));filter:brightness(1.25)}
+/* botões do carro/moto */
+#tb-horn{right:26px;bottom:26px;width:92px;height:92px;border-color:rgba(255,207,58,.85)}
+#tb-horn svg{width:34px;height:34px;color:var(--wax)}
+#tb-lights{right:136px;bottom:22px;width:68px;height:68px}
+#tb-lights.on{background:radial-gradient(circle at 50% 35%,rgba(255,244,200,.95),rgba(220,190,90,.85));color:#1a1405}
+#tb-blL{right:126px;bottom:112px;width:60px;height:60px}
+#tb-blR{right:40px;bottom:134px;width:60px;height:60px}
+#tb-blL.on,#tb-blR.on{background:radial-gradient(circle at 50% 35%,rgba(255,170,40,.95),rgba(220,120,20,.85));animation:blink .8s steps(1) infinite}
+@keyframes blink{50%{filter:brightness(.6)}}
+#tb-vexit{right:216px;bottom:26px;width:64px;height:64px;border-color:rgba(61,220,132,.9)}
+#tb-vexit svg{color:var(--ok)}
+#touch.driving .fb{display:none!important}
+#touch:not(.driving) .vb{display:none!important}
+/* editor de botões */
+#touch.editing{background:rgba(0,0,0,.35);pointer-events:auto;z-index:40}
+#touch.editing{touch-action:none}
+#touch.editing .tbtn{outline:2px dashed var(--wax);outline-offset:3px;cursor:grab}
+#touch.editing:not(.driving) .fb,#touch.editing.driving .vb{display:grid!important}
+#touch.editing #joy-base{outline:2px dashed var(--wax);outline-offset:4px;cursor:grab}
+#btnedit{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 10px);transform:translateX(-50%);z-index:45;background:rgba(21,22,26,.95);border:2px solid var(--wax);border-radius:14px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;max-width:calc(100vw - 20px)}
+#btnedit b{font-family:var(--cond);text-transform:uppercase;font-size:13px;width:100%;text-align:center}
 .touch-hint{position:absolute;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);font-family:var(--cond);font-weight:600;color:rgba(255,255,255,.5);font-size:14px;pointer-events:none}
 
 /* ---------- PANEL ---------- */
@@ -452,6 +474,7 @@ canvas.swatch{background:#333}
 <div id="banner" hidden></div>
 <div id="splat" hidden></div>
 <div id="fade" hidden></div>
+<div id="btnedit" hidden><b>Arraste os botões e o joystick para onde preferir</b><button class="btn ghost sm" data-act="be-size" data-d="-0.1">Menor</button><button class="btn ghost sm" data-act="be-size" data-d="0.1">Maior</button><button class="btn ghost sm" data-act="be-mode">Ver botões do carro</button><button class="btn ghost sm" data-act="be-reset">Padrão</button><button class="btn ghost sm" data-act="be-cancel">Cancelar</button><button class="btn sm" data-act="be-save">Salvar</button></div>
 <div id="smokeov" hidden></div>
 <div id="toasts" aria-live="polite"></div>
 
@@ -460,12 +483,17 @@ canvas.swatch{background:#333}
   <div id="joy-zone"><div id="joy-base"><div id="joy-knob"></div></div></div>
   <div class="touch-hint" id="touch-hint">Arraste aqui para andar</div>
   <div class="tbtns">
-    <button class="tbtn" data-btn="act" id="tb-act" aria-label="Ação"><svg viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12m0-1.5a1.5 1.5 0 0 1 3 0V12m0-.5a1.5 1.5 0 0 1 3 0v4.5a5.5 5.5 0 0 1-5.5 5.5h-1A5.5 5.5 0 0 1 6 18l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L8 15"/></svg><span>Ação</span></button>
-    <button class="tbtn" data-btn="item" id="tb-item" aria-label="Truque"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg><span id="tb-item-l">Truque</span></button>
-    <button class="tbtn" data-btn="board" id="tb-board" aria-label="Subir ou descer do skate"><svg viewBox="0 0 24 24"><path d="M3 11h18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="7" cy="16" r="1.6"/><circle cx="17" cy="16" r="1.6"/></svg><span>Skate</span></button>
-    <button class="tbtn hit" data-btn="punch" aria-label="Bater"><svg viewBox="0 0 24 24"><path d="M7 11V8.5a1.5 1.5 0 0 1 3 0V11m0-3a1.5 1.5 0 0 1 3 0v3m0-2.5a1.5 1.5 0 0 1 3 0V12m0-1a1.5 1.5 0 0 1 3 0v3.5A6.5 6.5 0 0 1 12.5 21h-1A5.5 5.5 0 0 1 6 15.5V13a2 2 0 0 1 2-2h2"/></svg><span>Bater</span></button>
-    <button class="tbtn jump" data-btn="jump" aria-label="Pular"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span>Pular</span></button>
-    <button class="tbtn wp" data-btn="weapon" id="tb-wp" hidden aria-label="Usar arma"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span>Arma</span><b class="badge" id="tb-wp-n">2</b></button>
+    <button class="tbtn fb" data-btn="act" id="tb-act" aria-label="Ação"><svg viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12m0-1.5a1.5 1.5 0 0 1 3 0V12m0-.5a1.5 1.5 0 0 1 3 0v4.5a5.5 5.5 0 0 1-5.5 5.5h-1A5.5 5.5 0 0 1 6 18l-2-3.5a1.5 1.5 0 0 1 2.6-1.5L8 15"/></svg><span>Ação</span></button>
+    <button class="tbtn fb" data-btn="item" id="tb-item" aria-label="Truque"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg><span id="tb-item-l">Truque</span></button>
+    <button class="tbtn fb" data-btn="board" id="tb-board" aria-label="Subir ou descer do skate"><svg viewBox="0 0 24 24"><path d="M3 11h18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="7" cy="16" r="1.6"/><circle cx="17" cy="16" r="1.6"/></svg><span>Skate</span></button>
+    <button class="tbtn hit fb" data-btn="punch" id="tb-hit" aria-label="Bater"><svg viewBox="0 0 24 24"><path d="M7 11V8.5a1.5 1.5 0 0 1 3 0V11m0-3a1.5 1.5 0 0 1 3 0v3m0-2.5a1.5 1.5 0 0 1 3 0V12m0-1a1.5 1.5 0 0 1 3 0v3.5A6.5 6.5 0 0 1 12.5 21h-1A5.5 5.5 0 0 1 6 15.5V13a2 2 0 0 1 2-2h2"/></svg><span>Bater</span></button>
+    <button class="tbtn jump fb" data-btn="jump" id="tb-jump" aria-label="Pular"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span>Pular</span></button>
+    <button class="tbtn wp fb" data-btn="weapon" id="tb-wp" hidden aria-label="Usar arma"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span>Arma</span><b class="badge" id="tb-wp-n">2</b></button>
+    <button class="tbtn vb" data-btn="horn" id="tb-horn" aria-label="Buzinar"><svg viewBox="0 0 24 24"><path d="M3 10v4h4l6 4V6L7 10z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6M19 6c3 3 3 9 0 12"/></svg><span>Buzina</span></button>
+    <button class="tbtn vb" data-btn="lights" id="tb-lights" aria-label="Farol"><svg viewBox="0 0 24 24"><path d="M10 6c-4 0-6 3-6 6s2 6 6 6c1 0 2-3 2-6s-1-6-2-6z"/><path d="M15 8h6M15 12h6M15 16h6"/></svg><span>Farol</span></button>
+    <button class="tbtn vb" data-btn="blinkL" id="tb-blL" aria-label="Seta esquerda"><svg viewBox="0 0 24 24"><path d="M14 5l-7 7 7 7M8 12h12"/></svg><span>Seta</span></button>
+    <button class="tbtn vb" data-btn="blinkR" id="tb-blR" aria-label="Seta direita"><svg viewBox="0 0 24 24"><path d="M10 5l7 7-7 7M16 12H4"/></svg><span>Seta</span></button>
+    <button class="tbtn vb" data-btn="act" id="tb-vexit" aria-label="Sair do veículo"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg><span>Sair</span></button>
   </div>
 </div>
 
@@ -1854,7 +1882,7 @@ function animReal(u, o, t) {
 
 /* ---------------- INPUT ---------------- */
 const input = { held: {}, pressed: {}, joy: { x: 0, y: 0 }, tbtn: {} };
-const KEYMAP = { KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
+const KEYMAP = { KeyH: 'horn', KeyL: 'lights', KeyZ: 'blinkL', KeyX: 'blinkR', KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
 addEventListener('keydown', e => {
   if (e.target.matches && e.target.matches('input,textarea')) { if (e.code === 'Escape') e.target.blur(); return; }
   input.held[e.code] = true;
@@ -1903,6 +1931,7 @@ function axis() {
   const zone = $('joy-zone'), base = $('joy-base'), knob = $('joy-knob');
   let id = null, ox = 0, oy = 0;
   zone.addEventListener('touchstart', e => {
+    if (btnEditing()) return;
     const t = e.changedTouches[0]; id = t.identifier; ox = t.clientX; oy = t.clientY;
     zone.classList.add('on'); base.style.left = ox + 'px'; base.style.top = (oy - zone.getBoundingClientRect().top) + 'px';
     $('touch-hint').hidden = true; e.preventDefault();
@@ -1919,10 +1948,63 @@ function axis() {
   const end = e => { for (const t of e.changedTouches) if (t.identifier === id) { id = null; input.joy.x = input.joy.y = 0; knob.style.transform = ''; base.style.left = base.style.top = ''; zone.classList.remove('on'); } };
   zone.addEventListener('touchend', end); zone.addEventListener('touchcancel', end);
   document.querySelectorAll('[data-btn]').forEach(b => {
-    b.addEventListener('touchstart', e => { input.pressed[b.dataset.btn] = true; b.classList.add('down'); if (navigator.vibrate) try { navigator.vibrate(12); } catch (x) { } e.preventDefault(); }, { passive: false });
+    b.addEventListener('touchstart', e => { if (btnEditing()) return; input.pressed[b.dataset.btn] = true; b.classList.add('down'); if (navigator.vibrate) try { navigator.vibrate(12); } catch (x) { } e.preventDefault(); }, { passive: false });
     b.addEventListener('touchend', () => b.classList.remove('down'));
-    b.addEventListener('mousedown', () => { input.pressed[b.dataset.btn] = true; });
+    b.addEventListener('mousedown', () => { if (!btnEditing()) input.pressed[b.dataset.btn] = true; });
   });
+})();
+/* ---------------- POSIÇÃO DOS BOTÕES (editável nas Configurações) ---------------- */
+const BTN_IDS = ['tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
+// celular em pé: tela estreita, os botões ficam num bloco compacto à direita para não encostar no joystick
+const BTN_PORTRAIT = { 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [14, 22], 'tb-lights': [116, 16], 'tb-blL': [110, 96], 'tb-blR': [18, 124], 'tb-vexit': [20, 204] };
+const btnOrient = () => innerWidth < innerHeight ? 'port' : 'land';
+const btnEditing = () => $('touch').classList.contains('editing');
+function btnCfg() { const st = S.settings; st.btnPos = st.btnPos || { port: {}, land: {} }; st.joyPos = st.joyPos || {}; return st; }
+function applyBtnLayout() {
+  if (!S) return;
+  const st = btnCfg(), o = btnOrient(), pos = st.btnPos[o] || {}, W = innerWidth, H = innerHeight, T = $('touch');
+  T.style.setProperty('--bs', st.btnScale || 1);
+  for (const id of BTN_IDS) {
+    const el = $(id); if (!el) continue; const c = pos[id], d = o === 'port' && BTN_PORTRAIT[id];
+    el.style.right = c ? (c[0] * W) + 'px' : d ? d[0] + 'px' : ''; el.style.bottom = c ? (c[1] * H) + 'px' : d ? d[1] + 'px' : '';
+  }
+  const jp = st.joyPos[o];
+  if (jp) { T.style.setProperty('--jx', (jp[0] * W) + 'px'); T.style.setProperty('--jy', (jp[1] * H) + 'px'); }
+  else { T.style.setProperty('--jx', (o === 'port' ? 84 : 110) + 'px'); T.style.setProperty('--jy', (o === 'port' ? 120 : 112) + 'px'); }
+  // área do joystick termina antes do primeiro botão de baixo (assim um não atrapalha o outro)
+  const sc = st.btnScale || 1; let minL = W * 0.5;
+  for (const id of BTN_IDS) { const el = $(id); if (!el) continue; const cs = getComputedStyle(el), r = parseFloat(cs.right) || 0, b = parseFloat(cs.bottom) || 0, w = parseFloat(cs.width) || 64; if (b > H * 0.6) continue; const left = W - r - w / 2 - w * sc / 2; if (left > W * 0.25) minL = Math.min(minL, left - 12); }
+  const jx = parseFloat(T.style.getPropertyValue('--jx')) || 100; $('joy-zone').style.width = Math.max(minL, jx + 70) + 'px';
+}
+addEventListener('resize', () => setTimeout(applyBtnLayout, 60));
+function btnEditStart() {
+  closePanel(); const T = $('touch'); T.dataset.wasHidden = T.hidden ? '1' : ''; T.hidden = false; T.classList.add('editing'); T.classList.toggle('driving', false); $('btnedit').hidden = false;
+  $('btnedit').querySelector('[data-act="be-mode"]').textContent = 'Ver botões do carro';
+  city.editDraft = JSON.parse(JSON.stringify({ p: btnCfg().btnPos, j: btnCfg().joyPos, s: btnCfg().btnScale || 1 }));
+  toast('Arraste cada botão para onde ficar melhor e toque em Salvar.', 'pink');
+}
+function btnEditEnd(save) {
+  const T = $('touch'); T.classList.remove('editing'); $('btnedit').hidden = true; if (T.dataset.wasHidden) T.hidden = true;
+  if (!save && city.editDraft) { const st = btnCfg(); st.btnPos = city.editDraft.p; st.joyPos = city.editDraft.j; st.btnScale = city.editDraft.s; }
+  city.editDraft = null; persist(); applyBtnLayout(); T.classList.toggle('driving', !!P.drive);
+  if (save) toast('Posição dos botões salva!', 'good');
+}
+(function setupBtnEdit() {
+  const T = $('touch'); let drag = null;
+  T.addEventListener('pointerdown', e => {
+    if (!btnEditing()) return;
+    const el = e.target.closest('.tbtn,#joy-base'); if (!el) return;
+    drag = { el, id: e.pointerId }; try { T.setPointerCapture(e.pointerId); } catch (x) { } e.preventDefault(); e.stopPropagation();
+  }, true);
+  T.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const W = innerWidth, H = innerHeight, st = btnCfg(), o = btnOrient(), x = clamp(e.clientX, 30, W - 30), y = clamp(e.clientY, 60, H - 30);
+    if (drag.el.id === 'joy-base') { st.joyPos[o] = [x / W, (H - y) / H]; }
+    else { const w = drag.el.offsetWidth, h = drag.el.offsetHeight; st.btnPos[o] = st.btnPos[o] || {}; st.btnPos[o][drag.el.id] = [(W - x - w / 2) / W, (H - y - h / 2) / H]; }
+    applyBtnLayout(); e.preventDefault();
+  });
+  const up = e => { if (drag && e.pointerId === drag.id) drag = null; };
+  T.addEventListener('pointerup', up); T.addEventListener('pointercancel', up);
 })();
 
 /* ---------------- UI BÁSICA ---------------- */
@@ -2714,7 +2796,44 @@ function makeVehicleMesh(V) {
     u.seatY = M === 'scooter' ? R + 0.74 : tankH + 0.17; u.camD = 6; u.radius = 0.6; u.len = wb + 0.6;
   }
   g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  addVehicleLights(g, V);
   return g;
+}
+/* faróis (brilho + facho no chão) e setas que piscam; ficam escondidos até ligar */
+let _glowT = null, _beamT = null;
+function addVehicleLights(g, V) {
+  const u = g.userData, bb = new THREE.Box3().setFromObject(g), car = V.kind === 'car';
+  const fz = bb.max.z, rz = bb.min.z, hw = Math.min(bb.max.x, 1.1), H = bb.max.y;
+  _glowT = _glowT || canvasTex(64, 64, (c, w, h) => { const gr = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, h); });
+  _beamT = _beamT || canvasTex(64, 128, (c, w, h) => { const gr = c.createLinearGradient(0, h, 0, 0); gr.addColorStop(0, 'rgba(255,246,210,.55)'); gr.addColorStop(1, 'rgba(255,246,210,0)'); c.fillStyle = gr; c.beginPath(); c.moveTo(w * 0.4, h); c.lineTo(w * 0.6, h); c.lineTo(w, 0); c.lineTo(0, 0); c.fill(); });
+  const glow = (color, size, x, y, z, P) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: _glowT, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); sp.scale.set(size, size, 1); sp.position.set(x, y, z); P.add(sp); return sp; };
+  const lg = new THREE.Group(); lg.visible = false; g.add(lg); u.lightG = lg;
+  const hy = car ? Math.min(0.75, H * 0.38) : H * 0.62, hz = car ? fz : fz - 0.2;
+  for (const sx of car ? [1, -1] : [0]) glow(0xfff2c8, car ? 0.9 : 0.7, sx * hw * 0.66, hy, hz + 0.05, lg);
+  for (const sx of car ? [1, -1] : [0]) glow(0xff2020, car ? 0.55 : 0.4, sx * hw * 0.68, car ? Math.min(0.8, H * 0.42) : H * 0.55, rz - 0.04, lg);
+  const beam = new THREE.Mesh(new THREE.PlaneGeometry(car ? 5 : 3.2, car ? 11 : 8), new THREE.MeshBasicMaterial({ map: _beamT, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  beam.rotation.x = -Math.PI / 2; beam.position.set(0, 0.06, fz + (car ? 5.5 : 4)); lg.add(beam); u.beam = beam;
+  u.blink = {};
+  for (const [k, sx] of [['L', 1], ['R', -1]]) { const bg = new THREE.Group(); bg.visible = false; g.add(bg); u.blink[k] = bg;
+    glow(0xffa020, car ? 0.6 : 0.45, sx * (car ? hw * 0.9 : 0.32), car ? hy : hy + 0.05, car ? fz : hz, bg); glow(0xffa020, car ? 0.6 : 0.45, sx * (car ? hw * 0.9 : 0.2), car ? Math.min(0.8, H * 0.42) : H * 0.5, rz, bg); }
+}
+/* aplica farol/seta num veículo (meu ou de outro jogador) */
+function vehLightsTick(m, lights, blink, t) {
+  const u = m.userData; if (!u.lightG) return;
+  u.lightG.visible = !!lights; if (u.beam) u.beam.material.opacity = 0.35 + 0.65 * (city.dn ? city.dn.night : 0);
+  const on = Math.floor(t * 2.6) % 2 === 0;
+  u.blink.L.visible = (blink === 1 || blink === 3) && on; u.blink.R.visible = (blink === 2 || blink === 3) && on;
+}
+/* buzina: dois tons juntos, como buzina de carro (moto mais aguda) */
+function hornSound(moto, vol = 1) {
+  const ac = audioCtx(); if (!ac) return;
+  const f = moto ? 520 : 400; tone('square', f, f * 0.98, 0.45, 0.05 * vol); tone('square', f * 1.26, f * 1.24, 0.45, 0.045 * vol);
+}
+function vehHorn() {
+  const d = P.drive; if (!d) return; if ((d.hornCd || 0) > 0) return; d.hornCd = 0.5;
+  hornSound(d.V.kind === 'moto');
+  for (const o of [...city.bots, ...city.peds]) if (Math.hypot(o.x - P.x, o.z - P.z) < 9 && Math.random() < 0.4 && !(o.fallT > 0)) bubble(o.g, pick(['Calma aí!', 'Tô passando!', 'Que pressa!', 'Bi-bi pra você também!']), 2.5);
+  if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'horn', payload: { id: NET.user.id, m: d.V.kind === 'moto' ? 1 : 0 } });
 }
 /* chama o seu veículo: aparece estacionado do seu lado */
 function spawnMyVehicle() {
@@ -2727,14 +2846,15 @@ function spawnMyVehicle() {
 }
 function enterVehicle() {
   const mv = city.myVeh; if (!mv) return;
+  for (const k of ['horn', 'lights', 'blinkL', 'blinkR', 'act']) input.pressed[k] = false;
   P.drive = { V: mv.V, m: mv.m }; P.onBoard = false; P.emote = null; P.x = mv.x; P.z = mv.z; P.h = mv.h; P.v = 0; P.y = 0; P.air = false;
   city.player.visible = mv.V.kind === 'moto'; city.zoom = 1; sfx('ui');
-  toast(`${mv.V.kind === 'car' ? 'Dirigindo' : 'Pilotando'}: ${mv.V.name}. ${IS_TOUCH ? 'Joystick acelera e vira · Ação para sair.' : 'W acelera · S freia · A/D vira · E sai.'}`);
+  toast(`${mv.V.kind === 'car' ? 'Dirigindo' : 'Pilotando'}: ${mv.V.name}. ${IS_TOUCH ? 'Joystick acelera e vira · Buzina, Farol e Setas nos botões.' : 'W acelera · S freia · A/D vira · H buzina · L farol · Z/X setas · E sai.'}`);
 }
 function exitVehicle(silent) {
   const d = P.drive; if (!d) return;
   city.myVeh.x = P.x; city.myVeh.z = P.z; city.myVeh.h = P.h;
-  P.drive = null; P.v = 0; city.player.visible = true;
+  vehLightsTick(d.m, 0, 0, 0); P.drive = null; P.v = 0; city.player.visible = true;
   let x = P.x + Math.cos(P.h) * 1.8, z = P.z - Math.sin(P.h) * 1.8; if (collide(x, z, 0.5)) { x = P.x - Math.cos(P.h) * 1.8; z = P.z + Math.sin(P.h) * 1.8; }
   P.x = x; P.z = z; if (!silent) sfx('ui');
 }
@@ -2758,6 +2878,19 @@ function updateDriving(dt, ax, blocked) {
   for (const w of u.wheels) { w.children[0].rotation.x = u.spin; if (w.children[1]) w.children[1].rotation.x = u.spin; if (w.userData.front) w.rotation.y = (w.userData.side < 0 ? Math.PI : 0) - st * 0.4; }
   if (u.body) { u.lean = lerp(u.lean || 0, -st * Math.min(1, Math.abs(P.v) / 12) * 0.45, 1 - Math.exp(-6 * dt)); u.body.rotation.z = u.lean; }
   city.myVeh.x = P.x; city.myVeh.z = P.z; city.myVeh.h = P.h;
+  // buzina, farol e setas
+  d.hornCd = (d.hornCd || 0) - dt;
+  if (!blocked && tap('horn')) vehHorn();
+  if (!blocked && tap('lights')) { d.lights = !d.lights; sfx('ui'); feed(d.lights ? 'Farol ligado' : 'Farol desligado'); }
+  if (!blocked && tap('blinkL')) { d.blink = d.blink === 1 ? 0 : 1; sfx('ui'); }
+  if (!blocked && tap('blinkR')) { d.blink = d.blink === 2 ? 0 : 2; sfx('ui'); }
+  // a seta desliga sozinha depois de completar a curva
+  if (d.blink === 1 || d.blink === 2) { if (Math.abs(st) > 0.35 && Math.sign(st) === (d.blink === 1 ? -1 : 1)) d.turned = true; else if (d.turned && Math.abs(st) < 0.1) { d.blink = 0; d.turned = false; } }
+  const tt = performance.now() / 1000, on = Math.floor(tt * 2.6) % 2 === 0;
+  if (d.blink && on !== d.lastOn) { if (on) tone('square', 1800, 1700, 0.03, 0.025); else tone('square', 1300, 1250, 0.03, 0.02); }
+  d.lastOn = on;
+  vehLightsTick(m, d.lights, d.blink, tt);
+  if (IS_TOUCH) { $('tb-lights').classList.toggle('on', !!d.lights); $('tb-blL').classList.toggle('on', d.blink === 1); $('tb-blR').classList.toggle('on', d.blink === 2); }
 }
 
 /* =========================================================
@@ -2890,7 +3023,7 @@ function buildInterior(hid) {
   box(0.7, 2.2, 1.8, 0xe8e2d6, gx, 1.1, gz); box(0.02, 2.0, 0.02, 0x999999, gx - 0.36, 1.1, gz); for (const z of [-0.12, 0.12]) box(0.04, 0.3, 0.03, 0xd4a017, gx - 0.37, 1.1, gz + z);
   col(gx, gz, 0.8, 1.9); spot('in_armario', 'Guarda-roupa', gx - 1.1, gz);
   // sala: sofá virado para a TV
-  const sx = 0, sz = D / 2 - 2.2;
+  const sx = 0, sz = D / 2 - 3.1; // longe da porta: deixa o corredor de entrada livre
   box(2.2, 0.45, 0.9, 0x3a4252, sx, 0.25, sz); box(2.2, 0.6, 0.25, 0x3a4252, sx, 0.65, sz + 0.35); for (const x of [-1.1, 1.1]) box(0.22, 0.6, 0.9, 0x323848, sx + x, 0.4, sz); for (const x of [-0.5, 0.5]) box(0.95, 0.15, 0.75, 0x4a5368, sx + x, 0.55, sz - 0.05);
   col(sx, sz, 2.5, 1.1);
   const tvT = canvasTex(256, 144, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#ff4f7b'); gr.addColorStop(1, '#4fc3ff'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.fillStyle = '#fff'; c.font = '34px Bungee, Impact'; c.textAlign = 'center'; c.fillText('ROLÊ TV', w / 2, h / 2 + 4); c.font = '16px sans-serif'; c.fillText('ao vivo da praça', w / 2, h / 2 + 30); });
@@ -3108,8 +3241,9 @@ function updateCity(dt, t) {
   // movimento + colisão
   if (!driving) {
   const nx = P.x + Math.sin(P.h) * P.v * dt, nz = P.z + Math.cos(P.h) * P.v * dt;
-  if (!collide(nx, P.z, 0.55)) P.x = nx; else P.v *= 0.4;
-  if (!collide(P.x, nz, 0.55)) P.z = nz; else P.v *= 0.4;
+  const stuck = collide(P.x, P.z, 0.55); // se nasceu dentro de algo (móvel, parede), deixa sair andando
+  if (stuck || !collide(nx, P.z, 0.55)) P.x = nx; else P.v *= 0.4;
+  if (stuck || !collide(P.x, nz, 0.55)) P.z = nz; else P.v *= 0.4;
   }
   if (P.onBoard && !P.air && P.v > 5 && inRamp(P.x, P.z)) { P.vy = (6.5 + P.v * 0.3) * st.pop; P.air = true; P.airT = 0; sfx('jump'); }
   if (P.air) {
@@ -3206,6 +3340,7 @@ function updateCity(dt, t) {
     pr.hidden = false;
     if (tap('act')) interact(near); }
   } else if (!city.promptBusy) pr.hidden = true;
+  if (IS_TOUCH && !btnEditing()) $('touch').classList.toggle('driving', !!P.drive);
   if (IS_TOUCH) { const show = !pr.hidden && !blocked; $('tb-act').hidden = !show; $('tb-act').classList.toggle('ready', show); $('tb-board').hidden = !hasSkate(); }
   if (!blocked && tap('phone')) togglePhone();
   if (tap('esc')) { if (!$('panel').hidden) closePanel(); else if (!$('phone').hidden) togglePhone(false); }
@@ -3414,9 +3549,44 @@ function drawCityMapOn(cv, cx, cz, Rad, mini) {
   if (S.gps) { g.fillStyle = '#4fc3ff'; g.strokeStyle = '#15161a'; g.lineWidth = 2; g.beginPath(); g.arc(X(S.gps.x), Z(S.gps.z), Math.max(6, W * 0.02), 0, TAU); g.fill(); g.stroke(); }
   const tg = missionTarget(); if (tg) { g.strokeStyle = '#ffcf3a'; g.lineWidth = 3; g.beginPath(); g.arc(X(tg[0]), Z(tg[1]), dr + 3 + Math.sin(performance.now() / 200) * 2, 0, TAU); g.stroke(); }
   g.save(); g.translate(X(P.x), Z(P.z)); g.rotate(-P.h + Math.PI); g.fillStyle = '#ffcf3a'; g.strokeStyle = '#15161a'; g.lineWidth = 2; const k = Math.max(7, W * 0.045); g.beginPath(); g.moveTo(0, -k); g.lineTo(k * 0.7, k * 0.7); g.lineTo(-k * 0.7, k * 0.7); g.closePath(); g.fill(); g.stroke(); g.restore();
+  if (!mini) drawLandmarks(g, cityId(), X, Z, W);
   if (mini) { g.fillStyle = 'rgba(21,22,26,.75)'; g.fillRect(0, W - 40, W, 40); g.fillStyle = '#fff'; g.font = '700 26px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(IS_TOUCH ? 'TOQUE PARA ABRIR' : 'M · MAPA', W / 2, W - 12); g.textAlign = 'start'; }
 }
 function drawCityMap() { drawCityMapOn($('citymap'), 0, 0, 118); }
+/* cartões-postais de cada cidade (os que ficam fora do mapa aparecem na borda, com seta) */
+const LANDMARKS = {
+  sp: [[0, -165, 'MASP · Av. Paulista'], [190, 40, 'Ponte Estaiada'], [0, -84, 'Rodoviária']],
+  rj: [[-40, -330, 'Cristo Redentor'], [230, 330, 'Pão de Açúcar'], [-230, 0, 'Morro / Favela'], [0, 132, 'Praia de Copacabana'], [0, -84, 'Rodoviária']],
+  ssa: [[70, 172, 'Elevador Lacerda'], [-150, 185, 'Farol da Barra'], [0, -180, 'Pelourinho'], [0, 132, 'Praia'], [0, -84, 'Rodoviária']],
+};
+function drawLandmarks(g, id, X, Z, W) {
+  g.font = `700 ${Math.round(W * 0.03)}px "Barlow Condensed", sans-serif`; g.textAlign = 'center';
+  for (const [x, z, n] of LANDMARKS[id] || []) {
+    let px = X(x), pz = Z(z); const out = px < 18 || pz < 18 || px > W - 18 || pz > W - 18; px = clamp(px, 22, W - 22); pz = clamp(pz, 66, W - 22);
+    g.fillStyle = out ? '#ffcf3a' : '#ff4f7b'; g.strokeStyle = '#15161a'; g.lineWidth = 3;
+    if (out) { const a = Math.atan2(Z(z) - pz, X(x) - px); g.save(); g.translate(px, pz); g.rotate(a); g.beginPath(); g.moveTo(14, 0); g.lineTo(-6, -9); g.lineTo(-6, 9); g.closePath(); g.fill(); g.stroke(); g.restore(); }
+    else { g.beginPath(); g.arc(px, pz, W * 0.016, 0, TAU); g.fill(); g.stroke(); }
+    const ty = pz < W * 0.12 ? pz + W * 0.05 : pz - W * 0.03, tx = clamp(px, W * 0.14, W * 0.86);
+    g.lineWidth = 4; g.strokeText(n, tx, ty); g.fillStyle = '#fff'; g.fillText(n, tx, ty);
+  }
+  g.textAlign = 'start';
+}
+/* mapa de outra cidade (para conhecer antes de viajar) */
+function drawCityPreview(cv, id) {
+  if (!cv) return;
+  const C = CITY_DEFS[id], W = cv.width, Rad = 150, g = cv.getContext('2d'), s = W / (2 * Rad), X = x => x * s + W / 2, Z = z => z * s + W / 2;
+  g.fillStyle = C.grass || '#4e7a3c'; g.fillRect(0, 0, W, W);
+  if (C.beach) { g.fillStyle = '#e8d3a0'; g.fillRect(0, Z(116), W, 47 * s); g.fillStyle = '#2a7fb8'; g.fillRect(0, Z(163), W, W); g.fillStyle = id === 'rj' ? '#15161a' : '#f2f0ea'; g.fillRect(0, Z(115), W, 6 * s); }
+  if (id === 'rj') { g.fillStyle = '#3f7a35'; g.beginPath(); g.ellipse(X(-230), Z(0), 40 * s, 110 * s, 0, 0, TAU); g.fill(); for (let i = 0; i < 90; i++) { const a = (i * 2.4) % TAU, r = (i * 37 % 90); g.fillStyle = ['#f2c94c', '#e07a5f', '#7fb3e0', '#f28ca0'][i % 4]; g.fillRect(X(-230 + Math.cos(a) * r * 0.3) - 2, Z(Math.sin(a) * r) - 2, 4, 4); } }
+  g.fillStyle = '#34363c'; g.fillRect(X(-111), Z(-111), 222 * s, 222 * s);
+  for (const bx of BLOCKS) for (const bz of BLOCKS) { const sp = SPECIAL[bx + ',' + bz], plaza = bx === 0 && bz === 0, k = (((bx * 7 + bz * 3) / 42 | 0) % C.pal.length + C.pal.length) % C.pal.length;
+    g.fillStyle = plaza ? '#c7bfae' : sp ? sp.css : '#' + C.pal[k].toString(16).padStart(6, '0'); g.globalAlpha = sp || plaza ? 1 : 0.8; g.fillRect(X(bx - 15), Z(bz - 15), 30 * s, 30 * s); g.globalAlpha = 1; }
+  g.strokeStyle = 'rgba(242,194,48,.55)'; g.lineWidth = Math.max(1, s * 0.4); g.setLineDash([4, 4]);
+  for (const r of ROADS) { g.beginPath(); g.moveTo(X(r), Z(-111)); g.lineTo(X(r), Z(111)); g.moveTo(X(-111), Z(r)); g.lineTo(X(111), Z(r)); g.stroke(); }
+  g.setLineDash([]);
+  drawLandmarks(g, id, X, Z, W);
+  g.fillStyle = 'rgba(21,22,26,.8)'; g.fillRect(0, 0, W, 44); g.fillStyle = '#ffcf3a'; g.font = `700 28px "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.fillText(C.name.toUpperCase(), W / 2, 31); g.textAlign = 'start';
+}
 function interact(n) {
   if (n.type === 'door') {
     const k = n.d.kind;
@@ -4722,6 +4892,7 @@ const OLD_PANELS = {
       title: 'Configurações', html: `<h3>Qualidade gráfica</h3><div class="seg" role="group" aria-label="Qualidade"><button data-act="quality" data-q="baixa" aria-pressed="${q === 'baixa'}">Baixa</button><button data-act="quality" data-q="media" aria-pressed="${q === 'media'}">Média</button><button data-act="quality" data-q="alta" aria-pressed="${q === 'alta'}">Alta</button><button data-act="quality" data-q="ultra" aria-pressed="${q === 'ultra'}">Ultra (rostos)</button></div>
       <p class="muted">A média é o padrão: boa aparência sem pesar no celular. Use a baixa se o jogo engasgar. A Ultra usa a resolução máxima da tela e sombras finas, ideal para ver os rostos de perto (pede um aparelho bom).</p>
       <h3>Som</h3><div class="seg"><button data-act="sound" data-on="1" aria-pressed="${S.settings.sound}">Ligado</button><button data-act="sound" data-on="0" aria-pressed="${!S.settings.sound}">Desligado</button></div>
+      <h3>Botões da tela</h3><p class="muted">Arraste o joystick e cada botão (a pé e no carro/moto) para onde for mais confortável no seu celular. Dá para aumentar ou diminuir o tamanho também.</p><button class="btn" data-act="edit-btns">Editar posição dos botões</button>
       <h3>Conta</h3>${NET.user ? `<p>Conectado como <b>${esc(NET.user.email || '')}</b>. Progresso salvo na nuvem.</p><div><button class="btn ghost sm" data-act="logout">Sair da conta</button></div>` : '<p class="muted">Jogando sem conta: o progresso fica só neste aparelho. Para salvar na nuvem e jogar online, volte ao menu inicial e entre com uma conta.</p>'}
       <h3>Sobre</h3><p class="note">Com conta, você vê e conversa com jogadores reais na praça e aparece no ranking semanal. Os skatistas com nome branco são personagens do jogo. A compra de tokens ainda está em modo demonstração.</p>
       <h3>Progresso</h3><div id="reset-zone"><button class="btn danger sm" data-act="reset-ask">Apagar progresso</button></div>` };
@@ -4975,10 +5146,18 @@ const PANELS = {
     if (!hasV) html += `<p class="muted">Compre um carro ou moto na Concessionária para viajar de graça.</p>`;
     return { title: 'Rodoviária', html };
   },
-  mapa() {
+  mapa(sub) {
+    const cur = cityId(), sel = CITY_DEFS[sub] ? sub : cur;
+    const ctabs = `<div class="seg tabs" role="tablist">${Object.entries(CITY_DEFS).map(([id, C]) => `<button role="tab" data-act="map-city" data-id="${id}" aria-pressed="${id === sel}">${esc(C.name)}${id === cur ? ' · aqui' : ''}</button>`).join('')}</div>`;
+    if (sel !== cur) {
+      setTimeout(() => drawCityPreview($('bigmap'), sel), 0);
+      const hasV = !!(S.veh && VEH[S.veh]);
+      return { title: 'Mapa · ' + CITY_DEFS[sel].name, html: `${ctabs}<p class="muted">${{ sp: 'Avenida Paulista, MASP, prédios altos e a Ponte Estaiada.', rj: 'Praia, calçadão de ondas, Cristo Redentor, Pão de Açúcar e o morro.', ssa: 'Casarões coloridos do Pelourinho, Elevador Lacerda, a praia e o Farol da Barra.' }[sel]} As lojas ficam nos mesmos quarteirões em todas as cidades.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa de ${esc(CITY_DEFS[sel].name)}"></canvas>
+        <div class="row">${hasV ? `<button class="btn" data-act="travel" data-id="${sel}" data-how="veh">Ir de ${VEH[S.veh].kind === 'car' ? 'carro' : 'moto'}</button>` : ''}<button class="btn ghost" data-act="travel" data-id="${sel}" data-how="bus" ${S.coins < 150 ? 'disabled' : ''}>Ônibus ($ 150)</button></div>` };
+    }
     setTimeout(() => { const cv = $('bigmap'); if (!cv) return; drawCityMapOn(cv, 0, 0, 118); cv.onclick = bigmapClick; }, 0);
     const places = city.doors.filter(d => !d.inside).map(d => `<button class="chip" data-act="gps-door" data-x="${d.x}" data-z="${d.z}" data-l="${esc(d.label)}">${esc(d.label)}</button>`).join('');
-    return { title: 'Mapa · ' + CITY().name, html: `<p class="muted">Toque no mapa para marcar o destino: aparece uma linha azul no chão e no mapa mostrando o caminho pelas ruas.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa completo da cidade, toque para marcar destino"></canvas><div class="chips">${places}${S.gps ? '<button class="chip" data-act="gps-clear">✕ Limpar GPS</button>' : ''}</div><div class="legend">${Object.entries({ roupas: 'Drip Store (roupas)', skate: 'Shape & Truck (skates)', celular: 'CelZap', arena: 'Terminal Mundial', tokens: 'Casa de Tokens', crew: 'Garagem da Crew', missoes: 'Quadro de Missões', agencia: 'Agência de Empregos', imobiliaria: 'Imobiliária', casa: 'Sua casa' }).map(([k, n]) => `<span><i style="background:${DOOR_COL[k]}"></i>${n}</span>`).join('')}<span><i style="background:#ffe9a3"></i>Amigos</span><span><i style="background:#3ddc84"></i>Crew</span></div>` };
+    return { title: 'Mapa · ' + CITY().name, html: `${ctabs}<p class="muted">Toque no mapa para marcar o destino: aparece uma linha azul no chão e no mapa mostrando o caminho pelas ruas.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa completo da cidade, toque para marcar destino"></canvas><div class="chips">${places}${S.gps ? '<button class="chip" data-act="gps-clear">✕ Limpar GPS</button>' : ''}</div><div class="legend">${Object.entries({ roupas: 'Drip Store (roupas)', skate: 'Shape & Truck (skates)', celular: 'CelZap', arena: 'Terminal Mundial', tokens: 'Casa de Tokens', crew: 'Garagem da Crew', missoes: 'Quadro de Missões', agencia: 'Agência de Empregos', imobiliaria: 'Imobiliária', casa: 'Sua casa' }).map(([k, n]) => `<span><i style="background:${DOOR_COL[k]}"></i>${n}</span>`).join('')}<span><i style="background:#ffe9a3"></i>Amigos</span><span><i style="background:#3ddc84"></i>Crew</span></div>` };
   },
 };
 ['tokens', 'crew', 'config', 'results'].forEach(k => PANELS[k] = OLD_PANELS[k]);
@@ -5074,6 +5253,12 @@ function act(a, ds, el) {
     }
     case 'crew-kick': S.crew.members = S.crew.members.filter(x => x !== ds.id); persist(); refreshBotTags(); renderPanel(); break;
     case 'crew-disband': S.crew = null; persist(); refreshBotTags(); updateHUD(); renderPanel(); break;
+    case 'edit-btns': btnEditStart(); break;
+    case 'be-size': { const st = btnCfg(); st.btnScale = clamp(Math.round(((st.btnScale || 1) + +ds.d) * 10) / 10, 0.7, 1.5); applyBtnLayout(); toast(`Tamanho dos botões: ${Math.round(st.btnScale * 100)}%`); break; }
+    case 'be-mode': { const T = $('touch'), dr = !T.classList.contains('driving'); T.classList.toggle('driving', dr); el.textContent = dr ? 'Ver botões a pé' : 'Ver botões do carro'; applyBtnLayout(); break; }
+    case 'be-reset': { const st = btnCfg(), o = btnOrient(); st.btnPos[o] = {}; delete st.joyPos[o]; st.btnScale = 1; applyBtnLayout(); toast('Botões no lugar padrão.'); break; }
+    case 'be-save': btnEditEnd(true); break;
+    case 'be-cancel': btnEditEnd(false); break;
     case 'quality': S.settings.quality = ds.q; persist(); applyQuality(); renderPanel(); break;
     case 'sound': S.settings.sound = ds.on === '1'; persist(); renderPanel(); break;
     case 'reset-ask': $('reset-zone').innerHTML = `<div class="warn-inline"><span>Isso apaga personagem, grana, tokens e itens deste navegador.</span><div class="row"><button class="btn danger sm" data-act="reset-do">Apagar tudo</button><button class="btn ghost sm" data-act="panel-close">Cancelar</button></div></div>`; break;
@@ -5096,6 +5281,7 @@ function act(a, ds, el) {
     case 'gps-door': setGps(+ds.x, +ds.z, ds.l); closePanel(); break;
     case 'gps-clear': clearGps(); renderPanel(); break;
     case 'travel': travelTo(ds.id, ds.how); break;
+    case 'map-city': panelArg = ds.id; renderPanel(); sfx('ui'); break;
     case 'veh-call': if (mode === 'city') { if (P.drive) break; spawnMyVehicle(); closePanel(); if (city.myVeh) toast(`${city.myVeh.V.name} estacionado do seu lado. Chegue perto e aperte ${IS_TOUCH ? 'Ação' : 'E'}.`, 'good'); } break;
     case 'veh-use': S.veh = ds.id; persist(); if (city.myVeh && !P.drive) spawnMyVehicle(); renderPanel(); break;
     case 'veh-buy': { const v = VEH[ds.id], cur = ds.cur; if (cur === 'c') { if (S.coins < v.c) return toast('Grana insuficiente. Trabalhe e faça missões.', 'bad'); S.coins -= v.c; } else { if (S.tokens < v.t) { toast('Tokens insuficientes.', 'bad'); city.checkout = null; return openPanel('tokens'); } S.tokens -= v.t; }
@@ -5234,6 +5420,7 @@ function netJoinPlaza() {
   ch.on('broadcast', { event: 'pos' }, ({ payload }) => onPeerPos(payload))
     .on('broadcast', { event: 'chat' }, ({ payload }) => onPeerChat(payload))
     .on('broadcast', { event: 'fila' }, ({ payload }) => onPeerFila(payload))
+    .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
@@ -5277,7 +5464,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, em: P.emote ? P.emote.id : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
@@ -5289,7 +5476,7 @@ function netTick(dt, t) {
     // veículo do outro jogador
     if (d.vh && VEH[d.vh]) {
       if (!p.veh || p.vehId !== d.vh) { if (p.veh) city.scene.remove(p.veh); p.veh = makeVehicleMesh(VEH[d.vh]); p.vehId = d.vh; city.scene.add(p.veh); }
-      p.veh.position.set(p.x, 0, p.z); p.veh.rotation.y = p.h; const vu = p.veh.userData; vu.spin = (vu.spin || 0) + d.v * dt / 0.35; for (const w of vu.wheels) w.children[0].rotation.x = vu.spin;
+      p.veh.position.set(p.x, 0, p.z); p.veh.rotation.y = p.h; const vu = p.veh.userData; vu.spin = (vu.spin || 0) + d.v * dt / 0.35; for (const w of vu.wheels) w.children[0].rotation.x = vu.spin; vehLightsTick(p.veh, d.vl, d.bk, t);
       if (VEH[d.vh].kind === 'car') { p.g.visible = false; } else { p.g.visible = true; p.g.position.y = vu.seatY - 1.07; animSkater(p.g, { ride: true, walk: true, v: 0, fallT: 0 }, t); }
       tickBubble(p.g, dt); continue;
     } else if (p.veh) { city.scene.remove(p.veh); p.veh = null; p.vehId = null; p.g.visible = true; }
@@ -5442,6 +5629,7 @@ async function enterGame() {
   }
   $('menu').hidden = true; $('hud').hidden = false; mode = 'city';
   if (IS_TOUCH) { $('touch').hidden = false; $('tb-item-l').textContent = 'Truque'; }
+  applyBtnLayout();
   buildCity(); applyQuality(); updateHUD(); rebuildMissionObjs(); renderMissionBox();
   const hd = homeDoor(); if (hd) { P.x = hd.x - 2.5; P.z = hd.z; P.h = -Math.PI / 2; setTimeout(() => toast('Você acordou em casa. Bom rolê!', 'pink'), 1200); }
   city.camYaw = P.h; camera.position.set(P.x - Math.sin(P.h) * 6, 4, P.z - Math.cos(P.h) * 6);
