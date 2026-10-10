@@ -208,6 +208,9 @@ table.res tr.ally td:nth-child(2){color:var(--ok)}
 #loading{position:fixed;inset:0;z-index:60;display:grid;place-content:center;justify-items:center;gap:14px;background:rgba(21,22,26,.92);font-family:var(--display);color:var(--wax);text-align:center;padding:16px}
 #loading .lbar{width:min(320px,80vw);height:12px;border-radius:6px;background:var(--panel-2);overflow:hidden;border:2px solid var(--line)}
 #loading .lbar i{display:block;height:100%;width:0;background:var(--sticker);transition:width .2s}
+#acc-msg{margin:0;font-weight:600;color:var(--wax)}#acc-msg:empty{display:none}
+.online-chip{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 222px);width:150px;background:rgba(21,22,26,.88);border:2px solid var(--ok);color:var(--ok);border-radius:10px;padding:4px 8px;font-family:var(--cond);font-weight:700;font-size:13px;text-align:left}
+.online-chip.off{border-color:var(--line);color:var(--muted)}
 #hud-map{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 10px);width:150px;height:150px;border-radius:18px;border:3px solid var(--fg);background:#10141c;box-shadow:4px 4px 0 var(--sticker);cursor:pointer}
 .profile{left:180px}
 .ev-chip{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 170px);width:150px;display:grid;gap:1px;text-align:left;background:rgba(21,22,26,.88);border:2px solid var(--ec,var(--wax));border-radius:10px;padding:5px 8px;font-family:var(--cond)}
@@ -279,6 +282,7 @@ canvas.swatch{background:#333}
   #hud-map{width:104px;height:104px;border-radius:14px}
   .profile{left:126px}
   .ev-chip{top:calc(env(safe-area-inset-top,0px) + 122px);width:104px;padding:4px 6px}
+  .online-chip{top:calc(env(safe-area-inset-top,0px) + 170px);width:104px;font-size:12px}
   .ev-chip b{font-size:12px}
   .hud-tr{flex-direction:column;flex-wrap:nowrap;max-width:none}
   .profile{min-width:0;max-width:calc(100vw - 190px)}
@@ -311,6 +315,19 @@ canvas.swatch{background:#333}
 <div id="menu">
   <div class="menu-card">
     <h1 class="logo">ROLÊ CITY<small>skate, rolê e campeonatos pelo mundo</small></h1>
+    <div class="menu-box" id="acc-box">
+      <h2>Conta</h2>
+      <div id="acc-out">
+        <p class="muted" style="margin:0">Entre para salvar o progresso na nuvem e andar com a galera de verdade na praça.</p>
+        <form id="acc-form" class="acc-form">
+          <div class="field"><label for="in-email">E-mail</label><input id="in-email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="in-pass">Senha</label><input id="in-pass" type="password" minlength="6" autocomplete="current-password" required></div>
+          <div class="row"><button class="btn" type="submit" data-mode="in">Entrar</button><button class="btn ghost" type="submit" data-mode="up">Criar conta</button></div>
+        </form>
+      </div>
+      <div id="acc-in" hidden><p style="margin:0">Conectado como <b id="acc-email"></b>. Seu progresso fica salvo na nuvem.</p><div class="row"><button class="btn ghost sm" data-act="logout">Sair da conta</button></div></div>
+      <p class="acc-msg" id="acc-msg" role="status"></p>
+    </div>
     <div class="menu-box" id="menu-continue" hidden>
       <h2>Continuar</h2>
       <p class="muted" id="menu-save-info" style="margin:0"></p>
@@ -337,6 +354,7 @@ canvas.swatch{background:#333}
 <div class="hud" id="hud" hidden>
   <canvas id="hud-map" width="300" height="300" data-act="open-map" role="button" aria-label="Mapa da cidade, toque para abrir"></canvas>
   <button class="ev-chip" id="ev-chip" data-act="open-eventos" aria-label="Eventos"></button>
+  <button class="online-chip" id="online-chip" data-act="open-online" hidden></button>
   <div id="contest-box" hidden></div>
   <button class="profile" data-act="open-perfil" aria-label="Abrir perfil">
     <span class="nm"><span class="lvl" id="h-lvl">NV 1</span><span id="h-name"></span></span>
@@ -400,6 +418,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 'use strict';
 THREE.ColorManagement.legacyMode = false;
@@ -595,7 +614,7 @@ function migrate(s) {
   return s;
 }
 function loadSave() { try { const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
-function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } }
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } if (typeof NET !== 'undefined') NET.dirty = true; }
 function wipeSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } }
 const needXP = lv => 100 + lv * 60;
 function addXP(n) {
@@ -1587,6 +1606,7 @@ function updateCity(dt, t) {
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
   recordFrame(dt);
+  netTick(dt, t);
 
   // céu e sol acompanham
   city.sky.position.copy(camera.position);
@@ -1749,6 +1769,7 @@ function rivalScores(id, frac, dv) {
 }
 function rankingTable(id = S.week.id, frac = weekFrac(), pts = S.week.pts) {
   const list = rivalScores(id, frac, division()); list.push({ name: S.name, pts, me: true });
+  if (NET.rank && id === S.week.id) for (const r of NET.rank) if (r.apelido.toLowerCase() !== S.name.toLowerCase()) list.push({ name: r.apelido, pts: r.pontos, real: true });
   return list.sort((a, b) => b.pts - a.pts);
 }
 function checkWeek() {
@@ -1820,6 +1841,7 @@ function drawCityMapOn(cv, cx, cz, Rad, mini) {
   const dr = Math.max(5, W * 0.035);
   for (const d of city.doors) { g.fillStyle = DOOR_COL[d.kind]; g.strokeStyle = '#15161a'; g.lineWidth = 2; g.beginPath(); g.arc(X(d.x), Z(d.z), dr, 0, TAU); g.fill(); g.stroke(); }
   for (const o of city.bots) { g.fillStyle = S.crew && S.crew.members.includes(o.b.id) ? '#3ddc84' : S.contacts.includes(o.b.id) ? '#ffe9a3' : '#c9cfdb'; g.beginPath(); g.arc(X(o.x), Z(o.z), Math.max(2.5, W * 0.014), 0, TAU); g.fill(); }
+  for (const id in NET.peers) { const p = NET.peers[id]; g.fillStyle = '#7fe3ff'; g.strokeStyle = '#15161a'; g.lineWidth = 2; g.beginPath(); g.arc(X(p.x), Z(p.z), Math.max(4, W * 0.022), 0, TAU); g.fill(); g.stroke(); }
   const tg = missionTarget(); if (tg) { g.strokeStyle = '#ffcf3a'; g.lineWidth = 3; g.beginPath(); g.arc(X(tg[0]), Z(tg[1]), dr + 3 + Math.sin(performance.now() / 200) * 2, 0, TAU); g.stroke(); }
   g.save(); g.translate(X(P.x), Z(P.z)); g.rotate(-P.h + Math.PI); g.fillStyle = '#ffcf3a'; g.strokeStyle = '#15161a'; g.lineWidth = 2; const k = Math.max(7, W * 0.045); g.beginPath(); g.moveTo(0, -k); g.lineTo(k * 0.7, k * 0.7); g.lineTo(-k * 0.7, k * 0.7); g.closePath(); g.fill(); g.stroke(); g.restore();
   if (mini) { g.fillStyle = 'rgba(21,22,26,.75)'; g.fillRect(0, W - 40, W, 40); g.fillStyle = '#fff'; g.font = '700 26px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(IS_TOUCH ? 'TOQUE PARA ABRIR' : 'M · MAPA', W / 2, W - 12); g.textAlign = 'start'; }
@@ -2584,7 +2606,8 @@ const OLD_PANELS = {
       title: 'Configurações', html: `<h3>Qualidade gráfica</h3><div class="seg" role="group" aria-label="Qualidade"><button data-act="quality" data-q="baixa" aria-pressed="${q === 'baixa'}">Baixa</button><button data-act="quality" data-q="media" aria-pressed="${q === 'media'}">Média</button><button data-act="quality" data-q="alta" aria-pressed="${q === 'alta'}">Alta (sombras)</button></div>
       <p class="muted">A média é o padrão: boa aparência sem pesar no celular. Use a baixa se o jogo engasgar.</p>
       <h3>Som</h3><div class="seg"><button data-act="sound" data-on="1" aria-pressed="${S.settings.sound}">Ligado</button><button data-act="sound" data-on="0" aria-pressed="${!S.settings.sound}">Desligado</button></div>
-      <h3>Sobre este protótipo</h3><p class="note">Os outros skatistas da cidade e das corridas são simulados pelo jogo. O modo online de verdade (ver e conversar com outras pessoas em tempo real) precisa de um servidor multiplayer, e a compra de tokens precisa do checkout ligado à sua conta de recebimento. O progresso fica salvo neste navegador.</p>
+      <h3>Conta</h3>${NET.user ? `<p>Conectado como <b>${esc(NET.user.email || '')}</b>. Progresso salvo na nuvem.</p><div><button class="btn ghost sm" data-act="logout">Sair da conta</button></div>` : '<p class="muted">Jogando sem conta: o progresso fica só neste aparelho. Para salvar na nuvem e jogar online, volte ao menu inicial e entre com uma conta.</p>'}
+      <h3>Sobre</h3><p class="note">Com conta, você vê e conversa com jogadores reais na praça e aparece no ranking semanal. Os skatistas com nome branco são personagens do jogo. A compra de tokens ainda está em modo demonstração.</p>
       <h3>Progresso</h3><div id="reset-zone"><button class="btn danger sm" data-act="reset-ask">Apagar progresso</button></div>` };
   },
   results() {
@@ -2699,7 +2722,8 @@ const PANELS = {
       html += `<div class="row"><div><div class="big-num">${me}º</div><span class="muted">sua posição · ${fmt(S.week.pts)} pts na semana</span></div><div><div class="big-num" style="color:var(--sky);font-size:28px">${countdown(mondayTs() + WEEK)}</div><span class="muted">para fechar a semana</span></div></div>
         <div class="note">Prêmios da semana: 1º caixa lendária + $ 2.000 · 2º e 3º estampa lendária Grafite da Praça + caixa rara + $ 800 · até 10º $ 300. Pontos vêm de corridas, campeonatos de manobras e missões.</div>
         ${S.lastWeek ? `<p class="muted">Semana passada: ${S.lastWeek.rank}º lugar (${fmt(S.lastWeek.pts)} pts)${S.lastWeek.reward ? ' · ' + esc(S.lastWeek.reward) : ''}</p>` : ''}
-        <table class="res"><tr><th>#</th><th>Skatista</th><th>Pontos</th></tr>${list.map((r, i) => `<tr class="${r.me ? 'me' : ''}"><td>${i + 1}º</td><td>${esc(r.name)}</td><td>${fmt(r.pts)}</td></tr>`).join('')}</table>`;
+        <table class="res"><tr><th>#</th><th>Skatista</th><th>Pontos</th></tr>${list.map((r, i) => `<tr class="${r.me ? 'me' : ''}"><td>${i + 1}º</td><td>${esc(r.name)}${r.real ? ' <span class="rar" style="--rc:#7fe3ff">jogador</span>' : ''}</td><td>${fmt(r.pts)}</td></tr>`).join('')}</table>
+        ${NET.user ? '' : '<p class="muted">Entre com uma conta no menu inicial para aparecer no ranking junto com os jogadores reais.</p>'}`;
     }
     return { title: 'Terminal Mundial', html };
   },
@@ -2723,6 +2747,8 @@ const PANELS = {
         <form class="chatform panelchat" id="square-form"><input id="square-in" maxlength="60" placeholder="Fale com quem está perto" autocomplete="off"><button type="submit">Enviar</button></form>`;
       setTimeout(() => { const c = $('chatlog'); if (c) c.scrollTop = 1e6; }, 0);
     } else if (tab === 'amigos') {
+      const on = Object.values(NET.peers);
+      html += `<h3>Online na praça agora (${on.length})</h3>` + (NET.user ? (on.length ? on.map(p => `<div class="item-card"><span class="av big" style="background:#7fe3ff">${esc(p.name[0])}</span><div class="item-info"><b>${esc(p.name)}</b><small><span class="dot on"></span>Jogador real · a ${Math.round(Math.hypot(p.x - P.x, p.z - P.z))} m</small></div></div>`).join('') : '<p class="muted">Ninguém além de você agora. Chame seus amigos para jogar!</p>') : '<p class="muted">Entre com uma conta no menu inicial para ver e encontrar jogadores reais.</p>') + `<h3>Contatos da cidade</h3>`;
       html += S.contacts.length ? S.contacts.map(id => {
         const b = BOT[id], o = city.bots.find(x => x.b.id === id), dist = o ? Math.round(Math.hypot(o.x - P.x, o.z - P.z)) : null;
         const status = o ? `Online · na cidade, a ${dist} m` : (b.skill > 0.9 ? 'Correndo em ' + pick(COUNTRIES).name : 'Offline');
@@ -2846,12 +2872,12 @@ function act(a, ds, el) {
       S.owned.push(it.id); S.equip[it.slot] = it.id;
       if (it.slot === 'skate' && !S.equip.wheels) { if (!S.owned.includes('wh_basic')) S.owned.push('wh_basic'); S.equip.wheels = 'wh_basic'; }
       persist(); updateHUD();
-      applyLook(city.player, myLook()); sfx('coin'); toast(`Comprou ${it.name}!`, 'good');
+      applyLook(city.player, myLook()); sfx('coin'); toast(`Comprou ${it.name}!`, 'good'); netTrack();
       if (it.slot === 'skate') { P.onBoard = true; toast(`${IS_TOUCH ? 'Botão Skate' : 'Tecla R'} sobe e desce do skate.`, 'pink'); }
       if (it.slot === 'phone') toast(it.tier === 1 ? 'Agora você tem Mapa e minimapa nas corridas.' : 'GPS Pro ativado nas corridas.', 'pink');
       renderPanel(); break;
     }
-    case 'equip': { const it = ITEM[ds.id]; S.equip[it.slot] = it.id; persist(); applyLook(city.player, myLook()); renderPanel(); sfx('ui'); break; }
+    case 'equip': { const it = ITEM[ds.id]; S.equip[it.slot] = it.id; persist(); applyLook(city.player, myLook()); renderPanel(); sfx('ui'); netTrack(); break; }
     case 'mission-accept': { S.mission = city.offers[+ds.i]; city.offers = null; persist(); rebuildMissionObjs(); renderMissionBox(); closePanel(); toast(`Missão aceita: ${S.mission.title}`, 'good'); break; }
     case 'mission-abandon': S.mission = null; P.carry = null; persist(); rebuildMissionObjs(); renderMissionBox(); renderPanel(); break;
     case 'race': case 'race-again': { $('panel').hidden = true; panelKind = null; startRace(ds.id); break; }
@@ -2884,8 +2910,8 @@ function act(a, ds, el) {
     case 'open-social': if (mode === 'city') openPanel('social', 'feed'); break;
     case 'open-eventos': if (mode === 'city') openPanel('eventos'); break;
     case 'open-map': if (mode === 'city') openPanel('mapa'); break;
-    case 'board-col': S.board[ds.k] = ds.c === 'null' ? null : +ds.c; persist(); applyLook(city.player, myLook()); renderPanel(); sfx('ui'); break;
-    case 'arena-tab': case 'social-tab': case 'perfil-tab': panelArg = ds.k; if (ds.k !== 'inventario') city.crateResult = null; renderPanel(); break;
+    case 'board-col': S.board[ds.k] = ds.c === 'null' ? null : +ds.c; persist(); applyLook(city.player, myLook()); renderPanel(); sfx('ui'); netTrack(); break;
+    case 'arena-tab': case 'social-tab': case 'perfil-tab': panelArg = ds.k; if (ds.k !== 'inventario') city.crateResult = null; renderPanel(); if (ds.k === 'ranking') netFetchRank(); break;
     case 'contest': startContest(); break;
     case 'like': S.likes[ds.id] = !S.likes[ds.id]; persist(); renderPanel(); break;
     case 'replay': playReplay(ds.id); break;
@@ -2898,6 +2924,8 @@ function act(a, ds, el) {
     case 'rp-speed': RP.speed = +ds.v; renderReplaySpeed(); break;
     case 'rp-exit': stopReplay(); break;
     case 'gender': selGender = ds.g; document.querySelectorAll('#genders button').forEach(b => b.setAttribute('aria-pressed', b.dataset.g === selGender)); break;
+    case 'logout': (async () => { await netSignOut(); location.reload(); })(); break;
+    case 'open-online': if (mode === 'city') openPanel('social', 'amigos'); break;
     case 'menu-continue': enterGame(); break;
     case 'menu-new-show': $('menu-new-warn').hidden = false; break;
     case 'menu-new-cancel': $('menu-new-warn').hidden = true; break;
@@ -2911,13 +2939,26 @@ document.addEventListener('submit', e => {
   e.preventDefault();
   if (e.target.id === 'menu-form') {
     const name = $('in-name').value.trim().slice(0, 14); if (!name) return;
-    S = newSave(name, SKINS[selSkin], selGender, HAIRS[selHair]); persist(); enterGame();
+    (async () => {
+      if (NET.user && !(await apelidoLivre(name))) { $('acc-msg').textContent = `O apelido "${name}" já é de outro jogador. Escolha outro.`; $('in-name').focus(); return; }
+      S = newSave(name, SKINS[selSkin], selGender, HAIRS[selHair]); persist(); enterGame();
+    })();
   } else if (e.target.id === 'crew-form') {
     const n = $('in-crew').value.trim().toUpperCase().slice(0, 10); if (!n || S.coins < 150) return;
     S.coins -= 150; S.crew = { name: n, members: [] }; persist(); updateHUD(); refreshBotTags(); sfx('level'); toast(`Crew [${n}] fundada!`, 'good'); renderPanel();
+  } else if (e.target.id === 'acc-form') {
+    const email = $('in-email').value.trim(), pass = $('in-pass').value, mode = e.submitter && e.submitter.dataset.mode;
+    const msg = $('acc-msg'); msg.textContent = mode === 'up' ? 'Criando conta…' : 'Entrando…';
+    (async () => {
+      try {
+        if (mode === 'up') { const u = await netSignUp(email, pass); if (!u) { msg.textContent = 'Conta criada! Abra o link de confirmação que enviamos para o seu e-mail e depois clique em Entrar.'; return; } }
+        else await netSignIn(email, pass);
+        msg.textContent = ''; afterLogin();
+      } catch (err) { msg.textContent = netErr(err); }
+    })();
   } else if (e.target.id === 'square-form') {
     const txt = $('square-in').value.trim(); if (!txt) return;
-    bubble(city.player, txt, 5); pushChat(S.name, txt, true); $('square-in').value = '';
+    bubble(city.player, txt, 5); pushChat(S.name, txt, true); $('square-in').value = ''; netChat(txt);
     const near = city.bots.filter(o => Math.hypot(o.x - P.x, o.z - P.z) < 20);
     if (near.length) setTimeout(() => { const o = pick(near), r = botReply(o.b.id, txt); bubble(o.g, r, 5); pushChat(o.b.name, r); }, 1200 + Math.random() * 1500);
   } else if (e.target.id === 'chat-form') {
@@ -2928,13 +2969,158 @@ document.addEventListener('submit', e => {
   }
 });
 
+/* ---------------- ONLINE (Supabase): conta, save na nuvem, praça multiplayer, ranking ---------------- */
+const SUPA_URL = 'https://ndcahlwnkynphfilvenw.supabase.co';
+const SUPA_KEY = 'sb_publishable_OEhCG-PCfsbqoyoecWTocQ_kDKsWgk0';
+const NET = { sb: null, user: null, ch: null, online: false, peers: {}, sendT: 0, dirty: false, rank: null, trackT: null, saving: false };
+function netInit() {
+  if (NET.sb) return true;
+  if (!window.supabase || !window.supabase.createClient) return false;
+  try { NET.sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, detectSessionInUrl: true } }); return true; } catch (e) { return false; }
+}
+async function netSession() {
+  if (!netInit()) return null;
+  try { const { data } = await NET.sb.auth.getSession(); NET.user = data.session ? data.session.user : null; } catch (e) { NET.user = null; }
+  return NET.user;
+}
+const netErr = e => {
+  const m = (e && (e.message || e.error_description)) || String(e || '');
+  if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
+  if (/not confirmed/i.test(m)) return 'Confirme seu e-mail pelo link que enviamos e tente de novo.';
+  if (/already registered|already been registered/i.test(m)) return 'Esse e-mail já tem conta. Use Entrar.';
+  if (/at least 6/i.test(m)) return 'A senha precisa de pelo menos 6 caracteres.';
+  if (/fetch|network|Failed/i.test(m)) return 'Sem conexão com o servidor. Você pode jogar sem conta.';
+  return m;
+};
+async function netSignIn(email, pass) {
+  const { data, error } = await NET.sb.auth.signInWithPassword({ email, password: pass });
+  if (error) throw error; NET.user = data.user; return data.user;
+}
+async function netSignUp(email, pass) {
+  const { data, error } = await NET.sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: location.origin + location.pathname } });
+  if (error) throw error;
+  if (!data.session) return null; // precisa confirmar o e-mail
+  NET.user = data.user; return data.user;
+}
+async function netSignOut() { try { await cloudSave(); await NET.sb.auth.signOut(); } catch (e) { } NET.user = null; }
+async function cloudLoad() {
+  const { data, error } = await NET.sb.from('jogadores').select('save').eq('id', NET.user.id).maybeSingle();
+  if (error) throw error;
+  return data && data.save && data.save.v ? data.save : null;
+}
+async function apelidoLivre(nome) {
+  try { const { data, error } = await NET.sb.rpc('apelido_disponivel', { p_apelido: nome }); if (error) throw error; return !!data; } catch (e) { return true; }
+}
+async function cloudSave() {
+  if (!NET.user || !S || NET.saving) return;
+  NET.saving = true; NET.dirty = false;
+  try {
+    const { error } = await NET.sb.from('jogadores').upsert({ id: NET.user.id, apelido: S.name, save: S, nivel: S.level, reputacao: S.rep, divisao: division().id, semana_id: S.week.id, semana_pts: S.week.pts, atualizado_em: new Date().toISOString() });
+    if (error) { if (error.code === '23505') toast('Esse apelido já é de outro jogador. Crie um personagem com outro nome.', 'bad'); else NET.dirty = true; }
+  } catch (e) { NET.dirty = true; }
+  NET.saving = false;
+}
+setInterval(() => { if (NET.dirty) cloudSave(); }, 10000);
+document.addEventListener('visibilitychange', () => { if (document.hidden && NET.dirty) cloudSave(); });
+
+/* aparência compacta enviada para os outros jogadores */
+const myNetLook = () => ({ g: S.gender, sk: S.skin, h: S.hair, e: { shirt: S.equip.shirt, pants: S.equip.pants, cap: S.equip.cap, shoes: S.equip.shoes, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print }, b: S.board });
+const myPresence = () => ({ id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook() });
+function netJoinPlaza() {
+  if (!NET.user || NET.ch) return;
+  const ch = NET.sb.channel('praca', { config: { presence: { key: NET.user.id }, broadcast: { self: false } } });
+  ch.on('broadcast', { event: 'pos' }, ({ payload }) => onPeerPos(payload))
+    .on('broadcast', { event: 'chat' }, ({ payload }) => onPeerChat(payload))
+    .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
+    .subscribe(async st => {
+      if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
+      else if (st === 'CLOSED' || st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { NET.online = false; updateOnlineChip(); }
+    });
+  NET.ch = ch;
+}
+function netTrack() { if (!NET.ch || !NET.online) return; clearTimeout(NET.trackT); NET.trackT = setTimeout(() => { try { NET.ch.track(myPresence()); } catch (e) { } }, 600); }
+function onPresence(state) {
+  const seen = {};
+  for (const key in state) {
+    const st = state[key][0]; if (!st || st.id === (NET.user && NET.user.id)) continue;
+    seen[st.id] = true;
+    let p = NET.peers[st.id];
+    const lookKey = JSON.stringify(st.look);
+    if (p && p.lookKey !== lookKey) { removePeer(st.id); p = null; }
+    if (!p) {
+      const L = st.look || {}, look = lookOf(L.e || {}, L.sk ?? SKINS[1], L.h ?? HAIRS[0], L.g || 'm', L.b);
+      const g = makeSkater(look, (st.crew ? `[${st.crew}] ` : '') + st.name, '#7fe3ff'); g.visible = false; city.scene.add(g);
+      p = NET.peers[st.id] = { id: st.id, name: st.name, g, lookKey, x: 0, y: 0, z: 0, h: 0, t: null, seen: false };
+      pushChat('Praça', `${st.name} entrou na praça`);
+    }
+  }
+  for (const id in NET.peers) if (!seen[id]) { pushChat('Praça', `${NET.peers[id].name} saiu`); removePeer(id); }
+  updateOnlineChip();
+}
+function removePeer(id) { const p = NET.peers[id]; if (!p) return; city.scene.remove(p.g); delete NET.peers[id]; }
+function onPeerPos(d) {
+  const p = NET.peers[d.id]; if (!p) return;
+  p.t = d; if (!p.seen) { p.seen = true; p.x = d.x; p.y = d.y; p.z = d.z; p.h = d.h; p.g.visible = true; }
+}
+function onPeerChat(d) { const p = NET.peers[d.id]; if (p) bubble(p.g, d.msg, 5); pushChat(d.name, d.msg); }
+function netChat(msg) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'chat', payload: { id: NET.user.id, name: S.name, msg } }); }
+/* chamado todo quadro na cidade: envia posição ~8x por segundo e anima quem está online */
+function netTick(dt, t) {
+  if (!NET.online) return;
+  if ((NET.sendT -= dt) <= 0) {
+    NET.sendT = 0.12;
+    const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, em: P.emote ? P.emote.id : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+  }
+  const k = 1 - Math.exp(-12 * dt);
+  for (const id in NET.peers) {
+    const p = NET.peers[id], d = p.t; if (!d) continue;
+    p.x = lerp(p.x, d.x, k); p.y = lerp(p.y, d.y, k); p.z = lerp(p.z, d.z, k);
+    p.h += Math.atan2(Math.sin(d.h - p.h), Math.cos(d.h - p.h)) * k;
+    p.g.position.set(p.x, p.y, p.z); p.g.rotation.y = p.h;
+    p.g.userData.lod = Math.hypot(p.x - camera.position.x, p.z - camera.position.z) > 38;
+    animSkater(p.g, { walk: !d.b, carry: true, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
+    tickBubble(p.g, dt);
+  }
+}
+function updateOnlineChip() {
+  const el = $('online-chip'); if (!el) return;
+  const n = Object.keys(NET.peers).length;
+  el.hidden = !NET.user; el.classList.toggle('off', !NET.online);
+  el.textContent = NET.online ? `● ${n + 1} online na praça` : '● offline';
+}
+async function netFetchRank() {
+  if (!NET.user) return;
+  try { const { data, error } = await NET.sb.rpc('ranking_semana', { p_semana: S.week.id, p_divisao: division().id, p_limite: 30 }); if (!error) NET.rank = data || []; } catch (e) { }
+  if (panelKind === 'arena' && panelArg === 'ranking') renderPanel();
+}
+
 /* ---------------- INÍCIO ---------------- */
 let mode = 'menu', selSkin = 1, selHair = 0, selGender = 'm';
 $('hairs').innerHTML = HAIRS.map((c, i) => `<button type="button" class="skin" style="--c:${hex(c)}" data-act="hair" data-i="${i}" aria-pressed="${i === selHair}" aria-label="Cor de cabelo ${i + 1}"></button>`).join('');
 $('skins').innerHTML = SKINS.map((c, i) => `<button type="button" class="skin" style="--c:${hex(c)}" data-act="skin" data-i="${i}" aria-pressed="${i === selSkin}" aria-label="Tom de pele ${i + 1}"></button>`).join('');
-(function initMenu() {
+function showContinue() {
+  if (!S) { $('menu-continue').hidden = true; return; }
+  $('menu-continue').hidden = false; $('menu-save-info').textContent = `${S.name} · nível ${S.level} · $ ${fmt(S.coins)} · ${fmt(S.tokens)} T${NET.user ? ' · salvo na nuvem' : ''}`;
+}
+function showAccount() {
+  $('acc-out').hidden = !!NET.user; $('acc-in').hidden = !NET.user;
+  if (NET.user) $('acc-email').textContent = NET.user.email || 'jogador';
+}
+async function afterLogin() {
+  showAccount(); $('acc-msg').textContent = 'Carregando seu progresso…';
+  try {
+    const cloud = await cloudLoad();
+    if (cloud) { S = migrate(cloud); persist(); $('acc-msg').textContent = ''; }
+    else $('acc-msg').textContent = S ? 'Conta nova. Clique em Entrar na cidade para levar este personagem para a nuvem, ou crie outro.' : 'Conta nova. Crie seu skatista abaixo.';
+  } catch (e) { $('acc-msg').textContent = netErr(e); }
+  showContinue();
+}
+(async function initMenu() {
   const s = loadSave();
-  if (s && s.v === 1) { S = migrate(s); $('menu-continue').hidden = false; $('menu-save-info').textContent = `${s.name} · nível ${s.level} · $ ${fmt(s.coins)} · ${fmt(s.tokens)} T`; }
+  if (s && s.v === 1) { S = migrate(s); showContinue(); }
+  if (!netInit()) { $('acc-out').hidden = true; $('acc-msg').textContent = 'Modo offline: sem conexão com o servidor. O progresso fica salvo neste aparelho.'; return; }
+  if (await netSession()) afterLogin();
 })();
 async function enterGame() {
   try { await Promise.race([Promise.all([document.fonts.load('40px Bungee'), document.fonts.load('700 40px "Barlow Condensed"')]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
@@ -2954,6 +3140,7 @@ async function enterGame() {
   P.onBoard = hasSkate();
   if (!S.mission && S.stats.missions === 0) setTimeout(() => toast(hasSkate() ? 'Vá até o Quadro de Missões (marcador amarelo) para fazer sua primeira grana.' : 'Você está a pé. Vá até o Quadro de Missões (marcador amarelo): a primeira missão te dá um skate.', 'pink'), 800);
   updateEventChip(); setInterval(updateEventChip, 30000);
+  if (NET.user) { cloudSave(); netJoinPlaza(); updateOnlineChip(); }
   const ev = activeEvents()[0]; setTimeout(() => toast(`Evento da semana: ${ev.name}. Veja em Eventos.`, 'pink'), 2600);
   sfx('ui');
 }

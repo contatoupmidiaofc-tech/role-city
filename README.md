@@ -39,6 +39,15 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Visual**: personagens 3D realistas com esqueleto animado (com personagens simples como reserva), iluminação com tone mapping, céu com nuvens, sombras, pop-ups de manobra estilo adesivo e linhas de velocidade.
 - **Progresso salvo** no navegador (localStorage).
 
+## Online (Supabase)
+
+- **Projeto Supabase:** `ndcahlwnkynphfilvenw` (tabela `jogadores` com RLS: cada conta lê e grava só o próprio save).
+- **Conta:** e-mail e senha no menu inicial. Sem conta, o jogo funciona offline com save no aparelho.
+- **Save na nuvem:** sincroniza a cada 10 s quando há mudança e ao sair da página.
+- **Praça multiplayer:** canal Realtime `praca` com presença (quem está online e a aparência) e broadcast de posição (~8 por segundo) e chat. Jogadores reais aparecem com nome azul-claro e no minimapa.
+- **Ranking semanal:** junta os jogadores reais da mesma divisão (função `ranking_semana`) com os rivais simulados.
+- **Limitações atuais:** o próprio jogo grava os pontos (falta validação no servidor contra trapaça); corridas ainda são contra bots.
+
 ## O que falta para virar um jogo online de verdade
 
 1. **Multiplayer em tempo real**: hoje os outros skatistas são simulados. Para ver pessoas reais, falta um servidor com WebSocket (por exemplo Node + Socket.IO ou Colyseus) que sincronize posição, chat e corridas. Também precisa de "salas" por mapa e de validação no servidor das corridas e dos prêmios, para impedir trapaça.
