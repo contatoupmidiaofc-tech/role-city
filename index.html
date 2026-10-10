@@ -231,6 +231,8 @@ table.res tr.ally td:nth-child(2){color:var(--ok)}
 .ev-chip{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 170px);width:150px;display:grid;gap:1px;text-align:left;background:rgba(21,22,26,.88);border:2px solid var(--ec,var(--wax));border-radius:10px;padding:5px 8px;font-family:var(--cond)}
 .ev-chip b{font-size:14px;color:var(--ec,var(--wax));text-transform:uppercase;letter-spacing:.03em;line-height:1.1}
 .ev-chip span{font-size:12px;color:var(--muted)}
+#acc-box.need{outline:3px solid var(--sticker);animation:shake .4s 2}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .clock-chip{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 222px);background:rgba(21,22,26,.82);border:2px solid var(--line);border-radius:99px;padding:2px 10px;font-family:var(--cond);font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;pointer-events:none}
 #wp-slot{pointer-events:auto;cursor:pointer;position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;align-items:center;gap:8px;background:rgba(21,22,26,.86);border:2px solid #a66bff;border-radius:12px;padding:5px 10px 5px 5px}
 #wp-slot .ic{width:40px;height:40px;border-radius:8px;background:var(--panel-2);display:grid;place-items:center;font-size:22px}
@@ -358,7 +360,7 @@ canvas.swatch{background:#333}
     <div class="menu-box" id="acc-box">
       <h2>Conta</h2>
       <div id="acc-out">
-        <p class="muted" style="margin:0">Entre para salvar o progresso na nuvem e andar com a galera de verdade na praça.</p>
+        <p class="muted" style="margin:0"><b>Obrigatório:</b> entre ou crie sua conta (e-mail e senha) para jogar no mundo online, junto com todos os jogadores. O progresso fica salvo na nuvem.</p>
         <form id="acc-form" class="acc-form">
           <div class="field"><label for="in-email">E-mail</label><input id="in-email" type="email" autocomplete="email" required></div>
           <div class="field"><label for="in-pass">Senha</label><input id="in-pass" type="password" minlength="6" autocomplete="current-password" required></div>
@@ -4457,7 +4459,7 @@ function act(a, ds, el) {
     case 'gender': selGender = ds.g; document.querySelectorAll('#genders button').forEach(b => b.setAttribute('aria-pressed', b.dataset.g === selGender)); break;
     case 'logout': (async () => { await netSignOut(); location.reload(); })(); break;
     case 'open-online': if (mode === 'city') openPanel('social', 'amigos'); break;
-    case 'menu-continue': enterGame(); break;
+    case 'menu-continue': if (needLogin()) enterGame(); break;
     case 'menu-new-show': $('menu-new-warn').hidden = false; break;
     case 'menu-new-cancel': $('menu-new-warn').hidden = true; break;
     case 'menu-new-confirm': wipeSave(); S = null; $('menu-continue').hidden = true; $('in-name').focus(); break;
@@ -4470,6 +4472,7 @@ document.addEventListener('submit', e => {
   e.preventDefault();
   if (e.target.id === 'menu-form') {
     const name = $('in-name').value.trim().slice(0, 14); if (!name) return;
+    if (!needLogin()) return;
     (async () => {
       if (NET.user && !(await apelidoLivre(name))) { $('acc-msg').textContent = `O apelido "${name}" já é de outro jogador. Escolha outro.`; $('in-name').focus(); return; }
       S = newSave(name, SKINS[selSkin], selGender, HAIRS[selHair]); persist(); enterGame();
@@ -4516,6 +4519,7 @@ async function netSession() {
 }
 const netErr = e => {
   const m = (e && (e.message || e.error_description)) || String(e || '');
+  if (/fetch|network|Failed/i.test(m)) NET.offlineOK = true;
   if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
   if (/not confirmed/i.test(m)) return 'Confirme seu e-mail pelo link que enviamos e tente de novo.';
   if (/already registered|already been registered/i.test(m)) return 'Esse e-mail já tem conta. Use Entrar.';
@@ -4715,6 +4719,14 @@ function raceNetTick(dt) {
 let mode = 'menu', selSkin = 1, selHair = 0, selGender = 'm';
 $('hairs').innerHTML = HAIRS.map((c, i) => `<button type="button" class="skin" style="--c:${hex(c)}" data-act="hair" data-i="${i}" aria-pressed="${i === selHair}" aria-label="Cor de cabelo ${i + 1}"></button>`).join('');
 $('skins').innerHTML = SKINS.map((c, i) => `<button type="button" class="skin" style="--c:${hex(c)}" data-act="skin" data-i="${i}" aria-pressed="${i === selSkin}" aria-label="Tom de pele ${i + 1}"></button>`).join('');
+/* todo mundo joga logado no mesmo mundo; sem servidor (fora do ar) libera o modo offline */
+function needLogin() {
+  if (NET.user || !NET.sb || NET.offlineOK) return true;
+  $('acc-msg').textContent = 'Para jogar, entre na sua conta ou crie uma (e-mail e senha). Assim você aparece no mundo online junto com todos.';
+  $('acc-box').classList.add('need'); setTimeout(() => $('acc-box').classList.remove('need'), 1600);
+  $('acc-box').scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => $('in-email').focus(), 300);
+  return false;
+}
 function showContinue() {
   if (!S) { $('menu-continue').hidden = true; return; }
   $('menu-continue').hidden = false; $('menu-save-info').textContent = `${S.name} · nível ${S.level} · $ ${fmt(S.coins)} · ${fmt(S.tokens)} T${NET.user ? ' · salvo na nuvem' : ''}`;
