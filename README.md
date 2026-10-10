@@ -49,6 +49,12 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Pistas urbanas**: vielas estreitas entre casas, curvas fechadas de esquina, escadarias (pule antes ou capota) e muros/casas que exigem descer do skate e escalar pela corda, com bichos de cada país.
 - **Personagens com vida**: dedos curvados naturais (mão relaxada, punho no soco, mão aberta no aceno), olhar que segue quem está perto e a câmera, olhos com pequenos movimentos, boca que mexe ao falar e sorri ao acertar manobra, gestos espontâneos parado (olhar o celular, coçar a cabeça, mão na cintura, braços cruzados, alongar), gestos de mão ao conversar, inclinação nas curvas e ao arrancar. Cabelo do personagem masculino gerado a partir do couro cabeludo do modelo.
 - **Câmera de rosto** (botão Rosto): close no rosto com giro (arrastar) e zoom (rodinha/pinça); zoom da câmera normal até ficar sobre o ombro. Qualidade **Ultra** com resolução máxima e sombras finas.
+- **3 cidades** com o mesmo traçado de ruas e cara própria: **São Paulo** (MASP, prédios altos, Ponte Estaiada), **Rio de Janeiro** (praia, calçadão de ondas, Cristo Redentor, Pão de Açúcar, morro) e **Salvador** (casarões coloridos, Elevador Lacerda, Farol da Barra). Viagem pela Rodoviária (de carro/moto grátis ou ônibus $ 150). Cada cidade tem a sua praça online.
+- **Carros e motos** na Concessionária (comuns com grana; raros e lendários só com tokens). Botão Carro / tecla V chama o veículo; Ação entra e sai; dirigir com joystick/WASD. Outros jogadores veem seu veículo.
+- **GPS**: toque no mapa (ou num lugar da lista) para marcar o destino; linha azul no chão e no mapa mostra o caminho pelas ruas. Missões também mostram a rota.
+- **Entrar em casa**: a porta abre, você entra e anda pelos cômodos (cama para descansar com bônus de XP, guarda-roupa, TV, geladeira).
+- **Economia**: peças comuns só com grana de missões e trampos (preços mais altos); raras e lendárias só com tokens. Caixas dão peças comuns ou grana.
+- **Figurantes realistas**: pedestres usam os mesmos modelos 3D dos personagens, com roupas sorteadas.
 - **Armas de corrida** (Terminal Mundial → Arsenal): banana, estilingue, fumaça, spray de tinta e rojão teleguiado. Uma arma por corrida, 2 usos (tecla G / botão Arma). Bots também usam; funciona na corrida online.
 
 ## Online (Supabase)
