@@ -381,6 +381,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" data-act="phone-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="lbl">Celular</span></button>
     <button class="hud-btn" data-act="open-social"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lbl">Social</span></button>
     <button class="hud-btn" data-act="open-crew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4.5"/></svg><span class="lbl">Crew</span></button>
+    <button class="hud-btn" data-act="face-cam" aria-label="Câmera de rosto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="lbl">Rosto</span></button>
     <button class="hud-btn" data-act="open-config" aria-label="Configurações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
   </div>
   <div id="mission-box" hidden></div>
@@ -850,14 +851,15 @@ function envFrom(sky) { const s = new THREE.Scene(); s.add(sky.clone()); return 
 const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 700);
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-const QUALITY = { baixa: { pr: 0.75, shadows: false, fog: 0.75, map: 512 }, media: { pr: 1.5, shadows: true, fog: 1, map: 1024 }, alta: { pr: 2, shadows: true, fog: 1.3, map: 2048, soft: true } };
+const QUALITY = { baixa: { pr: 0.75, shadows: false, fog: 0.75, map: 512 }, media: { pr: 1.5, shadows: true, fog: 1, map: 1024 }, alta: { pr: 2, shadows: true, fog: 1.3, map: 2048, soft: true }, ultra: { pr: 3, shadows: true, fog: 1.5, map: 4096, soft: true } };
 function applyQuality() {
   const q = QUALITY[S.settings.quality] || QUALITY.media;
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, q.pr));
   renderer.shadowMap.enabled = q.shadows;
   renderer.shadowMap.type = q.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   for (const L of [city.sun, R && R.sun]) if (L) { L.castShadow = q.shadows; L.shadow.mapSize.set(q.map, q.map); if (L.shadow.map) { L.shadow.map.dispose(); L.shadow.map = null; } }
-  [city.scene, R && R.sc].forEach(sc => sc && sc.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); }));
+  const an = q.pr >= 2 ? renderer.capabilities.getMaxAnisotropy() : 4;
+  [city.scene, R && R.sc].forEach(sc => sc && sc.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; if (o.isSkinnedMesh && m.map) { m.map.anisotropy = an; m.map.needsUpdate = true; } }); }));
   if (city.sun) city.sun.castShadow = q.shadows;
   if (city.scene) { city.scene.fog.far = 210 * q.fog; }
   resize();
@@ -1033,6 +1035,37 @@ function makeSkater(look, tagText, tagColor) {
   if (tagText) { u.tag = nameTag(tagText, tagColor); u.tag.position.y = 2.35; root.add(u.tag); }
   return root;
 }
+/* cabelo curto masculino (o avatar vem careca): calota com fios + nuca + franja */
+let _hairT = null;
+function hairTex() {
+  return _hairT || (_hairT = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#7a7a7a'; g.fillRect(0, 0, w, h);
+    const r = mulberry32(5);
+    for (let i = 0; i < 2600; i++) { const x = r() * w, y = r() * h, l = 6 + r() * 18, v = 90 + r() * 165; g.strokeStyle = `rgba(${v},${v},${v},${0.25 + r() * 0.5})`; g.lineWidth = 0.6 + r() * 1.2; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (r() - 0.5) * 3, y + l); g.stroke(); }
+  }));
+}
+function buildHair(u) {
+  const G = u.hairG; clearG(G);
+  if (u.hairShell) { u.hairShell.parent.remove(u.hairShell); u.hairShell = null; }
+  let head = null; u.body.traverse(o => { if (o.isSkinnedMesh && (o.name === 'Wolf3D_Head' || (o.material && o.material.name === 'Wolf3D_Skin'))) head = o; });
+  if (!head) return;
+  // casca de cabelo: copia o couro cabeludo da própria cabeça e afasta um pouco pela normal
+  const g = head.geometry, pos = g.attributes.position, nor = g.attributes.normal, idx = g.index;
+  g.computeBoundingBox(); const bb = g.boundingBox, H = bb.max.y - bb.min.y, D = bb.max.z - bb.min.z, zc = (bb.max.z + bb.min.z) / 2, xc = (bb.max.x + bb.min.x) / 2, W = bb.max.x - bb.min.x;
+  const inHair = i => { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), back = clamp((zc - z) / (D * 0.5) * 0.5 + 0.5, 0, 1), side = Math.abs(x - xc) / (W * 0.5);
+    const line = bb.max.y - H * (HAIR.front + (HAIR.back - HAIR.front) * Math.pow(back, 1.4) + side * HAIR.side * (1 - back) * 0); return y > line && !(side > 0.82 && y < bb.max.y - H * 0.42 && back < 0.72); };
+  const keep = new Uint8Array(pos.count); for (let i = 0; i < pos.count; i++) keep[i] = inHair(i) ? 1 : 0;
+  const tris = []; for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (keep[a] && keep[b] && keep[c]) tris.push(a, b, c); }
+  const ng = g.clone(); ng.setIndex(tris);
+  const p2 = ng.attributes.position, off = HAIR.off * H;
+  for (let i = 0; i < p2.count; i++) p2.setXYZ(i, p2.getX(i) + nor.getX(i) * off, p2.getY(i) + nor.getY(i) * off * 1.2, p2.getZ(i) + nor.getZ(i) * off);
+  for (const k of Object.keys(ng.morphAttributes)) delete ng.morphAttributes[k];
+  const m = new THREE.SkinnedMesh(ng, u.hairM); m.castShadow = true; m.frustumCulled = false;
+  m.bind(head.skeleton, head.bindMatrix); m.bindMode = head.bindMode;
+  head.parent.add(m); m.position.copy(head.position); m.quaternion.copy(head.quaternion); m.scale.copy(head.scale);
+  u.hairShell = m; u.hairM.side = THREE.DoubleSide;
+}
+const HAIR = { front: 0.2, back: 0.5, side: 0, off: 0.035 };
 /* ---- chapéus, óculos, acessórios e mochila de entrega (coordenadas no espaço da cabeça / do peito) ---- */
 function clearG(G) { while (G.children.length) G.remove(G.children[0]); }
 function buildCap(u, cap) {
@@ -1194,7 +1227,7 @@ function bubble(g, text, secs = 4) {
   if (u.bubble) { g.remove(u.bubble); u.bubble.material.map.dispose(); u.bubble.material.dispose(); }
   const short = text.length > 34 ? text.slice(0, 33) + '…' : text;
   u.bubble = textSprite(short, { w: 640, h: 96, bg: '#ffffff', fg: '#15161a', font: '"Barlow", system-ui, sans-serif', weight: 600, size: 40, r: 40, scale: [3.4, 0.51, 1], dy: 2, fog: false, stroke: '#15161a' });
-  u.bubble.position.y = 2.85; g.add(u.bubble); u.bubbleT = secs;
+  u.bubble.position.y = 2.85; g.add(u.bubble); u.bubbleT = secs; u.talkT = Math.min(secs, 0.8 + text.length * 0.06);
 }
 function tickBubble(g, dt) { const u = g.userData; if (u.bubble && (u.bubbleT -= dt) <= 0) { g.remove(u.bubble); u.bubble.material.map.dispose(); u.bubble.material.dispose(); u.bubble = null; } }
 function poseLeg(L, x, thigh, knee, rz = 0) { L.hip.position.x = x; L.hip.rotation.set(thigh, 0, rz); L.knee.rotation.x = knee; L.ankle.rotation.x = -(thigh + knee); }
@@ -1318,6 +1351,7 @@ function comboScore(combo) { const base = combo.reduce((a, d) => a + d.pts, 0); 
 let popT = null;
 function trickPop(names, pts, extra) {
   const el = $('trick-pop');
+  if (city.player) city.player.userData.smileT = 2.2;
   el.innerHTML = `<div class="nm">${esc(names)}</div><div class="pt">+${fmt(pts)}${extra ? ' · ' + esc(extra) : ''}</div>`;
   el.hidden = false; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
   clearTimeout(popT); popT = setTimeout(() => { el.hidden = true; }, 1000);
@@ -1414,7 +1448,25 @@ function rigSetup(body) {
   body.updateMatrixWorld(true);
   const a = B.LeftArm.getWorldPosition(new THREE.Vector3()), f = B.LeftForeArm.getWorldPosition(new THREE.Vector3());
   const dir = f.sub(a).applyQuaternion(body.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
-  return { B, rest, armRest: Math.atan2(-dir.y, Math.abs(dir.x)), body };
+  // dedos (curvar a mão) e olhos
+  const fingers = { L: [], R: [] };
+  for (const s of ['Left', 'Right']) for (const fn of ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']) for (let i = 1; i <= 3; i++) { const b = B[s + 'Hand' + fn + i]; if (b) fingers[s[0]].push({ b, rest: b.quaternion.clone(), seg: i, thumb: fn === 'Thumb', fi: ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'].indexOf(fn) }); }
+  const eyes = ['LeftEye', 'RightEye'].map(n => B[n]).filter(Boolean).map(b => ({ b, rest: b.quaternion.clone() }));
+  return { B, rest, armRest: Math.atan2(-dir.y, Math.abs(dir.x)), body, fingers, eyes };
+}
+const FAX = { ax: 'x', sg: 1, tax: 'z', tsg: 1 };
+const _fq = new THREE.Quaternion();
+/* curva os dedos: c = 0 aberta, ~0.35 relaxada, 1 punho; thumbUp levanta o polegar */
+function fingerPose(R, side, c, point, thumbUp) {
+  const list = R.fingers[side]; if (!list.length) return;
+  const sgn = side === 'L' ? 1 : -1;
+  for (const f of list) {
+    let a = c * (f.seg === 1 ? 1.15 : f.seg === 2 ? 1.35 : 0.9) * (1 + f.fi * 0.06);
+    if (point && f.fi === 1) a = 0.05;
+    if (f.thumb) { a = (thumbUp ? -0.2 : c * 0.55) * (f.seg === 1 ? 0.5 : 1); _fq.setFromAxisAngle(AXES[FAX.tax], a * FAX.tsg * sgn); }
+    else _fq.setFromAxisAngle(AXES[FAX.ax], a * FAX.sg * (FAX.mirror ? sgn : 1));
+    f.b.quaternion.copy(f.rest).multiply(_fq);
+  }
 }
 function rot(R, name, axis, ang) {
   const b = R.B[name]; if (!b || !ang) return;
@@ -1452,7 +1504,7 @@ function buildBoard(root, u, B, add) {
 function makeRealSkater(look, tagText, tagColor) {
   const k = look.gender === 'f' ? 'f' : 'm', M = MODELS[k];
   const root = new THREE.Group(); root.rotation.order = 'YXZ';
-  const u = root.userData; u.real = true; u.gender = look.gender; u.k = k;
+  const u = root.userData; u.real = true; u.gender = look.gender; u.k = k; u.root = root; u.morphs = []; u.mood = rand(0.05, 0.3); u.curious = Math.random() < 0.6;
   const add = (geo, mat, x, y, z, parent, rx, ry, rz) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); if (rx || ry || rz) m.rotation.set(rx || 0, ry || 0, rz || 0); m.castShadow = true; parent.add(m); return m; };
   buildBoard(root, u, look.board, add);
   const rider = new THREE.Group(); root.add(rider); u.rider = rider;
@@ -1465,6 +1517,7 @@ function makeRealSkater(look, tagText, tagColor) {
     const n = o.material.name;
     if (k === 'm' && (n === 'Wolf3D_Headwear' || /Beard/.test(o.name))) { o.visible = false; return; }
     o.material = o.material.clone(); u.mats[n] = o.material;
+    if (o.morphTargetDictionary && o.morphTargetInfluences) u.morphs.push(o);
     if (k === 'm' && M[n]) o.material.map = M[n];
   });
   root.updateMatrixWorld(true);
@@ -1481,8 +1534,8 @@ function makeRealSkater(look, tagText, tagColor) {
   sp.add(u.accG); sp.updateMatrixWorld(true);
   u.accG.quaternion.copy(sp.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(root.getWorldQuaternion(new THREE.Quaternion())));
   u.accG.position.applyQuaternion(u.accG.quaternion);
-  u.hairM = new THREE.MeshStandardMaterial({ color: look.hair, roughness: 0.75 });
-  if (k === 'm') { const h = new THREE.Mesh(SPH(0.122, 24, 14, 0, 1.4), u.hairM); h.position.set(0, 0.112, -0.016); h.rotation.x = -0.5; h.scale.set(1.0, 1.0, 1.1); h.castShadow = true; u.hairG.add(h); }
+  u.hairM = new THREE.MeshStandardMaterial({ color: look.hair, roughness: 0.62, map: hairTex(), bumpMap: hairTex(), bumpScale: 0.002 });
+  if (k === 'm') buildHair(u);
   applyRealLook(root, look);
   if (tagText) { u.tag = nameTag(tagText, tagColor); u.tag.position.y = 2.35; root.add(u.tag); }
   u.walking = false;
@@ -1501,6 +1554,7 @@ function applyRealLook(g, look) {
   }
   u.hairM.color.setHex(look.hair);
   u.hairG.visible = !look.cap || ['none', 'crown', 'visor', undefined].includes(look.cap.hat) && !look.cap.beanie;
+  if (u.hairShell) u.hairShell.visible = u.hairG.visible || ['cap', 'flat', 'bandana'].includes(look.cap && look.cap.hat);
   const B = look.board;
   u.deckM.map = deckTex(B.deck, B.pat); u.deckM.needsUpdate = true;
   u.wheelM.color.setHex(B.wheel); u.wheelM.emissive.setHex(B.glow ? B.wheel : 0); u.wheelM.emissiveIntensity = B.glow ? 0.8 : 0;
@@ -1537,6 +1591,102 @@ function smoothPose(u, p, dt, rate) {
   for (const key in POSE0) { const v = p[key] ?? POSE0[key]; cur[key] += (v - cur[key]) * k; }
   return cur;
 }
+/* ---- vida dos personagens: olhar, boca, mãos e gestos espontâneos ---- */
+const IDLE_GESTURES = ['olhar', 'celular', 'cocar', 'cintura', 'bracos', 'alongar', 'peso', 'celular', 'olhar'];
+const _lv = new THREE.Vector3(), _lw = new THREE.Vector3();
+/* para onde o personagem olha: câmera de rosto, quem conversa, ou alguém perto */
+function lookTarget(u) {
+  if (mode !== 'city' || !city.player) return null;
+  const me = u.root === city.player;
+  if (me && city.faceCam) return camera.position;
+  const pos = u.root.position;
+  if (!me) { if (!u.curious) return null; const d = Math.hypot(P.x - pos.x, P.z - pos.z); if (d < 7) return _lw.set(P.x, P.y + 1.6, P.z); return null; }
+  let best = null, bd = 6;
+  for (const o of city.bots) { const d = Math.hypot(o.x - pos.x, o.z - pos.z); if (d < bd) { bd = d; best = o.g.position; } }
+  for (const id in NET.peers) { const p = NET.peers[id]; const d = Math.hypot(p.x - pos.x, p.z - pos.z); if (d < bd) { bd = d; best = p.g.position; } }
+  return best ? _lw.set(best.x, best.y + 1.6, best.z) : null;
+}
+/* sobrepõe na pose: olhar, gesto parado, fala; devolve a pose da mão */
+function lifeLayer(u, o, t, dt, p, walking) {
+  const hands = { L: walking ? 0.32 : 0.5, R: walking ? 0.32 : 0.5, pointR: false, thumbR: false };
+  // virada do corpo: inclina para dentro da curva e a cabeça vai na frente
+  const yaw = u.root.rotation.y, dy = Math.atan2(Math.sin(yaw - (u.pyaw ?? yaw)), Math.cos(yaw - (u.pyaw ?? yaw))) / Math.max(dt, 0.001); u.pyaw = yaw;
+  u.turnR = lerp(u.turnR || 0, clamp(dy, -4, 4), 1 - Math.exp(-6 * dt));
+  if (walking) { p.side = (p.side || 0) - u.turnR * 0.03; p.headY = (p.headY || 0) + u.turnR * 0.12; }
+  // aceleração: inclina para frente ao arrancar, para trás ao frear
+  const sv = Math.abs(o.v || 0), acc = (sv - (u.pv ?? sv)) / Math.max(dt, 0.001); u.pv = sv;
+  u.accS = lerp(u.accS || 0, clamp(acc, -8, 8), 1 - Math.exp(-5 * dt));
+  if (walking) p.lean = (p.lean || 0) + u.accS * 0.012;
+  // olhar para alguém
+  const tg = walking && !o.emote ? lookTarget(u) : null;
+  let ly = 0, lx = 0;
+  if (tg) {
+    u.root.getWorldPosition(_lv); const dx = tg.x - _lv.x, dz = tg.z - _lv.z;
+    ly = Math.atan2(Math.sin(Math.atan2(dx, dz) - yaw), Math.cos(Math.atan2(dx, dz) - yaw));
+    if (Math.abs(ly) > 1.9) ly = 0; ly = clamp(ly, -1.1, 1.1);
+    lx = clamp(-Math.atan2(tg.y - (_lv.y + 1.55), Math.hypot(dx, dz)), -0.5, 0.5);
+  } else if (walking && sv < 0.3) { // parado: dá umas olhadas em volta
+    if ((u.glanceT = (u.glanceT ?? 2) - dt) <= 0) { u.glanceT = rand(1.5, 4.5); u.glance = Math.random() < 0.5 ? 0 : rand(-0.9, 0.9); }
+    ly = u.glance || 0;
+  }
+  u.lookY = lerp(u.lookY || 0, ly, 1 - Math.exp(-5 * dt)); u.lookX = lerp(u.lookX || 0, lx, 1 - Math.exp(-5 * dt));
+  p.headY = (p.headY || 0) + u.lookY * 0.75; p.headX = (p.headX || 0) + u.lookX * 0.7; p.twist = (p.twist || 0) + u.lookY * 0.18;
+  // gestos espontâneos quando fica parado
+  const idle = walking && !tg && sv < 0.08 && !o.emote && !(o.punchT > 0) && !o.spray && !o.air && !(o.fallT > 0);
+  u.idleT = idle ? (u.idleT || 0) + dt : 0;
+  if (!idle) u.gest = null;
+  else if (!u.gest && u.idleT > (u.gestWait ?? (u.gestWait = rand(2.5, 6)))) { u.gest = { id: pick(IDLE_GESTURES), t: 0, dur: rand(3, 5.5) }; u.gestWait = rand(3, 8); u.idleT = 0; }
+  if (u.gest) {
+    const G = u.gest; G.t += dt; const k = smooth01(Math.min(G.t / 0.6, (G.dur - G.t) / 0.6)), w = Math.sin(t * 6);
+    const mixp = (q) => { for (const key in q) p[key] = lerp(p[key] ?? POSE0[key], q[key], k); };
+    switch (G.id) {
+      case 'olhar': p.headY += Math.sin(G.t * 1.3) * 0.9 * k; p.twist += Math.sin(G.t * 1.3) * 0.2 * k; break;
+      case 'celular': mixp({ rArmDown: 1.15, rArmFwd: 0.75, rElbow: 2.0, headX: 0.42, headY: -0.15, lean: 0.06 }); hands.R = lerp(hands.R, 0.75, k); u.phoneOut = k > 0.5; break;
+      case 'cocar': mixp({ rArmDown: -0.55, rArmFwd: 0.55, rElbow: 2.35 + w * 0.12, headX: 0.1, headY: 0.2 }); hands.R = lerp(hands.R, 0.55, k); break;
+      case 'cintura': mixp({ lArmDown: 0.95, rArmDown: 0.95, lArmFwd: -0.35, rArmFwd: -0.35, lElbow: 1.55, rElbow: 1.55, side: 0.05 }); hands.L = hands.R = lerp(0.3, 0.15, k); break;
+      case 'bracos': mixp({ lArmDown: 1.25, rArmDown: 1.25, lArmFwd: 0.75, rArmFwd: 0.85, lElbow: 2.1, rElbow: 2.0, headX: -0.05 }); hands.L = hands.R = lerp(0.3, 0.6, k); break;
+      case 'alongar': mixp({ lArmDown: -1.35, rArmDown: -1.35, lElbow: 0.2, rElbow: 0.2, lean: -0.12, headX: -0.25 }); hands.L = hands.R = lerp(0.3, 0.05, k); break;
+      case 'peso': mixp({ side: 0.07, lKnee: 0.25, lThigh: 0.12, rSpread: 0.06 }); break;
+    }
+    if (G.t >= G.dur) u.gest = null;
+  }
+  if (!u.gest || u.gest.id !== 'celular') u.phoneOut = false;
+  // falando: gestos de mão e boca mexendo
+  if (u.talkT > 0) {
+    u.talkT -= dt;
+    if (walking && !u.gest && !o.emote) { const g1 = Math.sin(t * 3.1), g2 = Math.sin(t * 2.3 + 1); p.rArmFwd = (p.rArmFwd || 0) + 0.35 + g1 * 0.18; p.rElbow = (p.rElbow || 0) + 0.9 + g2 * 0.25; p.lArmFwd = (p.lArmFwd || 0) + 0.15 + g2 * 0.1; p.lElbow = (p.lElbow || 0) + 0.5; p.headY += Math.sin(t * 1.7) * 0.1; hands.R = 0.12; hands.L = 0.2; }
+  }
+  if (o.punchT > 0) { hands.R = 1; hands.L = 0.9; }
+  if (o.emote === 'wave') hands.R = 0.02;
+  if (o.emote === 'cheer') { hands.L = hands.R = 0.95; }
+  if (o.emote === 'dance') { hands.L = hands.R = 0.6; }
+  if (u.smileT > 0 && walking && !o.emote && !u.gest) { hands.thumbR = true; hands.R = 1; p.rArmFwd = (p.rArmFwd || 0) + 0.6; p.rElbow = (p.rElbow || 0) + 1.2; }
+  return hands;
+}
+/* rosto: boca (fala/sorriso) e olhos */
+function faceLayer(u, t, dt) {
+  u.smileT = (u.smileT || 0) - dt;
+  const talking = u.talkT > 0, open = talking ? Math.max(0, Math.sin(t * 13) * 0.5 + Math.sin(t * 7.3) * 0.25) : 0;
+  const smile = u.smileT > 0 || (u.root === city.player && city.faceCam) ? 0.75 : (u.mood || 0.12);
+  u.mOpen = lerp(u.mOpen || 0, open, 1 - Math.exp(-18 * dt)); u.mSmile = lerp(u.mSmile || 0, smile, 1 - Math.exp(-6 * dt));
+  for (const m of u.morphs || []) { const d = m.morphTargetDictionary; if (d.mouthOpen != null) m.morphTargetInfluences[d.mouthOpen] = u.mOpen; if (d.mouthSmile != null) m.morphTargetInfluences[d.mouthSmile] = u.mSmile; }
+  // olhos: acompanham o olhar e dão pequenos saltos (sacadas)
+  if (u.R.eyes.length) {
+    if ((u.sacT = (u.sacT ?? 0) - dt) <= 0) { u.sacT = rand(0.4, 2.2); u.sac = [rand(-0.12, 0.12), rand(-0.06, 0.06)]; }
+    const ey = clamp((u.lookY || 0) * 0.35 + u.sac[0], -0.45, 0.45), ex = clamp((u.lookX || 0) * 0.3 + u.sac[1], -0.3, 0.3);
+    for (const e of u.R.eyes) { _fq.setFromEuler(new THREE.Euler(ex * EYE_AX.x, ey * EYE_AX.y, 0, 'YXZ')); e.b.quaternion.copy(e.rest).multiply(_fq); }
+  }
+}
+const EYE_AX = { x: 1, y: 1 };
+let _phoneGeo = null;
+function handProp(u) {
+  if (u.phone) return u.phone;
+  const hb = u.R.B.RightHand; if (!hb) return null;
+  const ws = hb.getWorldScale(new THREE.Vector3()).x;
+  const m = new THREE.Mesh(_phoneGeo || (_phoneGeo = new THREE.BoxGeometry(0.075, 0.15, 0.01)), new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.3, metalness: 0.5, emissive: 0x2a5a8a, emissiveIntensity: 0.6 }));
+  m.scale.setScalar(1 / ws); m.position.set(0, 0.09 / ws, 0.03 / ws); m.rotation.x = -0.3; m.visible = false; hb.add(m); u.phone = m; return m;
+}
+
 function animReal(u, o, t) {
   const down = o.fallT > 0, e = o.emote;
   // modelos distantes atualizam o esqueleto com menos frequência
@@ -1583,11 +1733,16 @@ function animReal(u, o, t) {
     if (o.air) rate = 22;
   }
   if (down) rate = 22;
+  const hands = o.climb != null ? { L: 0.85, R: 0.85 } : lifeLayer(u, o, t, dt, p, !!o.walk);
   const k = 1 - Math.exp(-rate * dt);
   u.rider.rotation.x += (rx - u.rider.rotation.x) * k;
   u.rider.position.y += (ry - u.rider.position.y) * Math.min(1, k * 1.4);
   u.rider.position.z += (rz - u.rider.position.z) * k;
   rigPose(u.R, smoothPose(u, p, dt, rate));
+  const kh = 1 - Math.exp(-12 * dt); u.hL = lerp(u.hL ?? 0.3, hands.L, kh); u.hR = lerp(u.hR ?? 0.3, hands.R, kh);
+  fingerPose(u.R, 'L', u.hL, false, false); fingerPose(u.R, 'R', u.hR, hands.pointR, hands.thumbR);
+  faceLayer(u, t, dt);
+  if (u.phoneOut || u.phone) { const ph = handProp(u); if (ph) ph.visible = !!u.phoneOut; }
   if (u.wings) { const fl = o.air ? Math.sin(t * 14) * 0.6 : Math.sin(t * 2) * 0.12; u.wings[0].rotation.y = 0.3 + fl; u.wings[1].rotation.y = -0.3 - fl; }
 }
 
@@ -1601,6 +1756,23 @@ addEventListener('keydown', e => {
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code) && mode !== 'menu') e.preventDefault();
 });
 addEventListener('keyup', e => { input.held[e.code] = false; });
+/* zoom da câmera (rodinha / pinça) e giro na câmera de rosto (arrastar) */
+function camZoom(d) { if (mode !== 'city' || uiBlocking()) return; if (city.faceCam) city.faceDist = clamp(city.faceDist + d * 0.6, 0.45, 2.4); else city.zoom = clamp(city.zoom + d, 0.35, 1.5); }
+function camDrag(dx, dy) { if (mode !== 'city' || !city.faceCam) return; city.faceOrbit += dx * 0.008; city.faceH = clamp(city.faceH - dy * 0.003, -0.5, 0.8); }
+$('gl').addEventListener('wheel', e => { camZoom(e.deltaY * 0.0012); e.preventDefault(); }, { passive: false });
+(() => {
+  let drag = null; $('gl').addEventListener('mousedown', e => { drag = [e.clientX, e.clientY]; });
+  addEventListener('mousemove', e => { if (!drag) return; camDrag(e.clientX - drag[0], e.clientY - drag[1]); drag = [e.clientX, e.clientY]; });
+  addEventListener('mouseup', () => { drag = null; });
+  let pinch = null, one = null;
+  const free = e => !e.target.closest || !e.target.closest('button,.tbtns,#joy-zone,#panel,#phone,input');
+  addEventListener('touchstart', e => { if (e.touches.length === 2) { pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); one = null; } else if (e.touches.length === 1 && free(e)) one = [e.touches[0].clientX, e.touches[0].clientY]; }, { passive: true });
+  addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && pinch) { const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); camZoom((pinch - d) * 0.004); pinch = d; }
+    else if (e.touches.length === 1 && one) { camDrag(e.touches[0].clientX - one[0], e.touches[0].clientY - one[1]); one = [e.touches[0].clientX, e.touches[0].clientY]; }
+  }, { passive: true });
+  addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; if (!e.touches.length) one = null; }, { passive: true });
+})();
 addEventListener('blur', () => { input.held = {}; });
 function tap(a) { if (input.pressed[a]) { input.pressed[a] = false; return true; } return false; }
 function axis() {
@@ -1678,7 +1850,7 @@ const SPECIAL = {
   '-42,42': { kind: 'agencia', label: 'Agência de Empregos', sub: 'EMPREGOS', color: 0x2ecc71, css: '#2ecc71' },
   '42,-42': { kind: 'imobiliaria', label: 'Imobiliária', sub: 'CASAS', color: 0x00bcd4, css: '#00bcd4' },
 };
-const city = { scene: null, blds: [], winMats: [], addrs: [], walls: [], kiosks: [], peds: [], dogs: [], cats: [], pigeons: [], flocks: [], colliders: [], doors: [], ramps: [], cars: [], bots: [], player: null, sun: null, beam: null, mObjs: [], offers: null, checkout: null, rec: [], recT: 0, chatT: 6, chatLog: [], contest: null, socialTarget: null, mapT: 0 };
+const city = { zoom: 1, faceCam: false, faceDist: 0.85, faceOrbit: 0, faceH: 0, scene: null, blds: [], winMats: [], addrs: [], walls: [], kiosks: [], peds: [], dogs: [], cats: [], pigeons: [], flocks: [], colliders: [], doors: [], ramps: [], cars: [], bots: [], player: null, sun: null, beam: null, mObjs: [], offers: null, checkout: null, rec: [], recT: 0, chatT: 6, chatLog: [], contest: null, socialTarget: null, mapT: 0 };
 const P = { onBoard: false, x: 0, z: 10, y: 0, h: Math.PI, v: 0, vy: 0, air: false, airT: 0, trick: null, combo: [], emote: null, fallT: 0, punchT: 0, punchCd: 0, carry: null };
 
 function buildCity() {
@@ -1688,6 +1860,7 @@ function buildCity() {
   city.clouds = makeClouds(22, 320, 85); sc.add(city.clouds);
   sc.add(new THREE.HemisphereLight(0xe6f0ff, 0x6a5a78, 0.72));
   const sun = new THREE.DirectionalLight(0xffe2b8, 1.05); sun.position.set(40, 80, 30); sc.add(sun); sc.add(sun.target); city.sun = sun;
+  city.fill = new THREE.DirectionalLight(0xfff4ea, 0.28); sc.add(city.fill); sc.add(city.fill.target);
   sun.shadow.bias = -0.0005; Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 220 }); sun.shadow.camera.updateProjectionMatrix();
   const rng = mulberry32(7);
 
@@ -2314,19 +2487,30 @@ function updateCity(dt, t) {
   // câmera
   const shop = panelKind && (panelKind.startsWith('shop') || panelKind === 'oficina' || panelKind === 'perfil');
   if (g.userData.tag) g.userData.tag.visible = !shop;
-  if (shop) {
+  const hb = g.userData.R && g.userData.R.B.Head, head = hb ? hb.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(P.x, P.y + 1.6, P.z);
+  if (city.faceCam && (Math.abs(ax.y) > 0.3 || P.onBoard && Math.abs(P.v) > 2)) { city.faceCam = false; }
+  if (city.faceCam) {
+    // câmera de rosto: na frente do personagem, orbitando devagar
+    camYaw += dt * 0.25; const a = P.h + Math.sin(camYaw) * 0.6 + city.faceOrbit, d = city.faceDist;
+    camera.position.lerp(new THREE.Vector3(head.x + Math.sin(a) * d, head.y + 0.05 + city.faceH, head.z + Math.cos(a) * d), 1 - Math.exp(-4 * dt));
+    camera.lookAt(head.x, head.y - 0.02 - d * 0.08, head.z);
+  } else if (shop) {
     camYaw += dt * 0.4;
     const a = P.h + 0.35 + Math.sin(camYaw) * 0.55;
     camera.position.lerp(new THREE.Vector3(P.x + Math.sin(a) * 2.6, 1.6, P.z + Math.cos(a) * 2.6), 1 - Math.exp(-4 * dt));
     camera.lookAt(P.x, 1.05, P.z);
   } else {
-    const fx = Math.sin(P.h), fz = Math.cos(P.h);
-    let cd = P.onBoard ? 5.6 : 4.4;
-    while (cd > 2 && collide(P.x - fx * cd, P.z - fz * cd, 0.4)) cd -= 0.5;
-    const want = new THREE.Vector3(P.x - fx * cd, P.y * 0.5 + (P.onBoard ? 2.9 : 2.5), P.z - fz * cd);
+    const fx = Math.sin(P.h), fz = Math.cos(P.h), z = city.zoom;
+    let cd = (P.onBoard ? 5.6 : 4.4) * z;
+    while (cd > 1.2 && collide(P.x - fx * cd, P.z - fz * cd, 0.4)) cd -= 0.4;
+    const hh = lerp(1.75, P.onBoard ? 2.9 : 2.5, clamp((z - 0.35) / 0.65, 0, 1)), side = lerp(0.45, 0, clamp((z - 0.35) / 0.5, 0, 1));
+    const want = new THREE.Vector3(P.x - fx * cd + fz * side, P.y * 0.5 + hh, P.z - fz * cd - fx * side);
     camera.position.lerp(want, 1 - Math.exp(-5 * dt));
-    camera.lookAt(P.x + fx * 2.5, P.y * 0.5 + 1.25, P.z + fz * 2.5);
+    const ly = lerp(1.55, 1.25, clamp((z - 0.35) / 0.65, 0, 1));
+    camera.lookAt(P.x + fx * 2.5 * z + fz * side * 0.5, P.y * 0.5 + ly, P.z + fz * 2.5 * z - fx * side * 0.5);
   }
+  // luz de preenchimento suave vindo da câmera (rostos legíveis de dia e de noite)
+  city.fill.position.copy(camera.position); city.fill.target.position.copy(head);
 
   // campeonato de manobras
   if (city.contest) {
@@ -3792,8 +3976,8 @@ const OLD_PANELS = {
   config() {
     const q = S.settings.quality;
     return {
-      title: 'Configurações', html: `<h3>Qualidade gráfica</h3><div class="seg" role="group" aria-label="Qualidade"><button data-act="quality" data-q="baixa" aria-pressed="${q === 'baixa'}">Baixa</button><button data-act="quality" data-q="media" aria-pressed="${q === 'media'}">Média</button><button data-act="quality" data-q="alta" aria-pressed="${q === 'alta'}">Alta (sombras)</button></div>
-      <p class="muted">A média é o padrão: boa aparência sem pesar no celular. Use a baixa se o jogo engasgar.</p>
+      title: 'Configurações', html: `<h3>Qualidade gráfica</h3><div class="seg" role="group" aria-label="Qualidade"><button data-act="quality" data-q="baixa" aria-pressed="${q === 'baixa'}">Baixa</button><button data-act="quality" data-q="media" aria-pressed="${q === 'media'}">Média</button><button data-act="quality" data-q="alta" aria-pressed="${q === 'alta'}">Alta</button><button data-act="quality" data-q="ultra" aria-pressed="${q === 'ultra'}">Ultra (rostos)</button></div>
+      <p class="muted">A média é o padrão: boa aparência sem pesar no celular. Use a baixa se o jogo engasgar. A Ultra usa a resolução máxima da tela e sombras finas, ideal para ver os rostos de perto (pede um aparelho bom).</p>
       <h3>Som</h3><div class="seg"><button data-act="sound" data-on="1" aria-pressed="${S.settings.sound}">Ligado</button><button data-act="sound" data-on="0" aria-pressed="${!S.settings.sound}">Desligado</button></div>
       <h3>Conta</h3>${NET.user ? `<p>Conectado como <b>${esc(NET.user.email || '')}</b>. Progresso salvo na nuvem.</p><div><button class="btn ghost sm" data-act="logout">Sair da conta</button></div>` : '<p class="muted">Jogando sem conta: o progresso fica só neste aparelho. Para salvar na nuvem e jogar online, volte ao menu inicial e entre com uma conta.</p>'}
       <h3>Sobre</h3><p class="note">Com conta, você vê e conversa com jogadores reais na praça e aparece no ranking semanal. Os skatistas com nome branco são personagens do jogo. A compra de tokens ainda está em modo demonstração.</p>
@@ -4149,6 +4333,7 @@ function act(a, ds, el) {
     case 'board-col': S.board[ds.k] = ds.c === 'null' ? null : +ds.c; persist(); applyLook(city.player, myLook()); renderPanel(); sfx('ui'); netTrack(); break;
     case 'arena-tab': case 'social-tab': case 'perfil-tab': panelArg = ds.k; if (ds.k !== 'inventario') city.crateResult = null; renderPanel(); if (ds.k === 'ranking') netFetchRank(); break;
     case 'contest': startContest(); break;
+    case 'face-cam': if (mode === 'city') { city.faceCam = !city.faceCam; city.faceDist = 0.7; city.faceOrbit = 0; city.faceH = 0; if (city.faceCam) { P.v = 0; P.emote = null; toast(IS_TOUCH ? 'Câmera de rosto: arraste para girar, pinça para zoom. Ande para sair.' : 'Câmera de rosto: arraste para girar, rodinha para zoom. Ande para sair.'); } } break;
     case 'shift-start': startShift(ds.id); break;
     case 'shift-end': endShift(); if (panelKind) renderPanel(); break;
     case 'home-take': takeHome(ds.id, ds.how); break;

@@ -47,6 +47,8 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Cidade viva**: pedestres nas calçadas, motos, cachorros que latem, gatos que fogem, pombos que voam quando você passa e bandos de pássaros.
 - **Sons**: motores de carros e motos pela distância, rodinhas no asfalto, vento, passarinhos de dia, grilos à noite, cachorros, buzinas e efeitos das armas.
 - **Pistas urbanas**: vielas estreitas entre casas, curvas fechadas de esquina, escadarias (pule antes ou capota) e muros/casas que exigem descer do skate e escalar pela corda, com bichos de cada país.
+- **Personagens com vida**: dedos curvados naturais (mão relaxada, punho no soco, mão aberta no aceno), olhar que segue quem está perto e a câmera, olhos com pequenos movimentos, boca que mexe ao falar e sorri ao acertar manobra, gestos espontâneos parado (olhar o celular, coçar a cabeça, mão na cintura, braços cruzados, alongar), gestos de mão ao conversar, inclinação nas curvas e ao arrancar. Cabelo do personagem masculino gerado a partir do couro cabeludo do modelo.
+- **Câmera de rosto** (botão Rosto): close no rosto com giro (arrastar) e zoom (rodinha/pinça); zoom da câmera normal até ficar sobre o ombro. Qualidade **Ultra** com resolução máxima e sombras finas.
 - **Armas de corrida** (Terminal Mundial → Arsenal): banana, estilingue, fumaça, spray de tinta e rojão teleguiado. Uma arma por corrida, 2 usos (tecla G / botão Arma). Bots também usam; funciona na corrida online.
 
 ## Online (Supabase)
