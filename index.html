@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Rolê City</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#15161a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rolê City">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=VT323&display=swap">
@@ -145,6 +153,14 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #tb-vexit svg{color:var(--ok)}
 #touch.driving .fb{display:none!important}
 #touch:not(.driving) .vb{display:none!important}
+#tb-mic{right:300px;bottom:26px;width:58px;height:58px;border-color:rgba(79,195,255,.9)}
+#tb-mic svg{color:var(--sky)}
+#tb-mic.rec{background:radial-gradient(circle at 50% 35%,rgba(255,90,90,.95),rgba(200,30,40,.9));border-color:#fff;transform:scale(calc(var(--bs,1) * 1.15))}
+#tb-mic.rec svg{color:#fff}
+#mic-rec{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translateX(-50%);z-index:30;background:rgba(21,22,26,.92);border:2px solid #ff5a5a;border-radius:999px;padding:8px 16px;font-family:var(--cond);font-weight:700;text-transform:uppercase;display:flex;gap:8px;align-items:center;pointer-events:none}
+#mic-rec i{width:12px;height:12px;border-radius:50%;background:#ff5a5a;animation:blink .8s steps(1) infinite}
+.hud-btn.rec{border-color:#ff5a5a;background:rgba(200,30,40,.9)}
+.install-btn{width:100%;margin:6px 0 10px}
 /* editor de botões */
 #touch.editing{background:rgba(0,0,0,.35);pointer-events:auto;z-index:40}
 #touch.editing{touch-action:none}
@@ -391,6 +407,8 @@ canvas.swatch{background:#333}
 <div id="menu">
   <div class="menu-card">
     <h1 class="logo">ROLÊ CITY<small>skate, rolê e campeonatos pelo mundo</small></h1>
+    <button class="btn install-btn" data-act="install-app" hidden>📲 Baixar o jogo no celular</button>
+    <div class="menu-box" id="install-help" hidden></div>
     <div class="menu-box" id="acc-box">
       <h2>Conta</h2>
       <div id="acc-out">
@@ -444,6 +462,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" data-act="open-crew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4.5"/></svg><span class="lbl">Crew</span></button>
     <button class="hud-btn" id="hb-veh" data-act="veh-call" aria-label="Chamar veículo" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15l2-6h14l2 6v4H3z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="lbl">Carro</span></button>
     <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
+    <button class="hud-btn" id="hb-mic" aria-label="Segure para mandar áudio (tecla B)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="lbl">Áudio</span></button>
     <button class="hud-btn" data-act="face-cam" aria-label="Câmera de rosto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="lbl">Rosto</span></button>
     <button class="hud-btn" data-act="open-config" aria-label="Configurações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
   </div>
@@ -474,6 +493,7 @@ canvas.swatch{background:#333}
 <div id="banner" hidden></div>
 <div id="splat" hidden></div>
 <div id="fade" hidden></div>
+<div id="mic-rec" hidden><i></i><span id="mic-rec-t">Gravando… solte para enviar</span></div>
 <div id="btnedit" hidden><b>Arraste os botões e o joystick para onde preferir</b><button class="btn ghost sm" data-act="be-size" data-d="-0.1">Menor</button><button class="btn ghost sm" data-act="be-size" data-d="0.1">Maior</button><button class="btn ghost sm" data-act="be-mode">Ver botões do carro</button><button class="btn ghost sm" data-act="be-reset">Padrão</button><button class="btn ghost sm" data-act="be-cancel">Cancelar</button><button class="btn sm" data-act="be-save">Salvar</button></div>
 <div id="smokeov" hidden></div>
 <div id="toasts" aria-live="polite"></div>
@@ -489,6 +509,7 @@ canvas.swatch{background:#333}
     <button class="tbtn hit fb" data-btn="punch" id="tb-hit" aria-label="Bater"><svg viewBox="0 0 24 24"><path d="M7 11V8.5a1.5 1.5 0 0 1 3 0V11m0-3a1.5 1.5 0 0 1 3 0v3m0-2.5a1.5 1.5 0 0 1 3 0V12m0-1a1.5 1.5 0 0 1 3 0v3.5A6.5 6.5 0 0 1 12.5 21h-1A5.5 5.5 0 0 1 6 15.5V13a2 2 0 0 1 2-2h2"/></svg><span>Bater</span></button>
     <button class="tbtn jump fb" data-btn="jump" id="tb-jump" aria-label="Pular"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span>Pular</span></button>
     <button class="tbtn wp fb" data-btn="weapon" id="tb-wp" hidden aria-label="Usar arma"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span>Arma</span><b class="badge" id="tb-wp-n">2</b></button>
+    <button class="tbtn mic" id="tb-mic" aria-label="Segure para mandar áudio"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Áudio</span></button>
     <button class="tbtn vb" data-btn="horn" id="tb-horn" aria-label="Buzinar"><svg viewBox="0 0 24 24"><path d="M3 10v4h4l6 4V6L7 10z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6M19 6c3 3 3 9 0 12"/></svg><span>Buzina</span></button>
     <button class="tbtn vb" data-btn="lights" id="tb-lights" aria-label="Farol"><svg viewBox="0 0 24 24"><path d="M10 6c-4 0-6 3-6 6s2 6 6 6c1 0 2-3 2-6s-1-6-2-6z"/><path d="M15 8h6M15 12h6M15 16h6"/></svg><span>Farol</span></button>
     <button class="tbtn vb" data-btn="blinkL" id="tb-blL" aria-label="Seta esquerda"><svg viewBox="0 0 24 24"><path d="M14 5l-7 7 7 7M8 12h12"/></svg><span>Seta</span></button>
@@ -554,6 +575,35 @@ const ITEMS = [
   I('shirt', 'shirt_bolt', 'Jaqueta Raio', 0x15161a, null, 110, 'lendario', { pat: 'bolt' }),
   I('shirt', 'shirt_galaxy', 'Jaqueta Galáxia', 0x3a2a8a, null, null, 'lendario', { pat: 'galaxy', src: 'Caixa lendária' }),
   // calças
+  // camisas de time do Brasil (cores e desenhos inspirados nos clubes)
+  I('shirt', 'tm_bra', 'Camisa Seleção Canarinho', 0xf7d117, 900, 60, 'raro', { pat: 'tm_trim_1a8a3a_1f4fbf', team: true }),
+  I('shirt', 'tm_bra2', 'Camisa Seleção Azul', 0x1f4fbf, 700, 50, 'raro', { pat: 'tm_trim_f7d117_ffffff', team: true }),
+  I('shirt', 'tm_fla', 'Manto Rubro-Negro (RJ)', 0xc8102e, 420, null, 'comum', { pat: 'tm_h_15161a_c8102e', team: true }),
+  I('shirt', 'tm_flu', 'Tricolor Carioca', 0x7a1630, 420, null, 'comum', { pat: 'tm_v3_00613c_ffffff', team: true }),
+  I('shirt', 'tm_bot', 'Alvinegro da Estrela (RJ)', 0x15161a, 420, null, 'comum', { pat: 'tm_v_ffffff_15161a', team: true }),
+  I('shirt', 'tm_vas', 'Cruz de Malta (RJ)', 0xf4f2ec, 420, null, 'comum', { pat: 'tm_sash_15161a_c8102e', team: true }),
+  I('shirt', 'tm_cor', 'Alvinegro Paulista', 0xf4f2ec, 420, null, 'comum', { pat: 'tm_trim_15161a_15161a', team: true }),
+  I('shirt', 'tm_pal', 'Verdão Paulista', 0x006437, 420, null, 'comum', { pat: 'tm_trim_ffffff_ffffff', team: true }),
+  I('shirt', 'tm_spfc', 'Tricolor Paulista', 0xf4f2ec, 420, null, 'comum', { pat: 'tm_band_c8102e_15161a', team: true }),
+  I('shirt', 'tm_san', 'Alvinegro Praiano', 0xf4f2ec, 400, null, 'comum', { pat: 'tm_trim_15161a_ffffff', team: true }),
+  I('shirt', 'tm_bah', 'Tricolor de Aço (BA)', 0xf4f2ec, 420, null, 'comum', { pat: 'tm_band_1f4fbf_c8102e', team: true }),
+  I('shirt', 'tm_vit', 'Leão da Barra (BA)', 0xc8102e, 420, null, 'comum', { pat: 'tm_h_15161a_c8102e', team: true }),
+  I('shirt', 'tm_gre', 'Imortal Tricolor (RS)', 0x0d80bf, 420, null, 'comum', { pat: 'tm_v3_15161a_ffffff', team: true }),
+  I('shirt', 'tm_int', 'Colorado (RS)', 0xd0021b, 400, null, 'comum', { pat: 'tm_trim_ffffff_ffffff', team: true }),
+  I('shirt', 'tm_cru', 'Raposa Celeste (MG)', 0x1d3fa0, 400, null, 'comum', { pat: 'tm_trim_ffffff_ffffff', team: true }),
+  I('shirt', 'tm_cam', 'Galo Alvinegro (MG)', 0x15161a, 420, null, 'comum', { pat: 'tm_v_ffffff_15161a', team: true }),
+  I('shirt', 'tm_spt', 'Leão Rubro-Negro (PE)', 0xc8102e, 420, null, 'comum', { pat: 'tm_h_15161a_c8102e', team: true }),
+  I('shirt', 'tm_for', 'Tricolor do Pici (CE)', 0x1d3fa0, 420, null, 'comum', { pat: 'tm_h_c8102e_ffffff', team: true }),
+  I('shirt', 'tm_cea', 'Vozão Alvinegro (CE)', 0x15161a, 420, null, 'comum', { pat: 'tm_v_ffffff_15161a', team: true }),
+  // shorts e bermudas
+  I('pants', 'sh_tactel', 'Short Tactel', 0x2f4f86, 160, null, 'comum', { pat: 'plain', short: true }),
+  I('pants', 'sh_bermuda', 'Bermuda Jeans', 0x3b5a8f, 220, null, 'comum', { pat: 'denim', short: true }),
+  I('pants', 'sh_bra', 'Short da Seleção', 0x1f4fbf, 260, null, 'comum', { pat: 'sidestripe', short: true }),
+  I('pants', 'sh_white', 'Short Branco de Time', 0xf4f2ec, 220, null, 'comum', { pat: 'plain', short: true }),
+  I('pants', 'sh_black', 'Short Preto de Time', 0x15161a, 220, null, 'comum', { pat: 'sidestripe', short: true }),
+  I('pants', 'sh_red', 'Short Vermelho', 0xc8102e, 220, null, 'comum', { pat: 'plain', short: true }),
+  I('pants', 'sh_green', 'Short Verde', 0x006437, 220, null, 'comum', { pat: 'plain', short: true }),
+  I('pants', 'sh_floral', 'Bermuda Floral de Praia', 0x169aa8, 380, 30, 'raro', { pat: 'floral', short: true }),
   I('pants', 'pants_basic', 'Moletom Cinza', 0x7d808a, 0, null, 'comum', { pat: 'plain' }),
   I('pants', 'pants_black', 'Calça Preta', 0x1c1c20, 140, null, 'comum', { pat: 'plain' }),
   I('pants', 'pants_jeans', 'Jeans Baggy', 0x2f4f86, 180, null, 'comum', { pat: 'denim' }),
@@ -634,7 +684,7 @@ const ITEMS = [
   I('phone', 'ph_smart', 'Smart Rolê', 0x4fc3ff, 900, 70, 'raro', { tier: 1, desc: 'Mapa da cidade e minimapa ao vivo nas corridas.' }),
   I('phone', 'ph_pro', 'Pro Max Grind', 0xc9a24a, null, 200, 'lendario', { tier: 2, desc: 'Tudo do Smart + GPS de rota ideal, alerta de obstáculos e radar de rivais.' }),
 ];
-const SLOT_NAMES = { shirt: 'Camisetas e jaquetas', pants: 'Calças', shoes: 'Tênis, sandálias e botas', cap: 'Chapéus e bonés', glasses: 'Óculos', acc: 'Acessórios', skate: 'Shapes', wheels: 'Rodas', print: 'Estampas do shape', phone: 'Celulares', weapon: 'Armas de corrida' };
+const SLOT_NAMES = { shirt: 'Camisetas e jaquetas', pants: 'Calças, shorts e bermudas', shoes: 'Tênis, sandálias e botas', cap: 'Chapéus e bonés', glasses: 'Óculos', acc: 'Acessórios', skate: 'Shapes', wheels: 'Rodas', print: 'Estampas do shape', phone: 'Celulares', weapon: 'Armas de corrida' };
 
 /* ---- estampas de tecido (u, v de 0 a 1 no espaço da textura) ---- */
 const PAT_NOISE = (() => { const r = mulberry32(99); return Float32Array.from({ length: 4096 }, () => r()); })();
@@ -663,8 +713,25 @@ function patColor(pat, u, v, c, skin) {
     case 'galaxy': { const n = vnoise(u * 6, v * 6), b = mixc([28, 14, 66], [120, 40, 160], n); return vnoise(u * 220, v * 220) > 0.93 ? [255, 255, 255] : mixc(b, c, 0.25); }
     case 'bolt': { const z = Math.abs(((v * 10 + Math.abs(((u * 10) % 2) - 1)) % 1) - 0.5); return z < 0.07 ? [255, 210, 63] : c; }
     case 'sandal': { const f = (v * 6) % 1; return f < 0.22 ? c : (skin || [200, 150, 110]); }
-    default: return c;
+    default:
+      if (pat.startsWith('tm_')) return teamColor(pat, u, v, c);
+      return c;
   }
+}
+/* camisas de time: listras verticais/horizontais, três cores, faixa diagonal, faixa no peito, ou lisa com detalhes */
+const _tmCache = {};
+function teamColor(pat, u, v, c) {
+  const P = _tmCache[pat] || (_tmCache[pat] = (() => { const [, k, a, b] = pat.split('_'); return { k, a: rgb(parseInt(a, 16)), b: rgb(parseInt(b, 16)) }; })());
+  const f = x => ((x % 1) + 1) % 1;
+  switch (P.k) {
+    case 'v': return Math.floor(u * 18) % 2 ? P.a : c;
+    case 'h': return Math.floor(v * 18) % 2 ? P.a : c;
+    case 'v3': { const k = Math.floor(u * 21) % 4; return k === 0 ? c : k === 1 ? P.a : k === 2 ? c : P.b; }
+    case 'sash': { const d = f((u + v) * 1.6); return d < 0.1 ? P.a : d < 0.13 ? P.b : c; }
+    case 'band': { const d = f(v * 1.6); return d > 0.42 && d < 0.5 ? P.a : d >= 0.5 && d < 0.56 ? P.b : c; }
+    case 'trim': { const d = f(v * 3.2), e = f(u * 3.2); return d < 0.05 || e < 0.04 ? P.a : (d > 0.95 ? P.b : c); }
+  }
+  return c;
 }
 const rgb = h => [h >> 16 & 255, h >> 8 & 255, h & 255];
 function patSwatch(cv, pat, color) {
@@ -1261,12 +1328,12 @@ function deliveryTex() {
   }));
 }
 /* estampas: textura de tecido gerada (cinza do modelo x desenho) */
-function patTex(base, pat, color, skin, key, cache, size = 512) {
-  const k = key + '_' + pat + '_' + color + '_' + (pat === 'sandal' ? skin : ''); if (cache[k]) return cache[k];
+function patTex(base, pat, color, skin, key, cache, size = 512, mask = null) {
+  const k = key + '_' + pat + '_' + color + '_' + (pat === 'sandal' || mask ? skin : '') + (mask ? '_short' : ''); if (cache[k]) return cache[k];
   const img = base.image, c = document.createElement('canvas'); c.width = c.height = size;
   const g = c.getContext('2d'); g.drawImage(img, 0, 0, size, size); const d = g.getImageData(0, 0, size, size), p = d.data, col = rgb(color), sk = rgb(skin || 0xc89670);
   for (let y = 0, i = 0; y < size; y++) for (let x = 0; x < size; x++, i += 4) {
-    const L = p[i] / 255, cc = patColor(pat, x / size, y / size, col, sk);
+    const L = p[i] / 255, cc = mask && mask[y * size + x] ? sk : patColor(pat, x / size, y / size, col, sk);
     p[i] = Math.min(255, cc[0] * L); p[i + 1] = Math.min(255, cc[1] * L); p[i + 2] = Math.min(255, cc[2] * L);
   }
   g.putImageData(d, 0, 0);
@@ -1462,7 +1529,29 @@ function prepModel(k, gltf) {
   info.scale = (k === 'f' ? 1.68 : 1.78) / h;
   if (k === 'f') info.atlas = prepAtlas(info.mats.Ch03_Body.map.image);
   else for (const n of ['Wolf3D_Outfit_Top', 'Wolf3D_Outfit_Bottom', 'Wolf3D_Outfit_Footwear']) { const m = info.mats[n]; if (m && m.map) info[n] = grayTex(m.map); }
+  // máscara da canela (abaixo do short): triângulos da calça abaixo do joelho, pintados no espaço da textura
+  try {
+    const mname = k === 'f' ? 'Ch03_Body' : 'Wolf3D_Outfit_Bottom'; let mesh = null; scene.traverse(o => { if (o.isMesh && o.material.name === mname) mesh = o; });
+    let knee = null, hip = null; scene.traverse(o => { if (o.isBone && /LeftLeg$/.test(o.name)) knee = o; if (o.isBone && /LeftUpLeg$/.test(o.name)) hip = o; });
+    if (mesh && knee && hip) {
+      const ky = knee.getWorldPosition(new THREE.Vector3()).y, hy = hip.getWorldPosition(new THREE.Vector3()).y, cut = ky + (hy - ky) * 0.25;
+      const W = k === 'f' ? info.atlas.w : 512, H = k === 'f' ? info.atlas.h : 512;
+      info.legMask = legMask(mesh, W, H, cut);
+    }
+  } catch (e) { console.warn('máscara do short', e); }
   return info;
+}
+function legMask(mesh, W, H, cut) {
+  const geo = mesh.geometry, pos = geo.attributes.position, uv = geo.attributes.uv, idx = geo.index, v = new THREE.Vector3(), ys = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++) ys[i] = v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld).y;
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); g.fillStyle = g.strokeStyle = '#fff'; g.lineWidth = 2; g.lineJoin = 'round';
+  const n = idx ? idx.count : pos.count, at = k => idx ? idx.getX(k) : k;
+  for (let t = 0; t < n; t += 3) {
+    const a = at(t), b = at(t + 1), d = at(t + 2); if ((ys[a] + ys[b] + ys[d]) / 3 > cut) continue;
+    g.beginPath(); g.moveTo(uv.getX(a) * W, uv.getY(a) * H); g.lineTo(uv.getX(b) * W, uv.getY(b) * H); g.lineTo(uv.getX(d) * W, uv.getY(d) * H); g.closePath(); g.fill(); g.stroke();
+  }
+  const p = g.getImageData(0, 0, W, H).data, m = new Uint8Array(W * H); for (let i = 0; i < m.length; i++) m[i] = p[i * 4] > 100 ? 1 : 0;
+  return m;
 }
 /* textura em tons de cinza normalizada: a cor do material vira a cor da peça */
 function grayTex(map) {
@@ -1493,15 +1582,16 @@ function prepAtlas(img) {
   for (let k = 1; k < 4; k++) ref[k] /= Math.max(1, cnt[k]);
   return { c, d, cls, lum, ref, w: c.width, h: c.height, cache: {} };
 }
-function atlasTex(A, shirtIt, pantsIt, skin) {
+function atlasTex(A, shirtIt, pantsIt, skin, mask) {
   const sp = plainPat(shirtIt) ? 'plain' : shirtIt.pat, pp = plainPat(pantsIt) ? 'plain' : pantsIt.pat;
-  const key = [shirtIt.color, sp, pantsIt.color, pp, skin].join('_'); if (A.cache[key]) return A.cache[key];
+  const key = [shirtIt.color, sp, pantsIt.color, pp, skin, mask ? 'short' : ''].join('_'); if (A.cache[key]) return A.cache[key];
   const out = new ImageData(new Uint8ClampedArray(A.d.data), A.w, A.h), p = out.data;
   const col = [null, pantsIt.color, shirtIt.color, skin].map(x => x == null ? null : [(x >> 16 & 255), (x >> 8 & 255), (x & 255)]);
   const pats = [null, pp, sp, 'plain'];
   const boost = [0, 1, 1, 1.05];
   for (let j = 0, i = 0; j < A.cls.length; j++, i += 4) {
     const k = A.cls[j]; if (!k) continue;
+    if (k === 1 && mask && mask[j]) { const f = Math.min(1.15, A.lum[j] / A.ref[1]) * 0.98; p[i] = Math.min(255, col[3][0] * f); p[i + 1] = Math.min(255, col[3][1] * f); p[i + 2] = Math.min(255, col[3][2] * f); continue; }
     const f = A.lum[j] / A.ref[k] * boost[k], cc = pats[k] === 'plain' ? col[k] : patColor(pats[k], (j % A.w) / A.w * 1.6, Math.floor(j / A.w) / A.h * 1.6, col[k]);
     p[i] = Math.min(255, cc[0] * f); p[i + 1] = Math.min(255, cc[1] * f); p[i + 2] = Math.min(255, cc[2] * f);
   }
@@ -1620,11 +1710,11 @@ function makeRealSkater(look, tagText, tagColor) {
 function applyRealLook(g, look) {
   const u = g.userData, M = MODELS[u.k];
   if (u.k === 'f') {
-    const m = u.mats.Ch03_Body; m.map = atlasTex(M.atlas, look.shirt, look.pants, look.skin); m.needsUpdate = true;
+    const m = u.mats.Ch03_Body; m.map = atlasTex(M.atlas, look.shirt, look.pants, look.skin, look.pants.short ? M.legMask : null); m.needsUpdate = true;
   } else {
     const set = (n, c) => { if (u.mats[n]) u.mats[n].color.setHex(c); };
     M.patCache = M.patCache || {};
-    const part = (n, it) => { const m = u.mats[n]; if (!m || !M[n]) return; if (plainPat(it)) { m.map = M[n]; m.color.setHex(it.color); } else { m.map = patTex(M[n], it.pat, it.color, look.skin, n, M.patCache); m.color.setHex(0xffffff); } m.needsUpdate = true; };
+    const part = (n, it) => { const m = u.mats[n]; if (!m || !M[n]) return; if (it.short && M.legMask && n === 'Wolf3D_Outfit_Bottom') { m.map = patTex(M[n], it.pat || 'plain', it.color, look.skin, n, M.patCache, 512, M.legMask); m.color.setHex(0xffffff); m.needsUpdate = true; return; } if (plainPat(it)) { m.map = M[n]; m.color.setHex(it.color); } else { m.map = patTex(M[n], it.pat, it.color, look.skin, n, M.patCache); m.color.setHex(0xffffff); } m.needsUpdate = true; };
     part('Wolf3D_Outfit_Top', look.shirt); part('Wolf3D_Outfit_Bottom', look.pants); part('Wolf3D_Outfit_Footwear', look.shoes);
     const sf = skinFactor(look.skin); set('Wolf3D_Skin', sf); set('Wolf3D_Body', sf);
   }
@@ -1889,7 +1979,8 @@ addEventListener('keydown', e => {
   const a = KEYMAP[e.code]; if (a && !e.repeat) input.pressed[a] = true;
   if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code) && mode !== 'menu') e.preventDefault();
 });
-addEventListener('keyup', e => { input.held[e.code] = false; });
+addEventListener('keyup', e => { input.held[e.code] = false; if (e.code === 'KeyB') voiceStop(); });
+addEventListener('keydown', e => { if (e.code === 'KeyB' && !e.repeat && !(e.target.matches && e.target.matches('input,textarea'))) voiceStart(); });
 /* zoom da câmera (rodinha / pinça) e giro na câmera de rosto (arrastar) */
 function camZoom(d) { if (mode !== 'city' || uiBlocking()) return; if (city.faceCam) city.faceDist = clamp(city.faceDist + d * 0.6, 0.45, 2.4); else city.zoom = clamp(city.zoom + d, 0.35, 1.5); }
 function camDrag(dx, dy) {
@@ -1953,10 +2044,26 @@ function axis() {
     b.addEventListener('mousedown', () => { if (!btnEditing()) input.pressed[b.dataset.btn] = true; });
   });
 })();
+/* ---------------- INSTALAR COMO APP (PWA) ---------------- */
+let _installEvt = null;
+const isStandalone = () => matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); _installEvt = e; document.querySelectorAll('.install-btn').forEach(b => b.hidden = false); });
+addEventListener('appinstalled', () => { _installEvt = null; document.querySelectorAll('.install-btn').forEach(b => b.hidden = true); toast('Rolê City instalado! Abra pelo ícone na tela inicial.', 'good'); });
+if (!isStandalone() && (isIOS() || IS_TOUCH)) document.querySelectorAll('.install-btn').forEach(b => b.hidden = false);
+async function installApp() {
+  if (isStandalone()) return toast('O jogo já está instalado neste aparelho.');
+  if (_installEvt) { _installEvt.prompt(); try { await _installEvt.userChoice; } catch (e) { } _installEvt = null; return; }
+  const box = $('install-help'), html = isIOS()
+    ? '<h2>Instalar no iPhone</h2><p>1. Abra este site no <b>Safari</b>.<br>2. Toque em <b>Compartilhar</b> (o quadrado com a seta ⬆).<br>3. Escolha <b>Adicionar à Tela de Início</b> e toque em <b>Adicionar</b>.</p>'
+    : '<h2>Instalar no Android</h2><p>1. Abra este site no <b>Chrome</b>.<br>2. Toque no menu <b>⋮</b> (canto de cima).<br>3. Escolha <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</p>';
+  if (box && !$('menu').hidden) { box.innerHTML = html; box.hidden = false; } else { closePanel(); toast(isIOS() ? 'No Safari: Compartilhar ⬆ → Adicionar à Tela de Início.' : 'No Chrome: menu ⋮ → Instalar app.', 'pink'); }
+}
 /* ---------------- POSIÇÃO DOS BOTÕES (editável nas Configurações) ---------------- */
-const BTN_IDS = ['tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
+const BTN_IDS = ['tb-mic', 'tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
 // celular em pé: tela estreita, os botões ficam num bloco compacto à direita para não encostar no joystick
-const BTN_PORTRAIT = { 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [14, 22], 'tb-lights': [116, 16], 'tb-blL': [110, 96], 'tb-blR': [18, 124], 'tb-vexit': [20, 204] };
+const BTN_PORTRAIT = { 'tb-mic': [24, 290], 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [14, 22], 'tb-lights': [116, 16], 'tb-blL': [110, 96], 'tb-blR': [18, 124], 'tb-vexit': [20, 204] };
 const btnOrient = () => innerWidth < innerHeight ? 'port' : 'land';
 const btnEditing = () => $('touch').classList.contains('editing');
 function btnCfg() { const st = S.settings; st.btnPos = st.btnPos || { port: {}, land: {} }; st.joyPos = st.joyPos || {}; return st; }
@@ -2053,6 +2160,18 @@ const SPECIAL = {
   '0,-84': { kind: 'viagem', label: 'Rodoviária', sub: 'VIAGENS', color: 0x1e88e5, css: '#1e88e5' },
   '-84,0': { kind: 'concessionaria', label: 'Concessionária', sub: 'CARROS E MOTOS', color: 0xe53935, css: '#e53935' },
 };
+/* cada cidade tem as lojas em quarteirões diferentes e as suas comunidades (favelas) */
+const CITY_SHOPS = {
+  rj: { roupas: '42,-42', skate: '-42,42', celular: '42,0', arena: '0,-42', tokens: '0,42', crew: '-42,0', agencia: '42,42', imobiliaria: '-42,-42', viagem: '84,0', concessionaria: '0,84' },
+  ssa: { roupas: '0,42', skate: '-42,-42', celular: '-42,0', arena: '42,42', tokens: '42,0', crew: '0,-42', agencia: '-42,42', imobiliaria: '0,84', viagem: '-84,0', concessionaria: '-84,42' },
+};
+const FAVELA_BLOCKS = { sp: [], rj: ['-84,-84', '-84,-42', '-42,-84'], ssa: ['84,-84', '84,-42', '42,-84'] };
+function shopsFor(id) {
+  const L = CITY_SHOPS[id]; if (!L) return SPECIAL;
+  const out = {}; for (const k in SPECIAL) { const info = SPECIAL[k]; out[L[info.kind] || k] = info; } return out;
+}
+const FAV_OFF = [-11.2, -7.6, -4.0, 4.0, 7.6, 11.2];
+const isFavela = (id, key) => (FAVELA_BLOCKS[id] || []).includes(key);
 const city = { route: [], gpsT: 0, fx: [], bananas: [], camYaw: Math.PI, camPitch: 0, dragT: -9, zoom: 1, faceCam: false, faceDist: 0.85, faceOrbit: 0, faceH: 0, scene: null, blds: [], winMats: [], addrs: [], walls: [], kiosks: [], peds: [], dogs: [], cats: [], pigeons: [], flocks: [], colliders: [], doors: [], ramps: [], cars: [], bots: [], player: null, sun: null, beam: null, mObjs: [], offers: null, checkout: null, rec: [], recT: 0, chatT: 6, chatLog: [], contest: null, socialTarget: null, mapT: 0 };
 const P = { onBoard: false, x: 0, z: 10, y: 0, h: Math.PI, v: 0, vy: 0, air: false, airT: 0, trick: null, combo: [], emote: null, fallT: 0, punchT: 0, punchCd: 0, carry: null };
 
@@ -2069,20 +2188,35 @@ function buildCity() {
 
   // chão
   const SC = 1024 / 240, PX = w => (w + 120) * SC;
+  const cid = cityId(), SHOPS = shopsFor(cid);
   const gtex = canvasTex(1024, 1024, g => {
     g.fillStyle = CITY().grass; g.fillRect(0, 0, 1024, 1024);
-    g.fillStyle = '#3a3c42'; g.fillRect(PX(-111), PX(-111), 222 * SC, 222 * SC);
+    if (cid === 'ssa') { // paralelepípedo: pedrinhas irregulares
+      g.fillStyle = '#5f574b'; g.fillRect(PX(-111), PX(-111), 222 * SC, 222 * SC);
+      const r = mulberry32(5); for (let y = -111; y < 111; y += 0.8) for (let x = -111 + (Math.round(y / 0.8) % 2) * 0.4; x < 111; x += 0.8) { const v = 95 + r() * 45 | 0; g.fillStyle = `rgb(${v + 12},${v + 4},${v - 8})`; g.fillRect(PX(x), PX(y), 0.66 * SC, 0.66 * SC); }
+    } else { g.fillStyle = cid === 'rj' ? '#44464c' : '#3a3c42'; g.fillRect(PX(-111), PX(-111), 222 * SC, 222 * SC); }
     for (const cx of BLOCKS) for (const cz of BLOCKS) {
-      g.fillStyle = '#aaa59a'; g.fillRect(PX(cx - 15), PX(cz - 15), 30 * SC, 30 * SC);
-      const plaza = cx === 0 && cz === 0;
-      g.fillStyle = plaza ? '#a39c8f' : '#8d887e'; g.fillRect(PX(cx - 13), PX(cz - 13), 26 * SC, 26 * SC);
+      g.fillStyle = cid === 'rj' ? '#ece8de' : cid === 'ssa' ? '#d9d2c3' : '#aaa59a'; g.fillRect(PX(cx - 15), PX(cz - 15), 30 * SC, 30 * SC);
+      if (cid === 'rj') { // calçada de ondas pretas e brancas (pedra portuguesa)
+        g.strokeStyle = '#2a2a2e'; g.lineWidth = 0.35 * SC;
+        for (const side of [-14, 14]) { g.beginPath(); for (let t = -15; t <= 15; t += 0.25) { const w = Math.sin(t * 1.4) * 0.55; t === -15 ? g.moveTo(PX(cx + t), PX(cz + side + w)) : g.lineTo(PX(cx + t), PX(cz + side + w)); } g.stroke(); g.beginPath(); for (let t = -15; t <= 15; t += 0.25) { const w = Math.sin(t * 1.4) * 0.55; t === -15 ? g.moveTo(PX(cx + side + w), PX(cz + t)) : g.lineTo(PX(cx + side + w), PX(cz + t)); } g.stroke(); }
+      }
+      const plaza = cx === 0 && cz === 0, fav = isFavela(cid, cx + ',' + cz);
+      g.fillStyle = plaza ? '#a39c8f' : fav ? '#857563' : '#8d887e'; g.fillRect(PX(cx - 13), PX(cz - 13), 26 * SC, 26 * SC);
       if (plaza) {
         g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 2; for (let k = -12; k <= 12; k += 4) { g.beginPath(); g.moveTo(PX(k), PX(-13)); g.lineTo(PX(k), PX(13)); g.stroke(); g.beginPath(); g.moveTo(PX(-13), PX(k)); g.lineTo(PX(13), PX(k)); g.stroke(); }
       }
     }
-    g.strokeStyle = '#f2c230'; g.lineWidth = 0.35 * SC; g.setLineDash([3 * SC, 3 * SC]);
-    for (const r of ROADS) { g.beginPath(); g.moveTo(PX(r), PX(-111)); g.lineTo(PX(r), PX(111)); g.stroke(); g.beginPath(); g.moveTo(PX(-111), PX(r)); g.lineTo(PX(111), PX(r)); g.stroke(); }
-    g.setLineDash([]); g.fillStyle = 'rgba(255,255,255,.75)';
+    if (cid !== 'ssa') {
+      g.strokeStyle = cid === 'rj' ? '#f4f4f0' : '#f2c230'; g.lineWidth = 0.35 * SC; g.setLineDash([3 * SC, 3 * SC]);
+      for (const r of ROADS) { g.beginPath(); g.moveTo(PX(r), PX(-111)); g.lineTo(PX(r), PX(111)); g.stroke(); g.beginPath(); g.moveTo(PX(-111), PX(r)); g.lineTo(PX(111), PX(r)); g.stroke(); }
+      g.setLineDash([]);
+    }
+    if (cid === 'sp') { // Av. Paulista: ciclovia vermelha no canteiro e faixa de ônibus
+      g.fillStyle = '#c0392b'; g.fillRect(PX(-111), PX(-63 - 0.9), 222 * SC, 1.8 * SC); g.fillStyle = '#fff'; g.fillRect(PX(-111), PX(-63 - 1), 222 * SC, 0.15 * SC); g.fillRect(PX(-111), PX(-63 + 0.85), 222 * SC, 0.15 * SC);
+      g.font = `bold ${2 * SC}px sans-serif`; g.fillStyle = 'rgba(255,255,255,.8)'; for (let x = -95; x < 100; x += 42) { g.fillText('ÔNIBUS', PX(x), PX(-58)); g.fillText('ÔNIBUS', PX(x), PX(-66.5)); }
+    }
+    g.fillStyle = 'rgba(255,255,255,.75)';
     for (const rx of ROADS) for (const rz of ROADS) for (let k = -4; k <= 4; k += 2) {
       g.fillRect(PX(rx + k - .5), PX(rz - 9), 1 * SC, 2.5 * SC); g.fillRect(PX(rx - 9), PX(rz + k - .5), 2.5 * SC, 1 * SC);
     }
@@ -2093,7 +2227,13 @@ function buildCity() {
   const far = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200), lam(new THREE.Color(CITY().grass).getHex())); far.rotation.x = -Math.PI / 2; far.position.y = -0.05; sc.add(far);
 
   // prédios
-  const winTex = canvasTex(128, 128, g => {
+  const winTex = CITY().colonial ? canvasTex(128, 128, g => { // fachada colonial: janelas altas com venezianas e moldura branca
+    g.fillStyle = '#fff'; g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { const x = 14 + i * 64, y = 10 + j * 64;
+      g.fillStyle = '#f4f1ea'; g.fillRect(x - 4, y - 4, 44, 54); g.fillStyle = pick(['#2e6b4f', '#2f5d8a', '#7a3b2e']); g.fillRect(x, y, 36, 46);
+      g.fillStyle = 'rgba(0,0,0,.25)'; for (let k = 4; k < 46; k += 5) g.fillRect(x, y + k, 36, 1.5); g.fillRect(x + 17, y, 2, 46);
+      g.fillStyle = '#f4f1ea'; g.beginPath(); g.arc(x + 18, y, 18, Math.PI, 0); g.fill(); g.fillStyle = '#c9b48a'; g.fillRect(x - 6, y + 46, 48, 4); }
+  }) : canvasTex(128, 128, g => {
     g.fillStyle = '#fff'; g.fillRect(0, 0, 128, 128);
     g.fillStyle = 'rgba(0,0,0,.08)'; for (let y = 0; y < 128; y += 32) g.fillRect(0, y + 28, 128, 4);
     for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
@@ -2121,7 +2261,11 @@ function buildCity() {
     m.position.set(x, h / 2, z); m.castShadow = true; m.receiveShadow = true; sc.add(m);
     city.colliders.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
     if (!plain && bx != null) city.blds.push({ x, z, w, d, h, bx, bz, x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
-    if (!plain) {
+    if (!plain && CD.colonial && h < 16) { // casarão colonial: telhado de telha de barro de 4 águas
+      const rf = new THREE.Mesh(new THREE.ConeGeometry(0.72, 1, 4), lam(0xb5502e)); rf.rotation.y = Math.PI / 4; rf.scale.set(w * 1.02, 2.6, d * 1.02); rf.position.set(x, h + 1.3, z); rf.castShadow = true; sc.add(rf);
+      const fr = new THREE.Mesh(boxGeo(w + 0.3, 0.35, d + 0.3), lam(0xf6f1e7)); fr.position.set(x, h - 0.1, z); sc.add(fr);
+      const base = new THREE.Mesh(boxGeo(w + 0.15, 1.0, d + 0.15), lam(0xf6f1e7)); base.position.set(x, 0.5, z); sc.add(base);
+    } else if (!plain) {
       const cor = new THREE.Mesh(boxGeo(w + 0.4, 0.5, d + 0.4), lam(0x6d6f76)); cor.position.set(x, h + 0.25, z); cor.castShadow = true; sc.add(cor);
       const r = rng();
       if (r < 0.4) { const tk = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 2.2, 10), lam(0x8a6b4f)); tk.position.set(x + rand(-w / 4, w / 4), h + 1.6, z + rand(-d / 4, d / 4)); tk.castShadow = true; sc.add(tk); }
@@ -2137,16 +2281,45 @@ function buildCity() {
     }
     return m;
   };
+  // comunidade: casinhas de tijolo e coloridas, de 1 a 3 andares, com vielas entre elas
+  const favH = [], M4w = new THREE.Matrix4();
+  const favelaBlock = (cx, cz) => {
+    for (const ox of FAV_OFF) for (const oz of FAV_OFF) {
+      if (rng() < 0.12) continue;
+      const w = 2.9 + rng() * 0.5, d = 2.9 + rng() * 0.5, fl = 1 + Math.floor(rng() * 3), x = cx + ox + (rng() - 0.5) * 0.3, z = cz + oz + (rng() - 0.5) * 0.3;
+      const brick = rng() < 0.45, c = brick ? pick([0xa0522d, 0xb5651d, 0x9c5a3c, 0xb0623a]) : pick([0xe8604c, 0xf2c94c, 0x5aa9e6, 0x7bc67b, 0xf28ca0, 0xf6f1e7, 0xb58ad6, 0xff9f43]);
+      favH.push({ x, z, w, d, h: fl * 2.8, c, tank: rng() < 0.6, fl });
+      city.colliders.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
+    }
+    const tag = textSprite(cid === 'rj' ? 'COMUNIDADE DO MORRO' : 'FAVELA DO NORDESTE', { bg: '#15161a', fg: '#ffcf3a', size: 44, scale: [7, 1.2, 1] }); tag.position.set(cx, 10.5, cz); sc.add(tag);
+  };
   for (const cx of BLOCKS) for (const cz of BLOCKS) {
     const key = cx + ',' + cz;
     if (cx === 0 && cz === 0) continue;
-    if (SPECIAL[key]) { buildShop(sc, cx, cz, SPECIAL[key], addBuilding); continue; }
+    if (SHOPS[key]) { buildShop(sc, cx, cz, SHOPS[key], addBuilding); continue; }
     if (cx === HOME_LOT[0] && cz === HOME_LOT[1]) continue;
+    if (isFavela(cityId(), key)) { favelaBlock(cx, cz); continue; }
     if (rng() < CD.tall) addBuilding(cx, cz, 24, 24, HB(1), PAL[Math.floor(rng() * PAL.length)], false, cx, cz);
     else for (const ox of [-6.5, 6.5]) for (const oz of [-6.5, 6.5]) {
       if (rng() < 0.12) continue;
       addBuilding(cx + ox, cz + oz, 10 + rng() * 1.5, 10 + rng() * 1.5, HB(0.75), PAL[Math.floor(rng() * PAL.length)], false, cx, cz);
     }
+  }
+
+  if (favH.length) {
+    const hm = new THREE.InstancedMesh(boxGeo(1, 1, 1), new THREE.MeshLambertMaterial({ color: 0xffffff }), favH.length), cc = new THREE.Color(), Q0 = new THREE.Quaternion();
+    const nWin = favH.reduce((a, f) => a + f.fl * 4, 0), wm = new THREE.InstancedMesh(boxGeo(1, 1, 1), lam(0x1d232b), nWin);
+    const tanks = favH.filter(f => f.tank), tm = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.55, 0.5, 0.9, 10), lam(0x2f6db5), tanks.length);
+    let wi = 0;
+    favH.forEach((f, i) => {
+      hm.setMatrixAt(i, M4w.compose(new THREE.Vector3(f.x, f.h / 2, f.z), Q0, new THREE.Vector3(f.w, f.h, f.d))); hm.setColorAt(i, cc.setHex(f.c));
+      for (let k = 0; k < f.fl; k++) for (const [sx, sz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const y = k * 2.8 + 1.6, px = f.x + sx * (f.w / 2 + 0.03), pz = f.z + sz * (f.d / 2 + 0.03), off = (k % 2 ? 0.5 : -0.5);
+        wm.setMatrixAt(wi++, M4w.compose(new THREE.Vector3(px + (sz ? off : 0), y, pz + (sx ? off : 0)), Q0, new THREE.Vector3(sx ? 0.06 : 0.75, 0.85, sz ? 0.06 : 0.75)));
+      }
+    });
+    tanks.forEach((f, i) => tm.setMatrixAt(i, M4w.compose(new THREE.Vector3(f.x + 0.5, f.h + 0.45, f.z - 0.5), Q0, new THREE.Vector3(1, 1, 1))));
+    hm.castShadow = hm.receiveShadow = true; sc.add(hm); sc.add(wm); sc.add(tm);
   }
 
   // árvores (instanciadas)
@@ -2157,12 +2330,15 @@ function buildCity() {
     if (city.doors.some(d => Math.hypot(d.x - x, d.z - z) < 5)) continue;
     treePts.push([x, z]);
   }
-  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.15, 0.22, 2.2, 6), lam(0x6b4a2f), treePts.length);
-  const crown = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1.4, 0), new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), treePts.length);
+  // Rio e Salvador: coqueiros/palmeiras; São Paulo: árvores de copa redonda
+  const palm = cid !== 'sp', TH = palm ? 5 : 2.2;
+  const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(palm ? 0.12 : 0.15, palm ? 0.2 : 0.22, TH, 6), lam(palm ? 0x8a6a48 : 0x6b4a2f), treePts.length);
+  const crown = new THREE.InstancedMesh(palm ? new THREE.ConeGeometry(2.2, 1.1, 9, 1, true) : new THREE.IcosahedronGeometry(1.4, 0), new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: palm ? THREE.DoubleSide : THREE.FrontSide }), treePts.length);
   const M4 = new THREE.Matrix4(), col = new THREE.Color();
   treePts.forEach(([x, z], i) => {
-    M4.makeTranslation(x, 1.1, z); trunk.setMatrixAt(i, M4);
-    M4.makeTranslation(x, 2.9, z); crown.setMatrixAt(i, M4); crown.setColorAt(i, col.setHex(pick([0x3f8f3a, 0x4ea343, 0x2f7a34, 0x6aa84f])));
+    M4.makeTranslation(x, TH / 2, z); trunk.setMatrixAt(i, M4);
+    if (palm) M4.compose(new THREE.Vector3(x, TH + 0.1, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), i), new THREE.Vector3(1, -1, 1)); else M4.makeTranslation(x, 2.9, z);
+    crown.setMatrixAt(i, M4); crown.setColorAt(i, col.setHex(pick([0x3f8f3a, 0x4ea343, 0x2f7a34, 0x6aa84f])));
     city.colliders.push({ x0: x - .35, x1: x + .35, z0: z - .35, z1: z + .35 });
   });
   trunk.castShadow = crown.castShadow = true; sc.add(trunk); sc.add(crown);
@@ -2578,6 +2754,11 @@ function buildCityScape(sc) {
     hs.forEach((p, i) => { M4.makeTranslation(p[0], p[1] + 2, p[2]); hm.setMatrixAt(i, M4); hm.setColorAt(i, col.setHex(pick([0xe8604c, 0xf2c94c, 0x5aa9e6, 0x7bc67b, 0xf28ca0, 0xd9d2c3, 0xb5651d]))); }); sc.add(hm);
     const fav = new THREE.Mesh(new THREE.ConeGeometry(95, 46, 10), new THREE.MeshLambertMaterial({ color: 0x5f8a45, flatShading: true })); fav.position.set(-230, 20, 0); fav.scale.z = 1.5; sc.add(fav);
   } else if (id === 'ssa') {
+    // morro com favela (casas de tijolo e coloridas subindo a encosta)
+    { const hs = []; for (let i = 0; i < 240; i++) { const a = rand(-0.9, 0.9), r = rand(10, 85), x = 235 - Math.cos(a) * r * 0.6, z = -40 + Math.sin(a) * r * 1.3; hs.push([x, Math.max(0, 36 - r * 0.42) + rand(0, 2), z]); }
+      const hm = new THREE.InstancedMesh(boxGeo(5, 4, 5), new THREE.MeshLambertMaterial({ color: 0xffffff }), hs.length), col = new THREE.Color();
+      hs.forEach((p, i) => { M4.makeTranslation(p[0], p[1] + 2, p[2]); hm.setMatrixAt(i, M4); hm.setColorAt(i, col.setHex(pick([0xb5651d, 0xa0522d, 0xf2c94c, 0x5aa9e6, 0xe07a5f, 0xf6f1e7, 0x9bd1a8]))); }); sc.add(hm);
+      const fav = new THREE.Mesh(new THREE.ConeGeometry(90, 42, 10), new THREE.MeshLambertMaterial({ color: 0x5d8c45, flatShading: true })); fav.position.set(235, 18, -40); fav.scale.z = 1.4; sc.add(fav); }
     // Elevador Lacerda: torre art déco ligando a cidade alta ao mar
     const tw = box(9, 72, 12, 0xe8e2d6, 70, 36, 172); box(9.6, 4, 12.6, 0xd4c4a8, 70, 72, 172);
     for (let y = 8; y < 70; y += 8) box(9.2, 0.6, 12.2, 0xb8a888, 70, y, 172);
@@ -3535,8 +3716,8 @@ function drawCityMapOn(cv, cx, cz, Rad, mini) {
   const W = cv.width, g = cv.getContext('2d'), s = W / (2 * Rad), X = x => (x - cx) * s + W / 2, Z = z => (z - cz) * s + W / 2;
   g.fillStyle = '#4e7a3c'; g.fillRect(0, 0, W, W);
   if (CITY().beach) { g.fillStyle = '#e8d3a0'; g.fillRect(X(-400), Z(116), 800 * s, 47 * s); g.fillStyle = '#2a7fb8'; g.fillRect(X(-400), Z(163), 800 * s, 400 * s); g.fillStyle = '#f2f0ea'; g.fillRect(X(-400), Z(115), 800 * s, 6 * s); }
-  g.fillStyle = '#34363c'; g.fillRect(X(-111), Z(-111), 222 * s, 222 * s);
-  for (const bx of BLOCKS) for (const bz of BLOCKS) { const plaza = bx === 0 && bz === 0; g.fillStyle = plaza ? '#c7bfae' : '#7c776d'; g.fillRect(X(bx - 15), Z(bz - 15), 30 * s, 30 * s); }
+  g.fillStyle = cityId() === 'ssa' ? '#6f6658' : '#34363c'; g.fillRect(X(-111), Z(-111), 222 * s, 222 * s);
+  for (const bx of BLOCKS) for (const bz of BLOCKS) { if (isFavela(cityId(), bx + ',' + bz)) { drawFavelaMap(g, X, Z, s, bx, bz); continue; } const plaza = bx === 0 && bz === 0; g.fillStyle = plaza ? '#c7bfae' : '#7c776d'; g.fillRect(X(bx - 15), Z(bz - 15), 30 * s, 30 * s); }
   g.strokeStyle = 'rgba(242,194,48,.55)'; g.lineWidth = Math.max(1, s * 0.4); g.setLineDash([4, 4]);
   for (const r of ROADS) { g.beginPath(); g.moveTo(X(r), Z(-111)); g.lineTo(X(r), Z(111)); g.moveTo(X(-111), Z(r)); g.lineTo(X(111), Z(r)); g.stroke(); }
   g.setLineDash([]);
@@ -3553,11 +3734,17 @@ function drawCityMapOn(cv, cx, cz, Rad, mini) {
   if (mini) { g.fillStyle = 'rgba(21,22,26,.75)'; g.fillRect(0, W - 40, W, 40); g.fillStyle = '#fff'; g.font = '700 26px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(IS_TOUCH ? 'TOQUE PARA ABRIR' : 'M · MAPA', W / 2, W - 12); g.textAlign = 'start'; }
 }
 function drawCityMap() { drawCityMapOn($('citymap'), 0, 0, 118); }
+/* comunidade no mapa: casinhas coloridas apertadas com vielas */
+function drawFavelaMap(g, X, Z, s, bx, bz) {
+  g.fillStyle = '#7a6250'; g.fillRect(X(bx - 15), Z(bz - 15), 30 * s, 30 * s);
+  const cols = ['#b5651d', '#e8604c', '#f2c94c', '#5aa9e6', '#7bc67b', '#f28ca0', '#a0522d'];
+  let i = 0; for (const ox of FAV_OFF) for (const oz of FAV_OFF) { g.fillStyle = cols[(i++ * 5 + bx + bz) % cols.length & 7] || '#b5651d'; g.fillRect(X(bx + ox - 1.6), Z(bz + oz - 1.6), 3.2 * s, 3.2 * s); }
+}
 /* cartões-postais de cada cidade (os que ficam fora do mapa aparecem na borda, com seta) */
 const LANDMARKS = {
   sp: [[0, -165, 'MASP · Av. Paulista'], [190, 40, 'Ponte Estaiada'], [0, -84, 'Rodoviária']],
-  rj: [[-40, -330, 'Cristo Redentor'], [230, 330, 'Pão de Açúcar'], [-230, 0, 'Morro / Favela'], [0, 132, 'Praia de Copacabana'], [0, -84, 'Rodoviária']],
-  ssa: [[70, 172, 'Elevador Lacerda'], [-150, 185, 'Farol da Barra'], [0, -180, 'Pelourinho'], [0, 132, 'Praia'], [0, -84, 'Rodoviária']],
+  rj: [[-40, -330, 'Cristo Redentor'], [230, 330, 'Pão de Açúcar'], [-230, 0, 'Morro'], [-70, -70, 'Comunidade'], [0, 132, 'Praia de Copacabana'], [84, 0, 'Rodoviária']],
+  ssa: [[70, 172, 'Elevador Lacerda'], [-150, 185, 'Farol da Barra'], [0, -180, 'Pelourinho'], [70, -70, 'Favela'], [235, -40, 'Morro'], [0, 132, 'Praia'], [-84, 0, 'Rodoviária']],
 };
 function drawLandmarks(g, id, X, Z, W) {
   g.font = `700 ${Math.round(W * 0.03)}px "Barlow Condensed", sans-serif`; g.textAlign = 'center';
@@ -3577,9 +3764,11 @@ function drawCityPreview(cv, id) {
   const C = CITY_DEFS[id], W = cv.width, Rad = 150, g = cv.getContext('2d'), s = W / (2 * Rad), X = x => x * s + W / 2, Z = z => z * s + W / 2;
   g.fillStyle = C.grass || '#4e7a3c'; g.fillRect(0, 0, W, W);
   if (C.beach) { g.fillStyle = '#e8d3a0'; g.fillRect(0, Z(116), W, 47 * s); g.fillStyle = '#2a7fb8'; g.fillRect(0, Z(163), W, W); g.fillStyle = id === 'rj' ? '#15161a' : '#f2f0ea'; g.fillRect(0, Z(115), W, 6 * s); }
+  if (id === 'ssa') { g.fillStyle = '#4f7a3a'; g.beginPath(); g.ellipse(X(235), Z(-40), 40 * s, 100 * s, 0, 0, TAU); g.fill(); for (let i = 0; i < 90; i++) { const a = (i * 2.4) % TAU, r = (i * 37 % 85); g.fillStyle = ['#f2c94c', '#e07a5f', '#7fb3e0', '#b5651d'][i % 4]; g.fillRect(X(235 + Math.cos(a) * r * 0.3) - 2, Z(-40 + Math.sin(a) * r) - 2, 4, 4); } }
   if (id === 'rj') { g.fillStyle = '#3f7a35'; g.beginPath(); g.ellipse(X(-230), Z(0), 40 * s, 110 * s, 0, 0, TAU); g.fill(); for (let i = 0; i < 90; i++) { const a = (i * 2.4) % TAU, r = (i * 37 % 90); g.fillStyle = ['#f2c94c', '#e07a5f', '#7fb3e0', '#f28ca0'][i % 4]; g.fillRect(X(-230 + Math.cos(a) * r * 0.3) - 2, Z(Math.sin(a) * r) - 2, 4, 4); } }
-  g.fillStyle = '#34363c'; g.fillRect(X(-111), Z(-111), 222 * s, 222 * s);
-  for (const bx of BLOCKS) for (const bz of BLOCKS) { const sp = SPECIAL[bx + ',' + bz], plaza = bx === 0 && bz === 0, k = (((bx * 7 + bz * 3) / 42 | 0) % C.pal.length + C.pal.length) % C.pal.length;
+  g.fillStyle = id === 'ssa' ? '#6f6658' : '#34363c'; g.fillRect(X(-111), Z(-111), 222 * s, 222 * s);
+  for (const bx of BLOCKS) for (const bz of BLOCKS) { const sp = shopsFor(id)[bx + ',' + bz], fv = isFavela(id, bx + ',' + bz), plaza = bx === 0 && bz === 0, k = (((bx * 7 + bz * 3) / 42 | 0) % C.pal.length + C.pal.length) % C.pal.length;
+    if (fv) { drawFavelaMap(g, X, Z, s, bx, bz); continue; }
     g.fillStyle = plaza ? '#c7bfae' : sp ? sp.css : '#' + C.pal[k].toString(16).padStart(6, '0'); g.globalAlpha = sp || plaza ? 1 : 0.8; g.fillRect(X(bx - 15), Z(bz - 15), 30 * s, 30 * s); g.globalAlpha = 1; }
   g.strokeStyle = 'rgba(242,194,48,.55)'; g.lineWidth = Math.max(1, s * 0.4); g.setLineDash([4, 4]);
   for (const r of ROADS) { g.beginPath(); g.moveTo(X(r), Z(-111)); g.lineTo(X(r), Z(111)); g.moveTo(X(-111), Z(r)); g.lineTo(X(111), Z(r)); g.stroke(); }
@@ -4220,7 +4409,7 @@ function startRace(cid, opts = {}) {
   mode = 'race';
   $('hud').hidden = true; $('race-hud').hidden = false;
   $('minimap').hidden = phoneTier() < 1;
-  $('tb-act').hidden = true; $('tb-item').hidden = false; $('tb-item-l').textContent = 'Item'; $('tb-board').hidden = true;
+  $('tb-act').hidden = true; $('tb-item').hidden = false; $('tb-item-l').textContent = 'Item'; $('tb-board').hidden = true; $('tb-mic').hidden = true;
   $('progress').querySelectorAll('i').forEach(e => e.remove());
   racers.forEach(r => { const i = document.createElement('i'); if (r.isPlayer) i.className = 'me'; else if (r.ally) i.className = 'ally'; r.dot = i; $('progress').appendChild(i); });
   $('countdown').hidden = false; $('r-of').textContent = `º / ${racers.length}`;
@@ -4791,7 +4980,7 @@ function disposeRace() {
 function backToCity() {
   if (R) disposeRace();
   mode = 'city'; $('race-hud').hidden = true; $('hud').hidden = false; $('banner').hidden = true; $('countdown').hidden = true; $('splat').hidden = true; $('smokeov').hidden = true; $('tb-wp').hidden = true; R_CRIT = null;
-  $('tb-act').hidden = true; $('tb-item-l').textContent = 'Truque'; $('tb-board').hidden = false;
+  $('tb-act').hidden = true; $('tb-item-l').textContent = 'Truque'; $('tb-board').hidden = false; $('tb-mic').hidden = false;
   const d = city.doors.find(d => d.kind === 'arena'); P.x = d.x; P.z = d.z - 6; P.h = Math.PI; city.camYaw = Math.PI; city.camPitch = 0; P.v = 0; P.y = 0; P.air = false; P.fallT = 0; P.onBoard = true;
   applyLook(city.player, myLook()); refreshBotTags(); renderMissionBox(); updateHUD();
 }
@@ -4892,6 +5081,8 @@ const OLD_PANELS = {
       title: 'Configurações', html: `<h3>Qualidade gráfica</h3><div class="seg" role="group" aria-label="Qualidade"><button data-act="quality" data-q="baixa" aria-pressed="${q === 'baixa'}">Baixa</button><button data-act="quality" data-q="media" aria-pressed="${q === 'media'}">Média</button><button data-act="quality" data-q="alta" aria-pressed="${q === 'alta'}">Alta</button><button data-act="quality" data-q="ultra" aria-pressed="${q === 'ultra'}">Ultra (rostos)</button></div>
       <p class="muted">A média é o padrão: boa aparência sem pesar no celular. Use a baixa se o jogo engasgar. A Ultra usa a resolução máxima da tela e sombras finas, ideal para ver os rostos de perto (pede um aparelho bom).</p>
       <h3>Som</h3><div class="seg"><button data-act="sound" data-on="1" aria-pressed="${S.settings.sound}">Ligado</button><button data-act="sound" data-on="0" aria-pressed="${!S.settings.sound}">Desligado</button></div>
+      <h3>Baixar no celular</h3><p class="muted">${isStandalone() ? 'O jogo já está instalado como app neste aparelho.' : 'Instale o Rolê City na tela inicial: abre em tela cheia, como um aplicativo.'}</p>${isStandalone() ? '' : '<button class="btn" data-act="install-app">📲 Baixar o jogo no celular</button>'}
+      <h3>Áudios dos jogadores</h3><div class="seg"><button data-act="voice-set" data-on="1" aria-pressed="${S.settings.voice !== false}">Ouvir</button><button data-act="voice-set" data-on="0" aria-pressed="${S.settings.voice === false}">Silenciar</button></div><p class="muted">Segure o botão Áudio (ou a tecla B), fale e solte: todo mundo na mesma cidade ouve, mais alto quem está perto.</p>
       <h3>Botões da tela</h3><p class="muted">Arraste o joystick e cada botão (a pé e no carro/moto) para onde for mais confortável no seu celular. Dá para aumentar ou diminuir o tamanho também.</p><button class="btn" data-act="edit-btns">Editar posição dos botões</button>
       <h3>Conta</h3>${NET.user ? `<p>Conectado como <b>${esc(NET.user.email || '')}</b>. Progresso salvo na nuvem.</p><div><button class="btn ghost sm" data-act="logout">Sair da conta</button></div>` : '<p class="muted">Jogando sem conta: o progresso fica só neste aparelho. Para salvar na nuvem e jogar online, volte ao menu inicial e entre com uma conta.</p>'}
       <h3>Sobre</h3><p class="note">Com conta, você vê e conversa com jogadores reais na praça e aparece no ranking semanal. Os skatistas com nome branco são personagens do jogo. A compra de tokens ainda está em modo demonstração.</p>
@@ -5152,7 +5343,7 @@ const PANELS = {
     if (sel !== cur) {
       setTimeout(() => drawCityPreview($('bigmap'), sel), 0);
       const hasV = !!(S.veh && VEH[S.veh]);
-      return { title: 'Mapa · ' + CITY_DEFS[sel].name, html: `${ctabs}<p class="muted">${{ sp: 'Avenida Paulista, MASP, prédios altos e a Ponte Estaiada.', rj: 'Praia, calçadão de ondas, Cristo Redentor, Pão de Açúcar e o morro.', ssa: 'Casarões coloridos do Pelourinho, Elevador Lacerda, a praia e o Farol da Barra.' }[sel]} As lojas ficam nos mesmos quarteirões em todas as cidades.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa de ${esc(CITY_DEFS[sel].name)}"></canvas>
+      return { title: 'Mapa · ' + CITY_DEFS[sel].name, html: `${ctabs}<p class="muted">${{ sp: 'Avenida Paulista, MASP, prédios altos e a Ponte Estaiada.', rj: 'Praia, calçadão de ondas, Cristo Redentor, Pão de Açúcar e o morro.', ssa: 'Ruas de paralelepípedo, casarões coloniais, favela, Elevador Lacerda, a praia e o Farol da Barra.' }[sel]} Cada cidade tem ruas, lojas e bairros em lugares diferentes.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa de ${esc(CITY_DEFS[sel].name)}"></canvas>
         <div class="row">${hasV ? `<button class="btn" data-act="travel" data-id="${sel}" data-how="veh">Ir de ${VEH[S.veh].kind === 'car' ? 'carro' : 'moto'}</button>` : ''}<button class="btn ghost" data-act="travel" data-id="${sel}" data-how="bus" ${S.coins < 150 ? 'disabled' : ''}>Ônibus ($ 150)</button></div>` };
     }
     setTimeout(() => { const cv = $('bigmap'); if (!cv) return; drawCityMapOn(cv, 0, 0, 118); cv.onclick = bigmapClick; }, 0);
@@ -5254,6 +5445,8 @@ function act(a, ds, el) {
     case 'crew-kick': S.crew.members = S.crew.members.filter(x => x !== ds.id); persist(); refreshBotTags(); renderPanel(); break;
     case 'crew-disband': S.crew = null; persist(); refreshBotTags(); updateHUD(); renderPanel(); break;
     case 'edit-btns': btnEditStart(); break;
+    case 'install-app': installApp(); break;
+    case 'voice-set': S.settings.voice = ds.on === '1'; persist(); renderPanel(); break;
     case 'be-size': { const st = btnCfg(); st.btnScale = clamp(Math.round(((st.btnScale || 1) + +ds.d) * 10) / 10, 0.7, 1.5); applyBtnLayout(); toast(`Tamanho dos botões: ${Math.round(st.btnScale * 100)}%`); break; }
     case 'be-mode': { const T = $('touch'), dr = !T.classList.contains('driving'); T.classList.toggle('driving', dr); el.textContent = dr ? 'Ver botões a pé' : 'Ver botões do carro'; applyBtnLayout(); break; }
     case 'be-reset': { const st = btnCfg(), o = btnOrient(); st.btnPos[o] = {}; delete st.joyPos[o]; st.btnScale = 1; applyBtnLayout(); toast('Botões no lugar padrão.'); break; }
@@ -5420,6 +5613,7 @@ function netJoinPlaza() {
   ch.on('broadcast', { event: 'pos' }, ({ payload }) => onPeerPos(payload))
     .on('broadcast', { event: 'chat' }, ({ payload }) => onPeerChat(payload))
     .on('broadcast', { event: 'fila' }, ({ payload }) => onPeerFila(payload))
+    .on('broadcast', { event: 'voz' }, ({ payload }) => onPeerVoice(payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
@@ -5458,6 +5652,69 @@ function onPeerPos(d) {
 }
 function onPeerChat(d) { const p = NET.peers[d.id]; if (p) bubble(p.g, d.msg, 6); pushChat(d.name, d.msg, false, true); }
 function netChat(msg) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'chat', payload: { id: NET.user.id, name: S.name, msg } }); }
+/* ---------------- ÁUDIO: segure o botão, fale e solte para mandar (todo mundo na cidade ouve; mais alto perto) ---------------- */
+const VOICE = { on: false, chunks: [], len: 0, t0: 0, parts: {}, maxS: 8 };
+const VOICE_SR = 8000;
+function muEnc(x) { const s = Math.max(-1, Math.min(1, x)), sg = s < 0 ? 0x80 : 0, m = Math.log1p(255 * Math.abs(s)) / Math.log1p(255); return (~(sg | Math.round(m * 127))) & 0xff; }
+function muDec(b) { b = ~b & 0xff; const sg = b & 0x80 ? -1 : 1, m = (b & 0x7f) / 127; return sg * (Math.pow(256, m) - 1) / 255; }
+async function voiceStart() {
+  if (VOICE.on || mode !== 'city' || btnEditing()) return;
+  if (!NET.user || !NET.online) return toast('Entre com sua conta e fique online para mandar áudio.', 'bad');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast('Seu navegador não deixa gravar áudio.', 'bad');
+  VOICE.on = true; VOICE.chunks = []; VOICE.len = 0; VOICE.t0 = performance.now(); VOICE.cancel = false;
+  $('tb-mic').classList.add('rec'); $('hb-mic').classList.add('rec'); $('mic-rec').hidden = false; $('mic-rec-t').textContent = 'Gravando… solte para enviar';
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    if (!VOICE.on) { st.getTracks().forEach(t => t.stop()); return; }
+    const ac = VOICE.ac = VOICE.ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') await ac.resume();
+    const src = ac.createMediaStreamSource(st), pr = ac.createScriptProcessor(4096, 1, 1), mute = ac.createGain(); mute.gain.value = 0;
+    pr.onaudioprocess = e => { if (!VOICE.on) return; const d = e.inputBuffer.getChannelData(0); VOICE.chunks.push(new Float32Array(d)); VOICE.len += d.length; };
+    src.connect(pr); pr.connect(mute); mute.connect(ac.destination);
+    VOICE.st = st; VOICE.src = src; VOICE.pr = pr; VOICE.mute = mute; VOICE.sr = ac.sampleRate;
+    clearInterval(VOICE.tick); VOICE.tick = setInterval(() => { const s = (performance.now() - VOICE.t0) / 1000; $('mic-rec-t').textContent = `Gravando ${Math.min(VOICE.maxS, s).toFixed(0)}s… solte para enviar`; if (s >= VOICE.maxS) voiceStop(); }, 200);
+  } catch (e) { voiceReset(); toast('Sem permissão para o microfone. Libere o microfone nas configurações do navegador.', 'bad'); }
+}
+function voiceReset() {
+  VOICE.on = false; clearInterval(VOICE.tick); $('tb-mic').classList.remove('rec'); $('hb-mic').classList.remove('rec'); $('mic-rec').hidden = true;
+  try { VOICE.pr && VOICE.pr.disconnect(); VOICE.src && VOICE.src.disconnect(); VOICE.mute && VOICE.mute.disconnect(); } catch (e) { }
+  if (VOICE.st) VOICE.st.getTracks().forEach(t => t.stop()); VOICE.st = VOICE.pr = VOICE.src = null;
+}
+function voiceStop() {
+  if (!VOICE.on) return; const sr = VOICE.sr || 48000, chunks = VOICE.chunks, len = VOICE.len; voiceReset();
+  if (len < sr * 0.35) return toast('Segure o botão enquanto fala.');
+  // junta, reduz para 8 kHz (média) e comprime em mu-law (1 byte por amostra)
+  const all = new Float32Array(len); let o = 0; for (const c of chunks) { all.set(c, o); o += c.length; }
+  const ratio = sr / VOICE_SR, n = Math.min(Math.floor(len / ratio), VOICE_SR * VOICE.maxS), out = new Uint8Array(n);
+  let peak = 0.02; for (let i = 0; i < len; i += 7) peak = Math.max(peak, Math.abs(all[i]));
+  const gain = Math.min(4, 0.8 / peak);
+  for (let i = 0; i < n; i++) { const a = Math.floor(i * ratio), b = Math.min(len, Math.floor((i + 1) * ratio)); let sum = 0; for (let k = a; k < b; k++) sum += all[k]; out[i] = muEnc(sum / Math.max(1, b - a) * gain); }
+  let bin = ''; for (let i = 0; i < out.length; i += 4096) bin += String.fromCharCode.apply(null, out.subarray(i, i + 4096));
+  const b64 = btoa(bin), id = Math.random().toString(36).slice(2, 9), PART = 24000, parts = Math.ceil(b64.length / PART), secs = (n / VOICE_SR).toFixed(1);
+  for (let i = 0; i < parts; i++) NET.ch.send({ type: 'broadcast', event: 'voz', payload: { id: NET.user.id, name: S.name, k: id, i, n: parts, d: b64.slice(i * PART, (i + 1) * PART) } });
+  bubble(city.player, `🎤 áudio ${secs}s`, 3); pushChat(S.name, `🎤 Áudio (${secs}s)`, true); sfx('ui');
+}
+function onPeerVoice(d) {
+  const key = d.id + d.k, P2 = VOICE.parts[key] = VOICE.parts[key] || { got: 0, arr: [], t: Date.now() };
+  P2.arr[d.i] = d.d; P2.got++; if (P2.got < d.n) return; delete VOICE.parts[key];
+  for (const k in VOICE.parts) if (Date.now() - VOICE.parts[k].t > 30000) delete VOICE.parts[k];
+  const p = NET.peers[d.id], bin = atob(P2.arr.join('')), secs = (bin.length / VOICE_SR).toFixed(1);
+  pushChat(d.name, `🎤 Áudio (${secs}s)`, false, true);
+  if (S.settings.voice === false) return;
+  const ac = audioCtx(); if (!ac) return;
+  const buf = ac.createBuffer(1, bin.length, VOICE_SR), ch = buf.getChannelData(0); for (let i = 0; i < bin.length; i++) ch[i] = muDec(bin.charCodeAt(i));
+  const src = ac.createBufferSource(), g = ac.createGain(), dd = p ? Math.hypot(p.x - P.x, p.z - P.z) : 999;
+  g.gain.value = dd < 25 ? 1 : dd < 70 ? 0.7 : 0.45; src.buffer = buf; src.connect(g); g.connect(ac.destination); src.start();
+  if (p) bubble(p.g, '🎤 falando…', +secs + 0.5);
+}
+(function setupMic() {
+  for (const el of [$('tb-mic'), $('hb-mic')]) {
+    el.addEventListener('touchstart', e => { if (btnEditing()) return; e.preventDefault(); voiceStart(); }, { passive: false });
+    el.addEventListener('touchend', e => { e.preventDefault(); voiceStop(); }, { passive: false });
+    el.addEventListener('touchcancel', () => voiceStop());
+    el.addEventListener('mousedown', e => { if (btnEditing()) return; voiceStart(); });
+    el.addEventListener('mouseup', () => voiceStop()); el.addEventListener('mouseleave', () => voiceStop());
+  }
+})();
 /* chamado todo quadro na cidade: envia posição ~8x por segundo e anima quem está online */
 function netTick(dt, t) {
   if (!NET.online) return;
