@@ -1536,14 +1536,16 @@ function prepModel(k, gltf) {
     if (mesh && knee && hip) {
       const ky = knee.getWorldPosition(new THREE.Vector3()).y, hy = hip.getWorldPosition(new THREE.Vector3()).y, cut = ky + (hy - ky) * 0.25;
       const W = k === 'f' ? info.atlas.w : 512, H = k === 'f' ? info.atlas.h : 512;
-      info.legMask = legMask(mesh, W, H, cut);
+      // a skatista guarda os vértices em metros sem a escala/rotação do nó pai: compara na mesma escala
+      let c2 = cut, raw = false; if (k === 'f') { mesh.geometry.computeBoundingBox(); c2 = cut * mesh.geometry.boundingBox.max.y / h; raw = true; }
+      info.legMask = legMask(mesh, W, H, c2, raw);
     }
   } catch (e) { console.warn('máscara do short', e); }
   return info;
 }
-function legMask(mesh, W, H, cut) {
+function legMask(mesh, W, H, cut, raw) {
   const geo = mesh.geometry, pos = geo.attributes.position, uv = geo.attributes.uv, idx = geo.index, v = new THREE.Vector3(), ys = new Float32Array(pos.count);
-  for (let i = 0; i < pos.count; i++) ys[i] = v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld).y;
+  for (let i = 0; i < pos.count; i++) ys[i] = raw ? pos.getY(i) : v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld).y;
   const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); g.fillStyle = g.strokeStyle = '#fff'; g.lineWidth = 2; g.lineJoin = 'round';
   const n = idx ? idx.count : pos.count, at = k => idx ? idx.getX(k) : k;
   for (let t = 0; t < n; t += 3) {
