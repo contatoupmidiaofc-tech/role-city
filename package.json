@@ -1,0 +1,9 @@
+{
+  "name": "role-city",
+  "version": "0.1.0",
+  "description": "Rolê City: jogo de skate 3D no navegador.",
+  "private": true,
+  "scripts": {
+    "dev": "npx --yes serve -l 3000 ."
+  }
+}
