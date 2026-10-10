@@ -1258,7 +1258,40 @@ function animWalk(u, o, t) {
 }
 
 /* ---------------- MANOBRAS ---------------- */
-const trickUnlocked = id => S.stats.missions >= TRK[id].need;
+const trickUnlocked = id => isAdm() || S.stats.missions >= TRK[id].need;
+/* conta de administrador (criador do jogo): tudo liberado. Só o hash do e-mail fica no código. */
+const ADM_HASH = 'e5dbdf40026e65e6db8263242375130d629eebf526f848d00245fc6f188d04d4';
+const isAdm = () => typeof NET !== 'undefined' && !!NET.admin;
+const lvlLock = n => !isAdm() && S.level < n;
+async function checkAdmin() {
+  NET.admin = false;
+  const em = NET.user && NET.user.email; if (!em) return false;
+  NET.admin = sha256hex(em.trim().toLowerCase()) === ADM_HASH;
+  return NET.admin;
+}
+function sha256hex(str) {
+  const K = [], H = [], isP = n => { for (let f = 2; f * f <= n; f++) if (n % f === 0) return false; return true; }, fr = x => ((x - Math.floor(x)) * 4294967296) | 0;
+  for (let n = 2, k = 0; k < 64; n++) if (isP(n)) { if (k < 8) H[k] = fr(Math.pow(n, 1 / 2)); K[k++] = fr(Math.pow(n, 1 / 3)); }
+  const b = [...new TextEncoder().encode(str)], L = b.length * 8; b.push(0x80); while (b.length % 64 !== 56) b.push(0);
+  for (let i = 7; i >= 0; i--) b.push(i > 3 ? 0 : (L >>> (i * 8)) & 255);
+  const r = (x, n) => (x >>> n) | (x << (32 - n)), W = new Array(64);
+  for (let o = 0; o < b.length; o += 64) {
+    for (let i = 0; i < 16; i++) W[i] = (b[o + i * 4] << 24) | (b[o + i * 4 + 1] << 16) | (b[o + i * 4 + 2] << 8) | b[o + i * 4 + 3];
+    for (let i = 16; i < 64; i++) { const s0 = r(W[i - 15], 7) ^ r(W[i - 15], 18) ^ (W[i - 15] >>> 3), s1 = r(W[i - 2], 17) ^ r(W[i - 2], 19) ^ (W[i - 2] >>> 10); W[i] = (W[i - 16] + s0 + W[i - 7] + s1) | 0; }
+    let [a, bb, c, d, e, f, g, h] = H;
+    for (let i = 0; i < 64; i++) { const t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + W[i]) | 0, t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & bb) ^ (a & c) ^ (bb & c))) | 0; h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = bb; bb = a; a = (t1 + t2) | 0; }
+    [a, bb, c, d, e, f, g, h].forEach((v, i) => H[i] = (H[i] + v) | 0);
+  }
+  return H.map(v => (v >>> 0).toString(16).padStart(8, '0')).join('');
+}
+function grantAdmin() {
+  if (!isAdm() || !S) return;
+  for (const it of ITEMS) if (!S.owned.includes(it.id)) S.owned.push(it.id);
+  if (!S.equip.skate) { S.equip.skate = 'sk_basic'; S.equip.wheels = 'wh_basic'; }
+  S.coins = Math.max(S.coins, 1000000); S.tokens = Math.max(S.tokens, 100000);
+  S.crates.rara = Math.max(S.crates.rara, 10); S.crates.lendaria = Math.max(S.crates.lendaria, 10);
+  persist();
+}
 function dirOf(ax) { if (Math.abs(ax.x) > 0.5) return ax.x < 0 ? 'l' : 'r'; if (ax.y > 0.5) return 'u'; if (ax.y < -0.5) return 'd'; return 'n'; }
 /* começa uma manobra no ar; devolve false se ainda está bloqueada */
 function startTrick(actor, id, tec) {
@@ -1614,7 +1647,7 @@ function feed(msg, target) {
 }
 function updateHUD() {
   if (!S) return;
-  $('h-name').textContent = S.name + (S.crew ? ` [${S.crew.name}]` : '');
+  $('h-name').textContent = S.name + (S.crew ? ` [${S.crew.name}]` : '') + (isAdm() ? ' · ADM' : '');
   $('h-lvl').textContent = 'NV ' + S.level;
   $('h-xp').style.width = (S.xp / needXP(S.level) * 100) + '%';
   $('h-coins').textContent = '$ ' + fmt(S.coins);
@@ -2698,7 +2731,7 @@ const jobLv = id => 1 + Math.floor(((S.jobs[id] || {}).done || 0) / 5);
 const jobPay = (id, base) => Math.round(base * (1 + 0.15 * (jobLv(id) - 1)) * (1 + homeBonus()) * evMult('missionMult'));
 function startShift(id) {
   const J = JOBS[id];
-  if (S.level < J.need) return toast(`Libera no nível ${J.need}.`, 'bad');
+  if (lvlLock(J.need)) return toast(`Libera no nível ${J.need}.`, 'bad');
   if (J.skate && !hasSkate()) return toast('Precisa de um skate para dar aula.', 'bad');
   if (S.mission && !S.mission.job) { S.mission = null; P.carry = null; }
   S.shift = id; S.mission = null; persist(); closePanel();
@@ -2953,7 +2986,7 @@ function buildFeatures(sc, T, th, rng) {
 function startRace(cid, opts = {}) {
   const c = COUNTRIES.find(x => x.id === cid), th = THEMES[cid];
   if (!hasSkate()) return toast('Você precisa de um skate para correr.', 'bad');
-  if (S.level < c.lvl) return toast(`Precisa do nível ${c.lvl}.`, 'bad');
+  if (lvlLock(c.lvl)) return toast(`Precisa do nível ${c.lvl}.`, 'bad');
   if (S.coins < c.fee) return toast('Grana insuficiente para a inscrição.', 'bad');
   S.coins -= c.fee; S.stats.races++; persist(); updateHUD();
   closePanel(); togglePhone(false);
@@ -3707,7 +3740,7 @@ const OLD_PANELS = {
     let html = (noSk ? `<div class="warn-inline">Você precisa de um skate para correr. Complete uma missão no Quadro da praça ou compre um na Shape & Truck.</div>` : '') + `<p class="muted">Corridas de 8 skatistas em pistas gigantes. Vale tudo: derrubar, jogar pedra, usar óleo. Chegou primeiro, levou o prêmio.</p>`;
     html += `<div class="note">${allies.length ? `Correm do seu lado: <b>${allies.map(id => esc(BOT[id].name)).join(', ')}</b>. Aliados não te atacam e derrubam rivais perto de você.` : 'Sem aliados. Monte uma crew ou ligue para um contato antes da corrida para ele correr do seu lado.'}</div>`;
     for (const c of COUNTRIES) {
-      const lock = S.level < c.lvl, best = S.best[c.id];
+      const lock = lvlLock(c.lvl), best = S.best[c.id];
       html += `<div class="card ${lock ? 'locked' : ''}"><h4><span class="flag" style="background:linear-gradient(90deg,${c.flag[0]} 50%,${c.flag[1]} 50%)"></span>${esc(c.name)}</h4><div>${esc(c.place)}</div>
       <div class="meta"><span>${(c.len / 1000).toFixed(1).replace('.', ',')} km</span><span>Desnível ${c.drop} m</span><span>Inscrição ${c.fee ? '$ ' + fmt(c.fee) : 'grátis'}</span></div>
       <div class="meta"><span class="coin">1º $ ${fmt(c.prize[0])}</span><span>2º $ ${fmt(c.prize[1])}</span><span>3º $ ${fmt(c.prize[2])}</span>${best ? `<span>Seu melhor: ${best}º</span>` : ''}</div>
@@ -3858,9 +3891,9 @@ const PANELS = {
     let html = `<p class="muted">Escolha uma profissão e trabalhe em turnos. Cada pedido concluído paga na hora. A cada 5 pedidos você sobe de nível na profissão e ganha +15% por pedido.${S.home ? ` Sua casa dá +${Math.round(homeBonus() * 100)}%.` : ''}</p>`;
     if (S.shift) html += `<div class="note">Em turno: <b>${esc(JOBS[S.shift].name)}</b>. <button class="btn ghost sm" data-act="shift-end">Encerrar turno</button></div>`;
     for (const [id, J] of Object.entries(JOBS)) {
-      const rec = S.jobs[id] || { done: 0, earned: 0 }, lock = S.level < J.need || (J.skate && !hasSkate());
+      const rec = S.jobs[id] || { done: 0, earned: 0 }, lock = lvlLock(J.need) || (J.skate && !hasSkate());
       html += `<div class="card ${lock ? 'locked' : ''}"><h4>${J.icon} ${esc(J.name)}</h4><p>${esc(J.desc)}</p><div class="meta"><span>Nível ${jobLv(id)}</span><span>${rec.done} pedidos</span><span class="coin">ganhou $ ${fmt(rec.earned)}</span><span>a partir de $ ${fmt(jobPay(id, J.base))} por pedido</span></div>
-        <div>${S.shift === id ? '<span class="pill on">Trabalhando</span>' : lock ? `<span class="pill">${S.level < J.need ? `Libera no nível ${J.need}` : 'Precisa de skate'}</span>` : `<button class="btn" data-act="shift-start" data-id="${id}">Começar turno</button>`}</div></div>`;
+        <div>${S.shift === id ? '<span class="pill on">Trabalhando</span>' : lock ? `<span class="pill">${lvlLock(J.need) ? `Libera no nível ${J.need}` : 'Precisa de skate'}</span>` : `<button class="btn" data-act="shift-start" data-id="${id}">Começar turno</button>`}</div></div>`;
     }
     return { title: 'Agência de Empregos', html };
   },
@@ -3895,7 +3928,7 @@ const PANELS = {
       html += `<div class="note">${allies.length ? `Correm do seu lado: <b>${allies.map(id => esc(BOT[id].name)).join(', ')}</b>.` : 'Sem aliados. Monte uma crew ou ligue para um contato antes da corrida.'}</div>`;
       const rm = evMult('raceMult');
       for (const c of COUNTRIES) {
-        const lock = S.level < c.lvl, best = S.best[c.id];
+        const lock = lvlLock(c.lvl), best = S.best[c.id];
         html += `<div class="card ${lock ? 'locked' : ''}"><h4><span class="flag" style="background:linear-gradient(90deg,${c.flag[0]} 50%,${c.flag[1]} 50%)"></span>${esc(c.name)}</h4><div>${esc(c.place)}</div>
         <div class="meta"><span>${(c.len / 1000).toFixed(1).replace('.', ',')} km</span><span>Desnível ${c.drop} m</span><span>Inscrição ${c.fee ? '$ ' + fmt(c.fee) : 'grátis'}</span></div>
         <div class="meta"><span class="coin">1º $ ${fmt(c.prize[0] * rm)}</span><span>2º $ ${fmt(c.prize[1] * rm)}</span><span>3º $ ${fmt(c.prize[2] * rm)}</span>${best ? `<span>Seu melhor: ${best}º</span>` : ''}</div>
@@ -4315,7 +4348,7 @@ function lobbyJoin(cid) {
   if (!NET.online) return toast('Entre com uma conta e fique online para correr com outros jogadores.', 'bad');
   const c = COUNTRIES.find(x => x.id === cid);
   if (!hasSkate()) return toast('Você precisa de um skate para correr.', 'bad');
-  if (S.level < c.lvl) return toast(`Precisa do nível ${c.lvl}.`, 'bad');
+  if (lvlLock(c.lvl)) return toast(`Precisa do nível ${c.lvl}.`, 'bad');
   if (S.coins < c.fee) return toast('Grana insuficiente para a inscrição.', 'bad');
   lobbyLeave();
   LOBBY.cid = cid; LOBBY.joinedAt = Date.now(); LOBBY.players = [];
@@ -4423,6 +4456,7 @@ async function enterGame() {
   try { await Promise.race([Promise.all([document.fonts.load('40px Bungee'), document.fonts.load('700 40px "Barlow Condensed"')]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
   S.settings = S.settings || { quality: 'media', sound: true }; S.invite = S.invite || []; S.purchases = S.purchases || [];
   migrate(S); checkWeek();
+  if (NET.user) { await checkAdmin(); grantAdmin(); if (isAdm()) setTimeout(() => toast('Conta de administrador: tudo liberado.', 'pink'), 2000); }
   if (S.mission && S.mission.time != null) S.mission.time = Math.max(S.mission.time, 20);
   if (MODELS === null && !enterGame.tried) {
     enterGame.tried = true;
