@@ -4,6 +4,16 @@ Jogo 3D low-poly que roda no navegador do celular e do computador. Tudo está em
 
 Para jogar localmente com os personagens 3D realistas, sirva a pasta por HTTP (o navegador bloqueia carregar modelos direto do disco): `npm run dev` e abra http://localhost:3000. Abrindo o arquivo direto, o jogo funciona com os personagens simples.
 
+## Publicação na HostGator
+
+Cada push na `main` publica o jogo em `public_html/role-city` pela Action `Deploy HostGator` (FTP). Para ligar, cadastre em **Settings → Secrets and variables → Actions** do GitHub:
+
+- `FTP_SERVER`: servidor FTP da hospedagem (aparece em cPanel → Contas FTP → Configurar cliente FTP)
+- `FTP_USERNAME`: usuário FTP
+- `FTP_PASSWORD`: senha FTP
+
+Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator.com.br/role-city/`
+
 ## Personagens 3D
 
 - `modelos/Michelle.glb` (skatista feminina) e `modelos/readyplayer.me.glb` (masculino) vêm dos exemplos do three.js. A Michelle é um personagem Mixamo (Adobe); o masculino é um avatar Ready Player Me.
