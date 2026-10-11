@@ -161,3 +161,9 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Operação policial no morro**: de tempos em tempos a PM chega de viatura, sobe o morro e os traficantes trocam tiro com ela.
 - **Cidades maiores**: a cidade continua para fora do centro, com avenidas, quarteirões, prédios, pracinhas e placas dos bairros (Av. Paulista, Ibirapuera, Pinheiros...; Centro, Lapa, Copacabana...; Pelourinho, Barra, Bonfim...). Mapa com "Ver a cidade toda" / "Ver o centro".
 - **Pontos turísticos dentro da cidade**: cada um no seu bairro, cercado, com bilheteria e **dois seguranças na entrada** — só passa quem paga a taxa do Bonde do AJBZ (vale o dia do jogo; o chefe não paga). Cristo, Pão de Açúcar, Elevador Lacerda, Farol e Ponte Estaiada têm a entrada embaixo (trem, bondinho, elevador). Mapa → Pontos turísticos tem GPS até a entrada.
+
+### Movimentos de gente de verdade (etapa 1)
+- Os personagens agora usam **movimentos gravados de pessoas reais (captura de movimento)**: parado respirando e com variações (olha em volta, olha o relógio, apoia o peso, se alonga), **andar, trotar e correr** com a passada no ritmo exato da velocidade (sem "patinar"), **conversar gesticulando** (quando fala ou aparece o balão) e **dançar** (várias danças; samba para as mulheres).
+- A transição entre parado, andando e correndo é suave. A cabeça continua virando para quem chega perto.
+- Braços com arma apontada, spray, soco, celular, cigarro, aceno e comemoração continuam com o movimento do jogo por cima; skate, carro, moto, natação, algemas e quedas também continuam como antes.
+- Homem: biblioteca de animações da Ready Player Me (o modelo masculino é Ready Player Me). Mulher: animações do Mixamo adaptadas ao esqueleto dela. Arquivos `modelos/anim_m.bin` e `modelos/anim_f.bin`.

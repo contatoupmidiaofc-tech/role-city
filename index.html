@@ -599,7 +599,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-14';
+const BUILD = '2026.10.11-15';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -1935,7 +1935,7 @@ function lifeLayer(u, o, t, dt, p, walking) {
   const idle = walking && !o.ride && !tg && sv < 0.08 && !o.emote && !(o.punchT > 0) && !o.spray && !o.air && !(o.fallT > 0);
   u.idleT = idle ? (u.idleT || 0) + dt : 0;
   if (!idle) u.gest = null;
-  else if (!u.gest && u.idleT > (u.gestWait ?? (u.gestWait = rand(2.5, 6)))) { u.gest = { id: pick(IDLE_GESTURES), t: 0, dur: rand(3, 5.5) }; u.gestWait = rand(3, 8); u.idleT = 0; }
+  else if (!u.gest && u.idleT > (u.gestWait ?? (u.gestWait = rand(2.5, 6)))) { u.gest = { id: MOCAP[u.k] ? 'celular' : pick(IDLE_GESTURES), t: 0, dur: rand(3, 5.5) }; u.gestWait = MOCAP[u.k] ? rand(10, 25) : rand(3, 8); u.idleT = 0; }
   if (u.gest) {
     const G = u.gest; G.t += dt; const k = smooth01(Math.min(G.t / 0.6, (G.dur - G.t) / 0.6)), w = Math.sin(t * 6);
     const mixp = (q) => { for (const key in q) p[key] = lerp(p[key] ?? POSE0[key], q[key], k); };
@@ -2105,8 +2105,9 @@ function animReal(u, o, t) {
   u.rider.position.y += (ry - u.rider.position.y) * Math.min(1, k * 1.4);
   u.rider.position.z += (rz - u.rider.position.z) * k;
   rigPose(u.R, smoothPose(u, p, dt, rate));
+  mocapLayer(u, o, t, dt, e);
   const kh = 1 - Math.exp(-12 * dt); u.hL = lerp(u.hL ?? 0.3, hands.L, kh); u.hR = lerp(u.hR ?? 0.3, hands.R, kh);
-  fingerPose(u.R, 'L', u.hL, false, false); fingerPose(u.R, 'R', u.hR, hands.pointR, hands.thumbR);
+  fingerPose(u.R, 'L', u.hL, false, false); fingerPose(u.R, 'R', u.hR, hands.pointR, hands.thumbR); mocapFingers(u);
   faceLayer(u, t, dt);
   if (u.phoneOut || u.phone) { const ph = handProp(u); if (ph) ph.visible = !!u.phoneOut; }
   if (o.wpProp || o.wpHold || u.wpM) showWeaponProp(u, o.wpProp || o.wpHold);
@@ -8127,6 +8128,7 @@ function prepWearInfo(info, scene, k) {
   scene.traverse(o => { if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return; const n = o.material && o.material.name || ''; if (/Eye|Teeth|Hair|Head/i.test(n) && k === 'm') return; const pos = o.geometry.attributes.position; const step = Math.max(1, Math.floor(pos.count / 6000)); for (let i = 0; i < pos.count; i += step) { if (raw) pts.push(pos.getX(i) / sc2, pos.getY(i) / sc2, pos.getZ(i) / sc2); else { v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); pts.push(v.x, v.y, v.z); } } });
   const wp = b => b.getWorldPosition(new THREE.Vector3());
   const seg = (bn, cn, from, to, cap) => { const a = B[bn], c = B[cn]; if (!a || !c) return null; const A = wp(a), C = wp(c), d = C.clone().sub(A), L2 = d.lengthSq(), rs = []; for (let i = 0; i < pts.length; i += 3) { const px = pts[i] - A.x, py = pts[i + 1] - A.y, pz = pts[i + 2] - A.z, t = (px * d.x + py * d.y + pz * d.z) / L2; if (t < from || t > to) continue; const qx = px - d.x * t, qy = py - d.y * t, qz = pz - d.z * t, r = Math.sqrt(qx * qx + qy * qy + qz * qz); if (r < cap) rs.push(r); } if (rs.length < 8) return null; rs.sort((p, q) => p - q); return rs[Math.floor(rs.length * 0.9)] * info.scale; };
+  info.hipH = B.Hips ? wp(B.Hips).y * info.scale : 0.95;
   info.limb = {
     fore: seg('LeftForeArm', 'LeftHand', 0.25, 0.85, 0.09), foreR: seg('RightForeArm', 'RightHand', 0.25, 0.85, 0.09),
     wrist: seg('LeftForeArm', 'LeftHand', 0.82, 0.97, 0.08),
@@ -8192,6 +8194,113 @@ function bareUpper(u, g, look, add) {
   }
   if (B.Neck && B.Head) add(boneShell(B.Neck, B.Head, -0.3, 0.75, 0.058, 0.055, plain, false, 14));
   return true;
+}
+/* =========================================================
+   MOVIMENTOS DE CAPTURA REAL (mocap): parado respirando, olhando em volta, apoiando o peso,
+   andar, trotar e correr com a passada no ritmo da velocidade, conversar gesticulando e dançar.
+   Homem: biblioteca de animação da Ready Player Me (o modelo dele é Ready Player Me).
+   Mulher: animações do Mixamo adaptadas ao esqueleto dela.
+   Braços com arma, celular, cigarro etc. continuam com o movimento do jogo por cima.
+   ========================================================= */
+const MOCAP = { m: null, f: null };
+let mocapLoading = false;
+function loadMocap() {
+  if (mocapLoading) return; mocapLoading = true;
+  for (const k of ['m', 'f']) fetch(`modelos/anim_${k}.bin?v=${BUILD}`).then(r => r.ok ? r.arrayBuffer() : null).then(b => { if (b) MOCAP[k] = parseMocap(b, k); }).catch(e => console.warn('mocap', e));
+}
+function parseMocap(buf, k) {
+  const dv = new DataView(buf), n = dv.getUint32(0, true), meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, n))), base = 4 + n;
+  const clips = meta.clips.map(c => { const nb = meta.bones.length + (c.fg ? meta.fing.length : 0); return Object.assign(c, { nb, kind: c.n.split(':')[0], Q: new Int16Array(buf, base + c.q, c.F * nb * 4), Y: new Int16Array(buf, base + c.y, c.F), cd: c.dur / c.cy }); });
+  const by = kind => clips.filter(c => c.kind === kind);
+  const loco = by('loco');
+  return { k, bones: meta.bones, fing: meta.fing, nb: meta.bones.length + meta.fing.length, idle: by('idle'), talk: by('talk'), dance: by('dance'), loco };
+}
+/* amostra um clipe no tempo t (em loop) e mistura em acc com peso w */
+const _mq = new Float32Array(4);
+function mcAdd(S, c, t, w) {
+  if (w <= 0.001) return; const fr = ((t * c.fps) % (c.F - 1) + (c.F - 1)) % (c.F - 1), i0 = Math.floor(fr), i1 = i0 + 1, a = fr - i0, nb = c.nb, Q = c.Q, acc = S.acc, aw = S.aw;
+  const k = w / (S.tw + w);
+  for (let b = 0; b < nb; b++) {
+    const o0 = (i0 * nb + b) * 4, o1 = (i1 * nb + b) * 4; let x = Q[o0] * (1 - a), y = Q[o0 + 1] * (1 - a), z = Q[o0 + 2] * (1 - a), q = Q[o0 + 3] * (1 - a);
+    const d = Q[o0] * Q[o1] + Q[o0 + 1] * Q[o1 + 1] + Q[o0 + 2] * Q[o1 + 2] + Q[o0 + 3] * Q[o1 + 3], s = d < 0 ? -a : a; x += Q[o1] * s; y += Q[o1 + 1] * s; z += Q[o1 + 2] * s; q += Q[o1 + 3] * s;
+    const L = Math.hypot(x, y, z, q) || 1; x /= L; y /= L; z /= L; q /= L;
+    const j = b * 4, bw = aw[b];
+    if (bw <= 0) { acc[j] = x; acc[j + 1] = y; acc[j + 2] = z; acc[j + 3] = q; aw[b] = w; continue; }
+    const kk = w / (bw + w), dd = acc[j] * x + acc[j + 1] * y + acc[j + 2] * z + acc[j + 3] * q, sg = dd < 0 ? -1 : 1;
+    let nx = acc[j] * (1 - kk) + x * kk * sg, ny = acc[j + 1] * (1 - kk) + y * kk * sg, nz = acc[j + 2] * (1 - kk) + z * kk * sg, nw = acc[j + 3] * (1 - kk) + q * kk * sg; const LL = Math.hypot(nx, ny, nz, nw) || 1;
+    acc[j] = nx / LL; acc[j + 1] = ny / LL; acc[j + 2] = nz / LL; acc[j + 3] = nw / LL; aw[b] = bw + w;
+  }
+  const y0 = c.Y[i0] * (1 - a) + c.Y[i1] * a; S.y = S.y * (1 - k) + y0 / 10000 * k; S.tw += w;
+  if (c.fg) S.fw += w;
+}
+const ARM_R = ['RightShoulder', 'RightArm', 'RightForeArm', 'RightHand'], ARM_L = ['LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftHand'];
+const ARM_GEST = ['cocar', 'cintura', 'bracos', 'alongar', 'celular'];
+const _mQ = new THREE.Quaternion(), _bQ = new THREE.Quaternion();
+function mocapLayer(u, o, t, dt, e) {
+  const M = MOCAP[u.k]; if (!M || !u.R || !u.R.B.Hips) return;
+  const S = u.mc || (u.mc = { w: 0, ph: Math.random(), acc: new Float32Array(M.nb * 4), aw: new Float32Array(M.nb), tw: 0, fw: 0, y: 0, ic: null, it: 0, pc: null, pt: 0, pf: 0, dc: null, dt: 0, oL: 0, oR: 0, rest: {}, seed: Math.random() });
+  const B = u.R.B, MD = MODELS[u.k], hipH = (MD && MD.hipH) || 0.95;
+  // quando o movimento gravado entra (a pé, normal) e quando sai (skate, carro, nadar, algemado, caído, sentado)
+  const dance = e === 'dance' && o.walk && M.dance.length;
+  const on = !!o.walk && o.climb == null && !o.ride && o.pedal == null && !o.air && !(o.fallT > 0) && !o.pose && e !== 'sit';
+  S.w = lerp(S.w, on ? 1 : 0, 1 - Math.exp(-(on ? 7 : 14) * dt)); if (S.w < 0.01 && !on) { if (S.w > 0 || S.dirty) { for (const n in S.rest) if (B[n]) B[n].quaternion.copy(S.rest[n]); S.dirty = false; } S.w = 0; return; } S.dirty = true;
+  // braços por cima (arma apontada, spray, soco, celular, cigarro, aceno...)
+  const gest = u.gest && ARM_GEST.includes(u.gest.id), femTalk = u.k === 'f' && u.talkT > 0 && !dance;
+  const wantR = o.wpProp || o.spray || o.punchT > 0 || o.shootUp || u.phoneOut || e === 'wave' || e === 'cheer' || u.smileT > 0 || gest || femTalk ? 1 : 0;
+  const wantL = o.smoke || e === 'cheer' || (gest && u.gest.id !== 'celular' && u.gest.id !== 'cocar') || femTalk ? 1 : 0;
+  S.oR = lerp(S.oR, wantR, 1 - Math.exp(-12 * dt)); S.oL = lerp(S.oL, wantL, 1 - Math.exp(-12 * dt));
+  // mistura dos clipes
+  S.acc.fill(0); S.aw.fill(0); S.tw = 0; S.fw = 0; S.y = 0;
+  const sv = Math.abs(o.v || 0);
+  if (dance) {
+    if (!S.dc) { S.dc = M.dance[Math.floor(S.seed * M.dance.length)]; S.dt = S.seed * 5; }
+    S.dt += dt; mcAdd(S, S.dc, S.dt, 1);
+  } else {
+    S.dc = null;
+    const L = M.loco, sp = L.map(c => c.st * hipH / c.cd), wl = new Array(L.length).fill(0);
+    if (sv <= sp[0]) wl[0] = 1; else if (sv >= sp[L.length - 1]) wl[L.length - 1] = 1;
+    else for (let i = 0; i < L.length - 1; i++) if (sv >= sp[i] && sv <= sp[i + 1]) { const k = (sv - sp[i]) / (sp[i + 1] - sp[i]); wl[i] = 1 - k; wl[i + 1] = k; }
+    const move = clamp((sv - 0.08) / 0.55, 0, 1);
+    let stride = 0; L.forEach((c, i) => stride += wl[i] * c.st * hipH);
+    S.ph = (S.ph + dt * Math.max(sv, 0.25) / Math.max(0.3, stride)) % 1;
+    // parado: alterna variações (respirar, olhar, apoiar o peso); conversando: gestos de conversa
+    const talk = u.talkT > 0 && M.talk.length, pool = talk ? M.talk : M.idle;
+    if (!S.ic || (talk && S.ic.kind !== 'talk') || (!talk && S.ic.kind === 'talk') || S.it > S.ic.dur - 0.35) {
+      S.pc = S.ic; S.pt = S.it; S.pf = S.ic ? 1 : 0;
+      const nx = talk ? pool[Math.floor(Math.random() * pool.length)] : (Math.random() < 0.55 || pool.length < 2 ? pool[0] : pool[1 + Math.floor(Math.random() * (pool.length - 1))]);
+      S.ic = nx; S.it = nx === pool[0] && !talk ? Math.random() * nx.dur * 0.6 : 0;
+    }
+    S.it += dt; S.pt += dt; S.pf = Math.max(0, S.pf - dt / 0.5);
+    const wi = 1 - move;
+    if (S.pc && S.pf > 0) mcAdd(S, S.pc, S.pt, wi * S.pf);
+    mcAdd(S, S.ic, S.it, wi * (1 - S.pf));
+    L.forEach((c, i) => { if (wl[i] > 0) mcAdd(S, c, (((S.ph + c.off * c.cy) % 1) + 1) % 1 * c.cd, move * wl[i]); });
+  }
+  if (S.tw <= 0) return;
+  // aplica nos ossos: mistura com a pose do jogo (braços por cima quando precisa)
+  const W = S.w;
+  for (let b = 0; b < M.bones.length; b++) {
+    const name = M.bones[b], bone = B[name]; if (!bone || S.aw[b] <= 0) continue;
+    if (!(name in u.R.rest)) { if (!S.rest[name]) S.rest[name] = bone.quaternion.clone(); bone.quaternion.copy(S.rest[name]); }
+    const ov = ARM_R.includes(name) ? S.oR : ARM_L.includes(name) ? S.oL : 0, k = W * (1 - ov); if (k <= 0.001) continue;
+    const j = b * 4; _mQ.set(S.acc[j], S.acc[j + 1], S.acc[j + 2], S.acc[j + 3]);
+    bone.quaternion.slerp(_mQ, k);
+  }
+  // cabeça continua olhando para quem está perto
+  if (u.lookY || u.lookX) { rot(u.R, 'Neck', 'y', (u.lookY || 0) * 0.3 * W); rot(u.R, 'Head', 'y', (u.lookY || 0) * 0.45 * W); rot(u.R, 'Head', 'x', (u.lookX || 0) * 0.6 * W); }
+  // sobe e desce do quadril igual ao da pessoa de verdade
+  u.rider.position.y = lerp(u.rider.position.y, S.y * hipH, W);
+  u.R.body.updateMatrixWorld(true);
+}
+/* dedos da conversa e da dança (depois da pose das mãos do jogo) */
+function mocapFingers(u) {
+  const S = u.mc, M = MOCAP[u.k]; if (!S || !M || S.w <= 0.01 || S.fw <= 0.01) return;
+  const B = u.R.B, k0 = S.w * Math.min(1, S.fw / Math.max(S.tw, 1e-6)), nb = M.bones.length;
+  for (let f = 0; f < M.fing.length; f++) {
+    const name = M.fing[f], bone = B[name], b = nb + f; if (!bone || S.aw[b] <= 0) continue;
+    const ov = name.startsWith('Right') ? S.oR : S.oL, k = k0 * (1 - ov); if (k <= 0.01) continue;
+    const j = b * 4; _mQ.set(S.acc[j], S.acc[j + 1], S.acc[j + 2], S.acc[j + 3]); bone.quaternion.slerp(_mQ, k);
+  }
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
@@ -10354,13 +10463,14 @@ async function afterLogin() {
 async function enterGame() {
   try { await Promise.race([Promise.all([document.fonts.load('40px Bungee'), document.fonts.load('700 40px "Barlow Condensed"')]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
   S.settings = S.settings || { quality: 'media', sound: true }; S.invite = S.invite || []; S.purchases = S.purchases || [];
-  migrate(S); wearMigrate(); checkWeek();
+  migrate(S); wearMigrate(); checkWeek(); loadMocap();
   if (NET.user) { await checkAdmin(); grantAdmin(); if (isAdm()) setTimeout(() => { toast(`Conta de administrador: tudo liberado. Chefe ${CHIEF} de todos os morros.`, 'pink'); if (city.player) setTag(city.player, myTagText(), '#ffd700'); }, 2000); }
   if (S.mission && S.mission.time != null) S.mission.time = Math.max(S.mission.time, 20);
   if (MODELS === null && !enterGame.tried) {
     enterGame.tried = true;
     const ld = $('loading'); ld.hidden = false;
     MODELS = await loadModels(f => { $('loading-bar').style.width = Math.round(f * 100) + '%'; });
+    loadMocap();
     ld.hidden = true;
   }
   $('menu').hidden = true; $('hud').hidden = false; mode = 'city';
