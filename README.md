@@ -181,3 +181,29 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - Tocam nos paredões, nas caixas da favela, nos carros de som e na Hilux. Todo mundo ouve a mesma música no mesmo trecho (a programação segue o relógio).
 - Toque no aviso 🔊 da música para abrir a rádio. O chefe (ADM) pode escolher a música que toca para todos.
 - Para adicionar músicas próprias (com direito de uso): envie o MP3 para `musicas/` e acrescente uma linha em `musicas/lista.json` (`id` = nome do arquivo sem `.mp3`, `n` = nome, `g` = estilo, `dur` = duração em segundos).
+
+## Rádio mais alta
+- O som da rádio passa por um amplificador com limitador (bem mais alto e sem distorcer) e alcança mais longe. No painel da rádio há os botões "Mais baixo / Mais alto".
+
+## Carros realistas
+- Carroceria lisa feita de seções arredondadas (capô, porta-malas, caixas de roda recortadas), vidros escuros com colunas, linhas das portas e maçanetas, faróis com projetor e LED, lanternas, grade colmeia, placa Mercosul na frente e atrás, retrovisores, rodas de liga com pneu de perfil, disco e pinça de freio, escapamento e sombra no chão. Vale para Fusca, Kombi, Gol, Sedã/Táxi, Picape, SUV, Esportivo e Supercarro (e as viaturas das profissões).
+
+## Banco Rolê
+- Prédio do banco ao lado do centro (leste) e caixas eletrônicos 24h espalhados. Abrir conta é grátis e dá na hora o cartão de crédito Rolê.
+- Com o cartão, qualquer compra do jogo passa: sai primeiro da carteira, depois do saldo do banco e por último do limite do cartão. Dinheiro no banco não é levado em assalto e rende 0,5% por dia do jogo. Fatura com juros de 1% ao dia; com 3 dias de atraso o cartão bloqueia.
+
+## Casas para alugar e vender
+- Vila Residencial (6 casas com quintal) e todas as casas do morro. Toda casa tem morador; algumas têm placa ALUGA-SE ou VENDE-SE. O dono de todas é o chefe (ADM): aluguel e venda vão para ele.
+- Quem aluga ou compra entra na casa (com cama, sofá, TV e cozinha). Casa no morro deixa a pessoa morador do morro. Moradores (figurantes) saem e entram das casas.
+
+## Cidade viva
+- Praça dos Coroas com mesas de dominó (também nas favelas): os coroas batem as pedras, falam e dá para apostar em quem ganha.
+- Crianças andando pelas calçadas, mães de mão dada com os filhos, casais de mãos dadas. Jogadores casados andam de mãos dadas quando estão juntos.
+
+## Ringue Rolê Fight
+- Arena com ringue, cordas, arquibancada, luzes e plateia que vibra. Fila de lutadores: com gente online, o ringue chama de dois em dois (a próxima dupla espera); sozinho, luta contra um figurante.
+- 4 rounds de 45 s com intervalo; vence por nocaute ou por pontos. Controles próprios: Jab, Direto, Chute, Defesa e Esquiva. Loja do Lutador com calções, regatas e luvas.
+
+## Quadra de Futsal
+- Quadra com gols, rede, alambrado, arquibancada e placar. Times pela camisa (Azul do Rolê, Vermelho da Vila, Verde do Morro, Amarelo da Praça), vendidas do lado da quadra.
+- Com 10 jogadores online na fila vira campeonato (com 20, semifinais e final); com menos, pelada 5 contra 5 completada com figurantes. Controles próprios: Chutar, Passe, Carrinho, Correr e Pular.

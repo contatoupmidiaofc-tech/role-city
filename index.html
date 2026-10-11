@@ -210,6 +210,23 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #btnedit b{font-family:var(--cond);text-transform:uppercase;font-size:13px;width:100%;text-align:center}
 .touch-hint{position:absolute;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);font-family:var(--cond);font-weight:600;color:rgba(255,255,255,.5);font-size:14px;pointer-events:none}
 
+/* controles dos esportes (luta e futsal) */
+#touch:not(.sport) .sb{display:none!important}
+#touch.sport .fb{display:none!important}
+.tbtn.sb{width:72px;height:72px;font-size:12px;line-height:1.05;text-align:center;padding:4px}
+#sb-sp1{right:24px;bottom:24px;width:96px;height:96px;font-size:14px;border-color:rgba(255,90,90,.95);background:radial-gradient(circle at 50% 35%,rgba(255,110,110,.9),rgba(190,30,40,.9))}
+#sb-sp2{right:132px;bottom:20px;border-color:rgba(255,207,58,.9)}
+#sb-sp3{right:36px;bottom:132px;border-color:rgba(79,195,255,.9)}
+#sb-sp4{right:218px;bottom:28px;border-color:rgba(61,220,132,.9)}
+#sb-sp5{right:128px;bottom:108px;width:62px;height:62px}
+#sport-hud{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);transform:translateX(-50%);z-index:20;width:min(560px,calc(100vw - 24px));pointer-events:none;font-family:var(--cond);color:#fff;text-shadow:0 1px 2px #000}
+#sport-hud .sh-row{display:flex;gap:10px;align-items:center;background:rgba(10,12,18,.82);border:2px solid rgba(255,215,106,.7);border-radius:14px;padding:6px 10px}
+#sport-hud .sh-side{flex:1;min-width:0}#sport-hud .sh-side.r{text-align:right}#sport-hud .sh-side b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sport-hud .sh-bar{height:10px;border-radius:5px;background:rgba(255,255,255,.15);margin-top:3px;overflow:hidden}#sport-hud .sh-side.r .sh-bar i{margin-left:auto}#sport-hud .sh-bar.thin{height:5px}
+#sport-hud .sh-mid{display:grid;text-align:center;min-width:86px}#sport-hud .sh-mid b{font-size:24px;color:#ffd76a}#sport-hud .sh-mid small{font-size:11px;opacity:.85}
+#big-banner{position:fixed;left:50%;top:32%;transform:translate(-50%,-50%) scale(.6);z-index:25;font-family:var(--cond);font-weight:800;font-size:clamp(28px,7vw,56px);color:#ffd76a;text-shadow:0 3px 0 #15161a,0 0 18px rgba(0,0,0,.6);pointer-events:none;opacity:0;white-space:nowrap;text-align:center}
+#big-banner.on{animation:bban 2.2s ease-out forwards}
+@keyframes bban{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}22%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
 /* ---------- PANEL ---------- */
 #panel{position:fixed;inset:0;z-index:35;display:flex;justify-content:flex-end;pointer-events:none}
 .panel-card{pointer-events:auto;width:min(460px,100vw);height:100%;background:var(--panel);border-left:3px solid var(--line);display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(0,0,0,.4);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -578,6 +595,11 @@ canvas.swatch{background:#333}
     <button class="tbtn vb dc" data-btn="right" id="tb-right" aria-label="Virar para a direita"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
     <button class="tbtn vb dc" data-btn="gas" id="tb-gas" aria-label="Acelerar"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span>Acelerar</span></button>
     <button class="tbtn vb dc" data-btn="rev" id="tb-rev" aria-label="Freio e ré"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg><span>Ré</span></button>
+    <button class="tbtn sb" data-btn="sp1" id="sb-sp1"><span>1</span></button>
+    <button class="tbtn sb" data-btn="sp2" id="sb-sp2"><span>2</span></button>
+    <button class="tbtn sb" data-btn="sp3" id="sb-sp3"><span>3</span></button>
+    <button class="tbtn sb" data-btn="sp4" id="sb-sp4"><span>4</span></button>
+    <button class="tbtn sb" data-btn="sp5" id="sb-sp5"><span>5</span></button>
     <button class="tbtn vb" data-btn="act" id="tb-vexit" aria-label="Sair do veículo"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg><span>Sair</span></button>
   </div>
 </div>
@@ -599,7 +621,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-17';
+const BUILD = '2026.10.11-18';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -949,7 +971,7 @@ function migrate(s) {
   s.vehicles = (s.vehicles || []).filter(id => VEH[id]); if (s.owned && !s.owned.includes('gun_none')) s.owned.push('gun_none'); if (s.veh && !s.vehicles.includes(s.veh)) s.veh = null; s.cityId = s.cityId || 'sp';
   s.jobs = s.jobs || {}; s.home = s.home || null; s.shift = s.shift || null; s.day = s.day || 0;
   s.stats.trickCount = s.stats.trickCount || {}; s.stats.bestCombo = s.stats.bestCombo || 0; s.stats.contests = s.stats.contests || 0;
-  return s;
+  return bankInstall(s);
 }
 function loadSave() { try { const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } if (typeof NET !== 'undefined') NET.dirty = true; }
@@ -2066,6 +2088,7 @@ function animReal(u, o, t) {
     else if (e === 'cheer') { Object.assign(p, { lArmDown: -1.3, rArmDown: -1.3, lElbow: 0.1, rElbow: 0.1 }); ry = Math.abs(Math.sin(t * 7)) * 0.18; }
     else if (e === 'dance') { const d = Math.sin(t * 8); Object.assign(p, { twist: d * 0.45, side: d * 0.1, headY: -d * 0.4, lArmFwd: 1.0 + d * 0.5, rArmFwd: 1.0 - d * 0.5, lElbow: 1.4, rElbow: 1.4, lThigh: 0.15 + Math.max(0, d) * 0.3, rThigh: 0.15 + Math.max(0, -d) * 0.3, lKnee: 0.35 + Math.max(0, d) * 0.5, rKnee: 0.35 + Math.max(0, -d) * 0.5, lSpread: 0.08, rSpread: 0.08 }); ry = -0.04 + Math.abs(d) * 0.05; rate = 24; }
     else if (e === 'sit') { Object.assign(p, { lThigh: 1.5, rThigh: 1.5, lKnee: 1.55, rKnee: 1.55, lArmFwd: 0.7, rArmFwd: 0.7, lElbow: 0.5, rElbow: 0.5 }); ry = -0.42; }
+    if (o.fp) Object.assign(p, o.fp); if (o.armL) Object.assign(p, o.armL); if (o.armR) Object.assign(p, o.armR);
     u.board.visible = !!o.carry && e !== 'sit';
     if (o.carry) { u.board.position.set(0, 1.2, -0.2); u.board.rotation.set(Math.PI / 2, 0, 0); }
   } else {
@@ -2284,7 +2307,7 @@ function updateHUD() {
   $('h-name').textContent = S.name + (S.crew ? ` [${S.crew.name}]` : '') + (isAdm() ? ' · ADM' : '');
   $('h-lvl').textContent = 'NV ' + S.level;
   $('h-xp').style.width = (S.xp / needXP(S.level) * 100) + '%';
-  $('h-coins').textContent = '$ ' + fmt(S.coins);
+  $('h-coins').textContent = '$ ' + fmt(cashNow()) + (S.bank ? (S.bank.blk ? ' · 💳🔒' : ' · 💳') : '');
   $('h-tokens').textContent = fmt(S.tokens) + ' T';
 }
 let panelKind = null, panelArg = null;
@@ -2605,6 +2628,7 @@ function cityExtras(sc) {
   buildRegFavelas(sc); buildPoliceLot(sc); buildKids(sc); soundCars(); buildTattooShop(sc); for (const o of city.cops || []) attachBaton(o.g);
   { const [bx, bz] = morroWorld(17.6, 10), [sx, sz] = morroWorld(17.6, 15); partyAt(sc, bx, bz, 7, 4); speakerStack(sc, sx, sz, morroHd(17.6), 0, 2); const [ax, az] = morroWorld(-2, 3); usersFor(sc, [ax, az, city.boca[0], city.boca[1]], 2); }
   try { buildOuterCity(sc); } catch (e) { console.warn('cidade grande', e); city.outer = null; }
+  try { buildLife(sc); } catch (e) { console.warn('vida', e); }
   buildDayNight(sc);
   setTimeout(loadMarks, 600);
 }
@@ -3031,6 +3055,8 @@ function vmat(kind, color) {
   else if (kind === 'head') m = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff4d8, emissiveIntensity: 0.9, roughness: 0.1 });
   else if (kind === 'tail') m = new THREE.MeshStandardMaterial({ color: 0xb01818, emissive: 0xff1a1a, emissiveIntensity: 0.7, roughness: 0.2 });
   else if (kind === 'seat') m = new THREE.MeshStandardMaterial({ color: 0x1d1b19, roughness: 0.8 });
+  else if (kind === 'rimdark') m = new THREE.MeshStandardMaterial({ color: 0x2a2c30, metalness: 0.85, roughness: 0.32 });
+  else if (kind === 'disc') m = new THREE.MeshStandardMaterial({ color: 0x8a8d92, metalness: 0.9, roughness: 0.45 });
   else m = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
   return (VMAT[k] = m);
 }
@@ -3056,61 +3082,8 @@ function makeVehicleMesh0(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
   const paint = vmat('paint', V.color), add = (geo, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, P = g) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.set(rx, ry, rz); k.castShadow = true; k.receiveShadow = true; P.add(k); return k; };
   if (V.bike) { buildBike(g, V, add, paint); g.traverse(o => { if (o.isMesh) o.castShadow = true; }); addVehicleLights(g, V); return g; }
-  if (V.kind === 'car') {
-    const M = V.model;
-    // dimensões: [comprimento, largura, raio da roda, altura do vão]
-    const D = { fusca: [4.0, 1.6, 0.36, 0.22], kombi: [4.3, 1.8, 0.36, 0.25], hatch: [3.9, 1.7, 0.33, 0.2], sedan: [4.6, 1.8, 0.34, 0.2], pickup: [5.2, 1.9, 0.4, 0.32], suv: [4.7, 1.95, 0.42, 0.34], sport: [4.5, 1.95, 0.36, 0.14], super: [4.6, 2.05, 0.37, 0.12] }[M];
-    const [L, W, R, C] = D, l = L / 2;
-    let belt = 0, roof = 0;
-    if (M === 'fusca') {
-      const body = add(new THREE.SphereGeometry(1, 28, 18, 0, TAU, 0, Math.PI * 0.55), paint, 0, C + 0.2, 0.05); body.scale.set(W * 0.5, 0.95, l * 0.98);
-      const gl = add(new THREE.SphereGeometry(1, 24, 14, 0, TAU, 0, Math.PI * 0.32), vmat('glass'), 0, C + 0.32, -0.15); gl.scale.set(W * 0.44, 0.92, l * 0.55);
-      add(new THREE.SphereGeometry(1, 20, 12, 0, TAU, 0, Math.PI * 0.2), paint, 0, C + 0.36, -0.15).scale.set(W * 0.4, 0.88, l * 0.42);
-      for (const sx of [1, -1]) for (const z of [l * 0.62, -l * 0.6]) { const f = add(new THREE.SphereGeometry(1, 18, 12, 0, TAU, 0, Math.PI * 0.5), paint, sx * W * 0.4, C + R * 0.55, z); f.scale.set(0.32, R * 1.25, R * 1.6); }
-      for (const sx of [1, -1]) { add(new THREE.SphereGeometry(0.12, 14, 10), vmat('head'), sx * W * 0.38, C + R + 0.15, l * 0.86); add(boxGeo(0.1, 0.12, 0.05), vmat('tail'), sx * W * 0.38, C + R + 0.05, -l * 0.88); }
-      add(boxGeo(W * 0.9, 0.08, 0.1), vmat('chrome'), 0, C + 0.12, l * 0.9); add(boxGeo(W * 0.9, 0.08, 0.1), vmat('chrome'), 0, C + 0.12, -l * 0.9);
-      belt = C + 0.7; roof = C + 1.25;
-    } else if (M === 'kombi') {
-      const low = extrudeSide([[-l, C], [-l, C + 0.95], [l, C + 0.95], [l, C + 0.15], [l - 0.2, C]], W, 0.1); add(low, paint);
-      const top = extrudeSide([[-l + 0.05, C + 0.95], [-l + 0.12, C + 1.75], [l - 0.25, C + 1.75], [l - 0.02, C + 1.45], [l, C + 0.95]], W * 0.99, 0.12); add(top, vmat('paint', 0xf2f2ee));
-      for (const sx of [1, -1]) for (let k = 0; k < 4; k++) add(boxGeo(0.02, 0.42, 0.72), vmat('glass'), sx * W / 2, C + 1.38, -l + 0.6 + k * 0.9);
-      add(boxGeo(W * 0.85, 0.5, 0.02), vmat('glass'), 0, C + 1.38, l + 0.005, -0.25);
-      add(new THREE.TorusGeometry(0.22, 0.03, 8, 20), vmat('chrome'), 0, C + 0.62, l + 0.02); add(boxGeo(0.04, 0.28, 0.02), vmat('chrome'), 0, C + 0.62, l + 0.03, 0, 0, 0.35); add(boxGeo(0.04, 0.28, 0.02), vmat('chrome'), 0, C + 0.62, l + 0.03, 0, 0, -0.35);
-      for (const sx of [1, -1]) { add(new THREE.CylinderGeometry(0.12, 0.12, 0.05, 16), vmat('head'), sx * W * 0.36, C + 0.62, l + 0.02, Math.PI / 2); add(boxGeo(0.1, 0.22, 0.04), vmat('tail'), sx * W * 0.42, C + 0.7, -l - 0.02); }
-      belt = C + 0.95; roof = C + 1.75;
-    } else {
-      // carroceria inferior + cabine de vidro + teto
-      const P = {
-        hatch: { low: [[-l, C + 0.12], [-l + 0.05, C + 0.72], [l - 0.55, C + 0.74], [l, C + 0.6], [l, C + 0.12], [l - 0.25, C], [-l + 0.25, C]], cab: [-l + 0.12, -l + 0.3, 0.25, 0.95], rh: 0.6 },
-        sedan: { low: [[-l, C + 0.18], [-l + 0.1, C + 0.74], [-l + 0.9, C + 0.78], [l - 0.9, C + 0.74], [l, C + 0.55], [l, C + 0.15], [l - 0.3, C], [-l + 0.3, C]], cab: [-l + 0.95, -l + 1.5, 0.45, 1.1], rh: 0.56 },
-        suv: { low: [[-l, C + 0.15], [-l, C + 0.9], [l - 0.7, C + 0.92], [l, C + 0.78], [l, C + 0.15], [l - 0.3, C], [-l + 0.3, C]], cab: [-l + 0.1, -l + 0.2, 0.7, 1.1], rh: 0.72 },
-        pickup: { low: [[-l, C + 0.15], [-l, C + 0.9], [l - 0.8, C + 0.95], [l, C + 0.82], [l, C + 0.15], [l - 0.3, C], [-l + 0.3, C]], cab: [-0.25, -0.15, 0.6, 1.25], rh: 0.7 },
-        sport: { low: [[-l, C + 0.2], [-l + 0.05, C + 0.62], [-l + 0.6, C + 0.66], [l - 0.4, C + 0.58], [l, C + 0.38], [l, C + 0.12], [l - 0.3, C], [-l + 0.3, C]], cab: [-l + 0.65, -l + 1.6, 0.2, 1.05], rh: 0.44 },
-        super: { low: [[-l, C + 0.25], [-l + 0.1, C + 0.62], [-0.3, C + 0.66], [l - 0.2, C + 0.34], [l, C + 0.22], [l - 0.1, C + 0.08], [-l + 0.3, C]], cab: [-l + 1.2, -l + 1.8, 0.35, 1.3], rh: 0.4 },
-      }[M];
-      add(extrudeSide(P.low, W, 0.08), paint);
-      belt = Math.max(...P.low.map(p => p[1])) - 0.02; const [r0, r1, f1, f0] = P.cab; roof = belt + P.rh;
-      const cab = [[r0, belt], [r1, roof], [f1, roof], [f0, belt]];
-      add(extrudeSide(cab, W * 0.86, 0.07), vmat('glass'));
-      add(extrudeSide([[r1 + 0.04, roof - 0.04], [r1 + 0.06, roof + 0.03], [f1 - 0.06, roof + 0.03], [f1 - 0.04, roof - 0.04]], W * 0.84, 0.03), paint);
-      for (const z of [(r1 + f1) / 2]) for (const sx of [1, -1]) add(boxGeo(0.04, P.rh * 0.9, 0.08), paint, sx * W * 0.43, belt + P.rh * 0.45, z, 0);
-      if (M === 'pickup') { add(boxGeo(W * 0.96, 0.08, l - 0.25), paint, 0, belt - 0.02, -l / 2 - 0.15); for (const sx of [1, -1]) add(boxGeo(0.06, 0.3, l - 0.3), paint, sx * W * 0.47, belt + 0.12, -l / 2 - 0.15); add(boxGeo(W * 0.96, 0.32, 0.06), paint, 0, belt + 0.12, -l + 0.05); add(boxGeo(W * 0.95, 0.05, 0.05), vmat('chrome'), 0, roof + 0.15, -0.6); }
-      if (M === 'super' || M === 'sport') { const sp = add(boxGeo(W * 0.92, 0.05, 0.32), vmat('trim'), 0, belt + (M === 'super' ? 0.35 : 0.08), -l + 0.2); for (const sx of [1, -1]) add(boxGeo(0.05, 0.3, 0.12), vmat('trim'), sx * W * 0.35, belt + 0.18, -l + 0.2); }
-      if (M === 'super') for (const sx of [1, -1]) add(boxGeo(0.04, 0.22, 0.9), vmat('trim'), sx * W * 0.5, C + 0.38, -0.2);
-      if (V.taxi) { add(boxGeo(0.7, 0.18, 0.25), vmat('head'), 0, roof + 0.13, -0.1); const s = textSprite('TÁXI', { bg: '#15161a', fg: '#ffcf3a', size: 50, scale: [0.6, 0.15, 1] }); s.position.set(0, roof + 0.3, -0.1); g.add(s); add(boxGeo(0.02, 0.12, l * 1.6), vmat('paint', 0x15161a), W / 2 + 0.01, C + 0.45, 0); add(boxGeo(0.02, 0.12, l * 1.6), vmat('paint', 0x15161a), -W / 2 - 0.01, C + 0.45, 0); }
-      // faróis, lanternas, grade, para-choques e placa
-      const fy = C + (M === 'super' ? 0.26 : M === 'sport' ? 0.36 : 0.55), fz = l + 0.01;
-      for (const sx of [1, -1]) { add(boxGeo(0.36, 0.11, 0.06), vmat('head'), sx * W * 0.33, fy, fz - (M === 'super' ? 0.1 : 0)); add(boxGeo(0.34, 0.1, 0.05), vmat('tail'), sx * W * 0.34, C + 0.6, -l - 0.01); }
-      add(boxGeo(W * 0.45, 0.14, 0.04), vmat('trim'), 0, fy - 0.08, fz + 0.005);
-      add(boxGeo(W * 0.98, 0.12, 0.1), vmat('trim'), 0, C + 0.12, l - 0.02); add(boxGeo(W * 0.98, 0.12, 0.1), vmat('trim'), 0, C + 0.12, -l + 0.02);
-      for (const sx of [1, -1]) add(boxGeo(0.14, 0.08, 0.06), paint, sx * (W / 2 + 0.07), belt + 0.08, (f0 + f1) / 2 + 0.2);
-    }
-    const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.13), new THREE.MeshBasicMaterial({ map: plateTex() })); pl.position.set(0, C + 0.3, -l - 0.06); pl.rotation.y = Math.PI; g.add(pl);
-    // rodas
-    const tw = M === 'super' || M === 'sport' ? 0.3 : 0.24, wx = W / 2 - tw / 2 + 0.03, wz = l - (M === 'pickup' ? 0.85 : 0.75);
-    for (const sx of [1, -1]) for (const z of [wz, -wz + (M === 'super' ? 0.1 : 0)]) { const w = carWheel(R, tw, M !== 'fusca' && M !== 'kombi'); if (sx < 0) w.rotation.y = Math.PI; w.position.set(sx * wx, R, z); g.add(w); if (z > 0) w.userData.front = true; w.userData.side = sx; u.wheels.push(w); }
-    u.seatY = 0; u.camD = Math.max(7, L * 1.6); u.radius = W * 0.5 + 0.2; u.len = L; u.roof = roof;
-  } else {
+  if (V.kind === 'car') buildCarHQ(g, V, add);
+  else {
     const M = V.model, body = new THREE.Group(); g.add(body); u.body = body;
     const R = M === 'trail' ? 0.36 : M === 'scooter' ? 0.25 : M === 'chopper' ? 0.33 : 0.31, wb = M === 'chopper' ? 1.75 : M === 'scooter' ? 1.25 : 1.4, fz = wb / 2, rz = -wb / 2;
     const tire = r => new THREE.TorusGeometry(r - 0.06, 0.07, 10, 24);
@@ -3158,6 +3131,326 @@ function makeVehicleMesh0(V) {
   addVehicleLights(g, V);
   return g;
 }
+/* =========================================================
+   CARROS REALISTAS: carroceria lisa feita de seções arredondadas ao longo do carro (capô, porta-malas,
+   caixas de roda recortadas), vidros escuros com colunas, linhas das portas e maçanetas,
+   faróis com projetor e LED, lanternas, grade colmeia, placa Mercosul, retrovisores,
+   rodas de liga com pneu de perfil, disco e pinça de freio, e sombra de contato no chão.
+   ========================================================= */
+const sgp = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);
+/* curva suave e sem ondas por pontos [[z, y], ...] (interpolação cúbica monotônica) */
+function profFn(P) {
+  const n = P.length, d = [], m = [];
+  for (let i = 0; i < n - 1; i++) d.push((P[i + 1][1] - P[i][1]) / (P[i + 1][0] - P[i][0]));
+  m[0] = d[0]; m[n - 1] = d[n - 2]; for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) { if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; } const a = m[i] / d[i], b = m[i + 1] / d[i], s = a * a + b * b; if (s > 9) { const t = 3 / Math.sqrt(s); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; } }
+  return z => { if (z <= P[0][0]) return P[0][1]; if (z >= P[n - 1][0]) return P[n - 1][1]; let i = 0; while (z > P[i + 1][0]) i++; const h = P[i + 1][0] - P[i][0], t = (z - P[i][0]) / h, t2 = t * t, t3 = t2 * t; return (2 * t3 - 3 * t2 + 1) * P[i][1] + (t3 - 2 * t2 + t) * h * m[i] + (-2 * t3 + 3 * t2) * P[i + 1][1] + (t3 - t2) * h * m[i + 1]; };
+}
+/* formas dos carros (metros; frente = +z). bot/top: perfil lateral da carroceria; gh: perfil do teto/vidros;
+   zR..zF: onde começam o vidro traseiro e o para-brisa; zRR/zRF: fim e começo do teto */
+const CAR_SPEC = {
+  sedan: { L: 4.6, W: 1.8, R: 0.34, C: 0.16, tw: 0.24, ax: [1.42, -1.33], nt: 5, nb: 4.5, ns: 5.5, ng: 6, endF: [0.86, 0.86], endL: [0.38, 0.4],
+    bot: [[-2.3, 0.4], [-2.18, 0.22], [-1.9, 0.16], [1.85, 0.16], [2.16, 0.2], [2.3, 0.34]],
+    top: [[-2.3, 0.8], [-2.25, 0.93], [-2.0, 0.98], [-1.3, 0.99], [0, 1.0], [0.8, 0.97], [1.6, 0.92], [2.15, 0.86], [2.3, 0.74]],
+    gh: [[-1.38, 0.96], [-1.2, 1.12], [-0.95, 1.36], [-0.6, 1.44], [-0.1, 1.45], [0.3, 1.32], [0.62, 1.12], [0.8, 0.96]], zR: -1.38, zRR: -0.85, zRF: -0.05, zF: 0.8, zB: -0.42,
+    pill: 'black', cpil: 'sedan', hl: 'proj', tl: 'bar', grille: 'honey', mirror: 1, fin: 1 },
+  hatch: { L: 3.9, W: 1.66, R: 0.31, C: 0.15, tw: 0.2, ax: [1.22, -1.18], nt: 6, nb: 5, ns: 6, ng: 7, endF: [0.9, 0.9], endL: [0.22, 0.24],
+    bot: [[-1.95, 0.42], [-1.85, 0.2], [-1.6, 0.15], [1.6, 0.15], [1.85, 0.2], [1.95, 0.4]],
+    top: [[-1.95, 0.78], [-1.9, 0.86], [-1.5, 0.88], [0, 0.9], [0.8, 0.88], [1.5, 0.85], [1.9, 0.8], [1.95, 0.7]],
+    gh: [[-1.88, 0.86], [-1.82, 1.2], [-1.6, 1.36], [-0.2, 1.38], [0.25, 1.3], [0.62, 1.04], [0.72, 0.87]], zR: -1.88, zRR: -1.58, zRF: 0.18, zF: 0.72, zB: -0.42,
+    pill: 'black', cpil: 'hatch', hl: 'square', tl: 'square', grille: 'bars', mirror: 1 },
+  suv: { L: 4.7, W: 1.92, R: 0.4, C: 0.24, tw: 0.26, ax: [1.45, -1.38], nt: 5.5, nb: 4.5, ns: 6, ng: 6.5, endF: [0.86, 0.88], endL: [0.4, 0.3],
+    bot: [[-2.35, 0.5], [-2.25, 0.32], [-2.0, 0.24], [1.95, 0.24], [2.22, 0.3], [2.35, 0.46]],
+    top: [[-2.35, 1.0], [-2.3, 1.12], [-2.0, 1.16], [0, 1.18], [1.0, 1.17], [1.9, 1.1], [2.25, 1.0], [2.35, 0.82]],
+    gh: [[-2.24, 1.14], [-2.16, 1.5], [-1.95, 1.72], [-0.4, 1.74], [0.3, 1.68], [0.78, 1.36], [1.02, 1.15]], zR: -2.24, zRR: -1.95, zRF: 0.3, zF: 1.02, zB: -0.5,
+    pill: 'black', cpil: 'suv', hl: 'proj', tl: 'bar', grille: 'bars', mirror: 1, clad: 0.42, rails: 1, fin: 1 },
+  pickup: { L: 5.25, W: 1.88, R: 0.39, C: 0.26, tw: 0.26, ax: [1.6, -1.55], nt: 6, nb: 4.5, ns: 6.5, ng: 6.5, endF: [0.88, 0.94], endL: [0.4, 0.14],
+    bot: [[-2.62, 0.62], [-2.55, 0.32], [-2.25, 0.26], [2.05, 0.26], [2.4, 0.36], [2.62, 0.6]],
+    top: [[-2.62, 1.06], [-2.58, 1.12], [-0.6, 1.14], [0.6, 1.16], [1.5, 1.15], [2.3, 1.06], [2.55, 0.94], [2.62, 0.8]],
+    gh: [[-0.62, 1.12], [-0.6, 1.62], [-0.48, 1.8], [0.4, 1.82], [0.9, 1.68], [1.24, 1.38], [1.42, 1.14]], zR: -0.62, zRR: -0.5, zRF: 0.45, zF: 1.42, zB: 0.02,
+    pill: 'black', cpil: 'none', hl: 'proj', tl: 'vert', grille: 'bars', mirror: 1, bed: [-2.6, -0.66], clad: 0.4 },
+  sport: { L: 4.5, W: 1.94, R: 0.35, C: 0.12, tw: 0.3, ax: [1.38, -1.3], nt: 4.2, nb: 4, ns: 4, ng: 4.5, endF: [0.8, 0.82], endL: [0.5, 0.45],
+    bot: [[-2.25, 0.4], [-2.1, 0.16], [-1.8, 0.12], [1.8, 0.12], [2.1, 0.14], [2.25, 0.3]],
+    top: [[-2.25, 0.62], [-2.18, 0.78], [-1.9, 0.8], [-1.0, 0.8], [0, 0.8], [0.6, 0.78], [1.4, 0.68], [2.0, 0.56], [2.25, 0.4]],
+    gh: [[-1.75, 0.78], [-1.2, 0.98], [-0.7, 1.16], [-0.3, 1.2], [0.05, 1.12], [0.35, 0.92], [0.5, 0.79]], zR: -1.75, zRR: -0.62, zRF: -0.1, zF: 0.5, zB: -0.55,
+    pill: 'black', cpil: 'coupe', hl: 'slim', tl: 'bar', grille: 'honey', mirror: 1, exh: 4, caliper: 0xd8312f, spoiler: 'lip' },
+  super: { L: 4.62, W: 2.04, R: 0.36, C: 0.1, tw: 0.32, ax: [1.42, -1.38], nt: 3.8, nb: 4, ns: 3.6, ng: 4, endF: [0.78, 0.9], endL: [0.6, 0.3],
+    bot: [[-2.31, 0.36], [-2.2, 0.14], [-1.9, 0.1], [1.9, 0.1], [2.2, 0.12], [2.31, 0.2]],
+    top: [[-2.31, 0.76], [-2.25, 0.82], [-1.6, 0.8], [-0.6, 0.78], [0.2, 0.72], [0.9, 0.62], [1.6, 0.5], [2.1, 0.38], [2.31, 0.24]],
+    gh: [[-1.7, 0.78], [-1.0, 0.92], [-0.5, 1.08], [-0.15, 1.12], [0.25, 1.06], [0.62, 0.86], [0.92, 0.66]], zR: -1.7, zRR: -0.45, zRF: 0.1, zF: 0.92, zB: -0.5,
+    pill: 'black', cpil: 'super', hl: 'slim', tl: 'bar', grille: 'honey', mirror: 1, exh: 2, caliper: 0xffcf3a, intake: 1, spoiler: 'wing' },
+  fusca: { L: 4.05, W: 1.4, R: 0.36, C: 0.2, tw: 0.2, ax: [1.2, -1.2], nt: 2.4, nb: 2.6, ns: 2.4, ng: 2.6, endF: [0.6, 0.62], endL: [0.7, 0.7], noArch: 1,
+    bot: [[-2.0, 0.45], [-1.8, 0.28], [-1.4, 0.22], [1.4, 0.22], [1.8, 0.28], [2.02, 0.5]],
+    top: [[-2.0, 0.66], [-1.8, 0.78], [-1.2, 0.9], [0, 0.96], [0.55, 0.95], [1.2, 0.86], [1.8, 0.74], [2.02, 0.6]],
+    gh: [[-1.3, 0.88], [-1.05, 1.08], [-0.65, 1.34], [-0.1, 1.44], [0.15, 1.42], [0.45, 1.22], [0.62, 0.94]], zR: -1.3, zRR: -0.62, zRF: 0.12, zF: 0.62, zB: -0.15,
+    pill: 'paint', cpil: 'fusca', hl: 'round', tl: 'round', grille: 'none', mirror: 1, chromeBump: 1, steel: 1 },
+  kombi: { L: 4.3, W: 1.76, R: 0.35, C: 0.24, tw: 0.22, ax: [1.2, -1.2], nt: 7, nb: 4, ns: 7, ng: 8, endF: [0.9, 0.9], endL: [0.22, 0.25], two: 0xf2f2ee,
+    bot: [[-2.15, 0.48], [-2.08, 0.28], [-1.8, 0.24], [1.8, 0.24], [2.08, 0.28], [2.15, 0.48]],
+    top: [[-2.15, 1.05], [-2.12, 1.14], [-1.8, 1.16], [1.8, 1.16], [2.1, 1.12], [2.15, 1.04]],
+    gh: [[-2.1, 1.12], [-2.06, 1.6], [-1.9, 1.98], [1.5, 1.99], [1.86, 1.92], [2.05, 1.6], [2.12, 1.12]], zR: -2.1, zRR: -1.88, zRF: 1.55, zF: 2.12, zB: 0.95,
+    pill: 'two', cpil: 'kombi', hl: 'round', tl: 'square', grille: 'none', mirror: 1, chromeBump: 1, steel: 1 },
+};
+/* geometria da carroceria a partir da forma: funções de altura/largura usadas por tudo (faróis, vidros, recortes) */
+function carShape(M) {
+  if (carShape[M]) return carShape[M];
+  const s = CAR_SPEC[M], l = s.L / 2, hw0 = s.W / 2, yb = profFn(s.bot), yt = profFn(s.top), gt = profFn(s.gh);
+  const et = 2 / s.nt, eb = 2 / s.nb, ex = 2 / s.ns;
+  const hw = z => { let f = 1; if (z > l - s.endL[0]) { const k = (z - (l - s.endL[0])) / s.endL[0]; f = 1 - (1 - s.endF[0]) * Math.pow(k, 2.2); } else if (z < -l + s.endL[1]) { const k = (-l + s.endL[1] - z) / s.endL[1]; f = 1 - (1 - s.endF[1]) * Math.pow(k, 2.2); } return hw0 * f; };
+  // meia largura da carroceria na altura y (0 se fora)
+  const halfAt = (z, y) => { const a = yb(z), b = yt(z), ym = (a + b) / 2, hh = (b - a) / 2; const hr = (y - ym) / hh; if (hr >= 1 || hr <= -1) return 0; const sn = sgp(hr, hr > 0 ? 1 / et : 1 / eb), cs = Math.sqrt(Math.max(0, 1 - sn * sn)); return hw(z) * Math.pow(cs, ex); };
+  const shoulder = z => { const a = yb(z), b = yt(z); return (a + b) / 2 + (b - a) / 2 * 0.86; };
+  // ponto da superfície na frente (end=1) ou atrás (end=-1) para (x, y)
+  const surfZ = (x, y, end) => { let lo = end > 0 ? l - 1.4 : -l + 1.4, hi = end * l; const ins = z => halfAt(z, y) >= Math.abs(x); if (!ins(lo)) return null; for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2; if (ins(m)) lo = m; else hi = m; } return lo; };
+  return (carShape[M] = { s, l, hw, yb, yt, gt, et, eb, ex, halfAt, shoulder, surfZ });
+}
+const CAR_KIT = {};
+function carKit(M) {
+  if (CAR_KIT[M]) return CAR_KIT[M];
+  const K = carShape(M), s = K.s, l = K.l, kit = { M };
+  // ---- carroceria (com caixas de roda recortadas; cor escura por dentro e embaixo) ----
+  const zs = []; const NZ = Math.round(s.L / 0.06); for (let i = 0; i <= NZ; i++) zs.push(-l + s.L * (0.004 + 0.992 * i / NZ));
+  const NP = 44, pos = [], col = [], uv = [], idx = [];
+  const archR = s.R + 0.07, xin = K.s.W / 2 - s.tw - 0.07;
+  zs.forEach((z, i) => {
+    const pinch = false, a = K.yb(z), b = K.yt(z), ym = (a + b) / 2, hh = (b - a) / 2 * (pinch ? 0.86 : 1), w = K.hw(z) * (pinch ? 0.05 : 1);
+    let arch = 0; if (!s.noArch) for (const az of s.ax) { const dz = z - az; if (Math.abs(dz) < archR) arch = Math.max(arch, s.R + Math.sqrt(archR * archR - dz * dz)); }
+    for (let j = 0; j <= NP; j++) {
+      const ph = -Math.PI / 2 + TAU * j / NP, c = Math.cos(ph), sn = Math.sin(ph);
+      let x = w * sgp(c, K.ex), y = ym + hh * sgp(sn, sn > 0 ? K.et : K.eb), dark = y < s.C + 0.04;
+      if (arch && y < arch) { if (Math.abs(x) > xin) y = arch; else dark = true; }
+      if (s.clad && y < s.C + s.clad - 0.18 && !dark) dark = 0.5;
+      pos.push(x, y, z); const k = dark === true ? 0.06 : 1; col.push(k, k, k); uv.push((z + l) / s.L, j / NP);
+    }
+  });
+  for (let i = 0; i < zs.length - 1; i++) for (let j = 0; j < NP; j++) { const a = i * (NP + 1) + j, b = a + NP + 1; idx.push(a, a + 1, b, a + 1, b + 1, b); }
+  // tampas das pontas (para-choques), viradas para fora
+  for (const [ri, sg] of [[0, -1], [zs.length - 1, 1]]) { const base = pos.length / 3, o = ri * (NP + 1) * 3; let cy = 0; for (let j = 0; j < NP; j++) cy += pos[o + j * 3 + 1] / NP; pos.push(0, cy, zs[ri] + sg * 0.004); col.push(1, 1, 1); uv.push(ri ? 0.999 : 0.001, 0.25);
+    for (let j = 0; j <= NP; j++) { pos.push(pos[o + j * 3], pos[o + j * 3 + 1], pos[o + j * 3 + 2]); col.push(col[o + j * 3], col[o + j * 3 + 1], col[o + j * 3 + 2]); uv.push(ri ? 0.999 : 0.001, 0.25); }
+    for (let j = 0; j < NP; j++) { if (sg > 0) idx.push(base, base + 1 + j, base + 2 + j); else idx.push(base, base + 2 + j, base + 1 + j); } }
+  let g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); kit.body = g;
+  // ---- cabine (vidros, colunas e teto numa peça só) ----
+  const gz = [], NG = 36, NQ = 26, gp = [], gu = [], gi = []; for (let i = 0; i <= NG; i++) gz.push(s.zR + (s.zF - s.zR) * i / NG);
+  let roof = 0;
+  gz.forEach(z => {
+    const y0 = K.shoulder(z), y1 = Math.max(K.gt(z), K.yt(z) + 0.012), x0 = K.halfAt(z, y0) + 0.004, x1 = x0 * (M === 'kombi' ? 0.94 : 0.74); roof = Math.max(roof, y1);
+    for (let j = 0; j <= NQ; j++) {
+      const ph = Math.PI * j / NQ, c = Math.cos(ph), sn = Math.sin(ph), e = 2 / s.ng, hy = sgp(sn, e), y = y0 + (y1 - y0) * hy;
+      let x = sgp(c, e) * (x0 + (x1 - x0) * Math.pow(Math.abs(hy), 1.4));
+      const xb = K.halfAt(z, y); if (Math.abs(x) < xb + 0.006 && y <= K.yt(z)) x = Math.sign(x || 1) * (xb + 0.006);
+      gp.push(x, y, z); gu.push((z - s.zR) / (s.zF - s.zR), j / NQ);
+    }
+  });
+  for (let i = 0; i < NG; i++) for (let j = 0; j < NQ; j++) { const a = i * (NQ + 1) + j, b = a + NQ + 1; gi.push(a, a + 1, b, a + 1, b + 1, b); }
+  g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(gu, 2)); g.setIndex(gi); g.computeVertexNormals(); kit.gh = g; kit.roof = roof;
+  // a peça é aberta embaixo e nas pontas: as pontas ficam dentro da carroceria
+  // ---- peças que acompanham a superfície (faróis, lanternas, grade, placas) ----
+  kit.rib = (x0, x1, y0, y1, end, off = 0.006, nx = 10, ny = 3) => {
+    const P = [], U = [], I = [], v3 = (x, y) => { let z = K.surfZ(x, y, end); if (z == null) for (let t = 0.1; t <= 1.001 && z == null; t += 0.1) { const zz = end * (l - 0.2), ym = (K.yb(zz) + K.yt(zz)) / 2; z = K.surfZ(x * (1 - t * 0.5), y + (ym - y) * t, end); } return z == null ? null : new THREE.Vector3(x, y, z); };
+    for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+      const x = x0 + (x1 - x0) * i / nx, y = y0 + (y1 - y0) * j / ny, p = v3(x, y) || new THREE.Vector3(x, y, end * (l - 0.3));
+      const px = v3(x + 0.01, y) || p, py = v3(x, y + 0.01) || p, n = new THREE.Vector3().subVectors(px, p).cross(new THREE.Vector3().subVectors(py, p)).normalize(); if (n.z * end < 0) n.negate();
+      p.addScaledVector(n, off); P.push(p.x, p.y, p.z); U.push(end > 0 ? i / nx : 1 - i / nx, j / ny);
+    }
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const a = j * (nx + 1) + i, b = a + nx + 1; if (end > 0) I.push(a, a + 1, b, a + 1, b + 1, b); else I.push(a, b, a + 1, a + 1, b, b + 1); }
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); gg.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); gg.setIndex(I); gg.computeVertexNormals(); return gg;
+  };
+  return (CAR_KIT[M] = kit);
+}
+/* texturas: linhas das portas/maçanetas (multiplica a cor da pintura) e vidros/colunas/teto */
+function carSeamTex(M) {
+  const key = 'seam_' + M; if (VMAT[key]) return VMAT[key];
+  const K = carShape(M), s = K.s, l = K.l, Wt = 1024, Ht = 512;
+  const t = canvasTex(Wt, Ht, (g) => {
+    g.fillStyle = '#fff'; g.fillRect(0, 0, Wt, Ht);
+    const U = z => (z + l) / s.L * Wt;
+    const V = (z, y, side) => { const a = K.yb(z), b = K.yt(z), ym = (a + b) / 2, hh = (b - a) / 2, hr = clamp((y - ym) / hh, -0.999, 0.999), sn = sgp(hr, hr > 0 ? 1 / K.et : 1 / K.eb), ph = Math.asin(sn); return (side > 0 ? ph + Math.PI / 2 : Math.PI - ph + Math.PI / 2) / TAU * Ht; };
+    const vline = (z, y0, y1, w = 2.2, c = '#4a4a4a') => { for (const sd of [1, -1]) { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); for (let k = 0; k <= 8; k++) { const y = y0 + (y1 - y0) * k / 8, zz = z, p = [U(zz), V(zz, y, sd)]; k ? g.lineTo(...p) : g.moveTo(...p); } g.stroke(); } };
+    const hline = (z0, z1, y, w = 2.2, c = '#4a4a4a') => { for (const sd of [1, -1]) { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); for (let k = 0; k <= 16; k++) { const z = z0 + (z1 - z0) * k / 16, p = [U(z), V(z, y, sd)]; k ? g.lineTo(...p) : g.moveTo(...p); } g.stroke(); } };
+    const topLine = (z, c = '#4a4a4a') => { g.strokeStyle = c; g.lineWidth = 2.2; g.beginPath(); g.moveTo(U(z), V(z, K.shoulder(z), 1)); g.lineTo(U(z), V(z, K.shoulder(z), -1)); g.stroke(); };
+    const handle = (z, y) => { for (const sd of [1, -1]) { const x = U(z), v = V(z, y, sd); g.fillStyle = '#6a6a6a'; g.fillRect(x - 16, v - 4, 32, 8); g.fillStyle = '#d0d0d0'; g.fillRect(x - 14, v - 3, 28, 3); } };
+    const sh = K.shoulder(0), low = s.C + 0.12, top = sh - 0.01;
+    if (s.cpil !== 'super') {
+      // portas: dianteira (da coluna A até a B) e traseira
+      const zA = s.zF + 0.05, zB = s.zB, zC = M === 'hatch' || M === 'sport' || M === 'fusca' ? null : s.zRR + (M === 'pickup' ? -0.05 : 0.05);
+      vline(zA, low, K.shoulder(zA) - 0.02); vline(zB, low, K.shoulder(zB) - 0.02); if (zC != null && zC < zB - 0.4) vline(zC, low, K.shoulder(zC) - 0.02);
+      hline(zC != null && zC < zB - 0.4 ? zC : zB - 0.02, zA, low, 2);
+      handle(zB + 0.1, sh - 0.1); if (zC != null && zC < zB - 0.4) handle(zC + 0.1, sh - 0.1);
+    } else {
+      // portas de supercarro e entrada de ar lateral
+      vline(s.zF + 0.1, low + 0.06, K.shoulder(s.zF + 0.1) - 0.02); vline(s.zB, low + 0.06, K.shoulder(s.zB) - 0.03); hline(s.zB, s.zF + 0.1, low + 0.06, 2);
+      for (const sd of [1, -1]) { g.fillStyle = '#121212'; g.beginPath(); const p = [[s.zB - 0.05, low + 0.12], [s.zB - 0.05, sh - 0.12], [s.zB - 0.75, low + 0.2]]; p.forEach(([z, y], k) => k ? g.lineTo(U(z), V(z, y, sd)) : g.moveTo(U(z), V(z, y, sd))); g.closePath(); g.fill(); }
+    }
+    // capô, porta-malas, para-choques e tampa do tanque
+    topLine(l - 0.32); if (M !== 'pickup') topLine(-l + 0.25);
+    if (s.zR > -l + 0.5 && M !== 'pickup') topLine(s.zR - 0.03);
+    vline(l - 0.36, s.C + 0.08, K.shoulder(l - 0.36) - 0.06, 1.6, '#6a6a6a'); vline(-l + 0.3, s.C + 0.08, K.shoulder(-l + 0.3) - 0.06, 1.6, '#6a6a6a');
+    { const z = s.ax[1] + 0.55, v = V(z, sh - 0.16, 1); g.strokeStyle = '#6a6a6a'; g.lineWidth = 2; g.beginPath(); g.arc(U(z), v, 9, 0, TAU); g.stroke(); }
+    // friso/proteção lateral escura (SUV, picape)
+    if (s.clad) for (const sd of [1, -1]) { g.fillStyle = '#2a2b2d'; g.beginPath(); for (let k = 0; k <= 32; k++) { const z = -l + s.L * k / 32; g.lineTo(U(z), V(z, s.C + s.clad - 0.18, sd)); } for (let k = 32; k >= 0; k--) { const z = -l + s.L * k / 32; g.lineTo(U(z), V(z, s.C - 0.05, sd)); } g.closePath(); g.fill(); }
+  });
+  t.encoding = THREE.sRGBEncoding; return (VMAT[key] = t);
+}
+function carGlassTex(M, color) {
+  const key = 'gl_' + M + '_' + color; if (VMAT[key]) return VMAT[key];
+  const K = carShape(M), s = K.s, Wt = 256, Ht = 128;
+  const paint = '#' + new THREE.Color(s.two || color).getHexString(), pil = s.pill === 'black' ? '#08090a' : paint;
+  const vr = Math.asin(Math.pow(0.9, s.ng / 2)) / Math.PI;
+  const t = canvasTex(Wt, Ht, (g) => {
+    const im = g.createImageData(Wt, Ht), d = im.data, C = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    const cP = C(paint), cK = C(pil), cG = [12, 19, 25], cT = [184, 188, 192], cB = [6, 6, 7];
+    for (let py = 0; py < Ht; py++) for (let px = 0; px < Wt; px++) {
+      const u = (px + 0.5) / Wt, v = (py + 0.5) / Ht, z = s.zR + u * (s.zF - s.zR), side = v < vr || v > 1 - vr, ev = Math.min(Math.abs(v - vr), Math.abs(v - (1 - vr)));
+      let c = cG;
+      const roofZ = z > s.zRR + 0.06 && z < s.zRF - 0.06;
+      if (!side && roofZ) c = cP;
+      else if (ev < 0.035 && !roofZ) c = cK;
+      else if (side) {
+        const sv = v < 0.5 ? v / vr : (1 - v) / vr;
+        if (sv < 0.06) c = s.pill === 'two' ? cP : cT;
+        else if (Math.abs(z - s.zB) < 0.055) c = cK;
+        else if (s.cpil === 'sedan' && z < s.zRR + 0.06 && z > s.zRR - 0.38 + sv * 0.25) c = cP;
+        else if (s.cpil === 'hatch' && z < s.zR + 0.42 - sv * 0.12) c = cP;
+        else if (s.cpil === 'suv' && z < s.zR + 0.16) c = cK;
+        else if (s.cpil === 'coupe' && z < s.zRR - 0.12 + sv * 0.3) c = cP;
+        else if (s.cpil === 'super' && z < s.zRR + 0.1 - sv * 0.2) c = cP;
+        else if (s.cpil === 'fusca' && (z < s.zRR - 0.05 || Math.abs(z - (s.zRR + 0.2)) < 0.03)) c = cP;
+        else if (s.cpil === 'kombi' && (Math.abs(((z - s.zR) % 0.86) - 0.43) > 0.36 || z > s.zF - 0.75 && z < s.zF - 0.6)) c = cP;
+        else if (z > s.zF - 0.04 || z < s.zR + 0.03) c = cK;
+      } else if (z > s.zF - 0.06) c = cB;                 // base do para-brisa (palhetas)
+      const sheen = side ? 0 : (v > 0.35 && v < 0.65 ? 8 : 0), o = (py * Wt + px) * 4;
+      d[o] = Math.min(255, c[0] + (c === cG ? sheen : 0)); d[o + 1] = Math.min(255, c[1] + (c === cG ? sheen : 0)); d[o + 2] = Math.min(255, c[2] + (c === cG ? sheen + 4 : 0)); d[o + 3] = 255;
+    }
+    g.putImageData(im, 0, 0);
+  });
+  return (VMAT[key] = t);
+}
+/* faróis, lanternas e grade desenhados (cor + brilho) */
+function carLampTex(kind) {
+  const key = 'lamp_' + kind; if (VMAT[key]) return VMAT[key];
+  const W = kind === 'round' || kind === 'tround' ? 64 : 256, H = 64, mk = emis => canvasTex(W, H, (g) => {
+    g.clearRect(0, 0, W, H);
+    const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+    if (kind === 'proj' || kind === 'slim' || kind === 'square' || kind === 'round') {
+      g.fillStyle = emis ? '#000' : '#15181c'; if (kind === 'round') { g.beginPath(); g.ellipse(W / 2, H / 2, H * 0.46, H * 0.46, 0, 0, TAU); g.fill(); } else { rr(4, kind === 'slim' ? 14 : 6, W - 8, kind === 'slim' ? H - 28 : H - 12, kind === 'square' ? 4 : 18); g.fill(); }
+      if (!emis) { const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, 'rgba(255,255,255,.35)'); gr.addColorStop(0.5, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+      g.fillStyle = emis ? '#fff' : '#eef4ff';
+      if (kind === 'round') { g.beginPath(); g.ellipse(W / 2, H / 2, H * 0.3, H * 0.3, 0, 0, TAU); g.fill(); g.fillStyle = emis ? '#888' : '#b8c0c8'; g.fillRect(W / 2 - H * 0.42, H / 2 - 1, H * 0.84, 2); }
+      else if (kind === 'square') { g.fillRect(14, 14, W * 0.42, H - 28); g.fillStyle = emis ? '#5a3a00' : '#ffb347'; g.fillRect(W * 0.62, 14, W * 0.3, H - 28); }
+      else { const ny = kind === 'slim' ? 2 : 2; for (let i = 0; i < ny; i++) { g.beginPath(); g.arc(W * (0.3 + i * 0.22), H * 0.55, kind === 'slim' ? 8 : 13, 0, TAU); g.fill(); } g.fillRect(W * 0.08, kind === 'slim' ? 16 : 10, W * 0.84, 5); g.fillRect(W * 0.08, kind === 'slim' ? 16 : 10, 5, kind === 'slim' ? 22 : 30); }
+    } else if (kind === 'bar' || kind === 'vert' || kind === 'tsq' || kind === 'tround') {
+      g.fillStyle = emis ? '#300' : '#5a0d10'; if (kind === 'tround') { g.beginPath(); g.ellipse(W / 2, H / 2, H * 0.45, H * 0.45, 0, 0, TAU); g.fill(); } else { rr(4, 6, W - 8, H - 12, kind === 'bar' ? 14 : 6); g.fill(); }
+      g.fillStyle = emis ? '#ff3030' : '#d0262c';
+      if (kind === 'bar') { g.fillRect(14, 14, W - 28, 7); g.fillRect(14, 14, 7, H - 28); g.fillRect(W - 21, 14, 7, H - 28); }
+      else if (kind === 'tround') { g.beginPath(); g.ellipse(W / 2, H / 2, H * 0.32, H * 0.32, 0, 0, TAU); g.fill(); }
+      else { g.fillRect(12, 12, W * 0.5, H - 24); g.fillStyle = emis ? '#000' : '#e8e8e8'; g.fillRect(W * 0.66, 12, W * 0.12, H - 24); g.fillStyle = emis ? '#4a2a00' : '#ff9a20'; g.fillRect(W * 0.8, 12, W * 0.12, H - 24); }
+    } else if (kind === 'honey' || kind === 'bars' || kind === 'intake') {
+      g.fillStyle = emis ? '#000' : '#0b0c0d'; rr(2, 2, W - 4, H - 4, kind === 'intake' ? 10 : 16); g.fill(); if (emis) return;
+      g.strokeStyle = kind === 'bars' ? '#4c5056' : '#262a2e'; g.lineWidth = kind === 'bars' ? 3 : 1.5;
+      if (kind === 'bars') for (let y = 12; y < H - 6; y += 10) { g.beginPath(); g.moveTo(8, y); g.lineTo(W - 8, y); g.stroke(); }
+      else for (let y = 6, r = 0; y < H; y += 7, r++) for (let x = (r % 2) * 6 + 6; x < W - 4; x += 12) { g.beginPath(); for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; g.lineTo(x + Math.cos(a) * 4.5, y + Math.sin(a) * 4.5); } g.closePath(); g.stroke(); }
+      if (kind !== 'intake') { g.strokeStyle = '#9aa0a8'; g.lineWidth = 3; rr(3, 3, W - 6, H - 6, 16); g.stroke(); g.fillStyle = '#c8ccd2'; g.beginPath(); g.arc(W / 2, H / 2, 9, 0, TAU); g.fill(); g.fillStyle = '#20242a'; g.beginPath(); g.arc(W / 2, H / 2, 6, 0, TAU); g.fill(); }
+    }
+  });
+  const t = mk(false), te = mk(true);
+  const emissive = !['honey', 'bars', 'intake'].includes(kind);
+  const m = new THREE.MeshPhysicalMaterial({ map: t, transparent: true, alphaTest: 0.4, roughness: 0.08, metalness: 0.3, clearcoat: 1, emissive: emissive ? (['bar', 'vert', 'tsq', 'tround'].includes(kind) ? 0xff2020 : 0xfff6e0) : 0x000000, emissiveMap: emissive ? te : null, emissiveIntensity: emissive ? 0.9 : 0, polygonOffset: true, polygonOffsetFactor: -2 });
+  return (VMAT[key] = m);
+}
+/* roda de liga: pneu com perfil, aro com raios vazados, cubo, porcas; disco gira junto e a pinça fica parada */
+const WHEEL_TPL = {};
+function carWheelHQ(r, w, style, caliper) {
+  const key = [r, w, style, caliper].join('_');
+  if (!WHEEL_TPL[key]) {
+    const wg = new THREE.Group(), spin = new THREE.Group(), disc = new THREE.Group(), cal = new THREE.Group(); wg.add(spin, disc, cal);
+    const tp = [[0.64, -0.5], [0.86, -0.53], [0.95, -0.47], [1, -0.36], [1, 0.36], [0.95, 0.47], [0.86, 0.53], [0.64, 0.5]].map(([a, b]) => new THREE.Vector2(a * r, b * w));
+    const tg = new THREE.LatheGeometry(tp, 30); tg.rotateZ(Math.PI / 2); const tire = new THREE.Mesh(tg, vmat('tire')); tire.castShadow = true; spin.add(tire);
+    const rimR = r * 0.66, face = w / 2 - 0.035;
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(rimR, rimR, w * 0.9, 24, 1, true), vmat('trim')); barrel.rotation.z = Math.PI / 2; spin.add(barrel);
+    if (style === 'steel') {
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(rimR * 0.95, 24, 10, 0, TAU, 0, Math.PI * 0.32), vmat('chrome')); cap.rotation.z = -Math.PI / 2; cap.position.x = face - rimR * 0.82; spin.add(cap);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(rimR * 0.98, 0.018, 6, 28), vmat('paint', 0xe8e8e2)); ring.rotation.y = Math.PI / 2; ring.position.x = face; spin.add(ring);
+    } else {
+      const n = style === 'sport' ? 10 : style === 'suv' ? 6 : 5, sh = new THREE.Shape(); sh.absarc(0, 0, rimR, 0, TAU, false);
+      const ri = rimR * 0.3, ro = rimR * 0.86, gap = style === 'sport' ? 0.36 : 0.62;
+      for (let k = 0; k < n; k++) { const a0 = (k + 0.5 - gap / 2) / n * TAU, a1 = (k + 0.5 + gap / 2) / n * TAU, hpath = new THREE.Path(); const ai = (a1 - a0) * 0.25; hpath.absarc(0, 0, ro, a0, a1, false); hpath.absarc(0, 0, ri, a1 - ai, a0 + ai, true); hpath.closePath(); sh.holes.push(hpath); }
+      const rg = new THREE.ExtrudeGeometry(sh, { depth: 0.035, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.008, bevelSegments: 2, curveSegments: 10 }); rg.rotateY(Math.PI / 2); rg.translate(face - 0.045, 0, 0);
+      const rim = new THREE.Mesh(rg, style === 'sport' ? vmat('rimdark') : vmat('alloy')); spin.add(rim);
+      const lip = new THREE.Mesh(new THREE.TorusGeometry(rimR, 0.014, 6, 32), vmat('chrome')); lip.rotation.y = Math.PI / 2; lip.position.x = face; spin.add(lip);
+      for (let k = 0; k < 5; k++) { const a = k / 5 * TAU, nut = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.03, 6), vmat('chrome')); nut.rotation.z = Math.PI / 2; nut.position.set(face + 0.005, Math.cos(a) * rimR * 0.2, Math.sin(a) * rimR * 0.2); spin.add(nut); }
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(rimR * 0.12, rimR * 0.12, 0.03, 16), vmat('trim')); cap.rotation.z = Math.PI / 2; cap.position.x = face + 0.008; spin.add(cap);
+    }
+    const dm = new THREE.Mesh(new THREE.CylinderGeometry(rimR * 0.8, rimR * 0.8, 0.025, 24), vmat('disc')); dm.rotation.z = Math.PI / 2; dm.position.x = face - 0.12; disc.add(dm);
+    const cm = new THREE.Mesh(boxGeo(0.06, rimR * 0.5, rimR * 0.34), caliper ? vmat('paint', caliper) : vmat('trim')); cm.position.set(face - 0.1, rimR * 0.52, -rimR * 0.3); cm.rotation.x = 0.5; cal.add(cm);
+    WHEEL_TPL[key] = wg;
+  }
+  const wg = WHEEL_TPL[key].clone(true); wg.traverse(o => { if (o.isMesh) o.castShadow = true; }); return wg;
+}
+/* sombra de contato (escurece o chão embaixo do carro) */
+let _aoT = null;
+function carAO(L, W) {
+  _aoT = _aoT || canvasTex(64, 128, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, h / 2); gr.addColorStop(0, 'rgba(0,0,0,.62)'); gr.addColorStop(0.55, 'rgba(0,0,0,.45)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.save(); g.scale(1, 1); g.fillRect(0, 0, w, h); g.restore(); });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(W * 1.3, L * 1.12), new THREE.MeshBasicMaterial({ map: _aoT, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
+  m.rotation.x = -Math.PI / 2; m.position.y = 0.035; m.renderOrder = 1; return m;
+}
+function carBodyMat(M, color) {
+  const key = 'body_' + M + '_' + color; if (VMAT[key]) return VMAT[key];
+  return (VMAT[key] = new THREE.MeshPhysicalMaterial({ color, map: carSeamTex(M), vertexColors: true, metalness: 0.5, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05 }));
+}
+function carGlassMat(M, color) {
+  const key = 'ghm_' + M + '_' + color; if (VMAT[key]) return VMAT[key];
+  return (VMAT[key] = new THREE.MeshPhysicalMaterial({ map: carGlassTex(M, color), metalness: 0.35, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03 }));
+}
+/* monta o carro: substitui a carroceria antiga (mesmos dados: rodas, teto, comprimento) */
+function buildCarHQ(g, V, add) {
+  const M = V.model, kit = carKit(M), K = carShape(M), s = K.s, l = K.l, u = g.userData, W = s.W;
+  const body = new THREE.Mesh(kit.body, carBodyMat(M, V.color)); body.castShadow = body.receiveShadow = true; g.add(body);
+  const gh = new THREE.Mesh(kit.gh, carGlassMat(M, V.color)); gh.castShadow = true; g.add(gh);
+  const rib = (key, x0, x1, y0, y1, end, mat, nx, ny) => { const k = 'rib_' + M + key; const geo = kit[k] || (kit[k] = kit.rib(x0, x1, y0, y1, end, 0.006, nx, ny)); const m = new THREE.Mesh(geo, mat); g.add(m); return m; };
+  const hw = s.W / 2, hy = M === 'super' ? s.C + 0.2 : M === 'sport' ? s.C + 0.38 : M === 'fusca' ? s.C + 0.5 : M === 'kombi' ? s.C + 0.55 : (K.yt(l - 0.3) + K.yb(l - 0.3)) / 2 + 0.06;
+  const hlk = s.hl, hlh = hlk === 'slim' ? 0.075 : hlk === 'round' ? 0.2 : hlk === 'square' ? 0.13 : 0.12;
+  // faróis
+  if (M === 'fusca') { for (const sx of [1, -1]) { const hz = l - 0.42; add(new THREE.SphereGeometry(0.11, 18, 12), vmat('head'), sx * (hw + 0.06), s.C + 0.62, hz + 0.08).scale.set(1, 1, 0.6); add(new THREE.TorusGeometry(0.11, 0.015, 6, 20), vmat('chrome'), sx * (hw + 0.06), s.C + 0.62, hz + 0.115); } }
+  else { const x0 = hlk === 'round' ? hw * 0.66 - 0.1 : hw * 0.42, x1 = hlk === 'round' ? hw * 0.66 + 0.1 : hw * 0.93; rib('hlR', x0, x1, hy - hlh / 2, hy + hlh / 2, 1, carLampTex(hlk), 8, 2); rib('hlL', -x1, -x0, hy - hlh / 2, hy + hlh / 2, 1, carLampTex(hlk), 8, 2); }
+  // grade e entrada de ar
+  if (s.grille !== 'none') { const gw = M === 'super' ? hw * 0.36 : hw * 0.36, gy = M === 'super' || M === 'sport' ? s.C + 0.13 : hy - 0.06; rib('gr', -gw, gw, gy - (M === 'pickup' || M === 'suv' ? 0.17 : 0.09), gy + (M === 'pickup' || M === 'suv' ? 0.12 : 0.05), 1, carLampTex(s.grille), 8, 3);
+    rib('in', -hw * 0.62, hw * 0.62, s.C + 0.05, s.C + (M === 'super' || M === 'sport' ? 0.09 : 0.16), 1, carLampTex('intake'), 12, 2); }
+  // lanternas
+  const ty = M === 'kombi' ? s.C + 0.48 : M === 'fusca' ? s.C + 0.56 : Math.min(K.shoulder(-l + 0.2) - 0.06, K.yt(-l) - 0.04);
+  const tlk = s.tl === 'square' ? 'tsq' : s.tl === 'round' ? 'tround' : s.tl === 'vert' ? 'tsq' : 'bar', tlh = s.tl === 'vert' ? 0.36 : s.tl === 'round' ? 0.16 : 0.1;
+  if (s.tl === 'vert') { const ty2 = K.yt(-l) - 0.25; rib('tlR', hw * 0.78, hw * 0.96, ty2 - tlh / 2, ty2 + tlh / 2, -1, carLampTex('tsq'), 4, 4); rib('tlL', -hw * 0.96, -hw * 0.78, ty2 - tlh / 2, ty2 + tlh / 2, -1, carLampTex('tsq'), 4, 4); }
+  else if (s.tl === 'bar' && (M === 'sport' || M === 'super' || M === 'suv')) rib('tlB', -hw * 0.94, hw * 0.94, ty - tlh / 2, ty + tlh / 2, -1, carLampTex('bar'), 20, 2);
+  else { const x0 = s.tl === 'round' ? hw * 0.66 - 0.08 : hw * 0.5, x1 = s.tl === 'round' ? hw * 0.66 + 0.08 : hw * 0.94; rib('tlR', x0, x1, ty - tlh / 2, ty + tlh / 2, -1, carLampTex(tlk), 8, 2); rib('tlL', -x1, -x0, ty - tlh / 2, ty + tlh / 2, -1, carLampTex(tlk), 8, 2); }
+  // placas (Mercosul)
+  const pm = new THREE.MeshStandardMaterial({ map: plateTex(), roughness: 0.4, polygonOffset: true, polygonOffsetFactor: -2 });
+  if (M !== 'super' && M !== 'sport') rib('pf', -0.21, 0.21, s.C + 0.16, s.C + 0.29, 1, pm, 4, 1);
+  const py = M === 'pickup' ? s.C + 0.5 : M === 'kombi' ? s.C + 0.3 : Math.max(s.C + 0.3, ty - 0.24); rib('pr', -0.21, 0.21, py - 0.065, py + 0.065, -1, pm, 4, 1);
+  // para-choques cromados (clássicos) ou difusor escuro
+  if (s.chromeBump) for (const end of [1, -1]) { const z = (K.surfZ(0, s.C + 0.24, end) || end * l) + end * 0.05; add(new THREE.CapsuleGeometry(0.045, W * 0.92, 4, 10), vmat('chrome'), 0, s.C + 0.2, z, 0, 0, Math.PI / 2); }
+  else rib('df', -hw * 0.7, hw * 0.7, s.C + 0.04, s.C + 0.12, -1, carLampTex('intake'), 10, 1);
+  // escapamento
+  if (s.exh) { const n = s.exh, z = (K.surfZ(hw * 0.5, s.C + 0.12, -1) || -l) - 0.02; for (let k = 0; k < n; k++) { const x = n === 2 ? (k ? 1 : -1) * hw * 0.14 : (k < 2 ? 1 : -1) * hw * (0.42 + (k % 2) * 0.13); add(new THREE.CylinderGeometry(0.045, 0.045, 0.16, 14, 1, true), vmat('chrome'), x, s.C + 0.12, z, Math.PI / 2); } }
+  // retrovisores
+  if (s.mirror) for (const sx of [1, -1]) { const z = s.zF - 0.12, y = K.shoulder(z) + 0.12, x = K.halfAt(z, K.shoulder(z)) + 0.1; const mh = add(new THREE.SphereGeometry(1, 14, 10), M === 'fusca' || M === 'kombi' ? vmat('chrome') : vmat('paint', V.color), sx * x, y, z); mh.scale.set(0.1, 0.065, 0.06); add(boxGeo(0.12, 0.025, 0.05), vmat('trim'), sx * (x - 0.08), y - 0.04, z + 0.02); }
+  // barra de teto, antena, aerofólio
+  if (s.rails) for (const sx of [1, -1]) add(boxGeo(0.04, 0.04, (s.zRF - s.zRR) * 0.95), vmat('trim'), sx * hw * 0.55, kit.roof + 0.03, (s.zRF + s.zRR) / 2);
+  if (s.fin) { const f = add(new THREE.SphereGeometry(1, 10, 8), vmat('paint', 0x15161a), 0, kit.roof + 0.015, s.zRR + 0.12); f.scale.set(0.035, 0.05, 0.12); }
+  if (s.spoiler === 'wing') { add(boxGeo(W * 0.86, 0.04, 0.3), vmat('trim'), 0, K.yt(-l + 0.25) + 0.3, -l + 0.28); for (const sx of [1, -1]) add(boxGeo(0.04, 0.3, 0.12), vmat('trim'), sx * W * 0.3, K.yt(-l + 0.25) + 0.15, -l + 0.3); }
+  if (s.spoiler === 'lip') add(boxGeo(W * 0.7, 0.03, 0.08), vmat('trim'), 0, K.yt(-l + 0.1) + 0.02, -l + 0.1, -0.2);
+  // fusca: para-lamas separados e estribo
+  if (M === 'fusca') { const pm2 = vmat('paint', V.color); for (const sx of [1, -1]) { for (const z of s.ax) { const f = add(new THREE.SphereGeometry(1, 22, 14, 0, TAU, 0, Math.PI * 0.5), pm2, sx * (hw - 0.02), s.C + s.R * 0.62, z + (z > 0 ? 0.04 : -0.04)); f.scale.set(0.26, s.R * 1.18, s.R * 1.75); } add(boxGeo(0.16, 0.04, 1.4), vmat('trim'), sx * (hw + 0.04), s.C + 0.18, 0); } }
+  // caçamba da picape
+  if (s.bed) { const [z0, z1] = s.bed, yb = K.shoulder((z0 + z1) / 2), len = z1 - z0, zc = (z0 + z1) / 2, bw = K.halfAt(zc, yb) * 2;
+    add(boxGeo(bw * 0.96, 0.02, len), vmat('trim'), 0, yb - 0.02, zc); for (const sx of [1, -1]) add(boxGeo(0.06, 0.34, len), vmat('paint', V.color), sx * (bw / 2 - 0.03), yb + 0.15, zc);
+    add(boxGeo(bw, 0.36, 0.06), vmat('paint', V.color), 0, yb + 0.16, z0 + 0.03); add(boxGeo(bw * 0.9, 0.04, 0.04), vmat('chrome'), 0, kit.roof + 0.12, s.zR + 0.05); for (const sx of [1, -1]) add(boxGeo(0.04, kit.roof + 0.12 - yb, 0.04), vmat('chrome'), sx * bw * 0.44, (kit.roof + 0.12 + yb) / 2, s.zR + 0.05); }
+  // táxi: luminoso no teto e faixa
+  if (V.taxi) { add(boxGeo(0.7, 0.16, 0.25), vmat('head'), 0, kit.roof + 0.1, -0.3); const tx = textSprite('TÁXI', { bg: '#15161a', fg: '#ffcf3a', size: 50, scale: [0.6, 0.15, 1] }); tx.position.set(0, kit.roof + 0.28, -0.3); g.add(tx); }
+  // rodas
+  const style = s.steel ? 'steel' : M === 'sport' || M === 'super' ? 'sport' : M === 'suv' || M === 'pickup' ? 'suv' : 'alloy', wx = W / 2 - s.tw / 2 + (s.noArch ? 0.08 : 0.01);
+  for (const sx of [1, -1]) for (const z of s.ax) { const w = carWheelHQ(s.R, s.tw, style, s.caliper); if (sx < 0) w.rotation.y = Math.PI; w.position.set(sx * wx, s.R, z); g.add(w); if (z > 0) w.userData.front = true; w.userData.side = sx; u.wheels.push(w); }
+  g.add(carAO(s.L, W)); u.ao = true;
+  u.seatY = 0; u.camD = Math.max(7, s.L * 1.6); u.radius = W * 0.5 + 0.2; u.len = s.L; u.roof = kit.roof;
+  u.hl = { y: hy, x: hw * 0.68, fz: (K.surfZ(hw * 0.68, hy, 1) || l) + 0.05, ty, rz: (K.surfZ(hw * 0.7, ty, -1) || -l) - 0.05 };
+}
 /* bicicleta: quadro de tubos, rodas raiadas, pedivela que gira, guidão e selim */
 function buildBike(g, V, add, paint) {
   const u = g.userData, body = new THREE.Group(); g.add(body); u.body = body; u.wheels = [];
@@ -3186,9 +3479,9 @@ function addVehicleLights(g, V) {
   _beamT = _beamT || canvasTex(64, 128, (c, w, h) => { const gr = c.createLinearGradient(0, h, 0, 0); gr.addColorStop(0, 'rgba(255,246,210,.55)'); gr.addColorStop(1, 'rgba(255,246,210,0)'); c.fillStyle = gr; c.beginPath(); c.moveTo(w * 0.4, h); c.lineTo(w * 0.6, h); c.lineTo(w, 0); c.lineTo(0, 0); c.fill(); });
   const glow = (color, size, x, y, z, P) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: _glowT, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); sp.scale.set(size, size, 1); sp.position.set(x, y, z); P.add(sp); return sp; };
   const lg = new THREE.Group(); lg.visible = false; g.add(lg); u.lightG = lg;
-  const hy = car ? Math.min(0.75, H * 0.38) : H * 0.62, hz = car ? fz : fz - 0.2;
+  const hl = car && u.hl, hy = hl ? hl.y : car ? Math.min(0.75, H * 0.38) : H * 0.62, hz = hl ? hl.fz : car ? fz : fz - 0.2, ty = hl ? hl.ty : car ? Math.min(0.8, H * 0.42) : H * 0.55, trz = hl ? hl.rz : rz - 0.04;
   for (const sx of car ? [1, -1] : [0]) glow(0xfff2c8, car ? 0.9 : 0.7, sx * hw * 0.66, hy, hz + 0.05, lg);
-  for (const sx of car ? [1, -1] : [0]) glow(0xff2020, car ? 0.55 : 0.4, sx * hw * 0.68, car ? Math.min(0.8, H * 0.42) : H * 0.55, rz - 0.04, lg);
+  for (const sx of car ? [1, -1] : [0]) glow(0xff2020, car ? 0.55 : 0.4, sx * hw * 0.68, ty, trz, lg);
   const beam = new THREE.Mesh(new THREE.PlaneGeometry(car ? 5 : 3.2, car ? 11 : 8), new THREE.MeshBasicMaterial({ map: _beamT, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
   beam.rotation.x = -Math.PI / 2; beam.position.set(0, 0.06, fz + (car ? 5.5 : 4)); lg.add(beam); u.beam = beam;
   u.blink = {};
@@ -3575,7 +3868,7 @@ function inRamp(x, z) { return city.ramps.some(c => x > c.x0 && x < c.x1 && z > 
 let camYaw = 0;
 function updateCity(dt, t) {
   const blocked = uiBlocking() || !!P.down || P.stopT > 0 || !!P.cuffBy;
-  const ax = blocked || P.ride ? { x: 0, y: 0 } : axis();
+  const ax = blocked || P.ride || P.sportLock ? { x: 0, y: 0 } : axis();
   if (P.onBoard && !hasSkate()) P.onBoard = false;
   if (!blocked && tap('board')) {
     if (!hasSkate()) toast('Você ainda não tem skate. Complete uma missão ou compre na Shape & Truck.', 'bad');
@@ -3608,10 +3901,10 @@ function updateCity(dt, t) {
   if (driving) updateDriving(dt, ax, blocked);
   else if (P.fallT > 0) { }
   else if (!P.onBoard) {
-    const maxV = P.swim ? 2.8 : P.lie ? 0 : 6.2;
+    const maxV = P.swim ? 2.8 : P.lie ? 0 : 6.2 * (P.sprint || 1);
     turnTo(9);
     P.v = lerp(P.v, mag > 0.12 ? maxV * mag : 0, 1 - Math.exp(-(mag > 0.12 ? 6 : 9) * dt));
-    if (!blocked && tap('jump') && !P.air) { P.vy = 6; P.air = true; P.emote = null; }
+    if (!blocked && !P.sport && tap('jump') && !P.air) { P.vy = 6; P.air = true; P.emote = null; }
   }
   else {
     const maxV = 14 * st.spd;
@@ -3676,7 +3969,7 @@ function updateCity(dt, t) {
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
-  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: hasSkate(), v: P.v, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow(), wpProp: P.wpShowT > 0 ? handNow() : null, emote: P.emote && P.emote.id }, t);
+  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: hasSkate() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow(), wpProp: P.wpShowT > 0 ? handNow() : null, emote: P.emote && P.emote.id }, t);
   if (!driving && !P.ride) beachPose(g); else g.rotation.x = 0;
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
@@ -5211,7 +5504,7 @@ function robNpc(o) {
 function onRobbed(d) {
   if (!NET.user || d.to !== NET.user.id) return;
   if (isAdm()) { NET.ch.send({ type: 'broadcast', event: 'assalto_ok', payload: { to: d.id, amt: 0, chief: 1 } }); toast(`${d.by} tentou te assaltar, mas desistiu quando viu quem era.`, 'pink'); return; }
-  const amt = Math.min(600, Math.floor(S.coins * 0.08)); S.coins -= amt; persist(); updateHUD();
+  const amt = Math.min(600, Math.floor(cashNow() * 0.08)); S.wallet = cashNow() - amt; persist(); updateHUD();
   NET.ch.send({ type: 'broadcast', event: 'assalto_ok', payload: { to: d.id, amt } }); toast(`${d.by} te assaltou e levou $ ${fmt(amt)}!`, 'bad'); sfx('hit');
 }
 function onRobOk(d) { if (!NET.user || d.to !== NET.user.id) return; if (d.chief) return toast(`É o ${CHIEF}! Melhor não mexer com o chefe.`, 'bad'); if (d.amt) { S.coins += d.amt; persist(); updateHUD(); toast(`Assalto: +$ ${fmt(d.amt)}.`, 'pink'); } else toast('A vítima estava lisa.'); }
@@ -5238,7 +5531,7 @@ function updateRobbers(dt, t) {
     else if (r.st === 'rob') {
       if (r.tgt === 'player' && isAdm()) { r.st = 'flee'; r.t = 0; }
       else if (r.t > 2.5) {
-        if (r.tgt === 'player') { if (Math.hypot(P.x - r.x, P.z - r.z) < 3.5 && !P.drive) { const amt = Math.min(800, Math.floor(S.coins * 0.08)); S.coins -= amt; persist(); updateHUD(); toast(`Você foi assaltado! Levaram $ ${fmt(amt)}.`, 'bad'); sfx('hit'); } else toast('Você escapou do assalto!', 'good'); }
+        if (r.tgt === 'player') { if (Math.hypot(P.x - r.x, P.z - r.z) < 3.5 && !P.drive) { const amt = Math.min(800, Math.floor(cashNow() * 0.08)); S.wallet = cashNow() - amt; persist(); updateHUD(); toast(`Você foi assaltado! Levaram $ ${fmt(amt)}.`, 'bad'); sfx('hit'); } else toast('Você escapou do assalto!', 'good'); }
         r.st = 'flee'; r.t = 0;
       }
     } else if (r.st === 'flee') { const a = Math.atan2(r.x - P.x, r.z - P.z); goal = { x: r.x + Math.sin(a) * 10, z: r.z + Math.cos(a) * 10 }; sp = 5.2; if (r.t > 18 && Math.hypot(r.x - P.x, r.z - P.z) > 40) { r.st = 'gone'; city.scene.remove(g); } }
@@ -7248,7 +7541,7 @@ function updateMusic(dt) {
   if (Math.abs(camera.position.x) > 400) v = 0;
   MUSIC.vol = lerp(MUSIC.vol, v, 1 - Math.exp(-4 * dt));
   const useFile = MUSIC.file && P.drive && P.drive.V.som;
-  const radio = radioTick(useFile ? 0 : MUSIC.vol * 0.9);
+  const radio = radioTick(useFile ? 0 : MUSIC.vol);
   if (MUSIC.vol > 0.01 && !useFile && !radio) { musicTick(); if (MUSIC.g) MUSIC.g.gain.value = MUSIC.vol * 0.35; } else if (MUSIC.g) MUSIC.g.gain.value = 0;
   if (MUSIC.file) { MUSIC.file.volume = useFile ? 0.9 : 0; if (useFile && MUSIC.file.paused) MUSIC.file.play().catch(() => { }); if (!useFile && !MUSIC.file.paused) MUSIC.file.pause(); }
   const chip = $('music-chip'); if (chip) { if (!chip.dataset.h) { chip.dataset.h = 1; chip.addEventListener('click', () => openPanel('fm')); } chip.hidden = MUSIC.vol < 0.15; if (!chip.hidden) { const rn = radioNow(); chip.textContent = `🔊 ${useFile ? MUSIC.fileName : rn ? rn.m.n + ' · ' + rn.m.g : 'Trap do Chefe (instrumental)'} · toque para ver a rádio`; } }
@@ -7267,7 +7560,7 @@ function speakerStack(sc, x, z, y = 0, ry = 0, n = 2) {
     const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.3, 0.12, 20), std(0x2a2d34, 0.3, 0.6)); cone.rotation.x = Math.PI / 2; cone.position.set((j - 0.5) * 1.25, 0.6 + i * 1.22, 0.46); g.add(cone);
     const led = new THREE.Mesh(new THREE.TorusGeometry(0.47, 0.04, 6, 24), new THREE.MeshBasicMaterial({ color: 0xff4f7b })); led.position.copy(cone.position); led.position.z += 0.05; g.add(led); leds.push(led);
   }
-  (city.leds = city.leds || []).push(...leds); (city.soundSrc = city.soundSrc || []).push({ x, z, r: 38, k: 1 });
+  (city.leds = city.leds || []).push(...leds); (city.soundSrc = city.soundSrc || []).push({ x, z, r: 55, k: 1 });
   return g;
 }
 /* =========================================================
@@ -7530,7 +7823,7 @@ function soundCars() {
     const c = cars[(i * 5) % cars.length]; if (c.som) continue; c.som = true; const m = c.m, L = m.userData.len || 4.4;
     const b = new THREE.Mesh(boxGeo(1.3, 0.55, 0.5), std(0x15161a, 0.5)); b.position.set(0, (m.userData.roof || 1.4) * 0.7, -L / 2 - 0.05); m.add(b);
     for (const x of [-0.35, 0.35]) { const l = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 6, 16), new THREE.MeshBasicMaterial({ color: 0x4fc3ff })); l.position.set(x, b.position.y, -L / 2 - 0.32); m.add(l); (city.leds = city.leds || []).push(l); }
-    (city.soundSrc = city.soundSrc || []).push({ m, r: 32, k: 0.85 });
+    (city.soundSrc = city.soundSrc || []).push({ m, r: 45, k: 1 });
   }
 }
 /* =========================================================
@@ -8124,6 +8417,7 @@ function updateRP20(dt, t) {
   try { updateCityFire(dt, t); } catch (e) { console.warn('fogo', e); }
   try { updateRaid(dt, t); } catch (e) { console.warn('operação', e); }
   updateOuter(dt, t);
+  updateLife25(dt, t);
 }
 /* mede a grossura de braço, antebraço, pescoço e pernas de cada modelo (para tatuagem e relógio ficarem por cima da pele/manga) */
 function prepWearInfo(info, scene, k) {
@@ -8249,12 +8543,12 @@ function mocapLayer(u, o, t, dt, e) {
   const B = u.R.B, MD = MODELS[u.k], hipH = (MD && MD.hipH) || 0.95;
   // quando o movimento gravado entra (a pé, normal) e quando sai (skate, carro, nadar, algemado, caído, sentado)
   const dance = e === 'dance' && o.walk && M.dance.length;
-  const on = !!o.walk && o.climb == null && !o.ride && o.pedal == null && !o.air && !(o.fallT > 0) && !o.pose && e !== 'sit';
+  const on = !!o.walk && o.climb == null && !o.ride && o.pedal == null && !o.air && !(o.fallT > 0) && !o.pose && e !== 'sit' && !o.fp;
   S.w = lerp(S.w, on ? 1 : 0, 1 - Math.exp(-(on ? 7 : 14) * dt)); if (S.w < 0.01 && !on) { if (S.w > 0 || S.dirty) { for (const n in S.rest) if (B[n]) B[n].quaternion.copy(S.rest[n]); S.dirty = false; } S.w = 0; return; } S.dirty = true;
   // braços por cima (arma apontada, spray, soco, celular, cigarro, aceno...)
   const gest = u.gest && ARM_GEST.includes(u.gest.id), femTalk = u.k === 'f' && u.talkT > 0 && !dance;
-  const wantR = o.wpProp || o.spray || o.punchT > 0 || o.shootUp || u.phoneOut || e === 'wave' || e === 'cheer' || u.smileT > 0 || gest || femTalk ? 1 : 0;
-  const wantL = o.smoke || e === 'cheer' || (gest && u.gest.id !== 'celular' && u.gest.id !== 'cocar') || femTalk ? 1 : 0;
+  const wantR = o.armR || o.wpProp || o.spray || o.punchT > 0 || o.shootUp || u.phoneOut || e === 'wave' || e === 'cheer' || u.smileT > 0 || gest || femTalk ? 1 : 0;
+  const wantL = o.armL || o.smoke || e === 'cheer' || (gest && u.gest.id !== 'celular' && u.gest.id !== 'cocar') || femTalk ? 1 : 0;
   S.oR = lerp(S.oR, wantR, 1 - Math.exp(-12 * dt)); S.oL = lerp(S.oL, wantL, 1 - Math.exp(-12 * dt));
   // mistura dos clipes
   S.acc.fill(0); S.aw.fill(0); S.tw = 0; S.fw = 0; S.y = 0;
@@ -8444,7 +8738,8 @@ function rpmTorsoDetail(info, mesh, scene) {
    RÁDIO DO JOGO: músicas de verdade (arquivos em musicas/) nos paredões, caixas da favela, carros de som e Hilux.
    Todo mundo ouve a mesma música no mesmo trecho (a programação segue o relógio); o chefe escolhe o que toca.
    ========================================================= */
-const FM = { list: null, el: null, cur: -1, anchor: { i: 0, t0: 0 }, loading: false, sentT: 0 };
+const FM = { list: null, el: null, cur: -1, anchor: { i: 0, t0: 0 }, loading: false, sentT: 0, boost: (() => { try { return +localStorage.getItem('rc_fmvol') || 1; } catch (e) { return 1; } })() };
+function fmVol(d) { FM.boost = clamp(Math.round((FM.boost + d) * 4) / 4, 0.25, 2); try { localStorage.setItem('rc_fmvol', FM.boost); } catch (e) { } renderPanel(); }
 function loadRadio() {
   if (FM.loading || FM.list) return; FM.loading = true;
   fetch(`musicas/lista.json?v=${BUILD}`).then(r => r.ok ? r.json() : null).then(L => { if (L && L.length) FM.list = L; }).catch(() => { });
@@ -8464,7 +8759,10 @@ function radioTick(vol) {
   if (FM.cur !== now.i) { FM.cur = now.i; a.src = `musicas/${now.m.id}.mp3?v=${BUILD}`; a.currentTime = 0; FM.seekNeed = true; }
   if (a.paused) { FM.seekNeed = true; a.play().catch(() => { }); }
   if (a.readyState >= 1 && (FM.seekNeed || Math.abs(a.currentTime - now.pos) > 2.5)) { try { a.currentTime = now.pos; } catch (e) { } FM.seekNeed = false; }
-  a.volume = clamp(vol, 0, 1);
+  // volume alto: passa pelo amplificador do jogo (ganho até 3x com limitador para não distorcer)
+  if (!FM.g) { const ac = audioCtx(); if (ac) try { const src = ac.createMediaElementSource(a), g = ac.createGain(), cp = ac.createDynamicsCompressor(); cp.threshold.value = -10; cp.knee.value = 6; cp.ratio.value = 8; cp.attack.value = 0.003; cp.release.value = 0.2; src.connect(g); g.connect(cp); cp.connect(ac.destination); FM.g = g; } catch (e) { FM.g = 'x'; } }
+  const lv = Math.sqrt(clamp(vol, 0, 1));
+  if (FM.g && FM.g !== 'x') { a.volume = 1; FM.g.gain.value = lv * 3.2 * FM.boost; } else a.volume = lv;
   // o chefe reenvia a programação de vez em quando (quem entrou depois fica sincronizado)
   if (isAdm() && FM.anchor.t0 && NET.ch && NET.online && (FM.sentT -= 1 / 30) <= 0) { FM.sentT = 600; NET.ch.send({ type: 'broadcast', event: 'fm', payload: FM.anchor }); }
   return true;
@@ -8480,11 +8778,945 @@ const PANEL_RADIO = function () {
   if (!L) return { title: '🎵 Rádio do Rolê', html: '<p class="muted">Carregando as músicas…</p>' };
   const fm = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
   let html = `<p class="muted">A rádio toca nos paredões, nas caixas da favela, nos carros de som e na Hilux. Todo mundo perto ouve a mesma música.${isAdm() ? ' <b>Você é o chefe:</b> toque em uma música para colocar para todos.' : ''}</p>`;
+  html += `<div class="row"><button class="btn sm" data-act="fm-vol" data-d="-0.25">🔉 Mais baixo</button><b style="align-self:center">Volume ${Math.round(FM.boost * 100)}%</b><button class="btn sm" data-act="fm-vol" data-d="0.25">🔊 Mais alto</button></div>`;
   if (now) html += `<div class="note">▶ Agora: <b>${esc(now.m.n)}</b> · ${esc(now.m.g)} · ${fm(now.pos)} / ${fm(now.m.dur)}</div>`;
   html += L.map((m, i) => `<div class="card"><h4>${now && now.i === i ? '🔊' : '🎵'} ${esc(m.n)}</h4><p class="muted">${esc(m.g)} · ${fm(m.dur)} · instrumental original do Rolê City</p>${isAdm() ? `<div class="row"><button class="btn sm" data-act="radio-play" data-i="${i}">▶ Tocar agora para todos</button></div>` : ''}</div>`).join('');
   html += P.drive && P.drive.V.som ? `<div class="row"><button class="btn ghost" data-act="pick-song">📱 Tocar uma música do meu celular no som do carro</button></div>` : `<p class="muted">Dirigindo a Hilux ou um carro com som, você também pode tocar uma música do seu celular (só você ouve).</p>`;
   return { title: '🎵 Rádio do Rolê', html };
 };
+/* =========================================================
+   BANCO ROLÊ: conta, depósito, saque, rendimento e cartão de crédito.
+   Com o cartão, qualquer compra no jogo passa: primeiro sai da carteira, depois do saldo do banco
+   e por último do limite do cartão (fatura paga no banco ou no caixa eletrônico).
+   Dinheiro guardado no banco não é levado em assalto.
+   ========================================================= */
+const BANK_POS = [126, -84];
+const cardOk = s => !!(s && s.bank && s.bank.card && !s.bank.blk);
+const cardAvail = s => cardOk(s) ? Math.max(0, s.bank.bal) + Math.max(0, s.bank.lim - s.bank.used) : 0;
+let _cardNoteT = 0, _cardNoteAmt = 0;
+function cardNote(a) { _cardNoteAmt += a; const now = performance.now(); if (now - _cardNoteT < 1200) return; _cardNoteT = now; setTimeout(() => { if (_cardNoteAmt > 0.5) toast(`💳 Pago no cartão Rolê: $ ${fmt(Math.round(_cardNoteAmt))}`, 'pink'); _cardNoteAmt = 0; }, 300); }
+/* a carteira vira "coins" com o cartão por trás (todas as lojas do jogo já usam S.coins) */
+function bankInstall(s) {
+  const d = Object.getOwnPropertyDescriptor(s, 'coins'); if (d && d.get) return s;
+  let w = +s.coins || 0;
+  Object.defineProperty(s, 'wallet', { configurable: true, enumerable: false, get: () => w, set: v => { w = Math.round(v); } });
+  Object.defineProperty(s, 'coins', {
+    configurable: true, enumerable: true,
+    get() { return w + cardAvail(s); },
+    set(v) {
+      const cur = w + cardAvail(s); let dd = v - cur; if (!isFinite(dd)) return;
+      if (dd >= 0) { w += dd; return; }
+      dd = -dd; const fw = Math.min(Math.max(0, w), dd); w -= fw; dd -= fw; if (dd <= 0.0001) return;
+      const B = s.bank; if (cardOk(s)) { const fb = Math.min(Math.max(0, B.bal), dd); B.bal -= fb; dd -= fb; const fc = Math.min(Math.max(0, B.lim - B.used), dd); B.used += fc; dd -= fc; cardNote(fb + fc); }
+      w -= dd;
+    },
+  });
+  Object.defineProperty(s, 'toJSON', { configurable: true, enumerable: false, value: function () { const o = {}; for (const k of Object.keys(this)) o[k] = this[k]; o.coins = w; return o; } });
+  return s;
+}
+const cashNow = () => S ? (S.wallet ?? S.coins) : 0;
+function bankDaily() {
+  const B = S && S.bank; if (!B) return; const d = gameDay(); if (!B.day) B.day = d; if (B.day >= d) return;
+  const n = Math.min(5, d - B.day); B.day = d;
+  const jur = Math.round(B.used * 0.01 * n), ren = Math.min(2000 * n, Math.round(Math.max(0, B.bal) * 0.005 * n));
+  if (B.used > 0) { B.used += jur; B.late = (B.late || 0) + n; if (B.late >= 3 && !B.blk) { B.blk = true; toast('💳 Cartão bloqueado: fatura atrasada há 3 dias. Pague no banco ou no caixa eletrônico.', 'bad'); } }
+  if (ren > 0) { B.bal += ren; toast(`🏦 Rendimento da poupança: +$ ${fmt(ren)}`, 'good'); }
+  B.lim = Math.max(B.lim, 3000 + (S.level || 1) * 250); persist();
+}
+function bankOpen() {
+  if (S.bank) return; const num = Array.from({ length: 4 }, () => String(1000 + Math.floor(Math.random() * 9000))).join(' ');
+  S.bank = { bal: 0, used: 0, lim: 3000 + (S.level || 1) * 250, card: true, num, day: gameDay(), since: Date.now() };
+  persist(); updateHUD(); sfx('level'); toast('🏦 Conta aberta! Seu cartão de crédito Rolê chegou: pague compras em qualquer lugar.', 'good'); renderPanel();
+}
+function bankDep(v) { const B = S.bank; if (!B) return; const w = cashNow(); v = v === 'all' ? w : Math.min(+v, w); if (v <= 0) return toast('Sem dinheiro na carteira.', 'bad'); S.wallet = w - v; B.bal += v; persist(); updateHUD(); sfx('coin'); toast(`Depositado: $ ${fmt(v)}`, 'good'); renderPanel(); }
+function bankSaq(v) { const B = S.bank; if (!B) return; v = v === 'all' ? Math.max(0, B.bal) : Math.min(+v, Math.max(0, B.bal)); if (v <= 0) return toast('Sem saldo no banco.', 'bad'); B.bal -= v; S.wallet = cashNow() + v; persist(); updateHUD(); sfx('coin'); toast(`Sacado: $ ${fmt(v)}`, 'good'); renderPanel(); }
+function bankFat() {
+  const B = S.bank; if (!B || B.used <= 0) return toast('Sua fatura está zerada.');
+  let need = B.used; const fb = Math.min(Math.max(0, B.bal), need); B.bal -= fb; need -= fb; const fw = Math.min(cashNow(), need); S.wallet = cashNow() - fw; need -= fw;
+  B.used = need; if (need <= 0) { B.late = 0; if (B.blk) { B.blk = false; toast('💳 Cartão desbloqueado!', 'good'); } toast('Fatura paga!', 'good'); } else toast(`Pagou parte da fatura. Falta $ ${fmt(need)}.`, 'bad');
+  persist(); updateHUD(); sfx('coin'); renderPanel();
+}
+const PANEL_BANCO = function (atm) {
+  const B = S.bank, f = n => fmt(Math.round(n));
+  if (!B) return { title: '🏦 Banco Rolê', html: `<p>Guarde seu dinheiro no banco: <b>assaltante não leva</b> o que está guardado e a poupança rende todo dia.</p><p>Quem abre conta ganha na hora o <b>cartão de crédito Rolê</b>, que paga compras em <b>todos os lugares</b> do jogo (lojas, concessionária, imobiliária, tatuagem, comércios...).</p><div class="row"><button class="btn" data-act="bank-open">Abrir minha conta (grátis)</button></div>` };
+  const card = `<div style="border-radius:16px;padding:16px;margin:6px 0 12px;color:#fff;background:linear-gradient(135deg,#15161a 0%,#3b2a5a 55%,#a66bff 100%);box-shadow:0 8px 24px rgba(0,0,0,.35);font-family:var(--cond);letter-spacing:.5px"><div style="display:flex;justify-content:space-between"><b>ROLÊ BANK</b><span>${B.blk ? '🔒 BLOQUEADO' : 'CRÉDITO'}</span></div><div style="width:42px;height:30px;border-radius:6px;margin:12px 0;background:linear-gradient(135deg,#ffd76a,#c9a227)"></div><div style="font-size:20px">${esc(B.num || '0000 0000 0000 0000')}</div><div style="display:flex;justify-content:space-between;margin-top:8px"><span>${esc(S.name.toUpperCase())}</span><span>LIMITE $ ${f(B.lim)}</span></div></div>`;
+  const vals = [100, 1000, 10000];
+  const html = `${atm ? '<p class="muted">🏧 Caixa eletrônico 24h</p>' : ''}${card}
+    <div class="note">👛 Carteira: <b>$ ${f(cashNow())}</b> · 🏦 Saldo no banco: <b>$ ${f(B.bal)}</b><br>💳 Fatura do cartão: <b>$ ${f(B.used)}</b> · Disponível no cartão: <b>$ ${f(Math.max(0, B.lim - B.used))}</b></div>
+    <h4>Depositar (da carteira para o banco)</h4><div class="row">${vals.map(v => `<button class="btn sm" data-act="bank-dep" data-v="${v}">$ ${fmt(v)}</button>`).join('')}<button class="btn sm" data-act="bank-dep" data-v="all">Tudo</button></div>
+    <h4>Sacar (do banco para a carteira)</h4><div class="row">${vals.map(v => `<button class="btn ghost sm" data-act="bank-saq" data-v="${v}">$ ${fmt(v)}</button>`).join('')}<button class="btn ghost sm" data-act="bank-saq" data-v="all">Tudo</button></div>
+    <h4>Cartão de crédito</h4><div class="row"><button class="btn" data-act="bank-fat" ${B.used > 0 ? '' : 'disabled'}>Pagar fatura ($ ${f(B.used)})</button></div>
+    <p class="muted">Como paga: a compra sai primeiro da carteira, depois do saldo do banco e por último do limite do cartão. A fatura tem juros de 1% ao dia e, com 3 dias de atraso, o cartão é bloqueado. A poupança rende 0,5% por dia do jogo.</p>`;
+  return { title: atm ? '🏧 Caixa Eletrônico' : '🏦 Banco Rolê', html };
+};
+function buildBank(sc) {
+  const [x, z] = BANK_POS, g = new THREE.Group(); g.position.set(x, 0, z); sc.add(g);
+  const add = (geo, m, px, py, pz, ry = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.rotation.y = ry; o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  const marble = std(0xeeeae2, 0.35), dark = std(0x23262c, 0.4, 0.3), glass = new THREE.MeshStandardMaterial({ color: 0x9fd6ff, roughness: 0.05, metalness: 0.6, transparent: true, opacity: 0.55 });
+  add(boxGeo(26, 0.4, 26), std(0xb9b2a5, 0.9), 0, 0.2, 0);
+  add(boxGeo(16, 10, 14), marble, 3, 5.2, 0); add(boxGeo(16.6, 0.8, 14.6), dark, 3, 10.4, 0);
+  for (let k = -2; k <= 2; k++) { add(CYL(0.45, 0.5, 8.6, 18), marble, -5.6, 4.9, k * 2.6); add(boxGeo(1.2, 0.3, 1.2), marble, -5.6, 0.55, k * 2.6); }
+  add(boxGeo(1.8, 0.6, 14), marble, -5.6, 9.5, 0);
+  const pedT = canvasTex(512, 128, (c, w, h) => { c.fillStyle = '#eeeae2'; c.fillRect(0, 0, w, h); c.fillStyle = '#1f3a6b'; c.font = '700 64px "Barlow Condensed", Arial'; c.textAlign = 'center'; c.fillText('BANCO ROLÊ', w / 2, 84); c.fillStyle = '#c9a227'; c.fillRect(40, 100, w - 80, 6); });
+  const ped = new THREE.Mesh(new THREE.PlaneGeometry(12, 3), new THREE.MeshStandardMaterial({ map: pedT, roughness: 0.4 })); ped.position.set(-6.52, 9.5, 0); ped.rotation.y = -Math.PI / 2; g.add(ped);
+  add(boxGeo(0.2, 4, 5), glass, -4.9, 2.4, 0); add(boxGeo(0.25, 0.2, 5.2), dark, -4.88, 4.45, 0);
+  for (let i = 0; i < 4; i++) add(boxGeo(1.4, 0.35, 15 - i * 0.8), marble, -6.6 - i * 0.6, 0.4 + i * 0.12, 0);
+  // caixas eletrônicos na fachada
+  for (const zz of [-5.4, 5.4]) { atmMesh(g, -4.75, zz, -Math.PI / 2); }
+  const sp = textSprite('🏦 BANCO ROLÊ · CONTA E CARTÃO', { bg: '#1f3a6b', fg: '#ffd76a', size: 44, scale: [7, 1.2, 1] }); sp.position.set(-7, 12.4, 0); g.add(sp);
+  city.colliders.push({ x0: x - 5, x1: x + 11, z0: z - 7, z1: z + 7 });
+  city.xspots = (city.xspots || []).filter(o => !o.bank);
+  city.xspots.push({ bank: true, x: x - 8.4, z, r: 3.2, label: '🏦 Banco Rolê: conta, depósito, saque e cartão', fn: () => openPanel('banco') });
+  for (const zz of [-5.4, 5.4]) city.xspots.push({ bank: true, x: x - 5.8, z: z + zz, r: 1.6, label: '🏧 Caixa eletrônico 24h', fn: () => openPanel('banco', 1) });
+  const L = LANDMARKS[cityId()]; if (L && !L.some(l => l[2] === 'Banco Rolê')) L.push([x, z, 'Banco Rolê']);
+}
+function atmMesh(P0, x, z, ry, y = 0) {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; P0.add(g);
+  const b = new THREE.Mesh(boxGeo(0.9, 1.9, 0.6), std(0x1f3a6b, 0.4, 0.3)); b.position.y = 0.95; g.add(b);
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.36), new THREE.MeshBasicMaterial({ map: canvasTex(64, 48, (c, w, h) => { c.fillStyle = '#0b3a6a'; c.fillRect(0, 0, w, h); c.fillStyle = '#ffd76a'; c.font = 'bold 12px sans-serif'; c.fillText('ROLÊ 24h', 6, 20); c.fillStyle = '#9fd6ff'; c.fillRect(6, 28, 50, 4); c.fillRect(6, 36, 34, 4); }) })); scr.position.set(0, 1.4, 0.31); g.add(scr);
+  const k = new THREE.Mesh(boxGeo(0.5, 0.06, 0.25), std(0x9aa3ad, 0.3, 0.7)); k.position.set(0, 1.05, 0.38); k.rotation.x = 0.4; g.add(k);
+  const top = new THREE.Mesh(boxGeo(0.95, 0.25, 0.65), new THREE.MeshBasicMaterial({ color: 0xffd76a })); top.position.y = 2.0; g.add(top);
+  return g;
+}
+/* caixas eletrônicos espalhados pelo centro */
+function buildATMs(sc) {
+  for (const [x, z, ry] of [[-13.4, 4, Math.PI / 2], [13.4, -4, -Math.PI / 2], [4, -13.4, Math.PI], [-4, 13.4, 0], [-55.6, -80, Math.PI / 2], [84, 51, 0]]) {
+    atmMesh(sc, x, z, ry); city.xspots.push({ bank: true, x: x + Math.sin(ry) * 1, z: z + Math.cos(ry) * 1, r: 1.5, label: '🏧 Caixa eletrônico 24h', fn: () => openPanel('banco', 1) });
+    city.colliders.push({ x0: x - 0.5, x1: x + 0.5, z0: z - 0.5, z1: z + 0.5 });
+  }
+}
+
+/* =========================================================
+   CASAS DO MAPA: toda casa tem morador; algumas estão para alugar e outras à venda.
+   O dono de todas é o ADM (o chefe): aluguel e venda vão para ele. Moradores entram e saem de casa.
+   Vila Residencial (casas grandes) + casas do morro.
+   ========================================================= */
+const VILA_POS = [126, 84];
+const MORADOR_NOMES = ['Dona Cida', 'Seu Jorge', 'Família Silva', 'Dona Neide', 'Seu Raimundo', 'Família Souza', 'Tia Bete', 'Seu Valdir', 'Dona Lurdes', 'Família Santos', 'Seu Tião', 'Dona Rosa', 'Família Oliveira', 'Seu Zé', 'Dona Fátima', 'Família Costa', 'Vó Nair', 'Seu Antônio', 'Família Lima', 'Dona Marta'];
+const hash01 = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 10000) / 10000; };
+function casaInfo(key) {
+  const c = (city.casas || {})[key]; if (!c) return null;
+  const r = (city.casaRows || {})[key];
+  return Object.assign({}, c, { row: r || null, livre: !r && c.st !== 'morador' });
+}
+function buildCasas(sc) {
+  city.casas = {}; city.casaSigns = {}; city.casaRows = city.casaRows || {};
+  // ---- Vila Residencial: 6 casas com quintal ----
+  const [vx, vz] = VILA_POS, cols = [0xf2c94c, 0x9bd1a8, 0xf6f1e7, 0x7fb3e0, 0xf28ca0, 0xe8a87c];
+  let n = 0;
+  for (const side of [-1, 1]) for (const dz of [-10.5, 0, 10.5]) {
+    const hx = vx + side * 8, hz = vz + dz, key = 'v' + n, num = 101 + n, g = new THREE.Group(); g.position.set(hx, 0, hz); g.rotation.y = side < 0 ? -Math.PI / 2 : Math.PI / 2; sc.add(g);
+    const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+    add(boxGeo(9.6, 0.06, 15), lam(0x5f9a45), 0, 0.03, 0);
+    add(boxGeo(7, 3.4, 6.4), lam(cols[n]), 0, 1.7, -1.6);
+    const roof = add(new THREE.ConeGeometry(5.6, 2.2, 4), lam(0xb5452f), 0, 4.5, -1.6); roof.rotation.y = Math.PI / 4; roof.scale.set(1, 1, 0.9);
+    add(boxGeo(1.1, 2.2, 0.12), lam(0x6b4a2f), 0, 1.1, 1.62); add(boxGeo(1.3, 1, 0.1), lam(0x1d232b), -2.2, 1.9, 1.62); add(boxGeo(1.3, 1, 0.1), lam(0x1d232b), 2.2, 1.9, 1.62);
+    for (let k = -4.4; k <= 4.4; k += 0.55) add(boxGeo(0.08, 0.9, 0.08), lam(0xffffff), k, 0.45, 7.3); add(boxGeo(9, 0.08, 0.06), lam(0xffffff), 0, 0.85, 7.3);
+    add(boxGeo(0.3, 1.1, 0.3), lam(0x6d6f76), 3.6, 0.55, 7.0);
+    const numS = textSprite(`Nº ${num}`, { bg: '#15161a', fg: '#fff', size: 40, scale: [1.3, 0.45, 1] }); numS.position.set(0, 2.7, 1.75); g.add(numS);
+    g.updateMatrixWorld(true); const cl = new THREE.Box3().setFromObject(g.children[1]); city.colliders.push({ x0: cl.min.x, x1: cl.max.x, z0: cl.min.z, z1: cl.max.z });
+    const fw = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), g.rotation.y), dx = hx + fw.x * 1.62, dz2 = hz + fw.z * 1.62;
+    const r = hash01(cityId() + key), st = n === 1 || n === 4 ? 'aluga' : n === 2 || n === 3 ? 'vende' : 'morador';
+    city.casas[key] = { key, n: `Casa nº ${num} · Vila Residencial`, tier: 'casa', x: dx, z: dz2, ox: dx + fw.x * 2.2, oz: dz2 + fw.z * 2.2, fx: fw.x, fz: fw.z, y: 0, st, rent: 220, buy: 45000, mor: MORADOR_NOMES[Math.floor(r * MORADOR_NOMES.length)], vila: true };
+    n++;
+  }
+  // ---- casas do morro (todas com morador; ~1 em 9 para alugar ou vender) ----
+  (city.mWalls || []).forEach((w, i) => {
+    const key = 'm' + i, r = hash01(cityId() + key), st = r < 0.06 ? 'aluga' : r < 0.11 ? 'vende' : 'morador';
+    city.casas[key] = { key, n: `Casa nº ${i + 1} · ${MORRO_NAME[cityId()] || 'Morro'}`, tier: 'kitnet', x: w.wx + w.nx * 0.2, z: w.wz + w.nz * 0.2, ox: w.x, oz: w.z, fx: w.nx, fz: w.nz, y: w.y, st, rent: 60, buy: 8000, mor: MORADOR_NOMES[Math.floor(hash01(key + 'n') * MORADOR_NOMES.length)], morro: true };
+  });
+  refreshCasaSigns();
+  const L = LANDMARKS[cityId()]; if (L && !L.some(l => l[2] === 'Vila Residencial')) L.push([vx, vz, 'Vila Residencial']);
+}
+function casaLabel(c) {
+  const r = city.casaRows[c.key];
+  if (r) return r.dono === (NET.user && NET.user.id) ? `🏠 Minha casa (${c.n}) · entrar` : `🏠 ${c.n} · casa de ${r.dono_nome}`;
+  return c.st === 'aluga' ? `🏠 ${c.n} · ALUGA-SE $ ${fmt(c.rent)}/dia` : `🏠 ${c.n} · VENDE-SE $ ${fmt(c.buy)}`;
+}
+function refreshCasaSigns() {
+  const sc = city.scene; if (!sc || !city.casas) return;
+  for (const k in city.casaSigns) sc.remove(city.casaSigns[k]); city.casaSigns = {};
+  city.xspots = (city.xspots || []).filter(o => !o.casa);
+  for (const k in city.casas) {
+    const c = city.casas[k], r = city.casaRows[k]; if (c.st === 'morador' && !r) continue;
+    const mine = r && NET.user && r.dono === NET.user.id;
+    const txt = r ? (mine ? '🏠 MINHA CASA' : `🏠 ${r.dono_nome}`) : c.st === 'aluga' ? `ALUGA-SE · $ ${fmt(c.rent)}/dia` : `VENDE-SE · $ ${fmt(c.buy)}`;
+    const s = textSprite(txt, { bg: r ? '#15161a' : c.st === 'aluga' ? '#00bcd4' : '#ffcf3a', fg: r ? '#ffd76a' : '#15161a', size: 44, scale: [c.vila ? 5 : 3.2, c.vila ? 1 : 0.65, 1] });
+    s.position.set(c.x + c.fx * 0.3, c.y + (c.vila ? 3.4 : 2.6), c.z + c.fz * 0.3); sc.add(s); city.casaSigns[k] = s;
+    city.xspots.push({ casa: k, x: c.ox, z: c.oz, r: c.vila ? 2.4 : 1.8, label: () => casaLabel(c), fn: () => { const rr = city.casaRows[k]; if (rr && NET.user && rr.dono === NET.user.id) enterCasa(c); else openPanel('casa', k); } });
+  }
+}
+async function loadCasas() {
+  city.casaRows = {}; if (!NET.sb || !NET.user) return refreshCasaSigns(); const cid = cityId();
+  try {
+    const { data, error } = await NET.sb.from('casas').select('id,casa,modo,dono,dono_nome,pago_ate').eq('cidade', cid); if (error || !data || cityId() !== cid) return;
+    const now = Date.now();
+    for (const r of data) { if (r.modo === 'aluguel' && new Date(r.pago_ate).getTime() < now - 2 * 3600e3) continue; city.casaRows[r.casa] = r; }
+    // minha casa ainda é minha?
+    if (S.casa && S.casa.cid === cid && (!city.casaRows[S.casa.key] || city.casaRows[S.casa.key].dono !== NET.user.id)) { toast('Você perdeu a casa (aluguel vencido).', 'bad'); S.casa = null; persist(); }
+    refreshCasaSigns();
+  } catch (e) { }
+}
+function onCasaNet(d) {
+  if (!d || d.cid !== cityId()) return;
+  if (d.op === 'del') delete city.casaRows[d.key]; else city.casaRows[d.key] = d.row;
+  refreshCasaSigns(); if (panelKind === 'casa') renderPanel();
+}
+function onCasaPg(d) { if (!isAdm() || !d) return; toast(`🏠 ${d.who} ${d.modo === 'compra' ? 'comprou' : 'pagou o aluguel de'} ${d.casa}: +$ ${fmt(d.amt)} para o chefe`, 'good'); S.coins += d.amt; persist(); updateHUD(); }
+async function takeCasa(key, modo) {
+  const c = city.casas[key]; if (!c) return;
+  if (!NET.user || !NET.sb) return toast('Entre com sua conta para alugar ou comprar uma casa.', 'bad');
+  if (city.casaRows[key]) return toast('Essa casa já tem dono.', 'bad');
+  if (S.casa && S.casa.cid === cityId()) return toast('Você já tem uma casa nesta cidade. Entregue a outra primeiro.', 'bad');
+  const price = modo === 'compra' ? c.buy : c.rent; if (S.coins < price) return toast(`Precisa de $ ${fmt(price)}.`, 'bad');
+  try {
+    const { data, error } = await NET.sb.from('casas').insert({ cidade: cityId(), casa: key, modo, dono_nome: S.name, pago_ate: new Date(Date.now() + 3600e3).toISOString() }).select().single();
+    if (error) return toast(/duplicate|unique/i.test(error.message) ? 'Alguém acabou de pegar essa casa.' : 'Não deu agora. Tente de novo.', 'bad');
+    S.coins -= price; S.casa = { key, cid: cityId(), modo, tier: c.tier, n: c.n, paid: gameDay() };
+    if (c.morro) { S.morador = S.morador || {}; S.morador[cityId()] = true; }
+    persist(); updateHUD(); city.casaRows[key] = data; refreshCasaSigns(); sfx('level');
+    if (NET.ch) { NET.ch.send({ type: 'broadcast', event: 'casa', payload: { cid: cityId(), key, op: 'set', row: data } }); NET.ch.send({ type: 'broadcast', event: 'casa_pg', payload: { amt: price, who: S.name, casa: c.n, modo } }); }
+    toast(modo === 'compra' ? `🏠 Casa própria! ${c.n} agora é sua.` : `🏠 Você alugou ${c.n}. O aluguel ($ ${fmt(c.rent)}) é cobrado a cada dia do jogo.`, 'pink');
+    if (c.morro) toast(`Agora você é morador do ${MORRO_NAME[cityId()]}.`, 'good');
+    postFeed(modo === 'compra' ? `Comprei a ${c.n}!` : `Aluguei a ${c.n}!`); renderPanel();
+  } catch (e) { toast('Sem conexão com o servidor.', 'bad'); }
+}
+async function dropCasa() {
+  const sc = S.casa; if (!sc) return;
+  try { await NET.sb.from('casas').delete().eq('cidade', sc.cid).eq('casa', sc.key); } catch (e) { }
+  if (sc.cid === cityId()) { delete city.casaRows[sc.key]; refreshCasaSigns(); if (NET.ch) NET.ch.send({ type: 'broadcast', event: 'casa', payload: { cid: sc.cid, key: sc.key, op: 'del' } }); }
+  S.casa = null; persist(); toast('Você entregou a casa.'); renderPanel();
+}
+/* aluguel diário (vai para o chefe) */
+function casaDaily() {
+  const sc = S && S.casa; if (!sc || sc.modo !== 'aluguel' || !NET.user) return; const d = gameDay(); if ((sc.paid || 0) >= d) return;
+  const c = city.casas && city.casas[sc.key]; const rent = c ? c.rent : (sc.tier === 'casa' ? 220 : 60);
+  sc.paid = d;
+  if (S.coins >= rent) {
+    S.coins -= rent; sc.debt = 0; toast(`🏠 Aluguel do dia pago: $ ${fmt(rent)} (${sc.n})`);
+    if (NET.sb) NET.sb.from('casas').update({ pago_ate: new Date(Date.now() + 3600e3).toISOString() }).eq('cidade', sc.cid).eq('casa', sc.key).then(() => { }, () => { });
+    if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'casa_pg', payload: { amt: rent, who: S.name, casa: sc.n, modo: 'aluguel' } });
+  } else if ((sc.debt = (sc.debt || 0) + 1) >= 2) { toast(`Despejado! Dois dias sem pagar o aluguel da ${sc.n}.`, 'bad'); dropCasa(); return; }
+  else toast(`Aluguel atrasado (${sc.n}). Pague até amanhã ou será despejado.`, 'bad');
+  persist(); updateHUD();
+}
+function enterCasa(c) {
+  if (city.interior || city.doorAnim) return;
+  P.v = 0; P.onBoard = false;
+  fadeTo(() => {
+    city.interior = buildInterior(c.tier);
+    for (const s of city.interior.spots) city.doors.push({ kind: s.kind, label: s.label, x: s.x, z: s.z, ring: null, inside: true });
+    P.x = city.interior.exit.x; P.z = city.interior.exit.z; P.h = Math.PI; P.y = 0; city.camYaw = Math.PI; city.zoom = 0.75; city.camSnap = true;
+    city.homeOut = [c.ox + 2.2, c.oz]; city.casaOut = c; toast(`Você entrou na sua casa (${c.n}).`, 'pink');
+  });
+}
+const PANEL_CASA = function (key) {
+  const c = city.casas && city.casas[key]; if (!c) return { title: '🏠 Casa', html: '<p class="muted">Casa não encontrada.</p>' };
+  const r = city.casaRows[key], mine = r && NET.user && r.dono === NET.user.id;
+  let html = `<p><b>${esc(c.n)}</b></p><p class="muted">Dono do imóvel: <b>${esc(CHIEF)} (ADM)</b>. Aluguel e venda vão para o chefe.</p>`;
+  if (mine) html += `<div class="note">Esta casa é sua (${r.modo === 'compra' ? 'comprada' : 'alugada'}).</div><div class="row"><button class="btn" data-act="casa-in" data-k="${key}">Entrar em casa</button><button class="btn ghost" data-act="casa-drop">Entregar a casa</button></div>`;
+  else if (r) html += `<div class="note">Mora aqui: <b>${esc(r.dono_nome)}</b> (${r.modo === 'compra' ? 'casa própria' : 'aluguel'}).</div>`;
+  else if (c.st === 'morador') html += `<div class="note">Mora aqui: <b>${esc(c.mor)}</b>.</div>`;
+  else {
+    html += `<div class="note">${c.st === 'aluga' ? `ALUGA-SE: <b>$ ${fmt(c.rent)}</b> por dia do jogo (cobrado automaticamente).` : `VENDE-SE: <b>$ ${fmt(c.buy)}</b> (é sua para sempre).`}</div>`;
+    html += `<p class="muted">${c.morro ? 'Casa no morro: quem mora aqui vira morador e pode subir o morro.' : 'Casa com quintal na Vila Residencial.'} Dentro tem cama, sofá, TV e cozinha.</p>`;
+    html += `<div class="row">${c.st === 'aluga' ? `<button class="btn" data-act="casa-take" data-k="${key}" data-m="aluguel">Alugar ($ ${fmt(c.rent)})</button>` : `<button class="btn" data-act="casa-take" data-k="${key}" data-m="compra">Comprar ($ ${fmt(c.buy)})</button>`}</div>`;
+    if (S.casa && S.casa.cid === cityId()) html += `<p class="muted">Você já tem a ${esc(S.casa.n)}. Entregue ela antes de pegar outra.</p>`;
+  }
+  return { title: '🏠 Casa', html };
+};
+/* moradores saindo e entrando das casas (perto de você) */
+function updateMoradores(dt, t) {
+  const M = city.morad || (city.morad = []); if (!city.casas || city.interior || city.shopIn) { for (const o of M) o.g.visible = false; return; }
+  if ((city.moradT = (city.moradT || 0) - dt) <= 0 && M.length < 7) {
+    city.moradT = rand(2, 5);
+    const near = []; for (const k in city.casas) { const c = city.casas[k]; if (c.st !== 'morador' || city.casaRows[k]) continue; const d = Math.hypot(c.ox - P.x, c.oz - P.z); if (d > 9 && d < 55) near.push(c); }
+    if (near.length) {
+      const c = pick(near), f = hash01(c.key) < 0.5, old = hash01(c.key + 'o') < 0.25;
+      const look = lookOf({ shirt: pick(['shirt_basic', 'ct_cinza', 'ct_vinho', 'rg_branca', 'shirt_sky', 'tm_bra', 'ct_listra_az']), pants: pick(['sh_tactel', 'bm_tactel', 'pants_jeans', 'sh_bermuda', 'bm_cinza']), shoes: pick(['shoes_chinelo', 'shoes_basic', 'shoes_sandal'].filter(x => ITEM[x])) }, pick(SKINS), old ? 0xd8d8d8 : pick(HAIRS), f ? 'f' : 'm');
+      const g = makeSkater(look, null); city.scene.add(g); g.userData.lod = true;
+      const out = rand(5, 10), side = rand(-3, 3);
+      M.push({ g, c, st: 'sai', x: c.x, z: c.z, tx: c.ox + c.fx * out + c.fz * side, tz: c.oz + c.fz * out - c.fx * side, wait: rand(4, 12), spd: old ? 0.8 : 1.2, line: pick(['Bom dia, vizinho!', 'Vou na padaria.', 'Já volto!', 'Que calor hoje...', 'Ô de casa!', 'Vou buscar as crianças.']) });
+      bubble(g, M[M.length - 1].line, 3);
+    }
+  }
+  for (let i = M.length - 1; i >= 0; i--) {
+    const o = M[i], g = o.g; let tx = o.tx, tz = o.tz;
+    if (o.st === 'parado') { o.wait -= dt; if (o.wait <= 0) o.st = 'volta'; }
+    if (o.st === 'volta') { tx = o.c.x; tz = o.c.z; }
+    const dx = tx - o.x, dz = tz - o.z, d = Math.hypot(dx, dz), moving = o.st !== 'parado' && d > 0.3;
+    if (moving) { o.x += dx / d * o.spd * dt; o.z += dz / d * o.spd * dt; g.rotation.y = Math.atan2(dx, dz); }
+    else if (o.st === 'sai') o.st = 'parado';
+    else if (o.st === 'volta') { city.scene.remove(g); M.splice(i, 1); continue; }
+    g.position.set(o.x, groundH(o.x, o.z), o.z); g.visible = Math.hypot(o.x - P.x, o.z - P.z) < 70;
+    if (g.visible) { animSkater(g, { walk: true, v: moving ? o.spd : 0, fallT: 0 }, t); tickBubble(g, dt); }
+  }
+}
+
+/* =========================================================
+   CIDADE VIVA: coroas jogando dominó (favela e praça), crianças andando pela rua, casais de mãos dadas
+   ========================================================= */
+const PRACA_POS = [126, 0];
+let _domT = null;
+function dominoTex() { return _domT || (_domT = canvasTex(32, 64, (c, w, h) => { c.fillStyle = '#f6f3ea'; c.fillRect(0, 0, w, h); c.fillStyle = '#15161a'; c.fillRect(2, h / 2 - 1, w - 4, 2); const dots = [[8, 8], [24, 8], [16, 16], [8, 24], [24, 24], [8, 40], [24, 56], [16, 48]]; for (const [x, y] of dots) { c.beginPath(); c.arc(x, y, 3, 0, TAU); c.fill(); } })); }
+function dominoTable(sc, x, z, ry = 0) {
+  const g = new THREE.Group(); g.position.set(x, groundH(x, z), z); g.rotation.y = ry; sc.add(g);
+  const add = (geo, m, px, py, pz, rx = 0, ryy = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.rotation.set(rx, ryy, 0); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  add(boxGeo(1.0, 0.04, 1.0), lam(0x2e7d4f), 0, 0.76, 0); add(boxGeo(1.04, 0.05, 1.04), lam(0xf2f2ee), 0, 0.73, 0); for (const [a, b] of [[-0.42, -0.42], [0.42, -0.42], [-0.42, 0.42], [0.42, 0.42]]) add(CYL(0.025, 0.025, 0.72, 6), lam(0xf2f2ee), a, 0.36, b);
+  const seats = [], tm = new THREE.MeshLambertMaterial({ map: dominoTex() });
+  for (let k = 0; k < 4; k++) {
+    const a = k / 4 * TAU, sx = Math.sin(a) * 0.95, sz = Math.cos(a) * 0.95, ch = new THREE.Group(); ch.position.set(sx, 0, sz); ch.rotation.y = a + Math.PI; g.add(ch);
+    const seat = new THREE.Mesh(boxGeo(0.45, 0.05, 0.45), lam(0xf2f2ee)); seat.position.y = 0.44; ch.add(seat); const back = new THREE.Mesh(boxGeo(0.45, 0.45, 0.05), lam(0xf2f2ee)); back.position.set(0, 0.68, 0.22); ch.add(back);
+    for (const [a2, b2] of [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]]) { const l = new THREE.Mesh(CYL(0.018, 0.018, 0.44, 5), lam(0xf2f2ee)); l.position.set(a2, 0.22, b2); ch.add(l); }
+    // pedras na mão (em pé, viradas para o jogador)
+    const hand = new THREE.Group(); hand.position.set(Math.sin(a) * 0.36, 0.8, Math.cos(a) * 0.36); hand.rotation.y = a; g.add(hand);
+    for (let i = 0; i < 6; i++) { const t = new THREE.Mesh(boxGeo(0.045, 0.09, 0.015), tm); t.position.set((i - 2.5) * 0.05, 0.045, 0); hand.add(t); }
+    seats.push({ a, hand });
+  }
+  const line = new THREE.Group(); line.position.y = 0.79; g.add(line);
+  const D = { g, seats, line, tm, n: 0, turn: 0, t: rand(0, 3), npcs: [], wins: [0, 0, 0, 0] };
+  const names = [pick(['Seu Tião', 'Seu Jorge', 'Seu Zé']), pick(['Seu Valdir', 'Seu Raimundo', 'Seu Antônio']), pick(['Seu Nelson', 'Seu Juca', 'Seu Bené']), pick(['Seu Dito', 'Seu Lauro', 'Seu Geraldo'])];
+  seats.forEach((s, k) => {
+    const look = lookOf({ shirt: pick(['ct_cinza', 'shirt_basic', 'rg_branca', 'ct_listra_pb', 'tm_bra', 'ct_verde']), pants: pick(['bm_cinza', 'sh_tactel', 'bm_tactel', 'pants_jeans']), shoes: pick(['shoes_chinelo', 'shoes_sandal'].filter(x => ITEM[x]).concat('shoes_basic')), cap: pick(['cap_none', 'cap_none', 'cap_black', 'cap_red'].filter(x => ITEM[x])) }, pick(SKINS), 0xdedede, 'm');
+    const n = makeSkater(look, null); n.position.set(Math.sin(s.a) * 0.78, 0.0, Math.cos(s.a) * 0.78); n.rotation.y = s.a + Math.PI; g.add(n); n.userData.lod = true; D.npcs.push({ g: n, name: names[k], slapT: 0 });
+  });
+  (city.domino = city.domino || []).push(D);
+  city.colliders.push({ x0: x - 1.3, x1: x + 1.3, z0: z - 1.3, z1: z + 1.3 });
+  city.xspots.push({ dom: true, x: x + 1.8, z, r: 1.6, label: '🁫 Mesa de dominó dos coroas: apostar na partida', fn: () => openPanel('domino', city.domino.indexOf(D)) });
+  return D;
+}
+const DOM_LINES = ['Bati!', 'Passo...', 'Carroça de seis!', 'Lá e lô!', 'Tá fechado!', 'Essa é minha!', 'Ih, rapaz...', 'Toma!', 'Joga logo, Tião!', 'Buchuda!'];
+function updateDomino(dt, t) {
+  for (const D of city.domino || []) {
+    const wp = D.g.getWorldPosition(_v3a || (_v3a = new THREE.Vector3())), dist = Math.hypot(wp.x - P.x, wp.z - P.z), vis = dist < 80 && !city.interior && !city.shopIn; D.g.visible = vis; if (!vis) continue;
+    D.t -= dt;
+    if (D.t <= 0) {
+      D.t = rand(1.8, 3.6); const k = D.turn % 4, npc = D.npcs[k]; npc.slapT = 0.45; D.turn++;
+      if (Math.random() < 0.85) {
+        const tile = new THREE.Mesh(boxGeo(0.045, 0.012, 0.09), D.tm), i = D.n++, row = Math.floor(i / 9), col = i % 9;
+        tile.position.set((col - 4) * 0.095 * (row % 2 ? -1 : 1), 0, (row - 1) * 0.12); tile.rotation.y = Math.PI / 2; D.line.add(tile);
+        if (dist < 30) { tone('square', 180, 120, 0.04, 0.12); tone('triangle', 900, 700, 0.03, 0.05, 0.01); }
+        if (Math.random() < 0.5 && dist < 35) bubble(npc.g, pick(DOM_LINES), 2);
+      } else if (dist < 35) bubble(npc.g, 'Passo.', 1.6);
+      if (D.n >= 24) { D.wins[k]++; if (dist < 40) bubble(npc.g, pick(['Ganhei! Paga a cerveja!', 'Batida! Ganhei!', 'É meu, rapaziada!']), 3.5); D.n = 0; D.line.clear(); D.t = 5; if (D.bet) domBetEnd(D, k); }
+    }
+    if (dist > 45) continue;
+    D.npcs.forEach((o, k) => {
+      o.slapT = Math.max(0, o.slapT - dt); const s = o.slapT > 0 ? Math.sin((1 - o.slapT / 0.45) * Math.PI) : 0;
+      animSkater(o.g, { walk: true, v: 0, fallT: 0, emote: 'sit', fp: { lArmFwd: 1.15, rArmFwd: 1.15 + s * 0.9, lElbow: 1.05, rElbow: 1.0 - s * 0.6, lArmDown: 0.5, rArmDown: 0.5 - s * 0.4, headX: 0.25 } }, t + k);
+      o.g.position.y = 0.0; tickBubble(o.g, dt);
+    });
+  }
+}
+let _v3a = null;
+const PANEL_DOMINO = function (i) {
+  const D = (city.domino || [])[i]; if (!D) return { title: '🁫 Dominó', html: '' };
+  let html = `<p>Os coroas jogam dominó o dia inteiro. Aposte em quem vai bater a próxima partida: se acertar, ganha <b>3x</b>.</p>`;
+  if (D.bet) html += `<div class="note">Sua aposta: <b>$ ${fmt(D.bet.v)}</b> no <b>${esc(D.npcs[D.bet.k].name)}</b>. Aguarde a partida acabar.</div>`;
+  html += D.npcs.map((o, k) => `<div class="card"><h4>${esc(o.name)}</h4><p class="muted">Vitórias hoje: ${D.wins[k]}</p>${D.bet ? '' : `<div class="row"><button class="btn sm" data-act="dom-bet" data-i="${i}" data-k="${k}" data-v="50">Apostar $ 50</button><button class="btn sm ghost" data-act="dom-bet" data-i="${i}" data-k="${k}" data-v="200">$ 200</button></div>`}</div>`).join('');
+  return { title: '🁫 Mesa de Dominó', html };
+};
+function domBet(i, k, v) { const D = city.domino[i]; if (!D || D.bet) return; if (S.coins < v) return toast('Grana insuficiente.', 'bad'); S.coins -= v; persist(); updateHUD(); D.bet = { k, v }; toast(`Apostou $ ${v} no ${D.npcs[k].name}.`, 'pink'); renderPanel(); }
+function domBetEnd(D, k) { const b = D.bet; D.bet = null; if (b.k === k) { const w = b.v * 3; S.coins += w; toast(`🁫 ${D.npcs[k].name} bateu! Você ganhou $ ${fmt(w)}.`, 'good'); sfx('coin'); } else toast(`🁫 ${D.npcs[k].name} bateu. Perdeu a aposta.`, 'bad'); persist(); updateHUD(); if (panelKind === 'domino') renderPanel(); }
+/* praça com mesas de dominó, bancos, árvores e crianças */
+function buildPraca(sc) {
+  const [x, z] = PRACA_POS, g = new THREE.Group(); g.position.set(x, 0, z); sc.add(g);
+  const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  add(boxGeo(30, 0.08, 30), lam(0xcfc6b4), 0, 0.04, 0);
+  for (const [a, b] of [[-11, -11], [11, -11], [-11, 11], [11, 11], [0, -12], [0, 12]]) { add(CYL(0.25, 0.3, 3, 8), lam(0x6b4a2f), a, 1.5, b); const c = add(new THREE.IcosahedronGeometry(2.4, 1), lam(0x3f8a3a), a, 4.2, b); c.scale.y = 0.85; city.colliders.push({ x0: x + a - 0.4, x1: x + a + 0.4, z0: z + b - 0.4, z1: z + b + 0.4 }); }
+  for (const [a, b, r] of [[-6, -13, 0], [6, -13, 0], [-6, 13, Math.PI], [6, 13, Math.PI]]) { const bn = new THREE.Group(); bn.position.set(a, 0, b); bn.rotation.y = r; g.add(bn); const s1 = new THREE.Mesh(boxGeo(2.4, 0.08, 0.5), lam(0x8a6a48)); s1.position.y = 0.45; bn.add(s1); const s2 = new THREE.Mesh(boxGeo(2.4, 0.5, 0.06), lam(0x8a6a48)); s2.position.set(0, 0.75, -0.25); bn.add(s2); }
+  const sp = textSprite('🌳 PRAÇA DOS COROAS · DOMINÓ', { bg: '#2e7d4f', fg: '#fff', size: 44, scale: [6.5, 1.1, 1] }); sp.position.set(-13, 3.4, 0); g.add(sp);
+  dominoTable(sc, x - 4, z - 3); dominoTable(sc, x + 4, z + 3, 0.5);
+  atmMesh(sc, x - 14, z + 8, -Math.PI / 2); city.xspots.push({ bank: true, x: x - 15, z: z + 8, r: 1.5, label: '🏧 Caixa eletrônico 24h', fn: () => openPanel('banco', 1) });
+  const L = LANDMARKS[cityId()]; if (L && !L.some(l => l[2] === 'Praça dos Coroas')) L.push([x, z, 'Praça dos Coroas']);
+}
+/* crianças passeando nas calçadas (em dupla, às vezes com a mãe) e casais de mãos dadas */
+function buildWalkers(sc) {
+  city.walkers = [];
+  const kidLook = f => lookOf({ shirt: pick(['shirt_basic', 'shirt_sky', 'tm_bra', 'shirt_pink', 'tm_fla', 'ct_laranja', 'rg_basquete']), pants: pick(['sh_tactel', 'sh_bra', 'sh_red', 'sh_white']), shoes: pick(['shoes_basic', 'shoes_chinelo', 'shoes_white'].filter(x => ITEM[x])) }, pick(SKINS), pick(HAIRS), f ? 'f' : 'm');
+  const adultLook = f => lookOf({ shirt: pick(f ? ['shirt_pink', 'ct_vinho', 'shirt_sky', 'rg_branca', 'ct_verde'] : ['shirt_basic', 'ct_cinza', 'ct_listra_az', 'tm_bra', 'rg_preta']), pants: pick(f ? ['pants_jeans', 'sh_floral', 'sh_white'] : ['pants_jeans', 'bm_tactel', 'bm_cargo']), shoes: pick(['shoes_basic', 'shoes_white', 'shoes_sandal'].filter(x => ITEM[x])) }, pick(SKINS), pick(HAIRS), f ? 'f' : 'm');
+  const mk = (look, sc2) => { const g = makeSkater(look, null); if (sc2 !== 1) g.scale.multiplyScalar(sc2); city.scene.add(g); g.userData.lod = true; return g; };
+  // grupos: [tipo, membros]
+  for (let i = 0; i < 9; i++) {
+    const kind = i < 3 ? 'kids' : i < 5 ? 'mae' : 'casal', base = { bx: pick(BLOCKS), bz: pick(BLOCKS), u: rand(0, 107), dir: Math.random() < 0.5 ? 1 : -1, spd: kind === 'casal' ? 1.05 : 1.25, ph0: rand(0, 50) };
+    let mem;
+    if (kind === 'kids') mem = [{ g: mk(kidLook(Math.random() < 0.5), 0.62), off: -0.32, kid: true }, { g: mk(kidLook(Math.random() < 0.5), 0.58), off: 0.32, kid: true }];
+    else if (kind === 'mae') { const f = Math.random() < 0.7; mem = [{ g: mk(adultLook(f), 1), off: -0.3, hand: 'L' }, { g: mk(kidLook(Math.random() < 0.5), 0.6), off: 0.3, kid: true, hand: 'R' }]; }
+    else mem = [{ g: mk(adultLook(false), 1), off: -0.3, hand: 'L' }, { g: mk(adultLook(true), 1), off: 0.3, hand: 'R' }];
+    city.walkers.push(Object.assign(base, { kind, mem, stopT: 0, x: 0, z: 0 }));
+  }
+}
+const HOLD_R = { rArmDown: 1.18, rArmFwd: 0.12, rElbow: 0.18 }, HOLD_L = { lArmDown: 1.18, lArmFwd: 0.12, lElbow: 0.18 };
+function updateWalkers(dt, t) {
+  for (const w of city.walkers || []) {
+    const inside = city.interior || city.shopIn;
+    const [x0, z0] = pedPos(w), far = Math.hypot(x0 - P.x, z0 - P.z) > 90 || inside;
+    w.stopT -= dt; if (Math.random() < dt * 0.015) w.stopT = rand(1, 3);
+    const sp = w.stopT > 0 ? 0 : w.spd; w.u += w.dir * sp * dt;
+    const [x, z, h] = pedPos(w); w.x = x; w.z = z;
+    for (const m of w.mem) {
+      m.g.visible = !far; if (far) continue;
+      const ox = Math.cos(h) * m.off, oz = -Math.sin(h) * m.off; m.g.position.set(x + ox, groundH(x + ox, z + oz), z + oz); m.g.rotation.y = h;
+      const o = { walk: true, v: sp * (m.kid ? 1.25 : 1), fallT: 0 }; if (m.hand === 'R') o.armR = HOLD_R; if (m.hand === 'L') o.armL = HOLD_L;
+      animSkater(m.g, o, t + w.ph0 + m.off); tickBubble(m.g, dt);
+    }
+    if (!far && w.kind === 'kids' && Math.random() < dt * 0.02 && Math.hypot(x - P.x, z - P.z) < 14) bubble(w.mem[0].g, pick(['Tio, tem skate?', 'Bora jogar bola!', 'Olha o carro!', 'Quero sorvete!', 'Pega-pega!']), 2.5);
+  }
+}
+/* casais casados (jogadores) andando de mãos dadas: quando um está colado no outro */
+function updateHandHold() {
+  P.armL = P.armR = null;
+  for (const id in NET.peers) { const p = NET.peers[id]; p.armL = p.armR = null; }
+  const ppl = [{ me: true, name: S.name, sp: S.spouse ? S.spouse.name : '', x: P.x, z: P.z, h: P.h, ok: !P.drive && !P.onBoard && !P.fp }];
+  for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || p.t.vh || p.t.b || (p.t.rm || '') !== roomKey()) continue; ppl.push({ p, name: p.name, sp: p.sp || '', x: p.x, z: p.z, h: p.h, ok: true }); }
+  for (let i = 0; i < ppl.length; i++) for (let j = i + 1; j < ppl.length; j++) {
+    const A = ppl[i], B = ppl[j]; if (!A.ok || !B.ok || !A.sp || A.sp !== B.name || B.sp !== A.name) continue;
+    const d = Math.hypot(A.x - B.x, A.z - B.z); if (d > 1.3 || Math.cos(A.h - B.h) < 0.5) continue;
+    // B está à direita de A?
+    const rx = Math.cos(A.h), rz = -Math.sin(A.h), right = (B.x - A.x) * rx + (B.z - A.z) * rz < 0;
+    const set = (Q, side) => { if (Q.me) { if (side === 'R') P.armR = HOLD_R; else P.armL = HOLD_L; } else { if (side === 'R') Q.p.armR = HOLD_R; else Q.p.armL = HOLD_L; } };
+    set(A, right ? 'R' : 'L'); set(B, right ? 'L' : 'R');
+  }
+}
+
+/* monta tudo na cidade (chamado no fim do cityExtras) */
+function buildLife(sc) {
+  city.domino = []; city.morad = []; city.walkers = [];
+  try { buildBank(sc); buildATMs(sc); } catch (e) { console.warn('banco', e); }
+  try { buildPraca(sc); for (const F of regFav()) dominoTable(sc, F.x + 6.5, F.z + 6.5, 0.3); if (city.morro) { const [mx, mz] = morroWorld(2.5, 13); dominoTable(sc, mx, mz, 0); } } catch (e) { console.warn('dominó', e); }
+  try { buildCasas(sc); } catch (e) { console.warn('casas', e); }
+  try { buildWalkers(sc); } catch (e) { console.warn('pedestres', e); }
+  try { buildArena(sc); } catch (e) { console.warn('ringue', e); }
+  try { buildQuadra(sc); } catch (e) { console.warn('quadra', e); }
+  setTimeout(loadCasas, 900);
+}
+function updateLife25(dt, t) {
+  if (mode !== 'city') return;
+  if ((city.dailyT = (city.dailyT || 0) - dt) <= 0) { city.dailyT = 20; bankDaily(); casaDaily(); }
+  try { updateDomino(dt, t); } catch (e) { console.warn('dominó', e); }
+  try { updateMoradores(dt, t); } catch (e) { console.warn('moradores', e); }
+  try { updateWalkers(dt, t); } catch (e) { console.warn('pedestres', e); }
+  try { updateHandHold(); } catch (e) { console.warn('mãos dadas', e); }
+  try { updateFight(dt, t); } catch (e) { console.warn('luta', e); }
+  try { updateFutsal(dt, t); } catch (e) { console.warn('futsal', e); }
+}
+
+/* =========================================================
+   ESPORTES: controles próprios de cada esporte (aparecem no lugar dos botões normais)
+   ========================================================= */
+const SPORT_BTNS = {
+  luta: [['sp1', '👊 Jab'], ['sp2', '💥 Direto'], ['sp3', '🦵 Chute'], ['sp4', '🛡️ Defesa'], ['sp5', '💨 Esquiva']],
+  futsal: [['sp1', '⚽ Chutar'], ['sp2', '🎯 Passe'], ['sp3', '🦶 Carrinho'], ['sp4', '🏃 Correr'], ['sp5', '⬆️ Pular']],
+};
+Object.assign(KEYMAP, { Digit1: 'sp1', Digit2: 'sp2', Digit3: 'sp3', Digit4: 'sp4', Digit5: 'sp5' });
+function setSport(k) {
+  P.sport = k || null; P.sportLock = k === 'luta';
+  const tc = $('touch'); if (tc) tc.classList.toggle('sport', !!k);
+  if (k) for (const [id, label] of SPORT_BTNS[k]) { const b = $('sb-' + id); if (b) b.querySelector('span').textContent = label; }
+  let hud = $('sport-hud'); if (!k) { if (hud) hud.hidden = true; return; }
+  if (!hud) { hud = document.createElement('div'); hud.id = 'sport-hud'; document.body.appendChild(hud); }
+  hud.hidden = false;
+  if (!IS_TOUCH) toast(k === 'luta' ? 'Teclado: J/1 jab · K/2 direto · 3 chute · 4 (segure) defesa · 5 esquiva' : 'Teclado: J/1 chutar · K/2 passe · 3 carrinho · 4 (segure) correr', 'pink');
+}
+const spTap = (a, alt) => tap(a) || (alt ? tap(alt) : false);
+const spHold = (a, key) => !!(input.hold[a] || (key && input.held[key]));
+/* luvas de boxe presas nas mãos */
+function setGloves(g, color) {
+  const u = g.userData; if (!u.R || !u.R.B) return;
+  if (!u.gloves && color) {
+    u.gloves = [];
+    for (const n of ['LeftHand', 'RightHand']) { const hb = u.R.B[n]; if (!hb) continue; const ws = hb.getWorldScale(new THREE.Vector3()).x || 1, m = new THREE.Mesh(SPH(0.075, 14, 10), new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.1 })); m.scale.set(1.05 / ws, 1.25 / ws, 1.1 / ws); m.position.set(0, 0.07 / ws, 0.015 / ws); m.castShadow = true; hb.add(m); u.gloves.push(m); }
+  }
+  if (u.gloves) for (const m of u.gloves) { m.visible = !!color; if (color) m.material.color.setHex(color); }
+}
+/* poses da luta e do futebol (por código, para mandar pela rede) */
+const GUARD = { lArmFwd: 0.7, rArmFwd: 0.6, lElbow: 2.4, rElbow: 2.5, lArmDown: 1.45, rArmDown: 1.5, lThigh: 0.3, rThigh: -0.1, lKnee: 0.4, rKnee: 0.3, lean: 0.12, headX: 0.12, twist: -0.15 };
+function fpPose(code, k) {
+  const s = Math.sin(Math.min(1, k) * Math.PI);
+  switch (code) {
+    case 'g': return GUARD;
+    case 'j': return Object.assign({}, GUARD, { lArmFwd: 0.7 + s * 0.85, lElbow: 2.4 - s * 2.35, lArmDown: 1.45 - s * 0.05, twist: -0.15 - 0.25 * s });
+    case 'c': return Object.assign({}, GUARD, { rArmFwd: 0.6 + s * 0.95, rElbow: 2.5 - s * 2.45, rArmDown: 1.5 - s * 0.1, twist: -0.15 + 0.6 * s, lean: 0.12 + 0.12 * s });
+    case 'k': return Object.assign({}, GUARD, { rThigh: -0.1 + s * 1.6, rKnee: 0.3 + (1 - s) * 0.9, lean: 0.12 - 0.35 * s, twist: 0.3 * s });
+    case 'b': return Object.assign({}, GUARD, { lArmFwd: 0.95, rArmFwd: 0.95, lElbow: 2.65, rElbow: 2.65, lArmDown: 1.4, rArmDown: 1.4, headX: 0.35, lean: 0.2, twist: 0 });
+    case 'd': return Object.assign({}, GUARD, { lean: 0.45, side: 0.25 * (k < 0.5 ? 1 : -1), lKnee: 0.8, rKnee: 0.8, lThigh: 0.6, rThigh: 0.4 });
+    case 'fk': return { rThigh: -0.6 + s * 2.0, rKnee: 0.2 + (1 - s) * 0.6, lArmFwd: 0.5, rArmFwd: -0.3, lArmDown: 0.6, lean: -0.15 * s };
+    case 'fp': return { rThigh: -0.3 + s * 1.1, rKnee: 0.2, lArmFwd: 0.3, lean: -0.05 };
+    case 'ft': return { lThigh: 1.2, rThigh: 0.2, lKnee: 0.2, rKnee: 0.8, lean: -0.5, lArmDown: 0.2, rArmDown: 0.2 };
+  }
+  return null;
+}
+/* =========================================================
+   RINGUE ROLÊ FIGHT: fila de lutadores, 4 rounds com tempo, plateia em volta.
+   Sozinho você luta com um figurante; com gente online, a fila junta de dois em dois
+   (enquanto uma dupla luta, a outra espera).
+   ========================================================= */
+const ARENA_POS = [126, -42], RING_H = 1.0, RING_R = 3.15;
+const ROUND_S = 45, REST_S = 12, ROUNDS = 4;
+const RING = { q: [], cur: null, board: null, crowd: [] };
+const LUVAS = [['lv_vm', 'Luvas Vermelhas', 0xc8102e, 150], ['lv_az', 'Luvas Azuis', 0x1f4fbf, 150], ['lv_pt', 'Luvas Pretas', 0x15161a, 200], ['lv_br', 'Luvas Brancas', 0xf4f2ec, 200], ['lv_ou', 'Luvas Douradas', 0xd4a017, 600]];
+const FIGHT_WEAR = [
+  I('pants', 'lt_calcao_vm', 'Calção de Luta Vermelho', 0xc8102e, 180, null, 'comum', { pat: 'sidestripe', short: true }),
+  I('pants', 'lt_calcao_az', 'Calção de Luta Azul', 0x1f4fbf, 180, null, 'comum', { pat: 'sidestripe', short: true }),
+  I('pants', 'lt_calcao_pt', 'Calção de Luta Preto', 0x15161a, 180, null, 'comum', { pat: 'sidestripe', short: true }),
+  I('pants', 'lt_calcao_br', 'Calção de Luta Branco', 0xf4f2ec, 200, null, 'comum', { pat: 'sidestripe', short: true }),
+  I('pants', 'lt_calcao_ou', 'Calção de Luta Dourado', 0xd4a017, 450, null, 'comum', { pat: 'sidestripe', short: true }),
+  I('shirt', 'lt_regata_vm', 'Regata de Treino Vermelha', 0xc8102e, 160, null, 'comum', { pat: 'plain', tank: true }),
+  I('shirt', 'lt_regata_pt', 'Regata de Treino Preta', 0x15161a, 160, null, 'comum', { pat: 'plain', tank: true }),
+];
+FIGHT_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
+const myLuva = () => { const id = S.gear && S.gear.luva; const L = LUVAS.find(l => l[0] === id); return L ? L[2] : 0xc8102e; };
+function buildArena(sc) {
+  const [x, z] = ARENA_POS, g = new THREE.Group(); g.position.set(x, 0, z); sc.add(g); RING.g = g;
+  const add = (geo, m, px, py, pz, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.rotation.set(rx, ry, rz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  add(boxGeo(30, 0.08, 30), lam(0x8d8a84), 0, 0.04, 0);
+  const skirtT = canvasTex(512, 64, (c, w, h) => { c.fillStyle = '#10204a'; c.fillRect(0, 0, w, h); c.fillStyle = '#ffd76a'; c.font = '700 44px "Barlow Condensed", Arial'; c.textAlign = 'center'; c.fillText('ROLÊ FIGHT', w / 2, 48); });
+  add(boxGeo(7.4, RING_H, 7.4), [0, 1, 2, 3, 4, 5].map(i => i === 2 || i === 3 ? lam(0x10204a) : new THREE.MeshLambertMaterial({ map: skirtT })), 0, RING_H / 2, 0);
+  const matT = canvasTex(256, 256, (c, w, h) => { c.fillStyle = '#e9eef5'; c.fillRect(0, 0, w, h); c.strokeStyle = '#1f3a6b'; c.lineWidth = 6; c.strokeRect(10, 10, w - 20, h - 20); c.fillStyle = 'rgba(31,58,107,.85)'; c.beginPath(); c.arc(w / 2, h / 2, 54, 0, TAU); c.fill(); c.fillStyle = '#ffd76a'; c.font = '700 30px "Barlow Condensed", Arial'; c.textAlign = 'center'; c.fillText('ROLÊ', w / 2, h / 2 - 4); c.fillText('FIGHT', w / 2, h / 2 + 26); });
+  const mat = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 7.2), new THREE.MeshStandardMaterial({ map: matT, roughness: 0.8 })); mat.rotation.x = -Math.PI / 2; mat.position.y = RING_H + 0.012; mat.receiveShadow = true; g.add(mat);
+  const corner = [0xc8102e, 0xf4f2ec, 0x1f4fbf, 0xf4f2ec];
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([a, b], i) => { add(CYL(0.08, 0.08, 1.3, 10), std(0xb8bec6, 0.3, 0.8), a * 3.5, RING_H + 0.65, b * 3.5); add(boxGeo(0.28, 1.05, 0.28), lam(corner[i]), a * 3.38, RING_H + 0.75, b * 3.38, 0, Math.PI / 4); });
+  const ropeM = [lam(0xc8102e), lam(0xf4f2ec), lam(0x1f4fbf)];
+  [0.42, 0.78, 1.14].forEach((hh, k) => { for (const [a, b, rot] of [[0, -3.5, 1], [0, 3.5, 1], [-3.5, 0, 0], [3.5, 0, 0]]) add(CYL(0.035, 0.035, 7, 8), ropeM[k], a, RING_H + hh, b, rot ? 0 : Math.PI / 2, 0, rot ? Math.PI / 2 : 0); });
+  for (let i = 0; i < 4; i++) add(boxGeo(1.2, 0.25, 0.5), lam(0x6d6f76), -4.1 - i * 0.0, 0.125 + i * 0.25, 2.6 - i * 0.5);
+  // arquibancadas
+  for (const [a, b, ry] of [[0, 10, 0], [0, -10, Math.PI], [10, 0, -Math.PI / 2]]) for (let k = 0; k < 3; k++) { const st = add(boxGeo(14, 0.5 + k * 0.5, 1.2), lam(k % 2 ? 0x2a3550 : 0x34436a), 0, 0, 0); const dx = Math.sin(ry), dz = Math.cos(ry); st.position.set(a + dx * k * 1.2, (0.5 + k * 0.5) / 2, b + dz * k * 1.2); st.rotation.y = ry; city.colliders.push(ry === 0 || ry === Math.PI ? { x0: x + a - 7, x1: x + a + 7, z0: z + b + dz * k * 1.2 - 0.6, z1: z + b + dz * k * 1.2 + 0.6 } : { x0: x + a + dx * k * 1.2 - 0.6, x1: x + a + dx * k * 1.2 + 0.6, z0: z - 7, z1: z + 7 }); }
+  for (const [a, b] of [[-11, -11], [11, -11], [-11, 11], [11, 11]]) { add(CYL(0.15, 0.2, 9, 8), std(0x6d6f76, 0.5, 0.5), a, 4.5, b); const lb = add(boxGeo(1.6, 0.6, 0.4), new THREE.MeshBasicMaterial({ color: 0xfff6d8 }), a * 0.95, 9, b * 0.95); lb.lookAt(new THREE.Vector3(x, 0, z)); }
+  addSurf({ type: 'box', cx: x, cz: z, rot: 0, w: 7.4, l: 7.4, h: RING_H });
+  RING.board = textSprite('🥊 ROLÊ FIGHT · fila vazia', { bg: '#10204a', fg: '#ffd76a', size: 44, scale: [8, 1.2, 1] }); RING.board.position.set(x, 6.4, z); sc.add(RING.board);
+  const sp = textSprite('🥊 ARENA DE LUTA', { bg: '#c8102e', fg: '#fff', size: 46, scale: [6, 1.1, 1] }); sp.position.set(x - 14, 3.5, z); sc.add(sp);
+  // plateia em volta do ringue
+  RING.crowd = [];
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * TAU + 0.2, r = 5.4 + (i % 3) * 0.6, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (px < x - 4.6 && Math.abs(pz - z) < 3) continue;
+    const f = Math.random() < 0.4, look = lookOf({ shirt: pick(['shirt_basic', 'ct_cinza', 'rg_preta', 'tm_bra', 'tm_fla', 'ct_vinho', 'rg_bra', 'shirt_pink']), pants: pick(['pants_jeans', 'bm_tactel', 'sh_tactel', 'bm_cargo']), shoes: 'shoes_basic', cap: pick(['cap_none', 'cap_black', 'cap_none']) }, pick(SKINS), pick(HAIRS), f ? 'f' : 'm');
+    const n = makeSkater(look, null); n.position.set(px, 0, pz); n.rotation.y = Math.atan2(x - px, z - pz); sc.add(n); n.userData.lod = true; RING.crowd.push({ g: n, ph: rand(0, 10), cheer: 0 });
+  }
+  city.xspots.push({ ring: true, x: x - 5.2, z: z, r: 2.4, label: () => RING.mine ? '🥊 Ringue: você está lutando' : '🥊 Ringue Rolê Fight: entrar na fila e lutar', fn: () => openPanel('ringue') });
+  city.xspots.push({ ring: true, x: x - 12, z: z + 9, r: 2.2, label: '🥊 Loja do Lutador: calções, regatas e luvas', fn: () => openPanel('lutaloja') });
+  const lj = new THREE.Group(); lj.position.set(x - 12.5, 0, z + 10.5); sc.add(lj); { const b = new THREE.Mesh(boxGeo(3.4, 2.4, 1.2), lam(0x15161a)); b.position.y = 1.2; lj.add(b); const s2 = textSprite('🥊 LOJA DO LUTADOR', { bg: '#15161a', fg: '#ffd76a', size: 40, scale: [3.6, 0.6, 1] }); s2.position.y = 2.9; lj.add(s2); city.colliders.push({ x0: x - 14.2, x1: x - 10.8, z0: z + 9.9, z1: z + 11.1 }); }
+  const L = LANDMARKS[cityId()]; if (L && !L.some(l => l[2] === 'Arena de Luta')) L.push([x, z, 'Arena de Luta']);
+}
+const onlineCount = () => 1 + Object.keys(NET.peers || {}).length;
+const PANEL_RINGUE = function () {
+  const n = onlineCount(), inQ = RING.q.some(q => q.id === myId());
+  let html = `<p>Luta de <b>${ROUNDS} rounds de ${ROUND_S}s</b> (intervalo de ${REST_S}s). Ganha quem nocautear ou fizer mais pontos. Prêmio: <b>$ 800</b> contra jogador e <b>$ 300</b> contra figurante.</p>`;
+  html += `<div class="note">👥 Online na cidade agora: <b>${n}</b> ${n === 1 ? '(só você: dá para lutar com um figurante)' : ''}<br>🥊 Na fila: <b>${RING.q.length}</b>${RING.cur ? `<br>🔴 Lutando agora: <b>${esc(RING.cur.an)}</b> x <b>${esc(RING.cur.bn)}</b> · round ${RING.cur.round || 1}` : ''}</div>`;
+  if (RING.q.length) html += `<p class="muted">Fila: ${RING.q.map((q, i) => `${i + 1}. ${esc(q.name)}`).join(' · ')}</p>`;
+  if (RING.mine) html += `<p>Você está no meio de uma luta!</p><div class="row"><button class="btn ghost" data-act="ring-giveup">Desistir da luta</button></div>`;
+  else {
+    html += `<div class="row">${inQ ? `<button class="btn ghost" data-act="ring-leave">Sair da fila</button>` : `<button class="btn" data-act="ring-join">Entrar na fila</button>`}<button class="btn" data-act="ring-npc">Lutar agora contra figurante</button></div>`;
+    html += `<p class="muted">Quando tiver dois ou mais na fila, o ringue chama a próxima dupla. Use luvas e calção da Loja do Lutador (do lado).</p>`;
+  }
+  const F = S.fight || {}; html += `<p class="muted">Seu cartel: ${F.w || 0} vitórias (${F.ko || 0} por nocaute) · ${F.l || 0} derrotas${(F.w || 0) >= 5 ? ' · 🏆 Cinturão do Rolê' : ''}</p>`;
+  return { title: '🥊 Ringue Rolê Fight', html };
+};
+const PANEL_LUTALOJA = function () {
+  let html = '<p>Roupa de lutador: calção, regata (ou sem camisa) e luvas. As luvas aparecem nas mãos quando você sobe no ringue.</p><h4>Luvas de boxe</h4>';
+  S.gear = S.gear || {}; const own = S.gear.luvas || [];
+  html += LUVAS.map(([id, n, c, pr]) => `<div class="card"><h4><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#${c.toString(16).padStart(6, '0')}"></span> ${n}</h4><div class="row">${own.includes(id) ? (S.gear.luva === id ? '<span class="pill on">Usando</span>' : `<button class="btn sm" data-act="luva-use" data-id="${id}">Usar</button>`) : `<button class="btn sm" data-act="luva-buy" data-id="${id}">Comprar $ ${pr}</button>`}</div></div>`).join('');
+  html += '<h4>Calções e regatas</h4>' + FIGHT_WEAR.concat([ITEM.shirt_none].filter(Boolean)).map(it => `<div class="card"><h4>${esc(it.name)}</h4><div class="row">${S.owned.includes(it.id) ? (S.equip[it.slot] === it.id ? '<span class="pill on">Vestindo</span>' : `<button class="btn sm" data-act="equip" data-id="${it.id}">Vestir</button>`) : `<button class="btn sm" data-act="buy" data-id="${it.id}" data-cur="c">Comprar $ ${it.c}</button>`}</div></div>`).join('');
+  return { title: '🥊 Loja do Lutador', html };
+};
+function luvaBuy(id) { const L = LUVAS.find(l => l[0] === id); if (!L) return; if (S.coins < L[3]) return toast('Grana insuficiente.', 'bad'); S.coins -= L[3]; S.gear = S.gear || {}; S.gear.luvas = S.gear.luvas || []; S.gear.luvas.push(id); S.gear.luva = id; persist(); updateHUD(); sfx('coin'); toast(`Comprou ${L[1]}!`, 'good'); renderPanel(); }
+function luvaUse(id) { S.gear = S.gear || {}; S.gear.luva = id; persist(); renderPanel(); }
+const myId = () => NET.user ? NET.user.id : 'eu';
+function ringSend(p) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'ring', payload: p }); }
+function ringJoin() { if (RING.q.some(q => q.id === myId())) return; const e = { id: myId(), name: S.name, t: Date.now() }; RING.q.push(e); ringSend({ op: 'join', e }); toast('Você entrou na fila do ringue.', 'pink'); ringHost(); renderPanel(); }
+function ringLeave() { RING.q = RING.q.filter(q => q.id !== myId()); ringSend({ op: 'leave', id: myId() }); renderPanel(); }
+function onRing(d) {
+  if (!d) return;
+  if (d.op === 'join' && !RING.q.some(q => q.id === d.e.id)) RING.q.push(d.e);
+  if (d.op === 'leave') RING.q = RING.q.filter(q => q.id !== d.id);
+  if (d.op === 'sync') { RING.q = d.q || []; if (!RING.mine) RING.cur = d.cur || null; }
+  if (d.op === 'match') { RING.cur = d.m; RING.q = RING.q.filter(q => q.id !== d.m.a && q.id !== d.m.b); if (d.m.a === myId() || d.m.b === myId()) startFight(d.m); }
+  if (d.op === 'end') { if (RING.cur && RING.cur.t0 === d.t0) RING.cur = null; if (d.txt) feed('🥊 ' + d.txt); }
+  if (d.op === 'hit' && RING.mine && d.to === myId()) fightTakeHit(d);
+  if (d.op === 'st' && RING.mine && RING.mine.opId === d.id) { RING.mine.op.hp = d.hp; RING.mine.pts = d.given || 0; }
+  if (d.op === 'ko' && RING.mine && RING.mine.opId === d.id) fightEnd(true, true);
+  if (d.op === 'quit' && RING.mine && RING.mine.opId === d.id) fightEnd(true, false, 'O adversário desistiu.');
+  ringBoard(); if (panelKind === 'ringue') renderPanel();
+}
+/* quem organiza a fila: o primeiro da fila com o menor id (todo mundo calcula igual) */
+function ringHost() {
+  const live = RING.q.filter(q => q.id === myId() || NET.peers[q.id]); RING.q = live;
+  if (RING.cur && Date.now() - RING.cur.t0 > (ROUNDS * (ROUND_S + REST_S) + 30) * 1000) RING.cur = null;
+  if (RING.cur || live.length < 2) return;
+  const host = [...live].sort((a, b) => a.id < b.id ? -1 : 1)[0]; if (host.id !== myId()) return;
+  const [A, B] = live; const m = { a: A.id, an: A.name, b: B.id, bn: B.name, t0: Date.now() + 4000 };
+  onRing({ op: 'match', m }); ringSend({ op: 'match', m });
+}
+function ringBoard() {
+  if (!RING.board || !city.scene) return; const txt = RING.cur ? `🔴 ${RING.cur.an} x ${RING.cur.bn}${RING.mine ? ` · R${RING.mine.round}` : ''}` : RING.q.length ? `🥊 Fila: ${RING.q.length} · próxima: ${RING.q.slice(0, 2).map(q => q.name).join(' x ')}` : '🥊 ROLÊ FIGHT · ringue livre';
+  if (RING.boardTxt === txt) return; RING.boardTxt = txt; const p = RING.board.position.clone(); city.scene.remove(RING.board); RING.board = textSprite(txt, { bg: '#10204a', fg: '#ffd76a', size: 44, scale: [8, 1.2, 1] }); RING.board.position.copy(p); city.scene.add(RING.board);
+}
+/* ---------- a luta ---------- */
+function startFight(m) {
+  if (RING.mine) return;
+  const vsNpc = !!m.npc, me = m.a === myId() ? 'a' : 'b', opId = vsNpc ? null : (me === 'a' ? m.b : m.a);
+  if (P.drive) exitVehicle(true); P.onBoard = false; P.emote = null; closePanel();
+  const [x, z] = ARENA_POS, sx = me === 'a' ? -1.6 : 1.6;
+  fadeTo(() => { P.x = x + sx; P.z = z; P.y = RING_H; P.h = sx < 0 ? Math.PI / 2 : -Math.PI / 2; city.camYaw = P.h; city.camSnap = true; });
+  const F = RING.mine = { m, vsNpc, opId, me, round: 1, phase: 'pre', hp: 100, st: 100, pts: 0, cd: 0, act: null, actT: 0, inv: 0, block: false, op: { hp: 100, pts: 0 }, t0: m.t0, lastSt: 0, done: false };
+  if (vsNpc) {
+    const lv = (S.fight && S.fight.w) || 0, look = lookOf({ shirt: 'shirt_none', pants: pick(['lt_calcao_az', 'lt_calcao_pt', 'lt_calcao_vm']), shoes: 'shoes_black' }, pick(SKINS), pick(HAIRS), 'm', null, { w: pick(['forte', 'normal']), h: 'medio', hs: pick(['careca', 'padrao', 'moicano']) });
+    const g = makeSkater(look, m.bn, '#ff8a8a'); city.scene.add(g); setGloves(g, 0x1f4fbf);
+    F.npc = { g, x: x + 1.6, z, h: -Math.PI / 2, hp: 100, st: 100, cd: 1, act: null, actT: 0, block: 0, inv: 0, skill: Math.min(0.85, 0.45 + lv * 0.06), think: 0, fallT: 0 };
+  }
+  setSport('luta'); setGloves(city.player, myLuva()); P.fpc = 'g';
+  toast(`🥊 ${m.an} x ${m.bn}: a luta vai começar!`, 'pink'); sfx('ui');
+}
+function fightNPC() {
+  if (RING.mine) return; if (RING.cur) return toast('O ringue está ocupado. Entre na fila.', 'bad');
+  const names = ['Tyson do Morro', 'Zé Pancada', 'Pitbull da Vila', 'Muralha', 'Canhoto Silva', 'Furacão', 'Marreta', 'Bigode de Ferro'];
+  const m = { a: myId(), an: S.name, b: 'npc', bn: pick(names), t0: Date.now() + 3500, npc: true };
+  RING.cur = m; ringSend({ op: 'sync', q: RING.q, cur: m }); startFight(m);
+}
+function fightPhase(F) {
+  const el = (Date.now() - F.t0) / 1000; if (el < 0) return { ph: 'pre', round: 1, left: -el };
+  const per = ROUND_S + REST_S, r = Math.floor(el / per) + 1, inR = el - (r - 1) * per;
+  if (r > ROUNDS) return { ph: 'fim', round: ROUNDS, left: 0 };
+  return inR < ROUND_S ? { ph: 'luta', round: r, left: ROUND_S - inR } : { ph: 'pausa', round: r, left: per - inR };
+}
+const FMOVES = { j: { dmg: 5, st: 5, cd: 0.38, reach: 1.3, pts: 1, dur: 0.22 }, c: { dmg: 9, st: 11, cd: 0.62, reach: 1.35, pts: 2, dur: 0.3 }, k: { dmg: 13, st: 17, cd: 0.95, reach: 1.6, pts: 3, dur: 0.45 } };
+function fightOpPos(F) { if (F.vsNpc) return F.npc; const p = NET.peers[F.opId]; return p ? { x: p.x, z: p.z, h: p.h, fp: p.t && p.t.fp } : null; }
+function fightTakeHit(d) {
+  const F = RING.mine; if (!F || F.done || F.inv > 0) return;
+  let dmg = d.dmg; const blocked = F.block && F.st > 0; if (blocked) { dmg *= 0.2; F.st = Math.max(0, F.st - 4); }
+  F.hp = Math.max(0, F.hp - dmg); if (!blocked) F.gotPts = (F.gotPts || 0) + (d.pts || 0);
+  sfx('hit'); if (!blocked) { $('hurt') && ($('hurt').style.opacity = 0.5, setTimeout(() => { $('hurt').style.opacity = 0; }, 160)); P.v = 0; }
+  crowdReact(blocked ? 0.3 : 1);
+  if (F.hp <= 0) { if (!F.vsNpc) ringSend({ op: 'ko', id: myId() }); fightEnd(false, true); }
+}
+function crowdReact(k) { for (const c of RING.crowd) if (Math.random() < 0.35 * k) { c.cheer = 1.5; if (Math.random() < 0.2) bubble(c.g, pick(['Uhhh!', 'Bate nele!', 'Vai, vai!', 'Que porrada!', 'Defende!', 'Isso!']), 1.6); } }
+function fightAttack(F, k) {
+  const M = FMOVES[k]; if (F.cd > 0 || F.st < 3) return;
+  F.cd = M.cd; F.act = k; F.actT = 0; F.st = Math.max(0, F.st - M.st); P.fpc = k; tone('triangle', 220, 120, 0.06, 0.05);
+  const op = fightOpPos(F); if (!op) return;
+  const dx = op.x - P.x, dz = op.z - P.z, d = Math.hypot(dx, dz); if (d > M.reach) return;
+  const weak = F.st < 10 ? 0.6 : 1, dmg = M.dmg * weak;
+  setTimeout(() => {
+    if (!RING.mine || RING.mine !== F || F.done) return;
+    if (F.vsNpc) { const N = F.npc; if (N.inv > 0) return; const bl = N.block > 0; N.hp = Math.max(0, N.hp - (bl ? dmg * 0.2 : dmg)); if (!bl) { F.pts += M.pts; N.flinch = 0.25; } sfx('hit'); crowdReact(bl ? 0.3 : 1); if (N.hp <= 0) { N.fallT = 99; fightEnd(true, true); } }
+    else { ringSend({ op: 'hit', to: F.opId, dmg, pts: M.pts, k }); F.pts += 0; }
+  }, M.dur * 450);
+}
+function updateFight(dt, t) {
+  // plateia
+  if (RING.g) { const near = Math.hypot(ARENA_POS[0] - P.x, ARENA_POS[1] - P.z) < 70 && !city.interior && !city.shopIn; for (const c of RING.crowd) { c.g.visible = near; if (!near) continue; c.cheer = Math.max(0, c.cheer - dt); animSkater(c.g, { walk: true, v: 0, fallT: 0, emote: c.cheer > 0 || (RING.cur && Math.sin(t * 2 + c.ph) > 0.6) ? 'cheer' : null }, t + c.ph); tickBubble(c.g, dt); } }
+  if (performance.now() > (RING.syncAt || 0)) { RING.syncAt = performance.now() + 2500; ringHost(); ringBoard(); }
+  const F = RING.mine; if (!F) { if (P.sport === 'luta') setSport(null); return; }
+  const ph = fightPhase(F); F.round = ph.round;
+  const [ax0, az0] = ARENA_POS, op = fightOpPos(F);
+  // HUD
+  const hud = $('sport-hud'); if (hud) { const bar = (v, c) => `<i style="display:block;height:10px;border-radius:5px;background:linear-gradient(90deg,${c});width:${Math.max(0, v)}%"></i>`; const opHp = F.vsNpc ? F.npc.hp : F.op.hp, mm = Math.floor(ph.left / 60), ss = String(Math.floor(ph.left % 60)).padStart(2, '0');
+    hud.innerHTML = `<div class="sh-row"><div class="sh-side"><b>${esc(S.name)}</b><div class="sh-bar">${bar(F.hp, '#e53935,#ff6b6b')}</div><div class="sh-bar thin">${bar(F.st, '#ffcf3a,#ffe68a')}</div></div><div class="sh-mid"><small>${ph.ph === 'pre' ? 'PREPARA' : ph.ph === 'pausa' ? 'INTERVALO' : ph.ph === 'fim' ? 'FIM' : 'ROUND ' + ph.round + '/' + ROUNDS}</small><b>${mm}:${ss}</b><small>${F.pts} x ${F.vsNpc ? F.npcPts || 0 : F.gotPts || 0}</small></div><div class="sh-side r"><b>${esc(F.me === 'a' ? F.m.bn : F.m.an)}</b><div class="sh-bar">${bar(opHp, '#1f4fbf,#4fc3ff')}</div></div></div>`; }
+  if (F.done) { F.doneT -= dt; if (F.doneT <= 0) fightCleanup(); return; }
+  if (ph.ph !== F.lastPh) { F.lastPh = ph.ph; if (ph.ph === 'luta') { bigBanner(`ROUND ${ph.round}`); tone('square', 880, 880, 0.25, 0.08); tone('square', 880, 880, 0.25, 0.08, 0.35); } if (ph.ph === 'pausa') { bigBanner('INTERVALO'); F.hp = Math.min(100, F.hp + 15); F.st = 100; if (F.vsNpc) F.npc.hp = Math.min(100, F.npc.hp + 15); } if (ph.ph === 'fim') { const opPts = F.vsNpc ? F.npcPts || 0 : F.gotPts || 0; fightEnd(F.pts > opPts, false, F.pts === opPts ? 'empate' : null); return; } }
+  // movimento dentro do ringue, sempre de frente para o adversário
+  F.cd -= dt; F.inv -= dt; F.actT += dt; if (F.act && F.actT > (F.act === 'd' ? 0.35 : FMOVES[F.act] ? FMOVES[F.act].dur : 0.3)) { F.act = null; }
+  const fighting = ph.ph === 'luta';
+  F.block = fighting && spHold('sp4', 'Digit4') && F.st > 0;
+  F.st = Math.min(100, F.st + (F.block ? 5 : 15) * dt);
+  const ax = uiBlocking() ? { x: 0, y: 0 } : axis(), cy = city.camYaw, mag = Math.min(1, Math.hypot(ax.x, ax.y));
+  if (mag > 0.15 && ph.ph !== 'pre') { const wx = Math.sin(cy) * ax.y - Math.cos(cy) * ax.x, wz = Math.cos(cy) * ax.y + Math.sin(cy) * ax.x, sp = (F.block ? 1.4 : 2.8) * mag; P.x += wx * sp * dt; P.z += wz * sp * dt; }
+  P.x = clamp(P.x, ax0 - RING_R, ax0 + RING_R); P.z = clamp(P.z, az0 - RING_R, az0 + RING_R); P.y = RING_H; P.v = 0; P.sportV = mag > 0.15 ? 2 : 0;
+  if (op) { P.h = Math.atan2(op.x - P.x, op.z - P.z); const d = Math.hypot(op.x - P.x, op.z - P.z); if (d < 0.75) { P.x -= (op.x - P.x) / d * (0.75 - d); P.z -= (op.z - P.z) / d * (0.75 - d); } }
+  if (fighting) {
+    if (spTap('sp1', 'punch')) fightAttack(F, 'j'); else if (spTap('sp2', 'item')) fightAttack(F, 'c'); else if (spTap('sp3')) fightAttack(F, 'k');
+    else if (spTap('sp5', 'jump') && F.cd <= 0 && F.st >= 10) { F.cd = 0.7; F.st -= 10; F.inv = 0.35; F.act = 'd'; F.actT = 0; const bx = -Math.sin(P.h), bz = -Math.cos(P.h), lx = Math.cos(P.h), lz = -Math.sin(P.h), s2 = Math.random() < 0.5 ? 1 : -1; P.x += (bx * 0.6 + lx * s2 * 0.8); P.z += (bz * 0.6 + lz * s2 * 0.8); }
+  } else { tap('sp1'); tap('sp2'); tap('sp3'); tap('sp5'); }
+  P.fpc = F.act || (F.block ? 'b' : 'g');
+  P.fp = fpPose(P.fpc, F.act ? F.actT / (F.act === 'd' ? 0.35 : FMOVES[F.act].dur) : 0);
+  // estado para o adversário real
+  if (!F.vsNpc && performance.now() > (F.stAt || 0)) { F.stAt = performance.now() + 400; ringSend({ op: 'st', id: myId(), hp: Math.round(F.hp), given: F.gotPts || 0 }); }
+  if (F.vsNpc) fightNpcTick(F, dt, t, fighting, ph);
+}
+/* figurante que luta: chega perto, bate, defende e esquiva */
+function fightNpcTick(F, dt, t, fighting, ph) {
+  const N = F.npc, g = N.g, [ax0, az0] = ARENA_POS; N.cd -= dt; N.inv -= dt; N.block -= dt; N.actT += dt; N.think -= dt; N.flinch = Math.max(0, (N.flinch || 0) - dt);
+  const dx = P.x - N.x, dz = P.z - N.z, d = Math.hypot(dx, dz) || 1; N.h = Math.atan2(dx, dz);
+  if (N.fallT > 0) { g.position.set(N.x, RING_H, N.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t); return; }
+  let v = 0;
+  if (fighting && !N.flinch) {
+    const want = N.act ? d : d > 1.15 ? 1 : d < 0.85 ? -1 : 0, sp = 2.4;
+    if (want) { N.x += dx / d * want * sp * dt; N.z += dz / d * want * sp * dt; v = sp; }
+    if (N.think <= 0) {
+      N.think = rand(0.25, 0.55) * (1.3 - N.skill);
+      if (F.act && F.actT < 0.15 && Math.random() < N.skill * 0.7) { if (Math.random() < 0.7) N.block = 0.5; else { N.inv = 0.35; N.act = 'd'; N.actT = 0; } }
+      else if (d < 1.5 && N.cd <= 0 && N.st > 8) {
+        const k = Math.random() < 0.5 ? 'j' : Math.random() < 0.65 ? 'c' : 'k', M = FMOVES[k]; N.act = k; N.actT = 0; N.cd = M.cd * rand(1.1, 1.8); N.st -= M.st;
+        setTimeout(() => { if (RING.mine !== F || F.done || N.fallT > 0) return; const dd = Math.hypot(P.x - N.x, P.z - N.z); if (dd <= M.reach) { const blocked = F.block && F.st > 0; fightTakeHit({ dmg: M.dmg * (0.75 + N.skill * 0.4), pts: 0 }); if (!blocked) F.npcPts = (F.npcPts || 0) + M.pts; } }, M.dur * 450);
+      }
+    }
+  }
+  N.st = Math.min(100, N.st + 13 * dt);
+  if (N.act && N.actT > (N.act === 'd' ? 0.35 : FMOVES[N.act].dur)) N.act = null;
+  N.x = clamp(N.x, ax0 - RING_R, ax0 + RING_R); N.z = clamp(N.z, az0 - RING_R, az0 + RING_R);
+  g.position.set(N.x, RING_H, N.z); g.rotation.y = N.h;
+  const code = N.act || (N.block > 0 ? 'b' : 'g');
+  animSkater(g, { walk: true, v, fallT: 0, fp: fpPose(code, N.act ? N.actT / (N.act === 'd' ? 0.35 : FMOVES[N.act].dur) : 0) }, t); tickBubble(g, dt);
+}
+function bigBanner(txt) { let b = $('big-banner'); if (!b) { b = document.createElement('div'); b.id = 'big-banner'; document.body.appendChild(b); } b.textContent = txt; b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
+function fightEnd(win, ko, why) {
+  const F = RING.mine; if (!F || F.done) return; F.done = true; F.doneT = 4.5;
+  const draw = why === 'empate';
+  const prize = draw ? 150 : win ? (F.vsNpc ? 300 : 800) : (F.vsNpc ? 50 : 100);
+  S.fight = S.fight || { w: 0, l: 0, ko: 0 }; if (win && !draw) { S.fight.w++; if (ko) S.fight.ko++; } else if (!draw) S.fight.l++;
+  earn(prize); persist(); updateHUD();
+  bigBanner(draw ? 'EMPATE!' : win ? (ko ? 'NOCAUTE! VOCÊ VENCEU!' : 'VITÓRIA!') : (ko ? 'NOCAUTE...' : 'DERROTA'));
+  toast(`${why && !draw ? why + ' ' : ''}${draw ? 'Empate nos pontos.' : win ? 'Você venceu!' : 'Você perdeu.'} +$ ${fmt(prize)}`, win ? 'good' : 'bad');
+  if (win && !draw) { P.emote = { id: 'cheer', t: 4 }; celebrate && celebrate(); sfx('level'); } if (!win && ko) P.fallT = 2.5;
+  crowdReact(2);
+  if (win || F.vsNpc) { const txt = `${win ? S.name : (F.me === 'a' ? F.m.bn : F.m.an)} venceu ${ko ? 'por nocaute' : draw ? '(empate)' : 'nos pontos'}`; ringSend({ op: 'end', t0: F.t0, txt }); RING.cur = null; }
+  if (win && !draw) postFeed(`Venci uma luta no Ringue Rolê Fight${ko ? ' por nocaute' : ''}! 🥊`);
+}
+function fightGiveUp() { const F = RING.mine; if (!F) return; if (!F.vsNpc) ringSend({ op: 'quit', id: myId() }); fightEnd(false, false, 'Você desistiu.'); }
+function fightCleanup() {
+  const F = RING.mine; if (!F) return; if (F.npc) city.scene.remove(F.npc.g);
+  RING.mine = null; P.fp = null; P.fpc = 0; P.sportV = null; setSport(null); setGloves(city.player, null); ringBoard();
+  const [x, z] = ARENA_POS; P.x = x - 5.4; P.z = z + 1; P.y = 0;
+}
+
+/* =========================================================
+   QUADRA DE FUTSAL: pelada com figurantes ou campeonato quando juntar 10 online.
+   Times pela camisa: Azul do Rolê, Vermelho da Vila, Verde do Morro, Amarelo da Praça.
+   ========================================================= */
+const QUADRA_POS = [126, 42], CL = 13, CW = 7.5, GOAL_W = 1.6, GOAL_H = 2;
+const FS_TEAMS = [{ id: 'azul', n: 'Azul do Rolê', c: 0x1f4fbf, shirt: 'fs_azul' }, { id: 'verm', n: 'Vermelho da Vila', c: 0xc8102e, shirt: 'fs_verm' }, { id: 'verde', n: 'Verde do Morro', c: 0x1a8a3a, shirt: 'fs_verde' }, { id: 'amar', n: 'Amarelo da Praça', c: 0xf7d117, shirt: 'fs_amar' }];
+const FS_WEAR = [
+  I('shirt', 'fs_azul', 'Camisa Azul do Rolê (futsal)', 0x1f4fbf, 250, null, 'comum', { pat: 'tm_trim_ffffff_ffffff', team: true }),
+  I('shirt', 'fs_verm', 'Camisa Vermelho da Vila (futsal)', 0xc8102e, 250, null, 'comum', { pat: 'tm_trim_ffffff_ffffff', team: true }),
+  I('shirt', 'fs_verde', 'Camisa Verde do Morro (futsal)', 0x1a8a3a, 250, null, 'comum', { pat: 'tm_trim_ffffff_ffffff', team: true }),
+  I('shirt', 'fs_amar', 'Camisa Amarelo da Praça (futsal)', 0xf7d117, 250, null, 'comum', { pat: 'tm_trim_1a8a3a_1a8a3a', team: true }),
+];
+FS_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
+const FS = { q: [], m: null, ball: null, npcs: [], crowd: [] };
+const myTeam = () => { const t = FS_TEAMS.find(t => t.shirt === S.equip.shirt); return t ? t.id : null; };
+function buildQuadra(sc) {
+  const [x, z] = QUADRA_POS, g = new THREE.Group(); g.position.set(x, 0, z); sc.add(g); FS.g = g;
+  const add = (geo, m, px, py, pz, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.rotation.set(rx, ry, rz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  const fT = canvasTex(256, 448, (c, w, h) => { c.fillStyle = '#2f6db5'; c.fillRect(0, 0, w, h); c.fillStyle = '#d8312f'; c.fillRect(14, 14, w - 28, h - 28); c.fillStyle = '#2f6db5'; c.fillRect(22, 22, w - 44, h - 44); c.strokeStyle = '#fff'; c.lineWidth = 4; c.strokeRect(22, 22, w - 44, h - 44); c.beginPath(); c.moveTo(22, h / 2); c.lineTo(w - 22, h / 2); c.stroke(); c.beginPath(); c.arc(w / 2, h / 2, 34, 0, TAU); c.stroke(); for (const s of [1, -1]) { c.beginPath(); c.arc(w / 2, s > 0 ? 22 : h - 22, 62, s > 0 ? 0 : Math.PI, s > 0 ? Math.PI : TAU); c.stroke(); } c.fillStyle = '#fff'; c.beginPath(); c.arc(w / 2, h / 2, 4, 0, TAU); c.fill(); });
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry((CW + 1) * 2, (CL + 1) * 2), new THREE.MeshStandardMaterial({ map: fT, roughness: 0.55 })); fl.rotation.x = -Math.PI / 2; fl.position.y = 0.03; fl.receiveShadow = true; g.add(fl);
+  // gols com rede
+  const netM = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.55 }), postM = std(0xf4f4f4, 0.3, 0.2);
+  for (const s of [1, -1]) {
+    add(CYL(0.05, 0.05, GOAL_H, 8), postM, -GOAL_W, GOAL_H / 2, s * CL); add(CYL(0.05, 0.05, GOAL_H, 8), postM, GOAL_W, GOAL_H / 2, s * CL); add(CYL(0.05, 0.05, GOAL_W * 2, 8), postM, 0, GOAL_H, s * CL, 0, 0, Math.PI / 2);
+    const net = new THREE.Mesh(new THREE.BoxGeometry(GOAL_W * 2, GOAL_H, 0.9, 8, 5, 3), netM); net.position.set(0, GOAL_H / 2, s * (CL + 0.45)); g.add(net);
+  }
+  // alambrado (com entrada no canto)
+  const fenceT = canvasTex(64, 64, (c, w, h) => { c.clearRect(0, 0, w, h); c.strokeStyle = 'rgba(200,205,210,.9)'; c.lineWidth = 2; for (let i = -64; i < 128; i += 10) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i + 64, 64); c.stroke(); c.beginPath(); c.moveTo(i + 64, 0); c.lineTo(i, 64); c.stroke(); } });
+  fenceT.wrapS = fenceT.wrapT = THREE.RepeatWrapping;
+  const fence = (len, px, pz, ry) => { const t2 = fenceT.clone(); t2.needsUpdate = true; t2.repeat.set(len / 1.5, 2); const m = new THREE.Mesh(new THREE.PlaneGeometry(len, 3), new THREE.MeshBasicMaterial({ map: t2, transparent: true, side: THREE.DoubleSide, depthWrite: false })); m.position.set(px, 1.5, pz); m.rotation.y = ry; g.add(m); };
+  const W2 = CW + 1.6, L2 = CL + 1.8;
+  fence(W2 * 2, 0, -L2, 0); fence(W2 * 2, 0, L2, 0); fence(L2 * 2 - 3, W2, 1.5, Math.PI / 2); fence(L2 * 2 - 3, -W2, 1.5, Math.PI / 2);
+  for (const [a, b] of [[-W2, -L2], [W2, -L2], [-W2, L2], [W2, L2], [-W2, -L2 + 3], [W2, -L2 + 3]]) add(CYL(0.05, 0.05, 3.2, 6), std(0x9aa3ad, 0.4, 0.6), a, 1.6, b);
+  city.colliders.push({ x0: x - W2, x1: x + W2, z0: z - L2 - 0.1, z1: z - L2 + 0.1 }, { x0: x - W2, x1: x + W2, z0: z + L2 - 0.1, z1: z + L2 + 0.1 }, { x0: x + W2 - 0.1, x1: x + W2 + 0.1, z0: z - L2 + 3, z1: z + L2 }, { x0: x - W2 - 0.1, x1: x - W2 + 0.1, z0: z - L2 + 3, z1: z + L2 });
+  // arquibancada e placar
+  for (let k = 0; k < 3; k++) { add(boxGeo(1.2, 0.5 + k * 0.5, 20), lam(k % 2 ? 0x2e7d4f : 0x3c9a63), W2 + 1.4 + k * 1.2, (0.5 + k * 0.5) / 2, 0); city.colliders.push({ x0: x + W2 + 0.8 + k * 1.2, x1: x + W2 + 2 + k * 1.2, z0: z - 10, z1: z + 10 }); }
+  FS.board = textSprite('⚽ QUADRA DO ROLÊ · futsal', { bg: '#15161a', fg: '#ffd76a', size: 44, scale: [8, 1.2, 1] }); FS.board.position.set(x, 5.5, z - L2 - 0.5); sc.add(FS.board);
+  // bola parada no meio
+  const bm = new THREE.MeshStandardMaterial({ map: canvasTex(64, 32, (c, w, h) => { c.fillStyle = '#fff'; c.fillRect(0, 0, w, h); c.fillStyle = '#15161a'; for (let i = 0; i < 8; i++) { c.beginPath(); c.arc((i * 17) % w + 4, (i * 11) % h + 4, 4, 0, TAU); c.fill(); } }), roughness: 0.4 });
+  FS.ball = { m: new THREE.Mesh(SPH(0.2, 16, 12), bm), x, y: 0.2, z, vx: 0, vy: 0, vz: 0 }; FS.ball.m.castShadow = true; FS.ball.m.position.set(x, 0.2, z); sc.add(FS.ball.m);
+  // torcida
+  FS.crowd = [];
+  for (let i = 0; i < 10; i++) { const look = lookOf({ shirt: pick(FS_WEAR.map(w => w.id).concat(['shirt_basic', 'tm_bra'])), pants: pick(['pants_jeans', 'bm_tactel', 'sh_tactel']), shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), Math.random() < 0.4 ? 'f' : 'm'); const n = makeSkater(look, null); const k = i % 3; n.position.set(x + W2 + 1.4 + k * 1.2, 0.5 + k * 0.5, z - 8 + i * 1.7); n.rotation.y = -Math.PI / 2; sc.add(n); n.userData.lod = true; FS.crowd.push({ g: n, ph: rand(0, 10), cheer: 0, by: 0.5 + k * 0.5 }); }
+  city.xspots.push({ fs: true, x: x - W2 + 1.2, z: z - L2 + 1.5, r: 2.4, label: () => FS.m && FS.m.me ? '⚽ Você está jogando' : '⚽ Quadra de Futsal: jogar pelada ou campeonato', fn: () => openPanel('futsal') });
+  city.xspots.push({ fs: true, x: x - W2 - 2, z: z - L2 - 2, r: 2.2, label: '👕 Camisas dos times de futsal', fn: () => openPanel('fsloja') });
+  const L = LANDMARKS[cityId()]; if (L && !L.some(l => l[2] === 'Quadra de Futsal')) L.push([x, z, 'Quadra de Futsal']);
+}
+const PANEL_FSLOJA = function () {
+  return { title: '👕 Camisas dos Times', html: '<p>Escolha seu time comprando a camisa. Na pelada e no campeonato você joga pelo time da camisa que está vestindo.</p>' + FS_WEAR.map((it, i) => `<div class="card"><h4><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#${FS_TEAMS[i].c.toString(16).padStart(6, '0')}"></span> ${esc(FS_TEAMS[i].n)}</h4><div class="row">${S.owned.includes(it.id) ? (S.equip.shirt === it.id ? '<span class="pill on">Vestindo</span>' : `<button class="btn sm" data-act="equip" data-id="${it.id}">Vestir</button>`) : `<button class="btn sm" data-act="buy" data-id="${it.id}" data-cur="c">Comprar $ ${it.c}</button>`}</div></div>`).join('') };
+};
+const PANEL_FUTSAL = function () {
+  const n = onlineCount(), inQ = FS.q.some(q => q.id === myId()), tm = myTeam();
+  let html = `<p>Futsal 5 contra 5 (4 na linha + goleiro), 2 tempos de 2:30. <b>Com 10 jogadores online na fila vira campeonato</b> entre os times; com menos, a pelada completa com figurantes.</p>`;
+  html += `<div class="note">👥 Online na cidade: <b>${n}</b> · ⚽ Na fila: <b>${FS.q.length}</b>${FS.m ? `<br>🔴 Jogo rolando: <b>${esc(FS.m.tn[0])} ${FS.m.sc[0]} x ${FS.m.sc[1]} ${esc(FS.m.tn[1])}</b>` : ''}</div>`;
+  html += `<p>Seu time: ${tm ? `<b>${esc(FS_TEAMS.find(t => t.id === tm).n)}</b>` : '<b>sem camisa de time</b> (compre na barraca do lado ou jogue de colete)'}</p>`;
+  if (FS.q.length) html += `<p class="muted">Fila: ${FS.q.map(q => esc(q.name) + (q.tm ? ' (' + esc(FS_TEAMS.find(t => t.id === q.tm).n) + ')' : '')).join(' · ')}</p>`;
+  if (FS.m && FS.m.me) html += `<div class="row"><button class="btn ghost" data-act="fs-quit">Sair do jogo</button></div>`;
+  else html += `<div class="row">${inQ ? '<button class="btn ghost" data-act="fs-leave">Sair da fila</button>' : '<button class="btn" data-act="fs-join">Entrar na fila</button>'}<button class="btn" data-act="fs-start" ${FS.m ? 'disabled' : ''}>Começar ${FS.q.length >= 10 ? 'campeonato' : 'pelada'} agora</button></div>`;
+  const st = S.futsal || {}; html += `<p class="muted">Seus números: ${st.g || 0} gols · ${st.w || 0} vitórias · ${st.t || 0} títulos</p>`;
+  return { title: '⚽ Quadra de Futsal', html };
+};
+function fsSend(ev, p) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: ev, payload: p }); }
+function fsJoin() { if (FS.q.some(q => q.id === myId())) return; const e = { id: myId(), name: S.name, tm: myTeam(), t: Date.now() }; FS.q.push(e); fsSend('fsq', { op: 'join', e }); toast('Você entrou na fila do futsal.', 'pink'); renderPanel(); }
+function fsLeave() { FS.q = FS.q.filter(q => q.id !== myId()); fsSend('fsq', { op: 'leave', id: myId() }); renderPanel(); }
+function onFsq(d) { if (!d) return; if (d.op === 'join' && !FS.q.some(q => q.id === d.e.id)) FS.q.push(d.e); if (d.op === 'leave') FS.q = FS.q.filter(q => q.id !== d.id); if (panelKind === 'futsal') renderPanel(); }
+/* monta os times: campeonato (10+ reais, times pela camisa) ou pelada (completa com figurantes) */
+function fsStart() {
+  if (FS.m) return toast('Já tem jogo rolando. Espere acabar.', 'bad');
+  let reals = FS.q.filter(q => q.id === myId() || NET.peers[q.id]); if (!reals.some(q => q.id === myId())) reals.unshift({ id: myId(), name: S.name, tm: myTeam() });
+  const champ = reals.length >= 10;
+  // times: pela camisa; quem não tem camisa vai para o time com menos gente
+  const byTeam = {}; for (const q of reals) if (q.tm) (byTeam[q.tm] = byTeam[q.tm] || []).push(q);
+  let teams = Object.keys(byTeam).sort((a, b) => byTeam[b].length - byTeam[a].length).slice(0, champ && reals.length >= 20 ? 4 : 2);
+  for (const t of FS_TEAMS) if (teams.length < 2 && !teams.includes(t.id)) teams.push(t.id);
+  const rosters = {}; teams.forEach(t => rosters[t] = (byTeam[t] || []).slice(0, 5));
+  for (const q of reals) { if (teams.some(t => rosters[t].includes(q))) continue; const t = teams.filter(t => rosters[t].length < 5).sort((a, b) => rosters[a].length - rosters[b].length)[0]; if (t) rosters[t].push(q); }
+  const pair = [teams[0], teams[1]], waiting = teams.slice(2);
+  const roster = [];
+  const NPC_NAMES = ['Dentinho', 'Biro-Biro', 'Pezão', 'Chulapa', 'Tico', 'Neném', 'Russo', 'Baixinho', 'Gordo', 'Juninho', 'Pelézinho', 'Careca'];
+  pair.forEach((t, ti) => { const r = rosters[t]; for (let i = 0; i < 5; i++) { const q = r[i]; roster.push(q ? { id: q.id, name: q.name, team: ti, gk: i === 4 && !q } : { id: 'n' + ti + i, name: NPC_NAMES[(ti * 5 + i) % NPC_NAMES.length], team: ti, gk: i === 0, npc: true }); } });
+  // se o goleiro ficou com jogador real, deixa o primeiro figurante do time no gol; se o time é só de gente, o último vai pro gol
+  for (const ti of [0, 1]) { const tr = roster.filter(r => r.team === ti); if (!tr.some(r => r.gk)) (tr.find(r => r.npc) || tr[tr.length - 1]).gk = true; }
+  const m = { t0: Date.now() + 4000, host: myId(), champ, tid: pair, tn: pair.map(t => FS_TEAMS.find(x => x.id === t).n), roster, sc: [0, 0], wait: waiting, stage: champ ? (waiting.length ? 'semi1' : 'final') : 'pelada', rosters: champ ? rosters : null };
+  FS.q = FS.q.filter(q => !roster.some(r => r.id === q.id)); fsSend('fsq', { op: 'leave', id: myId() });
+  fsSend('fs_start', m); fsBegin(m); closePanel();
+}
+function fsBegin(m) {
+  fsEnd(true);
+  FS.m = Object.assign({}, m, { me: m.roster.find(r => r.id === myId()) || null, host: m.host === myId(), ph: 'pre', last: Date.now(), kickT: 0, half: 1 });
+  const [x, z] = QUADRA_POS; FS.npcs = [];
+  for (const r of m.roster) if (r.npc) {
+    const T = FS_TEAMS.find(t => t.id === m.tid[r.team]), look = lookOf({ shirt: r.gk ? 'shirt_black' : T.shirt, pants: r.gk ? 'pants_black' : 'sh_black', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), 'm');
+    const g = makeSkater(look, r.name, r.team ? '#ff8a8a' : '#8ac8ff'); city.scene.add(g); g.userData.lod = true;
+    FS.npcs.push({ r, g, x: x, z: z + (r.team ? 1 : -1) * 5, h: 0, v: 0, kickT: 0, act: null, actT: 0 });
+  }
+  fsKickoff(0);
+  if (FS.m.me) { if (P.drive) exitVehicle(true); P.onBoard = false; setSport('futsal'); const p0 = fsHome(FS.m.me); fadeTo(() => { P.x = x + p0[0]; P.z = z + p0[1]; P.y = 0; P.h = FS.m.me.team ? Math.PI : 0; city.camYaw = P.h; city.camSnap = true; }); }
+  bigBanner(m.champ ? `CAMPEONATO · ${m.tn[0]} x ${m.tn[1]}` : `PELADA · ${m.tn[0]} x ${m.tn[1]}`); sfx('ui');
+}
+/* posição base de cada um (time 0 defende o gol de z negativo) */
+function fsHome(r) {
+  const s = r.team ? 1 : -1, tr = FS.m.roster.filter(q => q.team === r.team && !q.gk), i = tr.indexOf(r);
+  if (r.gk) return [0, s * (CL - 0.7)];
+  const P4 = [[-3.5, 7.5], [3.5, 7.5], [-2.5, 3.2], [2.5, 3.2]][Math.max(0, i) % 4]; return [P4[0], s * P4[1]];
+}
+function fsKickoff(team) { const b = FS.ball, [x, z] = QUADRA_POS; b.x = x; b.z = z; b.y = 0.2; b.vx = b.vz = b.vy = 0; FS.koT = 2; if (!FS.m) return; for (const n of FS.npcs) { const h = fsHome(n.r); n.x = x + h[0]; n.z = z + h[1]; } }
+function fsKick(px, pz, dx, dz, pow, loft) { const b = FS.ball, L = Math.hypot(dx, dz) || 1; b.vx = dx / L * pow; b.vz = dz / L * pow; b.vy = loft; sfxKick(); }
+function sfxKick() { tone('sine', 140, 60, 0.08, 0.15); tone('triangle', 500, 300, 0.03, 0.04); }
+function onFsStart(m) { if (FS.m && FS.m.host && m.host !== myId()) return; fsBegin(m); }
+function onFsState(d) { const M = FS.m; if (!M || M.host) return; M.last = Date.now(); const b = FS.ball, [x, z] = QUADRA_POS; b.tx = x + d.b[0]; b.ty = d.b[1]; b.tz = z + d.b[2]; M.sc = d.sc; M.clock = d.t; M.ph = d.ph; M.half = d.hf; d.n.forEach((a, i) => { const n = FS.npcs[i]; if (n) { n.tx = x + a[0]; n.tz = z + a[1]; n.h = a[2]; n.v = a[3]; if (a[4] && a[4] !== n.act) { n.act = a[4]; n.actT = 0; } } }); }
+function onFsKick(d) { const M = FS.m; if (!M || !M.host) return; const p = NET.peers[d.id], b = FS.ball; if (!p) return; if (Math.hypot(p.x - b.x, p.z - b.z) > 1.6) return; fsKick(p.x, p.z, d.dx, d.dz, d.pow, d.loft); }
+function onFsEnd(d) { if (FS.m && !FS.m.host) { fsResult(d); fsEnd(); } }
+function fsGoal(team) {
+  const M = FS.m; M.sc[team]++; M.ph = 'gol'; M.golT = 3; bigBanner('GOOOOL!'); for (const c of FS.crowd) c.cheer = 2.5; tone('square', 660, 880, 0.4, 0.07);
+  if (M.lastTouch === myId() && M.me && M.me.team === team) { S.futsal = S.futsal || {}; S.futsal.g = (S.futsal.g || 0) + 1; persist(); toast('⚽ Gol seu!', 'good'); }
+}
+const FS_HALF = 150;
+function updateFutsal(dt, t) {
+  const b = FS.ball; if (!b) return; const [x0, z0] = QUADRA_POS, M = FS.m;
+  const near = Math.hypot(x0 - P.x, z0 - P.z) < 80 && !city.interior && !city.shopIn;
+  for (const c of FS.crowd) { c.g.visible = near; if (!near) continue; c.cheer = Math.max(0, c.cheer - dt); animSkater(c.g, { walk: true, v: 0, fallT: 0, emote: c.cheer > 0 ? 'cheer' : M && Math.sin(t + c.ph) > 0.7 ? 'wave' : null }, t + c.ph); c.g.position.y = c.by; }
+  if (FS.board && (FS.bT = (FS.bT || 0) - dt) <= 0) { FS.bT = 1; const txt = M ? `⚽ ${M.tn[0]} ${M.sc[0]} x ${M.sc[1]} ${M.tn[1]}` : FS.q.length ? `⚽ Fila do futsal: ${FS.q.length}` : '⚽ QUADRA DO ROLÊ · futsal'; if (FS.bTxt !== txt) { FS.bTxt = txt; const p = FS.board.position.clone(); city.scene.remove(FS.board); FS.board = textSprite(txt, { bg: '#15161a', fg: '#ffd76a', size: 44, scale: [8, 1.2, 1] }); FS.board.position.copy(p); city.scene.add(FS.board); } }
+  if (!M) { if (P.sport === 'futsal') setSport(null); b.m.position.set(b.x, b.y, b.z); return; }
+  if (!M.host && Date.now() - M.last > 8000 && Date.now() > M.t0 + 6000) { toast('O jogo de futsal caiu (o organizador saiu).', 'bad'); fsEnd(); return; }
+  // ---- relógio e fases (organizador) ----
+  if (M.host) {
+    const el = (Date.now() - M.t0) / 1000;
+    if (M.ph === 'pre' && el >= 0) { M.ph = 'jogo'; bigBanner('APITOU! ⚽'); tone('square', 2200, 2000, 0.35, 0.06); }
+    if (M.ph === 'gol') { M.golT -= dt; if (M.golT <= 0) { M.ph = 'jogo'; fsKickoff(); } }
+    if (M.ph === 'jogo' || M.ph === 'gol') { M.clock = (M.clock || 0) + dt; if (M.half === 1 && M.clock >= FS_HALF) { M.half = 2; M.clock = 0; M.ph = 'intervalo'; M.intT = 8; bigBanner('INTERVALO'); fsKickoff(); } else if (M.half === 2 && M.clock >= FS_HALF) { fsFinish(); return; } }
+    if (M.ph === 'intervalo') { M.intT -= dt; if (M.intT <= 0) { M.ph = 'jogo'; bigBanner('SEGUNDO TEMPO'); } }
+  }
+  const playing = M.ph === 'jogo';
+  // ---- eu (jogador) ----
+  if (M.me) {
+    P.sprint = spHold('sp4', 'Digit4') ? 1.3 : 1;
+    P.x = clamp(P.x, x0 - CW - 1, x0 + CW + 1); P.z = clamp(P.z, z0 - CL - 1.2, z0 + CL + 1.2);
+    const bd = Math.hypot(b.x - P.x, b.z - P.z);
+    if (playing) {
+      if (spTap('sp1', 'punch') && bd < 1.2) { const gz = M.me.team ? z0 - CL : z0 + CL, aimX = x0 + clamp((P.x - x0) * 0.3 + rand(-1.2, 1.2), -GOAL_W + 0.3, GOAL_W - 0.3); const fx = Math.sin(P.h), fz = Math.cos(P.h), tx = aimX - P.x, tz = gz - P.z, Lg = Math.hypot(tx, tz) || 1, dot = (fx * tx + fz * tz) / Lg; const dx = dot > 0.5 ? tx / Lg * 0.7 + fx * 0.3 : fx, dz = dot > 0.5 ? tz / Lg * 0.7 + fz * 0.3 : fz; fsMyKick(dx, dz, 17, 2.5); P.fpc = 'fk'; M.kickT = 0.35; }
+      else if (spTap('sp2', 'item') && bd < 1.2) { const fx = Math.sin(P.h), fz = Math.cos(P.h); let best = null, bs = -1; for (const r of fsTeamPos(M.me.team)) { if (r.me) continue; const dx = r.x - P.x, dz = r.z - P.z, L = Math.hypot(dx, dz); if (L < 2) continue; const sc = (dx * fx + dz * fz) / L - L * 0.02; if (sc > bs) { bs = sc; best = r; } } const dx = best ? best.x - P.x : fx, dz = best ? best.z - P.z : fz; fsMyKick(dx, dz, best ? clamp(Math.hypot(dx, dz) * 1.3 + 5, 7, 15) : 10, 0.6); P.fpc = 'fp'; M.kickT = 0.3; }
+      else if (spTap('sp3') && !(M.tackleT > 0)) { M.tackleT = 0.5; P.fpc = 'ft'; M.kickT = 0.45; P.x += Math.sin(P.h) * 1.4; P.z += Math.cos(P.h) * 1.4; if (Math.hypot(b.x - P.x, b.z - P.z) < 1.3) fsMyKick(Math.sin(P.h), Math.cos(P.h), 7, 0.3); }
+      else if (spTap('sp5') && !P.air) { P.vy = 6; P.air = true; }
+    } else { tap('sp1'); tap('sp2'); tap('sp3'); tap('sp5'); }
+    M.tackleT = (M.tackleT || 0) - dt; M.kickT -= dt; if (M.kickT <= 0) P.fpc = 0;
+    P.fp = P.fpc ? fpPose(P.fpc, 1 - M.kickT / 0.35) : null;
+    // conduzir a bola (o organizador calcula; os outros mandam o chute)
+    if (playing && M.host && bd < 0.6 && P.v > 0.5 && b.y < 0.5) { const sp = P.v * 1.12; b.vx = lerp(b.vx, Math.sin(P.h) * sp, 0.5); b.vz = lerp(b.vz, Math.cos(P.h) * sp, 0.5); M.lastTouch = myId(); }
+    else if (playing && !M.host && bd < 0.6 && P.v > 0.5 && (M.drT = (M.drT || 0) - dt) <= 0) { M.drT = 0.15; fsSend('fs_k', { id: myId(), dx: Math.sin(P.h), dz: Math.cos(P.h), pow: P.v * 1.12, loft: 0 }); }
+  }
+  // ---- bola e figurantes ----
+  if (M.host) {
+    if (playing) fsNpcAI(dt, t);
+    // outros jogadores reais conduzem a bola
+    for (const r of M.roster) { if (r.npc || r.id === myId()) continue; const p = NET.peers[r.id]; if (!p || !p.t) continue; const d = Math.hypot(p.x - b.x, p.z - b.z); if (playing && d < 0.6 && (p.t.v || 0) > 0.5 && b.y < 0.5) { b.vx = lerp(b.vx, Math.sin(p.h) * p.t.v * 1.12, 0.5); b.vz = lerp(b.vz, Math.cos(p.h) * p.t.v * 1.12, 0.5); M.lastTouch = r.id; } }
+    // física
+    b.vy -= 18 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
+    if (b.y < 0.2) { b.y = 0.2; b.vy = Math.abs(b.vy) > 1.5 ? -b.vy * 0.55 : 0; }
+    const fr = Math.pow(b.y > 0.25 ? 0.9 : 0.45, dt); b.vx *= fr; b.vz *= fr;
+    // gol e paredes do alambrado
+    const lx = b.x - x0, lz = b.z - z0;
+    // goleiro figurante defende (às vezes)
+    if (Math.abs(lz) > CL - 0.9 && Math.abs(lz) < CL + 0.2 && Math.abs(lx) < GOAL_W + 0.3 && M.ph === 'jogo' && !(M.saveT > 0)) { const gk = FS.npcs.find(n => n.r.gk && (n.r.team ? 1 : -1) === Math.sign(lz)); if (gk && Math.hypot(gk.x - b.x, gk.z - b.z) < 1.3) { M.saveT = 0.8; if (Math.random() < 0.6) { b.vz = -Math.sign(lz) * Math.abs(b.vz) * 0.45; b.vx += rand(-3, 3); b.vy = 2; gk.act = 'ft'; gk.actT = 0; sfxKick(); } } }
+    M.saveT = (M.saveT || 0) - dt;
+    if (Math.abs(lz) > CL && Math.abs(lx) < GOAL_W && b.y < GOAL_H && M.ph === 'jogo') { fsGoal(lz > 0 ? 0 : 1); b.vx *= 0.2; b.vz *= 0.2; }
+    if (Math.abs(lx) > CW + 1.4) { b.x = x0 + Math.sign(lx) * (CW + 1.4); b.vx = -b.vx * 0.6; }
+    if (Math.abs(lz) > CL + 1.6) { b.z = z0 + Math.sign(lz) * (CL + 1.6); b.vz = -b.vz * 0.6; if (Math.abs(lx) >= GOAL_W && M.ph === 'jogo') { b.x = x0 + Math.sign(lx) * Math.min(Math.abs(lx), CW); b.z = z0 + Math.sign(lz) * (CL - 0.5); b.vx = b.vz = 0; } }
+    if ((M.sendT = (M.sendT || 0) - dt) <= 0) { M.sendT = 0.1; const r2 = v => Math.round(v * 100) / 100; fsSend('fs_st', { b: [r2(b.x - x0), r2(b.y), r2(b.z - z0)], sc: M.sc, t: Math.round(M.clock || 0), ph: M.ph, hf: M.half, n: FS.npcs.map(n => [r2(n.x - x0), r2(n.z - z0), r2(n.h), r2(n.v), n.act || 0]) }); }
+  } else {
+    if (b.tx != null) { const k = 1 - Math.exp(-14 * dt); b.x = lerp(b.x, b.tx, k); b.y = lerp(b.y, b.ty, k); b.z = lerp(b.z, b.tz, k); }
+    for (const n of FS.npcs) if (n.tx != null) { const k = 1 - Math.exp(-10 * dt); n.x = lerp(n.x, n.tx, k); n.z = lerp(n.z, n.tz, k); }
+  }
+  b.m.position.set(b.x, b.y, b.z); b.m.rotation.x += (b.vz || 0) * dt * 3; b.m.rotation.z -= (b.vx || 0) * dt * 3;
+  for (const n of FS.npcs) { n.actT += dt; if (n.act && n.actT > 0.35) n.act = null; n.g.position.set(n.x, 0, n.z); n.g.rotation.y = n.h; n.g.visible = near; if (near) { animSkater(n.g, { walk: true, v: n.v, fallT: 0, fp: n.act ? fpPose(n.act, n.actT / 0.35) : null }, t + n.r.id.length); tickBubble(n.g, dt); } }
+  // placar na tela
+  const hud = $('sport-hud'); if (hud && M.me) { const mm = Math.floor((FS_HALF - (M.clock || 0)) / 60), ss = String(Math.max(0, Math.floor((FS_HALF - (M.clock || 0)) % 60))).padStart(2, '0'); hud.innerHTML = `<div class="sh-row"><div class="sh-side"><b>${esc(M.tn[0])}</b></div><div class="sh-mid"><small>${M.ph === 'intervalo' ? 'INTERVALO' : M.half + 'º TEMPO'}</small><b>${M.sc[0]} x ${M.sc[1]}</b><small>${Math.max(0, mm)}:${ss}</small></div><div class="sh-side r"><b>${esc(M.tn[1])}</b></div></div>`; }
+}
+function fsMyKick(dx, dz, pow, loft) { const M = FS.m; M.lastTouch = myId(); if (M.host) fsKick(P.x, P.z, dx, dz, pow, loft); else { fsSend('fs_k', { id: myId(), dx, dz, pow, loft }); sfxKick(); } }
+/* posições de todos de um time (figurantes, eu e os outros jogadores reais) */
+function fsTeamPos(team) {
+  const out = []; for (const r of FS.m.roster) { if (r.team !== team) continue; if (r.npc) { const n = FS.npcs.find(n => n.r === r); if (n) out.push({ r, x: n.x, z: n.z, npc: n }); } else if (r.id === myId()) out.push({ r, x: P.x, z: P.z, me: true }); else { const p = NET.peers[r.id]; if (p) out.push({ r, x: p.x, z: p.z }); } }
+  return out;
+}
+function fsNpcAI(dt, t) {
+  const M = FS.m, b = FS.ball, [x0, z0] = QUADRA_POS;
+  for (const team of [0, 1]) {
+    const mates = fsTeamPos(team), field = mates.filter(m => !m.r.gk); let chaser = null, cd = 1e9;
+    for (const m of field) { const d = Math.hypot(m.x - b.x, m.z - b.z); if (d < cd) { cd = d; chaser = m; } }
+    const attackZ = team ? z0 - CL : z0 + CL, s = team ? 1 : -1;
+    for (const m of mates) {
+      const n = m.npc; if (!n) continue; n.kickT -= dt;
+      let tx, tz, sp = 4.8;
+      if (m.r.gk) { tx = x0 + clamp(b.x - x0, -GOAL_W + 0.2, GOAL_W - 0.2); tz = z0 + s * (CL - 0.6); if (Math.hypot(b.x - n.x, b.z - n.z) < 3 && Math.sign(b.z - z0) === s) { tx = b.x; tz = b.z; sp = 5.2; } }
+      else if (m === chaser) { tx = b.x - (attackZ > b.z ? -0.25 : 0.25) * 0; tz = b.z - Math.sign(attackZ - b.z) * 0.3; sp = 5.4; }
+      else { const h = fsHome(m.r); tx = x0 + h[0] + (b.x - x0) * 0.3; tz = z0 + h[1] * 0.55 + (b.z - z0) * 0.5; sp = 4.2; }
+      const dx = tx - n.x, dz = tz - n.z, d = Math.hypot(dx, dz);
+      if (d > 0.25) { const v = Math.min(sp, d * 3); n.x += dx / d * v * dt; n.z += dz / d * v * dt; n.v = v; n.h = Math.atan2(dx, dz); } else { n.v = 0; n.h = Math.atan2(b.x - n.x, b.z - n.z); }
+      n.x = clamp(n.x, x0 - CW, x0 + CW); n.z = clamp(n.z, z0 - CL - 0.3, z0 + CL + 0.3);
+      // com a bola no pé: chuta, passa ou conduz
+      const bd = Math.hypot(b.x - n.x, b.z - n.z);
+      if (bd < 0.75 && n.kickT <= 0 && b.y < 0.6) {
+        M.lastTouch = n.r.id; const gx = x0 + rand(-GOAL_W + 0.3, GOAL_W - 0.3), dg = Math.hypot(gx - n.x, attackZ - n.z);
+        if (m.r.gk || dg < 9 || Math.random() < 0.02) { fsKick(n.x, n.z, gx - n.x, attackZ - n.z, m.r.gk ? 13 : rand(13, 18), m.r.gk ? 3 : rand(0.5, 2.5)); n.act = 'fk'; n.actT = 0; n.kickT = 0.8; }
+        else {
+          const ahead = mates.filter(o => o !== m && !o.r.gk && Math.sign(attackZ - n.z) * (o.z - n.z) > 1.5);
+          const press = fsTeamPos(1 - team).some(o => Math.hypot(o.x - n.x, o.z - n.z) < 1.6);
+          if (ahead.length && (press || Math.random() < 0.3)) { const o = pick(ahead); fsKick(n.x, n.z, o.x - n.x, o.z - n.z, clamp(Math.hypot(o.x - n.x, o.z - n.z) * 1.3 + 5, 7, 14), 0.4); n.act = 'fp'; n.actT = 0; n.kickT = 0.7; }
+          else { const ddx = gx - n.x, ddz = attackZ - n.z, L = Math.hypot(ddx, ddz); b.vx = lerp(b.vx, ddx / L * 5, 0.5); b.vz = lerp(b.vz, ddz / L * 5, 0.5); n.kickT = 0.15; }
+        }
+      }
+    }
+  }
+}
+function fsFinish() {
+  const M = FS.m; const res = { sc: M.sc, tn: M.tn, tid: M.tid, champ: M.champ, stage: M.stage, wait: M.wait, rosters: M.rosters };
+  fsSend('fs_end', res); fsResult(res);
+  // campeonato: semifinais e final em sequência
+  if (M.champ && M.wait && M.wait.length && M.stage === 'semi1') { const win = M.sc[0] >= M.sc[1] ? M.tid[0] : M.tid[1]; FS.champWin = [win]; const next = M.wait; fsEnd(); setTimeout(() => fsStartChamp(next, 'semi2', M.rosters), 6000); return; }
+  if (M.champ && M.stage === 'semi2') { const win = M.sc[0] >= M.sc[1] ? M.tid[0] : M.tid[1]; const f = [FS.champWin[0], win]; fsEnd(); setTimeout(() => fsStartChamp(f, 'final', M.rosters), 6000); return; }
+  fsEnd();
+}
+function fsStartChamp(pair, stage, rosters) {
+  const roster = []; const NPC_NAMES = ['Dentinho', 'Pezão', 'Tico', 'Neném', 'Russo', 'Baixinho', 'Gordo', 'Juninho', 'Careca', 'Chulapa'];
+  pair.forEach((t, ti) => { const r = (rosters && rosters[t]) || []; for (let i = 0; i < 5; i++) { const q = r[i]; roster.push(q ? { id: q.id, name: q.name, team: ti } : { id: 'n' + ti + i, name: NPC_NAMES[(ti * 5 + i) % 10], team: ti, npc: true }); } });
+  for (const ti of [0, 1]) { const tr = roster.filter(r => r.team === ti); (tr.find(r => r.npc) || tr[tr.length - 1]).gk = true; }
+  const m = { t0: Date.now() + 4000, host: myId(), champ: true, tid: pair, tn: pair.map(t => FS_TEAMS.find(x => x.id === t).n), roster, sc: [0, 0], wait: [], stage, rosters };
+  fsSend('fs_start', m); fsBegin(m);
+}
+function fsResult(d) {
+  const M = FS.m, me = M && M.me, [a, bb] = d.sc; const txt = `${d.tn[0]} ${a} x ${bb} ${d.tn[1]}`; bigBanner(a === bb ? 'EMPATE · ' + txt : 'FIM DE JOGO · ' + txt); feed('⚽ ' + txt);
+  if (me) { const mine = me.team ? bb : a, their = me.team ? a : bb, win = mine > their; S.futsal = S.futsal || {}; if (win) S.futsal.w = (S.futsal.w || 0) + 1; const champ = d.champ && d.stage === 'final' && win; if (champ) { S.futsal.t = (S.futsal.t || 0) + 1; bigBanner('🏆 CAMPEÃO!'); celebrate && celebrate(); postFeed(`Fui campeão do futsal com o ${d.tn[me.team]}! 🏆`); } const prize = champ ? 2000 : win ? (d.champ ? 600 : 300) : mine === their ? 150 : 60; earn(prize); persist(); updateHUD(); toast(`${win ? 'Vitória!' : mine === their ? 'Empate.' : 'Derrota.'} +$ ${fmt(prize)}`, win ? 'good' : 'pink'); }
+}
+function fsEnd(silent) {
+  for (const n of FS.npcs) city.scene.remove(n.g); FS.npcs = [];
+  const wasMe = FS.m && FS.m.me; FS.m = null; if (wasMe) { P.fp = null; P.fpc = 0; P.sprint = 1; setSport(null); }
+  if (FS.ball) { const [x, z] = QUADRA_POS; FS.ball.x = x; FS.ball.z = z; FS.ball.y = 0.2; FS.ball.vx = FS.ball.vz = FS.ball.vy = 0; }
+}
+function fsQuit() { if (FS.m && FS.m.host) { fsSend('fs_end', { sc: FS.m.sc, tn: FS.m.tn, tid: FS.m.tid }); } fsEnd(); renderPanel(); }
+
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },
@@ -9998,7 +11230,7 @@ const PANELS = {
 ['tokens', 'crew', 'config', 'results'].forEach(k => PANELS[k] = OLD_PANELS[k]);
 
 /* ---------------- CELULAR ---------------- */
-Object.assign(PANELS, { pix: PANEL_PIX, tattoo: PANEL_TAT, turismo: PANEL_TUR, fm: PANEL_RADIO });
+Object.assign(PANELS, { pix: PANEL_PIX, tattoo: PANEL_TAT, turismo: PANEL_TUR, fm: PANEL_RADIO, banco: PANEL_BANCO, casa: PANEL_CASA, domino: PANEL_DOMINO, ringue: PANEL_RINGUE, lutaloja: PANEL_LUTALOJA, futsal: PANEL_FUTSAL, fsloja: PANEL_FSLOJA });
 const phoneState = { screen: 'home', contact: null, callT: 0 };
 function togglePhone(force) {
   const el = $('phone'); const show = force != null ? force : el.hidden;
@@ -10119,7 +11351,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
@@ -10355,6 +11587,14 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'samu' }, ({ payload }) => onSamuCall(payload))
     .on('broadcast', { event: 'pix' }, ({ payload }) => onPix(payload))
     .on('broadcast', { event: 'fm' }, ({ payload }) => onRadio(payload))
+    .on('broadcast', { event: 'casa' }, ({ payload }) => onCasaNet(payload))
+    .on('broadcast', { event: 'casa_pg' }, ({ payload }) => onCasaPg(payload))
+    .on('broadcast', { event: 'ring' }, ({ payload }) => onRing(payload))
+    .on('broadcast', { event: 'fsq' }, ({ payload }) => onFsq(payload))
+    .on('broadcast', { event: 'fs_start' }, ({ payload }) => onFsStart(payload))
+    .on('broadcast', { event: 'fs_st' }, ({ payload }) => onFsState(payload))
+    .on('broadcast', { event: 'fs_k' }, ({ payload }) => onFsKick(payload))
+    .on('broadcast', { event: 'fs_end' }, ({ payload }) => onFsEnd(payload))
     .on('broadcast', { event: 'socorrido' }, ({ payload }) => onRescued(payload))
     .on('broadcast', { event: 'assalto_ok' }, ({ payload }) => onRobOk(payload))
     .on('broadcast', { event: 'marca' }, ({ payload }) => renderMark(payload))
@@ -10403,7 +11643,7 @@ function onPresence(state) {
       p = NET.peers[st.id] = { wp: L.w || null, id: st.id, name: st.name, g, lookKey, x: 0, y: 0, z: 0, h: 0, t: null, seen: false };
       pushChat('Praça', `${st.name} entrou na praça`);
     }
-    p.job = st.job || ''; p.gang = st.gang || null;
+    p.job = st.job || ''; p.gang = st.gang || null; p.sp = st.sp || '';
     if (st.adm && !p.adm) { p.adm = 1; setTag(p.g, '👑 ' + st.name + ' · Chefe', '#ffd700'); toast(`👑 O chefe ${st.name} chegou na cidade! Respeito!`, 'pink'); }
   }
   for (const id in NET.peers) if (!seen[id]) { pushChat('Praça', `${NET.peers[id].name} saiu`); removePeer(id); }
@@ -10486,7 +11726,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
@@ -10509,7 +11749,8 @@ function netTick(dt, t) {
       if (VEH[d.vh].kind === 'car' || VEH[d.vh].heli) { p.g.visible = false; if (vu.rotor) { vu.rotor.rotation.y += dt * 28; vu.trotor.rotation.x += dt * 40; } } else { p.g.visible = true; p.g.position.y = groundH(p.x, p.z) + vu.seatY - 1.07; if (vu.crank) vu.crank.rotation.x = vu.spin * 0.45; animSkater(p.g, { pedal: vu.bike ? vu.spin || 0 : null, ride: true, walk: true, v: 0, fallT: 0 }, t); }
       tickBubble(p.g, dt); continue;
     } else if (p.veh) { city.scene.remove(p.veh); p.veh = null; p.vehId = null; p.g.visible = true; }
-    animSkater(p.g, { pose: d.ps === 2 ? 'algema' : d.ps === 1 || d.ps === 4 ? 'maos' : d.ps === 3 ? 'nadar' : null, wpHold: p.wp || null, walk: !d.b, carry: true, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
+    if (d.fp !== p.fpk) { p.fpk = d.fp; p.fpT = t; setGloves(p.g, d.fp && 'gjckbd'.includes(d.fp) ? 0xc8102e : null); }
+    animSkater(p.g, { fp: d.fp ? fpPose(d.fp, (t - (p.fpT || 0)) / 0.35) : null, armL: p.armL, armR: p.armR, pose: d.ps === 2 ? 'algema' : d.ps === 1 || d.ps === 4 ? 'maos' : d.ps === 3 ? 'nadar' : null, wpHold: p.wp || null, walk: !d.b, carry: !d.fp, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
     p.g.rotation.order = 'YXZ'; p.g.rotation.x = d.ps === 4 ? -Math.PI / 2 : 0; if (d.ps === 3) p.g.position.y -= 1.15; else if (d.ps === 4) p.g.position.y += 0.16;
     tickBubble(p.g, dt);
   }
