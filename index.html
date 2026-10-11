@@ -80,6 +80,8 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 .hud-tr{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:60vw}
 .hud-btn{min-height:44px;padding:0 12px;border-radius:10px;background:rgba(21,22,26,.86);border:2px solid var(--line);font-family:var(--cond);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
 .hud-btn svg{width:18px;height:18px}
+#jail-box{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 120px);background:rgba(21,22,26,.92);border:2px solid #ff5a5a;border-radius:12px;padding:7px 14px;text-align:center;z-index:5}
+#jail-box .t{font-family:var(--cond);font-weight:700;text-transform:uppercase;color:#ff8a8a}
 #mission-box{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 64px);background:rgba(21,22,26,.86);border:2px solid var(--wax);border-radius:12px;padding:7px 12px;max-width:min(360px,calc(100vw - 420px));min-width:200px;text-align:center}
 #mission-box .t{font-family:var(--cond);font-weight:700;text-transform:uppercase;color:var(--wax);letter-spacing:.05em;font-size:13px}
 #mission-box .d{font-size:13px;line-height:1.3}
@@ -133,6 +135,8 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #tb-wp{right:40px;bottom:134px;border-color:rgba(166,107,255,.9)}
 #tb-wp svg{color:#c3a0ff}
 #tb-wp.off{opacity:.45}
+#tb-gsw{right:48px;bottom:206px;width:46px;height:46px;font-size:9px}
+#tb-gsw svg{width:20px;height:20px}
 #tb-wp .badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:#a66bff;color:#fff;font-size:12px;display:grid;place-items:center;padding:0 4px}
 #tb-board{right:208px;bottom:102px;width:54px;height:54px}
 #tb-act{right:216px;bottom:26px;width:66px;height:66px;border-color:rgba(61,220,132,.9)}
@@ -482,6 +486,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" data-act="open-config" aria-label="Configurações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
   </div>
   <div id="mission-box" hidden></div>
+  <div id="jail-box" hidden></div>
   <div id="waypoint" hidden><svg viewBox="0 0 40 40"><path d="M20 3 34 34 20 26 6 34Z" fill="#ffcf3a" stroke="#15161a" stroke-width="2.5" stroke-linejoin="round"/></svg><span id="wp-dist"></span></div>
   <div id="prompt" hidden></div>
   <div id="feed"></div>
@@ -525,6 +530,7 @@ canvas.swatch{background:#333}
     <button class="tbtn jump fb" data-btn="jump" id="tb-jump" aria-label="Pular"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span>Pular</span></button>
     <button class="tbtn wp fb" data-btn="weapon" id="tb-wp" hidden aria-label="Usar arma"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span>Arma</span><b class="badge" id="tb-wp-n">2</b></button>
     <button class="tbtn mic" id="tb-mic" aria-label="Segure para mandar áudio"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Áudio</span></button>
+    <button class="tbtn fb" data-btn="gunsw" id="tb-gsw" hidden aria-label="Trocar arma"><svg viewBox="0 0 24 24"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg><span>Trocar</span></button>
     <button class="tbtn vb" data-btn="horn" id="tb-horn" aria-label="Buzinar"><svg viewBox="0 0 24 24"><path d="M3 10v4h4l6 4V6L7 10z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6M19 6c3 3 3 9 0 12"/></svg><span>Buzina</span></button>
     <button class="tbtn vb" data-btn="lights" id="tb-lights" aria-label="Farol"><svg viewBox="0 0 24 24"><path d="M10 6c-4 0-6 3-6 6s2 6 6 6c1 0 2-3 2-6s-1-6-2-6z"/><path d="M15 8h6M15 12h6M15 16h6"/></svg><span>Farol</span></button>
     <button class="tbtn vb" data-btn="blinkL" id="tb-blL" aria-label="Seta esquerda"><svg viewBox="0 0 24 24"><path d="M14 5l-7 7 7 7M8 12h12"/></svg><span>Seta</span></button>
@@ -1484,6 +1490,7 @@ function grantAdmin() {
   for (const it of ITEMS) if (!S.owned.includes(it.id)) S.owned.push(it.id);
   S.vehicles = VEHICLES.map(v => v.id); if (!S.veh) S.veh = 'v_sport';
   if (!S.equip.skate) { S.equip.skate = 'sk_basic'; S.equip.wheels = 'wh_basic'; }
+  if (!S.equip.gun || S.equip.gun === 'gun_none') S.equip.gun = 'gun_fuzil';
   S.coins = Math.max(S.coins, 1000000); S.tokens = Math.max(S.tokens, 100000);
   S.crates.rara = Math.max(S.crates.rara, 10); S.crates.lendaria = Math.max(S.crates.lendaria, 10);
   persist();
@@ -1847,6 +1854,8 @@ function lifeLayer(u, o, t, dt, p, walking) {
   if (o.punchT > 0) { hands.R = 1; hands.L = 0.9; }
   if (o.wpHold && !o.wpProp) hands.R = 0.8;
   if (o.wpProp) { hands.R = 0.85; Object.assign(p, walking ? { rArmDown: 1.0, rArmFwd: 1.35, rElbow: 0.25, headY: (p.headY || 0) * 0.3 } : { rArmDown: 0.12, rArmFwd: 0.15, rElbow: 0.2 }); }
+  if (o.smoke) { hands.L = 0.7; Object.assign(p, { lArmDown: 0.35, lArmFwd: 0.8, lElbow: 2.45, headX: -0.06 }); }
+  if (o.shootUp) { hands.R = 0.85; Object.assign(p, { rArmDown: -1.25, rArmFwd: 0.25, rElbow: 0.12, headX: -0.3 }); }
   if (o.emote === 'wave') hands.R = 0.02;
   if (o.emote === 'cheer') { hands.L = hands.R = 0.95; }
   if (o.emote === 'dance') { hands.L = hands.R = 0.6; }
@@ -1998,7 +2007,7 @@ function animReal(u, o, t) {
 /* ---------------- INPUT ---------------- */
 const input = { held: {}, pressed: {}, hold: {}, joy: { x: 0, y: 0 }, tbtn: {} };
 addEventListener('mouseup', () => { input.hold = {}; });
-const KEYMAP = { KeyH: 'horn', KeyL: 'lights', KeyZ: 'blinkL', KeyX: 'blinkR', KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
+const KEYMAP = { KeyY: 'gunsw', KeyH: 'horn', KeyL: 'lights', KeyZ: 'blinkL', KeyX: 'blinkR', KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
 addEventListener('keydown', e => {
   if (e.target.matches && e.target.matches('input,textarea')) { if (e.code === 'Escape') e.target.blur(); return; }
   input.held[e.code] = true;
@@ -2089,9 +2098,9 @@ async function installApp() {
   if (box && !$('menu').hidden) { box.innerHTML = html; box.hidden = false; } else { closePanel(); toast(isIOS() ? 'No Safari: Compartilhar ⬆ → Adicionar à Tela de Início.' : 'No Chrome: menu ⋮ → Instalar app.', 'pink'); }
 }
 /* ---------------- POSIÇÃO DOS BOTÕES (editável nas Configurações) ---------------- */
-const BTN_IDS = ['tb-left', 'tb-right', 'tb-gas', 'tb-rev', 'tb-mic', 'tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
+const BTN_IDS = ['tb-gsw', 'tb-left', 'tb-right', 'tb-gas', 'tb-rev', 'tb-mic', 'tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
 // celular em pé: tela estreita, os botões ficam num bloco compacto à direita para não encostar no joystick
-const BTN_PORTRAIT = { 'tb-mic': [24, 290], 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [20, 126], 'tb-lights': [104, 100], 'tb-blL': [160, 172], 'tb-blR': [104, 172], 'tb-gas': [14, 20], 'tb-rev': [118, 14], 'tb-vexit': [20, 204] };
+const BTN_PORTRAIT = { 'tb-gsw': [88, 170], 'tb-mic': [24, 290], 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [20, 126], 'tb-lights': [104, 100], 'tb-blL': [160, 172], 'tb-blR': [104, 172], 'tb-gas': [14, 20], 'tb-rev': [118, 14], 'tb-vexit': [20, 204] };
 const btnOrient = () => innerWidth < innerHeight ? 'port' : 'land';
 const btnEditing = () => $('touch').classList.contains('editing');
 function btnCfg() { const st = S.settings; st.btnPos = st.btnPos || { port: {}, land: {} }; st.joyPos = st.joyPos || {}; return st; }
@@ -2201,7 +2210,7 @@ function shopsFor(id) {
 }
 const FAV_OFF = [-11.2, -7.6, -4.0, 4.0, 7.6, 11.2];
 const isFavela = (id, key) => (FAVELA_BLOCKS[id] || []).includes(key);
-const city = { route: [], gpsT: 0, fx: [], bananas: [], camYaw: Math.PI, camPitch: 0, dragT: -9, zoom: 1, faceCam: false, faceDist: 0.85, faceOrbit: 0, faceH: 0, scene: null, blds: [], winMats: [], addrs: [], walls: [], kiosks: [], peds: [], dogs: [], cats: [], pigeons: [], flocks: [], colliders: [], doors: [], ramps: [], cars: [], bots: [], player: null, sun: null, beam: null, mObjs: [], offers: null, checkout: null, rec: [], recT: 0, chatT: 6, chatLog: [], contest: null, socialTarget: null, mapT: 0 };
+const city = { surf: [], rails: [], robbers: [], prisoners: [], route: [], gpsT: 0, fx: [], bananas: [], camYaw: Math.PI, camPitch: 0, dragT: -9, zoom: 1, faceCam: false, faceDist: 0.85, faceOrbit: 0, faceH: 0, scene: null, blds: [], winMats: [], addrs: [], walls: [], kiosks: [], peds: [], dogs: [], cats: [], pigeons: [], flocks: [], colliders: [], doors: [], ramps: [], cars: [], bots: [], player: null, sun: null, beam: null, mObjs: [], offers: null, checkout: null, rec: [], recT: 0, chatT: 6, chatLog: [], contest: null, socialTarget: null, mapT: 0 };
 const P = { onBoard: false, x: 0, z: 10, y: 0, h: Math.PI, v: 0, vy: 0, air: false, airT: 0, trick: null, combo: [], emote: null, fallT: 0, punchT: 0, punchCd: 0, carry: null };
 
 function buildCity() {
@@ -2253,7 +2262,7 @@ function buildCity() {
   gtex.anisotropy = 8;
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshLambertMaterial({ map: gtex }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; sc.add(ground);
-  const far = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200), lam(new THREE.Color(CITY().grass).getHex())); far.rotation.x = -Math.PI / 2; far.position.y = -0.05; sc.add(far);
+  const far = new THREE.Mesh(new THREE.PlaneGeometry(1200, 1200), lam(new THREE.Color(CITY().grass).getHex())); far.rotation.x = -Math.PI / 2; far.position.y = -0.05; sc.add(far); city.far = far;
 
   // prédios
   const winTex = CITY().colonial ? canvasTex(128, 128, g => { // fachada colonial: janelas altas com venezianas e moldura branca
@@ -2473,6 +2482,8 @@ function cityExtras(sc) {
   buildHome();
   buildCritters(sc);
   buildMorro(sc);
+  buildSkatepark(sc);
+  { const [bx, bz] = parkWorld(50, -24), sh = new THREE.Shape(); sh.moveTo(-600, -600); sh.lineTo(600, -600); sh.lineTo(600, 600); sh.lineTo(-600, 600); const ho = new THREE.Path(); ho.absarc(bx, -bz, 7.6, 0, TAU, true); sh.holes.push(ho); city.far.geometry.dispose(); city.far.geometry = new THREE.ShapeGeometry(sh, 32); }
   buildRoles(sc);
   buildDayNight(sc);
   setTimeout(loadMarks, 600);
@@ -2643,7 +2654,9 @@ function updateCritters(dt, t) {
     if (dP < 0.95 && Math.abs(P.v) > 4.5 && P.y < 0.8) { p.fallT = 1.6; bubble(p.g, pick(['Ei! Olha por onde anda!', 'Que isso, mano?!', 'Ai! Cuidado!']), 2.5); sfx('hit'); P.v *= 0.5; continue; }
     p.stopT -= dt;
     const blocked = dP < 1.2;
-    const sp = blocked || p.stopT > 0 ? 0 : p.spd;
+    if (p.robbedT > 0) p.robbedT -= dt;
+    { const ch = chiefNear(p.x, p.z, 4); if (ch && (p.grT = (p.grT || 0) - dt) <= 0) { p.grT = 30; bubble(p.g, pick(RESPECT_LINES), 2.5); } }
+    const sp = p.flee > 0 ? (p.flee -= dt, 3.4) : blocked || p.stopT > 0 ? 0 : p.spd;
     p.u += p.dir * sp * dt; p.ph += sp * dt * 5.2;
     if (Math.random() < dt * 0.02) p.stopT = rand(1, 4);
     const [x, z, h] = pedPos(p); p.x = x; p.z = z; p.g.position.set(x, 0, z); p.g.rotation.y = h;
@@ -2817,7 +2830,7 @@ function buildCityScape(sc) {
     const masp = textSprite('MASP · AV. PAULISTA', { bg: '#c0182b', fg: '#ffffff', size: 40, scale: [10, 1.6, 1] }); masp.position.set(0, 28, -165); sc.add(masp);
     // skyline
     const sk = [], col = new THREE.Color();
-    for (let i = 0; i < 90; i++) { const a = Math.random() * TAU, r = rand(150, 280), x = Math.cos(a) * r, z = Math.sin(a) * r; if (Math.abs(x) < 40 && z < -140) continue; if (z > 100 && Math.abs(x) < 90) continue; sk.push([x, z, rand(30, 110), rand(14, 26)]); }
+    for (let i = 0; i < 90; i++) { const a = Math.random() * TAU, r = rand(150, 280), x = Math.cos(a) * r, z = Math.sin(a) * r; if (Math.abs(x) < 40 && z < -140) continue; if (z > 100 && Math.abs(x) < 90) continue; if (Math.abs(x) > 100 && Math.abs(z) < 70) continue; sk.push([x, z, rand(30, 110), rand(14, 26)]); }
     const sm = new THREE.InstancedMesh(boxGeo(1, 1, 1), new THREE.MeshLambertMaterial({ color: 0xffffff }), sk.length);
     sk.forEach((b, i) => { M4.compose(new THREE.Vector3(b[0], b[2] / 2, b[1]), new THREE.Quaternion(), new THREE.Vector3(b[3], b[2], b[3])); sm.setMatrixAt(i, M4); sm.setColorAt(i, col.setHex(pick([0x8c8f96, 0x9aa3ad, 0x6f7c8e, 0xb7b2a8, 0x5f6670]))); }); sc.add(sm);
     // ponte estaiada
@@ -2848,6 +2861,7 @@ function travelTo(id, how) {
 }
 function resetCity() {
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
+  city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -3343,20 +3357,18 @@ function buildPlaza(sc) {
     g.strokeText('ROLÊ', 0, -58); g.fillText('ROLÊ', 0, -58); g.fillStyle = '#ffffff'; g.strokeText('CITY', 0, 72); g.fillText('CITY', 0, 72);
   }) }));
   logo.rotation.x = -Math.PI / 2; logo.position.set(0, 0.02, 5); logo.receiveShadow = true; sc.add(logo);
+  let ri = 0;
   const addRamp = (x, z, rot, w = 4, l = 3.5, h = 1.1) => {
-    const m = new THREE.Mesh(wedgeGeo(w, l, h), conc); m.position.set(x, 0, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; sc.add(m);
-    const rw = (Math.abs(Math.sin(rot)) > 0.5 ? l : w) / 2, rl = (Math.abs(Math.sin(rot)) > 0.5 ? w : l) / 2;
-    city.ramps.push({ x0: x - rw, x1: x + rw, z0: z - rl, z1: z + rl });
+    const m = wedgeMeshUV(w, l, h, rampMats()[ri++ & 3]); m.position.set(x, 0, z); m.rotation.y = rot; sc.add(m);
+    plazaSurf(x, z, rot, w, l, h);
   };
+  // desenhos no chão da praça
+  for (const [x, z, sz, sd] of [[-6, 9, 6, 3], [7, -8, 5, 9], [-4, -6, 4, 13], [9, 5, 4, 17]]) { const t = paintedTex(sd, 256, 256, 'rgba(0,0,0,0)'), m = new THREE.Mesh(new THREE.PlaneGeometry(sz, sz), new THREE.MeshLambertMaterial({ map: t, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 })); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.022, z); sc.add(m); }
   addRamp(-8, 2, Math.PI / 2); addRamp(8, -2, -Math.PI / 2); addRamp(0, -4, 0); addRamp(-6, -9, Math.PI); addRamp(7, 8, 0, 3, 3, 0.9);
-  // corrimão
-  const rail = new THREE.Mesh(boxGeo(0.12, 0.12, 8), lam(0xe0e0e0)); rail.position.set(4, 0.7, 4); sc.add(rail);
-  for (const z of [0.5, 7.5]) { const p = new THREE.Mesh(boxGeo(0.1, 0.7, 0.1), lam(0x888888)); p.position.set(4, 0.35, z); sc.add(p); }
-  // quarter pipes nas bordas
-  for (const [x, z, r] of [[-12.5, 0, Math.PI / 2], [12.5, 0, -Math.PI / 2]]) {
-    const q = new THREE.Mesh(wedgeGeo(10, 2.2, 2.2), lam(0xb5aea0)); q.position.set(x, 0, z); q.rotation.y = r + Math.PI; sc.add(q);
-    city.colliders.push({ x0: x - 1.1, x1: x + 1.1, z0: z - 5, z1: z + 5 });
-  }
+  // corrimão para grind
+  addRail(sc, 4, 0.3, 4, 7.8, 0.6);
+  // quarter pipes de verdade nas bordas
+  plazaQP(sc, -1); plazaQP(sc, 1);
   // quadro de missões
   const board = new THREE.Group();
   const panel = new THREE.Mesh(boxGeo(5, 3, 0.25), new THREE.MeshLambertMaterial({ map: canvasTex(256, 160, g => { g.fillStyle = '#2b2118'; g.fillRect(0, 0, 256, 160); g.fillStyle = '#ffcf3a'; g.font = '30px Bungee, Impact'; g.textAlign = 'center'; g.fillText('MISSÕES', 128, 48); for (let i = 0; i < 4; i++) { g.fillStyle = ['#fff', '#ffd6e0', '#d6f1ff', '#e8ffd6'][i]; g.fillRect(24 + i * 54, 70, 46, 60); } }) }));
@@ -3396,7 +3408,7 @@ function nextWaypoint(o) {
   if (o.iz > 0) opts.push([o.ix, o.iz - 1]); if (o.iz < 5) opts.push([o.ix, o.iz + 1]);
   [o.ix, o.iz] = pick(opts); o.tx = ROADS[o.ix]; o.tz = ROADS[o.iz];
 }
-function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if (city.interior && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; return Math.abs(x) > 116 || z < -116 || z > cityBoundZ(); }
+function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if ((city.interior || city.jail) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return Math.abs(x) > 116 || z < -116 || z > cityBoundZ(); }
 function inRamp(x, z) { return city.ramps.some(c => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1); }
 
 let camYaw = 0;
@@ -3413,6 +3425,8 @@ function updateCity(dt, t) {
   if (!blocked && tap('veh')) act('veh-call', {});
   P.wpShowT = (P.wpShowT || 0) - dt; P.wpCd = (P.wpCd || 0) - dt;
   if (!blocked && tap('weapon')) cityWeapon();
+  if (!blocked && tap('gunsw')) nextGun();
+  if (IS_TOUCH) $('tb-gsw').hidden = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)).length < 2;
   if (IS_TOUCH) { const wk = myHandKind(); $('tb-wp').hidden = !wk; if (wk) { $('tb-wp').classList.toggle('off', P.wpCd > 0); $('tb-wp-n').textContent = '∞'; } }
   updateCityFx(dt);
   if (!blocked && tap('map')) openPanel('mapa');
@@ -3435,11 +3449,12 @@ function updateCity(dt, t) {
   }
   else {
     const maxV = 14 * st.spd;
-    if (!P.air) turnTo(4.2 * st.ctl / (1 + Math.abs(P.v) * 0.02));
+    P.flipT = (P.flipT || 0) - dt;
+    if (!P.air && !(P.flipT > 0) && !P.grind) turnTo(4.2 * st.ctl / (1 + Math.abs(P.v) * 0.02));
     if (mag > 0.15) P.v += 11 * st.acc * mag * dt * (1 - P.v / (maxV * 1.05));
-    P.v -= P.v * (mag > 0.15 ? 0.15 : 0.6) * dt;
+    P.v -= P.v * (P.onSurf ? 0.05 : mag > 0.15 ? 0.15 : 0.6) * dt;
     if (input.held.KeyS || input.held.ArrowDown) P.v -= 14 * dt;
-    P.v = clamp(P.v, 0, maxV);
+    P.v = clamp(P.v, 0, maxV * (P.onSurf ? 1.8 : 1)); if (P.vertAir && P.air) P.v = 0;
     const jp = !blocked && tap('jump'), sp = !blocked && tap('item');
     if (jp && !P.air) { P.vy = 7.2 * st.pop; P.air = true; P.airT = 0; sfx('jump'); }
     else if ((jp || sp) && P.air && !P.trick) {
@@ -3452,22 +3467,28 @@ function updateCity(dt, t) {
       P.punchT = 0.25; P.punchCd = 0.8;
       const b = city.bots.find(o => Math.hypot(o.x - P.x, o.z - P.z) < 2.4 && o.fallT <= 0);
       if (b) { b.fallT = 1.6; sfx('hit'); bubble(b.g, line('hit'), 3); }
+      const rb = (city.robbers || []).find(r => Math.hypot(r.x - P.x, r.z - P.z) < 2.4 && !(r.fallT > 0) && r.st !== 'preso'); if (rb) { rb.fallT = 3; sfx('hit'); bubble(rb.g, 'Ai! Vou embora!', 2); }
     }
   }
   // movimento + colisão
-  if (!driving) {
+  const ox = P.x, oz = P.z;
+  if (P.grind) grindTick(dt);
+  else if (!driving) {
   const nx = P.x + Math.sin(P.h) * P.v * dt, nz = P.z + Math.cos(P.h) * P.v * dt;
   const stuck = collide(P.x, P.z, 0.55); // se nasceu dentro de algo (móvel, parede), deixa sair andando
   if (stuck || !collide(nx, P.z, 0.55)) P.x = nx; else P.v *= 0.4;
   if (stuck || !collide(P.x, nz, 0.55)) P.z = nz; else P.v *= 0.4;
   }
+  morroGate(dt);
+  if (!P.grind) skateSurf(dt, ox, oz, driving);
   if (P.onBoard && !P.air && P.v > 5 && inRamp(P.x, P.z)) { P.vy = (6.5 + P.v * 0.3) * st.pop; P.air = true; P.airT = 0; sfx('jump'); }
   const gy = groundH(P.x, P.z);
-  if (!P.air) P.y = gy;
+  if (!P.air && !P.grind) P.y = gy;
   if (P.air) {
     P.vy -= 22 * dt; P.y += P.vy * dt; P.airT += dt;
     stepTrick(P, dt);
-    if (P.y <= gy) { P.y = gy; P.air = false; sfx('land'); if (P.onBoard) onLand(); }
+    tryGrind();
+    if (P.air && P.y <= gy) { const vyL = P.vy; P.y = gy; P.air = false; sfx('land'); if (P.vertAir) { P.vertAir = false; P.h += Math.PI; P.v = Math.max(2.5, Math.abs(vyL) * 0.85); P.flipT = 0.9; } if (P.onBoard) onLand(); }
   }
   // carros
   for (const c of city.cars) {
@@ -3498,7 +3519,7 @@ function updateCity(dt, t) {
   // céu e sol acompanham
   city.sky.position.copy(camera.position);
   for (const c of city.clouds.children) { c.position.x += c.userData.v * dt; if (c.position.x > 340) c.position.x = -340; }
-  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
+  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
   const sd = city.dn ? city.dn.sunDir : [40, 80, 30]; city.sun.position.set(P.x + sd[0], sd[1], P.z + sd[2]); city.sun.target.position.set(P.x, 0, P.z);
   for (const d of city.doors) if (d.ring) d.ring.rotation.y += dt;
   updateHomeDoor(dt); if (city.seaTex) { city.seaTex.offset.x += dt * 0.01; city.seaTex.offset.y += dt * 0.02; city.foam.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.3; }
@@ -3529,7 +3550,7 @@ function updateCity(dt, t) {
     while (cd > 1.2 && collide(P.x - fx * cd, P.z - fz * cd, 0.4)) cd -= 0.4;
     const hh = lerp(1.75, P.drive ? 3.3 : P.onBoard ? 2.9 : 2.5, clamp((z - 0.35) / 0.65, 0, 1)), side = lerp(0.45, 0, clamp((z - 0.35) / 0.5, 0, 1));
     const by = gy + (P.y - gy) * 0.5, want = new THREE.Vector3(P.x - fx * cd + fz * side, Math.max(groundH(P.x - fx * cd, P.z - fz * cd) + 0.8, by + hh + city.camPitch * cd * 0.7), P.z - fz * cd - fx * side);
-    if (city.interior) want.y = Math.min(want.y, 2.75);
+    if (city.interior || city.jail) want.y = Math.min(want.y, 2.75);
     camera.position.lerp(want, city.camSnap ? 1 : 1 - Math.exp(-5 * dt)); city.camSnap = false;
     const ly = lerp(1.55, 1.25, clamp((z - 0.35) / 0.65, 0, 1));
     camera.lookAt(P.x + fx * 2.5 * z + fz * side * 0.5, by + ly, P.z + fz * 2.5 * z - fx * side * 0.5);
@@ -3555,6 +3576,11 @@ function updateCity(dt, t) {
   if (!P.drive && !P.ride) for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen) continue; const k = Math.hypot(p.x - P.x, p.z - P.z);
     if (p.t.vh && k < 3.8 && k < nd + 0.5) { nd = k; near = { type: 'carona', p }; }
     else if (S.shift === 'policial' && p.t.wd > 0 && !p.t.vh && k < 2.6 && k < nd + 0.5) { nd = k; near = { type: 'prender', p }; } }
+  if (!P.drive && !P.ride && !(P.jailT > 0)) {
+    if (S.shift === 'policial') { for (const o of [...(city.thugs || []), ...(city.robbers || [])]) { if (o.off || o.arrestedT > 0 || o.st === 'preso' || o.st === 'gone') continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.4 && k < nd && (o.fallT > 0 || o.st === 'rob' || o.st === 'flee' || o.st === 'go')) { nd = k; near = { type: 'prenderNpc', o }; } } }
+    else if (myGun()) { for (const o of [...city.peds, ...city.bots]) { if (o.off || o.role || o.fallT > 0) continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.2 && k < nd) { nd = k; near = { type: 'assalto', o }; } }
+      for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen || p.t.vh) continue; const k = Math.hypot(p.x - P.x, p.z - P.z); if (k < 2.2 && k < nd) { nd = k; near = { type: 'assaltoP', p }; } } }
+  }
   if (!near && S.gang && !P.drive && !P.ride && (city.paintCd = (city.paintCd || 0) - dt) <= 0) { const w = nearWall(); if (w) near = { type: 'paint', w }; }
   if (P.drive) near = { type: 'exitveh' };
   if (P.ride) near = { type: 'rideexit' };
@@ -3562,6 +3588,9 @@ function updateCity(dt, t) {
   if (near && !blocked && !city.contest) {
     const key = IS_TOUCH ? 'Ação' : 'E';
     if (near.type === 'exitveh') { pr.textContent = `${key} · Sair ${P.drive.V.kind === 'car' ? 'do carro' : 'da moto'}`; pr.hidden = false; if (tap('act')) exitVehicle(); }
+    else if (near.type === 'assalto') { pr.textContent = `${key} · Assaltar`; pr.hidden = false; if (tap('act')) robNpc(near.o); }
+    else if (near.type === 'assaltoP') { pr.textContent = `${key} · Assaltar ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'assalto', payload: { id: NET.user.id, to: near.p.id, by: S.name } }); addWanted(2, 'assalto à mão armada'); } }
+    else if (near.type === 'prenderNpc') { pr.textContent = `${key} · Prender o bandido`; pr.hidden = false; if (tap('act')) { const o = near.o; if (o.st) { o.st = 'preso'; o.t2 = 0; bubble(o.g, 'Tá bom, perdi…', 2); } else { o.arrestedT = 150; o.hostT = 0; o.fallT = 0; o.g.visible = false; } addPrisoner(o.st ? 'Assaltante' : 'Traficante', 120); const g = earn(jobPay('policial', 180)); addXP(30); toast(`Bandido preso e levado para a Delegacia! +$${fmt(g)}`, 'good'); sfx('coin'); } }
     else if (near.type === 'rideexit') { pr.textContent = `${key} · Descer`; pr.hidden = false; if (tap('act')) endRide(); }
     else if (near.type === 'carona') { pr.textContent = `${key} · Pegar carona com ${near.p.name}`; pr.hidden = false; if (tap('act')) askRide(near.p); }
     else if (near.type === 'prender') { pr.textContent = `${key} · Prender ${near.p.name} ${'★'.repeat(near.p.t.wd)}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'prisao', payload: { to: near.p.id, by: 'o policial ' + S.name } }); const g = earn(jobPay('policial', 220)); addXP(40); toast(`Você prendeu ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('coin'); } }
@@ -3576,6 +3605,7 @@ function updateCity(dt, t) {
   if (tap('esc')) { if (!$('panel').hidden) closePanel(); else if (!$('phone').hidden) togglePhone(false); }
   if (!$('phone').hidden && phoneState.screen === 'map') drawCityMap();
   if ((city.mapT -= dt) <= 0) { city.mapT = 0.1; drawCityMapOn($('hud-map'), P.x, P.z, 55, true); }
+  if (!city.interior) cullChars();
 }
 /* pouso no skate: conta o combo, dá pontos, grana e guarda replay */
 function onLand() {
@@ -3767,6 +3797,7 @@ function drawCityMapOn(cv, cx, cz, Rad, mini) {
   if (CITY().beach) { g.fillStyle = '#e8d3a0'; g.fillRect(X(-400), Z(116), 800 * s, 47 * s); g.fillStyle = '#2a7fb8'; g.fillRect(X(-400), Z(163), 800 * s, 400 * s); g.fillStyle = '#f2f0ea'; g.fillRect(X(-400), Z(115), 800 * s, 6 * s); }
   g.fillStyle = cityId() === 'ssa' ? '#6f6658' : '#34363c'; g.fillRect(X(-111), Z(-111), 222 * s, 222 * s);
   if (city.morro) drawMorroMap(g, X, Z, s, cityId(), city.mHouses);
+  if (city.park) drawParkMap(g, X, Z, s, cityId());
   for (const bx of BLOCKS) for (const bz of BLOCKS) { if (isFavela(cityId(), bx + ',' + bz)) { drawFavelaMap(g, X, Z, s, bx, bz); continue; } const plaza = bx === 0 && bz === 0; g.fillStyle = plaza ? '#c7bfae' : '#7c776d'; g.fillRect(X(bx - 15), Z(bz - 15), 30 * s, 30 * s); }
   g.strokeStyle = 'rgba(242,194,48,.55)'; g.lineWidth = Math.max(1, s * 0.4); g.setLineDash([4, 4]);
   for (const r of ROADS) { g.beginPath(); g.moveTo(X(r), Z(-111)); g.lineTo(X(r), Z(111)); g.moveTo(X(-111), Z(r)); g.lineTo(X(111), Z(r)); g.stroke(); }
@@ -3792,6 +3823,13 @@ function drawMorroMap(g, X, Z, s, id, houses) {
   else { const r = mulberry32(3), cols = ['#b5651d', '#e8604c', '#f2c94c', '#5aa9e6', '#7bc67b', '#f6f1e7']; for (let i = 0; i < 260; i++) { const d = 6 + r() * 86, t = (r() * 2 - 1) * 58; if (Math.abs(t) < 5) continue; const [x, z] = morroWorld(d, t, id); g.fillStyle = cols[i % cols.length]; g.fillRect(X(x) - 2, Z(z) - 2, 4, 4); } }
   const a = morroWorld(-2, 0, id), b = morroWorld(MORRO_D, 0, id); g.strokeStyle = '#d9d2c3'; g.lineWidth = Math.max(2, 6 * s); g.beginPath(); g.moveTo(X(a[0]), Z(a[1])); g.lineTo(X(b[0]), Z(b[1])); g.stroke();
 }
+/* skatepark no mapa */
+function drawParkMap(g, X, Z, s, id) {
+  const poly = (pts, c) => { g.fillStyle = c; g.beginPath(); pts.map(([d, t]) => parkWorld(d, t, id)).forEach(([x, z], i) => i ? g.lineTo(X(x), Z(z)) : g.moveTo(X(x), Z(z))); g.closePath(); g.fill(); };
+  poly([[-3, -PARK_W], [PARK_D, -PARK_W], [PARK_D, PARK_W], [-3, PARK_W]], '#a39c8f');
+  poly([[20, 5], [52, 5], [52, 25], [20, 25]], '#ff4f7b'); poly([[63, -40], [68, -40], [68, 40], [63, 40]], '#ffcf3a'); poly([[22, -25], [30, -25], [30, -19], [22, -19]], '#4fc3ff');
+  const [bx, bz] = parkWorld(50, -24, id); g.fillStyle = '#6fb6d8'; g.beginPath(); g.arc(X(bx), Z(bz), 7.5 * s, 0, TAU); g.fill();
+}
 /* comunidade no mapa: casinhas coloridas apertadas com vielas */
 function drawFavelaMap(g, X, Z, s, bx, bz) {
   g.fillStyle = '#7a6250'; g.fillRect(X(bx - 15), Z(bz - 15), 30 * s, 30 * s);
@@ -3800,9 +3838,9 @@ function drawFavelaMap(g, X, Z, s, bx, bz) {
 }
 /* cartões-postais de cada cidade (os que ficam fora do mapa aparecem na borda, com seta) */
 const LANDMARKS = {
-  sp: [[0, -165, 'MASP · Av. Paulista'], [190, 40, 'Ponte Estaiada'], [0, -84, 'Rodoviária'], [0, 160, 'Comunidade (morro)']],
-  rj: [[-40, -330, 'Cristo Redentor'], [230, 330, 'Pão de Açúcar'], [-160, 0, 'Morro da Alegria'], [-70, -70, 'Comunidade'], [0, 132, 'Praia de Copacabana'], [84, 0, 'Rodoviária']],
-  ssa: [[70, 172, 'Elevador Lacerda'], [-150, 185, 'Farol da Barra'], [0, -180, 'Pelourinho'], [70, -70, 'Favela'], [160, 0, 'Alto do Céu Azul'], [0, 132, 'Praia'], [-84, 0, 'Rodoviária']],
+  sp: [[0, -165, 'MASP · Av. Paulista'], [190, 40, 'Ponte Estaiada'], [0, -84, 'Rodoviária'], [0, 160, 'Comunidade (morro)'], [-150, 0, 'Skatepark']],
+  rj: [[-40, -330, 'Cristo Redentor'], [230, 330, 'Pão de Açúcar'], [-160, 0, 'Morro da Alegria'], [150, 0, 'Skatepark'], [-70, -70, 'Comunidade'], [0, 132, 'Praia de Copacabana'], [84, 0, 'Rodoviária']],
+  ssa: [[70, 172, 'Elevador Lacerda'], [-150, 185, 'Farol da Barra'], [0, -180, 'Pelourinho'], [70, -70, 'Favela'], [160, 0, 'Alto do Céu Azul'], [-150, 0, 'Skatepark'], [0, 132, 'Praia'], [-84, 0, 'Rodoviária']],
 };
 function drawLandmarks(g, id, X, Z, W) {
   g.font = `700 ${Math.round(W * 0.03)}px "Barlow Condensed", sans-serif`; g.textAlign = 'center';
@@ -3824,7 +3862,7 @@ function drawCityPreview(cv, id) {
   if (C.beach) { g.fillStyle = '#e8d3a0'; g.fillRect(0, Z(116), W, 47 * s); g.fillStyle = '#2a7fb8'; g.fillRect(0, Z(163), W, W); g.fillStyle = id === 'rj' ? '#15161a' : '#f2f0ea'; g.fillRect(0, Z(115), W, 6 * s); }
   if (id === 'ssa') { g.fillStyle = '#4f7a3a'; g.beginPath(); g.ellipse(X(235), Z(-40), 40 * s, 100 * s, 0, 0, TAU); g.fill(); for (let i = 0; i < 90; i++) { const a = (i * 2.4) % TAU, r = (i * 37 % 85); g.fillStyle = ['#f2c94c', '#e07a5f', '#7fb3e0', '#b5651d'][i % 4]; g.fillRect(X(235 + Math.cos(a) * r * 0.3) - 2, Z(-40 + Math.sin(a) * r) - 2, 4, 4); } }
   if (id === 'rj') { g.fillStyle = '#3f7a35'; g.beginPath(); g.ellipse(X(-230), Z(0), 40 * s, 110 * s, 0, 0, TAU); g.fill(); for (let i = 0; i < 90; i++) { const a = (i * 2.4) % TAU, r = (i * 37 % 90); g.fillStyle = ['#f2c94c', '#e07a5f', '#7fb3e0', '#f28ca0'][i % 4]; g.fillRect(X(-230 + Math.cos(a) * r * 0.3) - 2, Z(Math.sin(a) * r) - 2, 4, 4); } }
-  drawMorroMap(g, X, Z, s, id, null);
+  drawMorroMap(g, X, Z, s, id, null); drawParkMap(g, X, Z, s, id);
   g.fillStyle = id === 'ssa' ? '#6f6658' : '#34363c'; g.fillRect(X(-111), Z(-111), 222 * s, 222 * s);
   for (const bx of BLOCKS) for (const bz of BLOCKS) { const sp = shopsFor(id)[bx + ',' + bz], fv = isFavela(id, bx + ',' + bz), plaza = bx === 0 && bz === 0, k = (((bx * 7 + bz * 3) / 42 | 0) % C.pal.length + C.pal.length) % C.pal.length;
     if (fv) { drawFavelaMap(g, X, Z, s, bx, bz); continue; }
@@ -4011,7 +4049,7 @@ function updateMission(dt, t) {
 }
 /* seta + feixe + linha da rota (GPS marcado no mapa ou alvo da missão) */
 function updateNav(dt) {
-  if (city.interior) { city.beam.visible = false; $('waypoint').hidden = true; if (city.routeM) city.routeM.visible = false; return; }
+  if (city.interior || city.jail) { city.beam.visible = false; $('waypoint').hidden = true; if (city.routeM) city.routeM.visible = false; return; }
   const nxt = updateGps(dt), fin = S.gps ? [S.gps.x, S.gps.z] : missionTarget();
   if (city.routeM) city.routeM.visible = true;
   if (nxt && fin) {
@@ -4124,13 +4162,17 @@ function spawnStudent(first) {
    ========================================================= */
 const MORRO_SIDE = { sp: ['z', 1], rj: ['x', -1], ssa: ['x', 1] };
 const MORRO_NAME = { sp: 'Comunidade Vila Esperança', rj: 'Morro da Alegria', ssa: 'Alto do Céu Azul' };
-const NPC_GANG = { sp: 'Bonde da Vila', rj: 'Bonde da Alegria', ssa: 'Bonde do Alto' };
+const NPC_GANG = { sp: 'Bonde do Ajbz', rj: 'Bonde do Ajbz', ssa: 'Bonde do Ajbz' };
 const MORRO_D = 95, MORRO_W = 62, MORRO_H = 24;
 function morroLocal(x, z, id) { const [ax, s] = MORRO_SIDE[id || cityId()] || MORRO_SIDE.sp; return ax === 'x' ? [s * x - 111, z] : [s * z - 111, x]; }
 function morroWorld(d, t, id) { const [ax, s] = MORRO_SIDE[id || cityId()] || MORRO_SIDE.sp; return ax === 'x' ? [s * (d + 111), t] : [t, s * (d + 111)]; }
 function inMorro(x, z, m = 0) { const [d, t] = morroLocal(x, z); return d > -6 && d < MORRO_D - m && Math.abs(t) < MORRO_W - m; }
 const morroHd = d => { const k = clamp(d / 85, 0, 1); return MORRO_H * k * k * (3 - 2 * k); };
-function groundH(x, z) { if (!city.morro) return 0; const [d, t] = morroLocal(x, z); if (d <= 0 || Math.abs(t) > MORRO_W + 1) return 0; return morroHd(Math.min(d, MORRO_D + 12)); }
+function groundH(x, z) {
+  let b = 0; if (city.morro) { const [d, t] = morroLocal(x, z); if (d > 0 && Math.abs(t) <= MORRO_W + 1) b = morroHd(Math.min(d, MORRO_D + 12)); }
+  if (city.surf.length) { const s = surfaceH(x, z); if (s != null) return b + s; }
+  return b;
+}
 let _flagT = null;
 function brFlagTex() {
   return _flagT || (_flagT = canvasTex(200, 140, (g, w, h) => {
@@ -4234,8 +4276,8 @@ function buildMorro(sc) {
   const bm = new THREE.InstancedMesh(tri, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }), bunt.length), rot = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), ax === 'x' ? 0 : Math.PI / 2);
   bunt.forEach((p, i) => { bm.setMatrixAt(i, M4.compose(V(p[0], p[1], p[2]), rot, V(1, 1, 1))); bm.setColorAt(i, c.setHex([0x009c3b, 0xffdf00, 0x002776][p[3]])); }); sc.add(bm);
   // placa de entrada e QG da comunidade
-  { const [x, z] = morroWorld(-1, 0), s = textSprite(MORRO_NAME[id].toUpperCase(), { bg: '#15161a', fg: '#ffdf00', size: 46, scale: [9, 1.3, 1], stroke: '#009c3b' }); s.position.set(x, 7.5, z); sc.add(s); }
-  { const [x, z] = morroWorld(10, -5.6), ring = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffdf00, transparent: true, opacity: .8, side: THREE.DoubleSide })); ring.position.set(x, morroHd(10) + 0.15, z); sc.add(ring); city.doors.push({ kind: 'qg', label: 'QG da Comunidade', x, z, ring }); }
+  { const [x, z] = morroWorld(-1, 0), s = textSprite(MORRO_NAME[id].toUpperCase() + ' · TERRITÓRIO DO AJBZ', { bg: '#15161a', fg: '#ffdf00', size: 46, scale: [13, 1.3, 1], stroke: '#009c3b' }); s.position.set(x, 7.5, z); sc.add(s); }
+  { const [x, z] = morroWorld(-3, -9), ring = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffdf00, transparent: true, opacity: .8, side: THREE.DoubleSide })); ring.position.set(x, 0.15, z); sc.add(ring); city.doors.push({ kind: 'qg', label: 'QG da Comunidade', x, z, ring }); }
   city.boca = morroWorld(22, 5.6);
 }
 function updateMorro(dt, t) {
@@ -4274,6 +4316,10 @@ const GUNS = [
 GUNS.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 SLOT_NAMES.gun = 'Armas de fogo';
 const myGun = () => { const it = ITEM[S.equip.gun]; return it && it.gun && it.gun !== 'none' && S.owned.includes(it.id) ? it : null; };
+function nextGun() {
+  const L = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)); if (!L.length) return toast('Você não tem armas de fogo. Compre no Arsenal com tokens.', 'bad');
+  const i = L.findIndex(g => g.id === S.equip.gun), n = L[(i + 1) % L.length]; S.equip.gun = n.id; persist(); netTrack(); toast(`Arma: ${n.name}`); sfx('ui');
+}
 const myHandKind = () => { const g = myGun(); return g ? g.gun : myWpKind(); };
 // prédios novos de cada cidade
 Object.assign(SPECIAL, {
@@ -4319,7 +4365,7 @@ function updateRoleVisibility() {
   if (!city.roles) return;
   const real = {}; for (const id in NET.peers) { const j = NET.peers[id].job; if (j) real[j] = (real[j] || 0) + 1; }
   if (S.shift) real[S.shift] = (real[S.shift] || 0) + 1;
-  for (const role in city.roles) city.roles[role].forEach((o, i) => { o.off = i < (real[role] || 0); const m = o.g || o.m; if (m) m.visible = !o.off; });
+  for (const role in city.roles) city.roles[role].forEach((o, i) => { o.off = i < (real[role] || 0); const m = o.g || o.m; if (m) m.visible = !o.off && !(o.arrestedT > 0); });
   // skatistas de mentira: some um para cada jogador real na cidade (fica no mínimo 2)
   const nReal = Object.keys(NET.peers).length; city.bots.forEach((o, i) => { o.off = i < Math.min(nReal, city.bots.length - 2); o.g.visible = !o.off; });
 }
@@ -4334,7 +4380,7 @@ function updateRoles(dt, t) {
     if (o.off) continue; const g = o.g, dP = Math.hypot(o.x - P.x, o.z - P.z);
     g.userData.lod = Math.hypot(o.x - camera.position.x, o.z - camera.position.z) > 32;
     if (o.fallT > 0) { o.fallT -= dt; animSkater(g, { walk: true, v: 0, fallT: 1 }, t + o.ph0); continue; }
-    o.chase = W > 0 && !P.ride && dP < 34 + W * 8 && !city.interior;
+    o.chase = W > 0 && !isAdm() && !P.ride && dP < 34 + W * 8 && !city.interior && !city.jail;
     if (o.chase) {
       const a = Math.atan2(P.x - o.x, P.z - o.z), sp = P.drive ? 0 : 5.0 + W * 0.3, nx = o.x + Math.sin(a) * sp * dt, nz = o.z + Math.cos(a) * sp * dt;
       if (!collide(nx, nz, 0.3) || inMorro(nx, nz)) { o.x = nx; o.z = nz; } else { o.x += Math.cos(a) * sp * dt; o.z -= Math.sin(a) * sp * dt; }
@@ -4346,20 +4392,24 @@ function updateRoles(dt, t) {
       else { o.u += o.dir * o.spd * dt; const [x, z, h] = pedPos(o); o.x = x; o.z = z; o.h = h; }
       g.position.set(o.x, groundH(o.x, o.z), o.z); g.rotation.y = o.h; animSkater(g, { walk: true, v: o.back ? 2.5 : o.spd, fallT: 0 }, t + o.ph0);
       if (W === 0 && dP > 40) o.back = Math.hypot(pedPos(o)[0] - o.x, pedPos(o)[1] - o.z) > 2;
-      if (dP < 3 && (o.talkCd = (o.talkCd || 0) - dt) <= 0) { o.talkCd = 8; bubble(g, roleSay('policial'), 2.5); }
+      if (dP < 3 && (o.talkCd = (o.talkCd || 0) - dt) <= 0) { o.talkCd = 8; bubble(g, isAdm() ? `Às ordens, senhor ${CHIEF}.` : roleSay('policial'), 2.5); }
     }
     tickBubble(g, dt);
   }
   for (const o of [...city.roles.bombeiro, ...city.thugs]) {
-    if (o.off) continue; const g = o.g, dP = Math.hypot(o.x - P.x, o.z - P.z);
+    if (o.off) continue;
+    if (o.arrestedT > 0) { o.arrestedT -= dt; if (o.arrestedT <= 0) o.g.visible = true; continue; }
+    const g = o.g, dP = Math.hypot(o.x - P.x, o.z - P.z);
     g.userData.lod = Math.hypot(o.x - camera.position.x, o.z - camera.position.z) > 32;
     if (o.fallT > 0) { o.fallT -= dt; g.position.set(o.x, groundH(o.x, o.z), o.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t + o.ph0); if (o.fallT <= 0 && o.cuffed) { o.cuffed = false; } continue; }
+    if (o.role === 'traficante') { if (isAdm()) o.hostT = 0; thugLife(o, dt, t); const ch = chiefNear(o.x, o.z, 14); if (ch && (o.chiefT = (o.chiefT || 0) - dt) <= 0) { o.chiefT = 20; bubble(g, pick(CHIEF_LINES), 3); o.waveT = 2; } }
+    if (o.waveT > 0) o.waveT -= dt;
     const hostile = o.role === 'traficante' && o.hostT > 0; if (hostile) o.hostT -= dt;
     const look = dP < (hostile ? 40 : 10) ? Math.atan2(P.x - o.x, P.z - o.z) : o.h; o.h += Math.atan2(Math.sin(look - o.h), Math.cos(look - o.h)) * (1 - Math.exp(-4 * dt));
     g.position.set(o.x, groundH(o.x, o.z), o.z); g.rotation.y = o.h;
-    animSkater(g, { walk: true, v: 0, fallT: 0, wpHold: o.gun || null, wpProp: hostile ? o.gun : null }, t + o.ph0);
+    animSkater(g, { walk: true, v: 0, fallT: 0, wpHold: o.gun || null, wpProp: hostile ? o.gun : null, smoke: o.smoking > 0 && !hostile, shootUp: o.upT > 0 && !hostile, emote: o.waveT > 0 && !hostile ? 'wave' : null }, t + o.ph0);
     if (o.role === 'traficante') {
-      if (S.shift === 'policial' && dP < 22 && !o.hostT) { o.hostT = 15; bubble(g, 'Sujou! Polícia!', 2); }
+      if (S.shift === 'policial' && !isAdm() && dP < 22 && !o.hostT) { o.hostT = 15; bubble(g, 'Sujou! Polícia!', 2); }
       if (hostile && dP < 38 && !P.drive && !city.interior && P.fallT <= 0 && (o.shotT -= dt) <= 0) {
         o.shotT = rand(1.2, 2.4); gunFx(o.x, groundH(o.x, o.z) + 1.4, o.z, P.x, P.y + 1.2, P.z, o.gun); sfx('tiro');
         if (Math.random() < 0.33) { P.fallT = 3; P.v = 0; toast('Você foi atingido e caiu! Saia da linha de tiro.', 'bad'); playerFell('tiro'); if (S.mission && S.mission.type === 'job_corre') failMission('derrubaram você e levaram a encomenda.'); }
@@ -4374,7 +4424,7 @@ function updateRoles(dt, t) {
 
 /* ---------- procurado (estrelas) e prisão ---------- */
 function addWanted(n, why) {
-  if (S.shift === 'policial') return;
+  if (S.shift === 'policial' || isAdm()) return;
   const before = P.wanted || 0; P.wanted = clamp(before + n, 0, 3); P.wantedCalm = 45;
   if (P.wanted > before) { toast(`Procurado ${'★'.repeat(P.wanted)}: ${why}`, 'bad'); sfx('hit'); }
 }
@@ -4385,15 +4435,8 @@ function updateWanted(dt) {
   const el = $('h-wanted'); if (el) { el.hidden = !P.wanted; el.textContent = '★'.repeat(P.wanted || 0); }
 }
 function getArrested(by) {
-  if (city.arrestT > 0) return; city.arrestT = 3;
-  const fine = Math.min(2500, Math.round(S.coins * 0.15));
-  if (S.mission && S.mission.type === 'job_corre') { S.mission = null; P.carry = null; rebuildMissionObjs(); renderMissionBox(); }
-  if (P.drive) exitVehicle(true); if (P.ride) endRide(true);
-  fadeTo(() => {
-    const d = city.doors.find(d => d.kind === 'delegacia'); if (d) { P.x = d.x; P.z = d.z + 3; } P.y = 0; P.v = 0; P.wanted = 0; city.camSnap = true;
-    S.coins = Math.max(0, S.coins - fine); persist(); updateHUD();
-    toast(`Você foi preso por ${by}. Multa de $ ${fmt(fine)}.`, 'bad'); P.fallT = 2;
-  });
+  if (city.arrestT > 0 || P.jailT > 0 || isAdm()) return; city.arrestT = 3;
+  const stars = Math.max(1, P.wanted || 1); jailPlayer(25 + 25 * stars, by);
 }
 
 /* ---------- armas de fogo ---------- */
@@ -4404,11 +4447,11 @@ function gunFx(x0, y0, z0, x1, y1, z1, kind) {
   city.fx.push({ m: ln, vx: 0, vy: 0, vz: 0, life: 0.08, max: 0.08, line: true }, { m: fl, vx: 0, vy: 0, vz: 0, life: 0.07, max: 0.07 });
 }
 function shootGun(G) {
-  if ((P.wpCd || 0) > 0 || P.drive || P.ride) return; P.wpCd = G.cd; P.wpShowT = 0.8; P.emote = null;
+  if ((P.wpCd || 0) > 0 || P.drive || P.ride || P.jailT > 0) return; P.wpCd = G.cd; P.wpShowT = 0.8; P.emote = null;
   const fx = Math.sin(P.h), fz = Math.cos(P.h), cone = G.cone || 0.9;
   let best = null, bd = G.rng, kind = null;
   const consider = (o, k) => { if (!o || o.off || o.fallT > 0) return; const dx = o.x - P.x, dz = o.z - P.z, d = Math.hypot(dx, dz); if (d < bd && d > 0.4 && (dx * fx + dz * fz) / d > cone) { bd = d; best = o; kind = k; } };
-  for (const o of city.bots) consider(o, 'bot'); for (const o of city.peds) consider(o, 'ped'); for (const o of city.cops || []) consider(o, 'cop'); for (const o of city.thugs || []) consider(o, 'thug');
+  for (const o of city.bots) consider(o, 'bot'); for (const o of city.peds) consider(o, 'ped'); for (const o of city.cops || []) consider(o, 'cop'); for (const o of city.thugs || []) if (!(o.arrestedT > 0)) consider(o, 'thug'); for (const r of city.robbers || []) if (r.st !== 'preso') consider(r, 'robber');
   for (const id in NET.peers) { const p = NET.peers[id]; if (p.seen && !(p.t && p.t.vh)) consider({ x: p.x, z: p.z, p, fallT: 0 }, 'peer'); }
   const y0 = P.y + 1.35, tx = best ? best.x : P.x + fx * G.rng, tz = best ? best.z : P.z + fz * G.rng;
   gunFx(P.x + fx * 0.6, y0, P.z + fz * 0.6, tx, groundH(tx, tz) + 1.1, tz, G.gun); sfx(G.gun === 'taser' ? 'spray' : 'tiro');
@@ -4420,6 +4463,7 @@ function shootGun(G) {
     toast(`Derrubou ${best.p.name}!`); return;
   }
   best.fallT = G.knock + (kind === 'thug' ? 2 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2);
+  if (kind === 'robber') { best.fallT = G.knock + 3; return; }
   if (kind === 'cop') addWanted(2, 'atacou um policial');
   else if (kind === 'thug') { if (S.shift !== 'policial') addWanted(1, 'tiroteio no morro'); }
   else if (!(S.shift === 'policial')) addWanted(1, 'atacou um pedestre');
@@ -4515,7 +4559,7 @@ async function gangCreate() {
 function gangJoin(g) { if (S.shift === 'policial') return toast('Policial em serviço não entra em facção.', 'bad'); S.policeOk = false; S.gang = { id: g.id, n: g.nome, e: g.emoji, c: g.cor, own: NET.user && g.dono === NET.user.id }; persist(); netTrack(); setTag(city.player, myTagText(), '#ffcf3a'); toast(`Você entrou no grupo ${g.emoji} ${g.nome}.`, 'good'); renderPanel(); }
 function gangLeave() { if (S.shift === 'traficante') endShift(); S.gang = null; persist(); netTrack(); setTag(city.player, myTagText(), '#ffcf3a'); toast('Você saiu do grupo.'); renderPanel(); }
 async function gangDelete() { const g = S.gang; if (!g || !g.own) return; try { await NET.sb.from('grupos').delete().eq('id', g.id); } catch (e) { } gangLeave(); gangsFetch(); }
-const myTagText = () => (S.crew ? `[${S.crew.name}] ` : '') + (S.gang ? S.gang.e + ' ' : '') + S.name;
+const myTagText = () => (isAdm() ? '👑 ' : '') + (S.crew ? `[${S.crew.name}] ` : '') + (S.gang ? S.gang.e + ' ' : '') + S.name + (isAdm() ? ' · Chefe' : '');
 function markTex(g) {
   return canvasTex(256, 128, (c, w, h) => {
     c.globalAlpha = 0.9; c.fillStyle = g.c; c.font = '64px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(g.e, 52, 62);
@@ -4678,6 +4722,328 @@ function missionBoxNew(m) {
   if (m.type === 'job_pm') return m.got < m.pts.length ? `Ponto de patrulha ${m.got + 1} / ${m.pts.length}` : 'Aborde o suspeito';
   if (m.type === 'job_corre') return m.stage === 0 ? 'Pegue a encomenda na boca do morro' : 'Entregue sem ser preso';
   return '';
+}
+
+/* personagens fora da tela ou longe não são desenhados (os modelos 3D são pesados e não somem sozinhos) */
+const _cd = new THREE.Vector3();
+function cullChars() {
+  camera.getWorldDirection(_cd); const cx = camera.position.x, cz = camera.position.z, fx = _cd.x, fz = _cd.z, fl = Math.hypot(fx, fz) || 1;
+  const vis = (x, z, base) => { if (!base) return false; const dx = x - cx, dz = z - cz, d = Math.hypot(dx, dz); if (d < 10) return true; if (d > 80) return false; return (dx * fx + dz * fz) / (fl * d) > 0.3; };
+  for (const o of city.bots) o.g.visible = vis(o.x, o.z, !o.off);
+  for (const o of city.peds) o.g.visible = vis(o.x, o.z, !o.off);
+  for (const o of city.cops || []) o.g.visible = vis(o.x, o.z, !o.off);
+  for (const o of city.thugs || []) o.g.visible = vis(o.x, o.z, !o.off && !(o.arrestedT > 0));
+  if (city.roles) for (const o of city.roles.bombeiro) o.g.visible = vis(o.x, o.z, !o.off);
+  for (const r of city.robbers || []) r.g.visible = vis(r.x, r.z, r.st !== 'gone');
+}
+/* =========================================================
+   PISTAS DE SKATE DE VERDADE: rampas, quarter pipes, half-pipe, bowl e corrimãos com física
+   (sobe e desce com a gravidade, beirada lança no ar, aéreo no vert e grind no corrimão)
+   ========================================================= */
+const CHIEF = 'Ajbz';
+const PARK_SIDE = { sp: ['x', -1], rj: ['x', 1], ssa: ['x', -1] };
+const PARK_D = 72, PARK_W = 46;
+function parkLocal(x, z, id) { const [ax, s] = PARK_SIDE[id || cityId()] || PARK_SIDE.sp; return ax === 'x' ? [s * x - 111, z] : [s * z - 111, x]; }
+function parkWorld(d, t, id) { const [ax, s] = PARK_SIDE[id || cityId()] || PARK_SIDE.sp; return ax === 'x' ? [s * (d + 111), t] : [t, s * (d + 111)]; }
+function inPark(x, z, m = 0) { if (!city.park) return false; const [d, t] = parkLocal(x, z); return d > -6 && d < PARK_D - m && Math.abs(t) < PARK_W - m; }
+// ângulo (rotation.y) que aponta para o sentido +d e +t do parque
+const parkRotD = () => { const [ax, s] = PARK_SIDE[cityId()]; return ax === 'x' ? s * Math.PI / 2 : (s > 0 ? 0 : Math.PI); };
+const parkRotT = () => { const [ax, s] = PARK_SIDE[cityId()]; return ax === 'x' ? 0 : Math.PI / 2; };
+/* altura de uma superfície no ponto (coordenadas locais u = largura, v = comprimento) */
+function surfLocal(f, x, z) { const dx = x - f.cx, dz = z - f.cz, c = Math.cos(f.rot), s = Math.sin(f.rot); return [dx * c - dz * s, dx * s + dz * c]; }
+function surfH(f, x, z) {
+  if (x < f.bb[0] || x > f.bb[1] || z < f.bb[2] || z > f.bb[3]) return null;
+  if (f.type === 'bowl') { const r = Math.hypot(x - f.cx, z - f.cz); if (r > f.r0 + f.D) return null; if (r <= f.r0) return -f.D; const k = r - f.r0; return -f.D + (f.D - Math.sqrt(Math.max(0, f.D * f.D - k * k))); }
+  const [u, v] = surfLocal(f, x, z); if (Math.abs(u) > f.w / 2) return null;
+  if (f.type === 'wedge') { if (Math.abs(v) > f.l / 2) return null; return f.h * (v + f.l / 2) / f.l; }
+  if (f.type === 'box') { if (Math.abs(v) > f.l / 2) return null; return f.h; }
+  if (f.type === 'qp') { if (v < 0 || v > f.vt + f.deck) return null; if (v >= f.vt) return f.H; return f.R - Math.sqrt(Math.max(0, f.R * f.R - v * v)); }
+  return null;
+}
+function addSurf(f) {
+  if (f.type === 'qp') f.vt = Math.sqrt(f.R * f.R - (f.R - f.H) * (f.R - f.H));
+  const len = f.type === 'qp' ? f.vt + f.deck : f.l || 0, ext = f.type === 'bowl' ? f.r0 + f.D : Math.hypot(f.w / 2, len) + 0.5;
+  f.bb = [f.cx - ext - (f.type === 'qp' ? len : 0), f.cx + ext + (f.type === 'qp' ? len : 0), f.cz - ext - (f.type === 'qp' ? len : 0), f.cz + ext + (f.type === 'qp' ? len : 0)];
+  city.surf.push(f); return f;
+}
+function surfaceH(x, z) {
+  let h = null; for (const f of city.surf) { const k = surfH(f, x, z); if (k == null) continue; if (f.type === 'bowl') return k; if (h == null || k > h) h = k; }
+  return h;
+}
+/* textura de concreto pintado com desenhos (grafite, estrelas, bandeira, raios) */
+function paintedTex(seed, w = 512, h = 512, base = '#b8b2a6') {
+  return canvasTex(w, h, (g) => {
+    const r = mulberry32(seed); g.fillStyle = base; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(0,0,0,${r() * 0.06})`; g.fillRect(r() * w, r() * h, 3, 3); }
+    const cols = ['#ff4f7b', '#ffcf3a', '#4fc3ff', '#3ddc84', '#a66bff', '#ff7a1a', '#15161a', '#ffffff'];
+    for (let i = 0; i < 9; i++) {
+      const x = r() * w, y = r() * h, s = 30 + r() * 90, c = cols[Math.floor(r() * cols.length)], k = Math.floor(r() * 6);
+      g.save(); g.translate(x, y); g.rotate(r() * TAU); g.fillStyle = c; g.strokeStyle = '#15161a'; g.lineWidth = 5;
+      if (k === 0) { g.beginPath(); for (let j = 0; j < 10; j++) { const a = j * Math.PI / 5, rr = j % 2 ? s * 0.4 : s; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } g.closePath(); g.fill(); g.stroke(); }
+      else if (k === 1) { g.beginPath(); g.arc(0, 0, s * 0.6, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#15161a'; g.beginPath(); g.arc(-s * 0.2, -s * 0.1, s * 0.08, 0, TAU); g.arc(s * 0.2, -s * 0.1, s * 0.08, 0, TAU); g.fill(); g.beginPath(); g.arc(0, s * 0.05, s * 0.3, 0.2, Math.PI - 0.2); g.stroke(); }
+      else if (k === 2) { g.beginPath(); g.moveTo(-s * 0.2, -s); g.lineTo(s * 0.35, -s * 0.1); g.lineTo(0, -s * 0.05); g.lineTo(s * 0.2, s); g.lineTo(-s * 0.35, s * 0.05); g.lineTo(0, 0); g.closePath(); g.fill(); g.stroke(); }
+      else if (k === 3) { g.fillStyle = '#009c3b'; g.fillRect(-s, -s * 0.7, s * 2, s * 1.4); g.fillStyle = '#ffdf00'; g.beginPath(); g.moveTo(-s * 0.85, 0); g.lineTo(0, -s * 0.6); g.lineTo(s * 0.85, 0); g.lineTo(0, s * 0.6); g.fill(); g.fillStyle = '#002776'; g.beginPath(); g.arc(0, 0, s * 0.3, 0, TAU); g.fill(); }
+      else if (k === 4) { g.font = `${Math.round(s * 0.7)}px Bungee, Impact`; g.textAlign = 'center'; g.lineWidth = 8; const t = ['SK8', 'ROLÊ', 'FLIP', 'BR', 'VAI', 'GRIND'][Math.floor(r() * 6)]; g.strokeText(t, 0, 0); g.fillText(t, 0, 0); }
+      else { for (let j = 0; j < 7; j++) { g.beginPath(); g.arc((r() - 0.5) * s, (r() - 0.5) * s, 6 + r() * s * 0.3, 0, TAU); g.fill(); } }
+      g.restore();
+    }
+  });
+}
+let _rampMats = null;
+function rampMats() { if (_rampMats) return _rampMats; _rampMats = [0, 1, 2, 3].map(i => { const t = paintedTex(31 + i * 7, 512, 512); t.wrapS = t.wrapT = THREE.RepeatWrapping; return new THREE.MeshLambertMaterial({ map: t }); }); return _rampMats; }
+function uvScale(geo, k) { const uv = geo.attributes.uv; if (!uv) return geo; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * k, uv.getY(i) * k); return geo; }
+/* malha de um quarter pipe (perfil curvo + deck + coping de metal) */
+function qpMesh(f, mat) {
+  const sh = new THREE.Shape(); sh.moveTo(0, 0); for (let i = 1; i <= 16; i++) { const v = f.vt * i / 16; sh.lineTo(v, f.R - Math.sqrt(Math.max(0, f.R * f.R - v * v))); }
+  sh.lineTo(f.vt + f.deck, f.H); sh.lineTo(f.vt + f.deck, 0); sh.lineTo(0, 0);
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: f.w, bevelEnabled: false, curveSegments: 4 }); geo.translate(0, 0, -f.w / 2); geo.rotateY(-Math.PI / 2); uvScale(geo, 0.22);
+  const g = new THREE.Group(), m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; g.add(m);
+  const cop = new THREE.Mesh(CYL(0.06, 0.06, f.w, 8), std(0xcfd3d8, 0.3, 0.8)); cop.rotation.z = Math.PI / 2; cop.position.set(0, f.H, f.vt); g.add(cop);
+  g.position.set(f.cx, 0, f.cz); g.rotation.y = f.rot; return g;
+}
+function wedgeMeshUV(w, l, h, mat) { const geo = wedgeGeo(w, l, h); const p = geo.attributes.position, uv = []; for (let i = 0; i < p.count; i++) uv.push(p.getX(i) * 0.25, (p.getZ(i) + p.getY(i)) * 0.25); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; return m; }
+function addRail(sc, x0, z0, x1, z1, h, ledge) {
+  const L = Math.hypot(x1 - x0, z1 - z0), a = Math.atan2(x1 - x0, z1 - z0), g = new THREE.Group();
+  if (ledge) { const b = new THREE.Mesh(boxGeo(0.7, h, L), new THREE.MeshLambertMaterial({ map: rampMats()[1].map })); b.position.y = h / 2; g.add(b); const e = new THREE.Mesh(boxGeo(0.08, 0.06, L), std(0xcfd3d8, 0.3, 0.8)); e.position.set(0.33, h, 0); g.add(e); }
+  else { const r = new THREE.Mesh(CYL(0.05, 0.05, L, 8), std(0xffcf3a, 0.35, 0.6)); r.rotation.x = Math.PI / 2; r.position.y = h; g.add(r); for (const k of [-0.45, 0, 0.45]) { const p = new THREE.Mesh(CYL(0.04, 0.04, h, 6), std(0x6d717a, 0.4, 0.6)); p.position.set(0, h / 2, k * L); g.add(p); } }
+  g.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); g.rotation.y = a; g.traverse(o => { if (o.isMesh) o.castShadow = true; }); sc.add(g);
+  city.rails.push({ x0, z0, x1, z1, h: h + (ledge ? 0 : 0.05), L, ledge });
+  if (ledge) addSurf({ type: 'box', cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, rot: a, w: 0.7, l: L, h });
+}
+/* skatepark grande ao lado da cidade */
+function buildSkatepark(sc) {
+  city.park = true; const id = cityId(), rd = parkRotD(), rt = parkRotT(), W = (d, t) => parkWorld(d, t);
+  const M = rampMats();
+  // piso pintado (com o buraco do bowl)
+  const bowlC = [50, -24], bowl = { r0: 4.5, D: 3 };
+  const corners = [[-3, -PARK_W], [PARK_D, -PARK_W], [PARK_D, PARK_W], [-3, PARK_W]].map(([d, t]) => W(d, t));
+  const shp = new THREE.Shape(); corners.forEach(([x, z], i) => i ? shp.lineTo(x, -z) : shp.moveTo(x, -z));
+  const [bx, bz] = W(...bowlC), hole = new THREE.Path(); hole.absarc(bx, -bz, bowl.r0 + bowl.D, 0, TAU, true); shp.holes.push(hole);
+  const fg = new THREE.ShapeGeometry(shp, 40); const pos = fg.attributes.position, uv = [];
+  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = -pos.getY(i), [d, t] = parkLocal(x, z); uv.push((d + 3) / (PARK_D + 3), (t + PARK_W) / (2 * PARK_W)); }
+  fg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  const floorT = canvasTex(1024, 1024, (g, w, h) => {
+    g.fillStyle = '#9d978c'; g.fillRect(0, 0, w, h); const r = mulberry32(id.length * 11);
+    g.strokeStyle = 'rgba(0,0,0,.12)'; g.lineWidth = 2; for (let k = 0; k < w; k += 46) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); }
+    const art = paintedTex(id.length * 5 + 3, 512, 512, 'rgba(0,0,0,0)').image; for (let i = 0; i < 6; i++) { g.globalAlpha = 0.85; g.drawImage(art, r() * w * 0.7, r() * h * 0.7, 300 + r() * 200, 300 + r() * 200); }
+    g.globalAlpha = 1; g.save(); g.translate(w * 0.12, h / 2); g.rotate(-Math.PI / 2); g.font = '96px Bungee, Impact'; g.textAlign = 'center'; g.lineWidth = 14; g.strokeStyle = '#15161a'; g.fillStyle = '#ffcf3a'; g.strokeText('ROLÊ SKATEPARK', 0, 30); g.fillText('ROLÊ SKATEPARK', 0, 30); g.restore();
+  });
+  const floor = new THREE.Mesh(fg, new THREE.MeshLambertMaterial({ map: floorT })); floor.rotation.x = -Math.PI / 2; floor.position.y = 0.03; floor.receiveShadow = true; sc.add(floor);
+  // bowl
+  addSurf({ type: 'bowl', cx: bx, cz: bz, r0: bowl.r0, D: bowl.D, rot: 0, w: 0 });
+  const prof = [new THREE.Vector2(0, -bowl.D)]; prof.push(new THREE.Vector2(bowl.r0, -bowl.D)); for (let i = 1; i <= 14; i++) { const k = bowl.D * i / 14; prof.push(new THREE.Vector2(bowl.r0 + k, -bowl.D + (bowl.D - Math.sqrt(bowl.D * bowl.D - k * k)))); }
+  const bowlT = paintedTex(77, 512, 512, '#6fb6d8'); bowlT.wrapS = bowlT.wrapT = THREE.RepeatWrapping; bowlT.repeat.set(4, 1);
+  const bm = new THREE.Mesh(new THREE.LatheGeometry(prof, 48), new THREE.MeshLambertMaterial({ map: bowlT, side: THREE.DoubleSide })); bm.position.set(bx, 0.02, bz); bm.receiveShadow = true; sc.add(bm);
+  const cop = new THREE.Mesh(new THREE.TorusGeometry(bowl.r0 + bowl.D, 0.07, 6, 64), std(0xcfd3d8, 0.3, 0.8)); cop.rotation.x = Math.PI / 2; cop.position.set(bx, 0.05, bz); sc.add(cop);
+  // half-pipe (paredes viradas uma para a outra no sentido t)
+  for (const [tc, dir] of [[10, -1], [20, 1]]) { const [x, z] = W(36, tc), f = addSurf({ type: 'qp', cx: x, cz: z, rot: rt + (dir > 0 ? 0 : Math.PI), w: 32, R: 3.4, H: 3.06, deck: 1.8 }); sc.add(qpMesh(f, M[0])); }
+  // quarter pipe no fundo
+  { const [x, z] = W(64, 0), f = addSurf({ type: 'qp', cx: x, cz: z, rot: rd, w: 80, R: 2.8, H: 2.5, deck: 1.2 }); sc.add(qpMesh(f, M[1])); }
+  // funbox com duas rampas
+  { const [x, z] = W(26, -22); const f = addSurf({ type: 'box', cx: x, cz: z, rot: rd, w: 6, l: 4, h: 0.9 }); const b = new THREE.Mesh(boxGeo(6, 0.9, 4), M[2]); b.position.set(x, 0.45, z); b.rotation.y = rd; b.castShadow = b.receiveShadow = true; sc.add(b);
+    for (const [dd, r] of [[26 - 3.5, rd], [26 + 3.5, rd + Math.PI]]) { const [wx, wz] = W(dd, -22); addSurf({ type: 'wedge', cx: wx, cz: wz, rot: r, w: 6, l: 3, h: 0.9 }); const m = wedgeMeshUV(6, 3, 0.9, M[3]); m.position.set(wx, 0, wz); m.rotation.y = r; sc.add(m); } }
+  // kickers soltos
+  for (const [dd, tt, h] of [[10, -34, 1.0], [10, 34, 1.2], [44, 38, 0.8]]) { const [x, z] = W(dd, tt); addSurf({ type: 'wedge', cx: x, cz: z, rot: rd, w: 3.5, l: 3, h }); const m = wedgeMeshUV(3.5, 3, h, M[(dd + tt) & 3]); m.position.set(x, 0, z); m.rotation.y = rd; sc.add(m); }
+  // corrimãos e ledges
+  { const a = W(8, -6), b = W(20, -6); addRail(sc, a[0], a[1], b[0], b[1], 0.55); }
+  { const a = W(34, -38), b = W(46, -38); addRail(sc, a[0], a[1], b[0], b[1], 0.6); }
+  { const a = W(8, 4), b = W(18, 4); addRail(sc, a[0], a[1], b[0], b[1], 0.45, true); }
+  // muretas grafitadas, postes e placa
+  const wallM = new THREE.MeshLambertMaterial({ color: 0xc9c2b4 });
+  for (const [d0, t0, d1, t1] of [[PARK_D, -PARK_W, PARK_D, PARK_W], [-3, -PARK_W, PARK_D, -PARK_W], [-3, PARK_W, PARK_D, PARK_W]]) {
+    const [x0, z0] = W(d0, t0), [x1, z1] = W(d1, t1), L = Math.hypot(x1 - x0, z1 - z0), m = new THREE.Mesh(boxGeo(0.4, 1.4, L), wallM); m.position.set((x0 + x1) / 2, 0.7, (z0 + z1) / 2); m.rotation.y = Math.atan2(x1 - x0, z1 - z0); sc.add(m);
+    for (let k = 4; k < L - 4; k += 9) { const u = k / L, px = lerp(x0, x1, u), pz = lerp(z0, z1, u), gm = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.3), new THREE.MeshLambertMaterial({ map: graffitiTex(Math.floor(k / 9) % 6), transparent: true })); gm.position.set(px, 0.72, pz); gm.rotation.y = m.rotation.y + Math.PI / 2; const nx = Math.sin(gm.rotation.y), nz = Math.cos(gm.rotation.y), [dc] = parkLocal(px + nx, pz + nz); if (dc > PARK_D - 0.1 || Math.abs(parkLocal(px + nx, pz + nz)[1]) > PARK_W) gm.rotation.y += Math.PI; gm.position.x += Math.sin(gm.rotation.y) * 0.22; gm.position.z += Math.cos(gm.rotation.y) * 0.22; sc.add(gm); }
+  }
+  for (const [dd, tt] of [[5, -40], [5, 40], [40, -44], [40, 44], [68, -30], [68, 30]]) { const [x, z] = W(dd, tt), p = new THREE.Mesh(CYL(0.12, 0.15, 8, 6), lam(0x3b3e46)); p.position.set(x, 4, z); sc.add(p); const hd = new THREE.Mesh(boxGeo(0.8, 0.25, 0.8), new THREE.MeshBasicMaterial({ color: 0xfff2c4 })); hd.position.set(x, 8, z); sc.add(hd); }
+  { const [x, z] = W(-2, 0), s = textSprite('ROLÊ SKATEPARK', { bg: '#ff4f7b', fg: '#15161a', size: 60, scale: [10, 1.8, 1], stroke: '#ffcf3a' }); s.position.set(x, 6.5, z); sc.add(s); }
+}
+/* praça central: rampas viram superfícies de verdade e ganham desenhos */
+function plazaSurf(x, z, rot, w, l, h) { addSurf({ type: 'wedge', cx: x, cz: z, rot, w, l, h }); }
+function plazaQP(sc, side) {
+  const f = { type: 'qp', R: 2.6, H: 2.3, deck: 0.5, w: 10, rot: side < 0 ? -Math.PI / 2 : Math.PI / 2 }; f.vt = Math.sqrt(f.R * f.R - (f.R - f.H) ** 2);
+  f.cx = side < 0 ? -13 + f.vt + f.deck : 13 - f.vt - f.deck; f.cz = 0; addSurf(f); sc.add(qpMesh(f, rampMats()[side < 0 ? 2 : 3]));
+}
+function groundAt(x, z) { const s = city.surf && city.surf.length ? surfaceH(x, z) : null; return s == null ? null : s; }
+/* física do skate nas superfícies: chamado depois de mover em x/z */
+function skateSurf(dt, ox, oz, driving) {
+  if (driving || P.grind || P.air) return;
+  const gyN = groundH(P.x, P.z), step = Math.hypot(P.x - ox, P.z - oz), fx = Math.sin(P.h), fz = Math.cos(P.h);
+  const sl = (groundH(P.x + fx * 0.12, P.z + fz * 0.12) - groundH(P.x - fx * 0.12, P.z - fz * 0.12)) / 0.24, ss = step > 1e-3 ? (gyN - P.y) / step : 0;
+  if (!P.onBoard) { if (sl > 1.4 && ss > 0.8) { P.x = ox; P.z = oz; P.v *= 0.3; } return; }
+  P.onSurf = inPark(P.x, P.z) || (Math.abs(P.x) < 13 && Math.abs(P.z) < 13) || (city.surf.length && surfaceH(P.x, P.z) != null);
+  // o chão sumiu na frente (fim da rampa, borda do bowl, fim do deck): voa
+  const slOld = (groundH(ox + fx * 0.12, oz + fz * 0.12) - groundH(ox - fx * 0.12, oz - fz * 0.12)) / 0.24;
+  if (gyN < P.y + Math.min(0, slOld) * step - 0.25) { const a = Math.atan(Math.max(0, P.surfS || 0)); P.air = true; P.airT = 0; P.vy = a > 0.15 ? P.v * Math.sin(a) * 1.15 + 1 : 0; P.v *= Math.cos(a); P.surfS = 0; if (a > 0.15) sfx('jump'); return; }
+  // parede quase vertical (quarter pipe, half-pipe, bowl): aéreo e volta de frente para baixo
+  if ((sl > 1.8 || ss > 1.3) && P.v > 2.8) { P.air = true; P.airT = 0; P.vy = Math.min(11, P.v * 1.05 + 1); P.v = 0; P.vertAir = true; P.y = gyN; P.surfS = 0; sfx('jump'); return; }
+  if (Math.abs(sl) > 0.01) P.v -= 9.8 * Math.sin(Math.atan(clamp(sl, -4, 4))) * dt * 1.15;
+  // perdeu velocidade na subida: volta de ré (fakie)
+  if (sl > 0.25 && P.v < 0.4) { P.h += Math.PI; P.v = 0.8; P.flipT = 0.9; }
+  P.surfS = sl;
+}
+/* grind: cai em cima de um corrimão/ledge com o skate e desliza */
+function tryGrind() {
+  if (!P.onBoard || !P.air || P.vy > 0 || P.grind) return;
+  for (const r of city.rails) {
+    const dx = r.x1 - r.x0, dz = r.z1 - r.z0, u = ((P.x - r.x0) * dx + (P.z - r.z0) * dz) / (r.L * r.L); if (u < 0.02 || u > 0.98) continue;
+    const px = r.x0 + dx * u, pz = r.z0 + dz * u, lat = Math.hypot(P.x - px, P.z - pz); if (lat > 0.55 || P.y < r.h - 0.25 || P.y > r.h + 0.6) continue;
+    const dir = Math.sin(P.h) * dx + Math.cos(P.h) * dz >= 0 ? 1 : -1;
+    P.grind = { r, u, dir, t: 0 }; P.air = false; P.trick = null; P.vy = 0; P.y = r.h; P.v = Math.max(P.v, 4.5); P.h = Math.atan2(dx * dir, dz * dir); P.x = px; P.z = pz; sfx('land'); return;
+  }
+}
+function grindTick(dt) {
+  const G = P.grind, r = G.r; G.t += dt; G.u += G.dir * P.v * dt / r.L; P.v = Math.max(3, P.v - 0.6 * dt);
+  P.x = r.x0 + (r.x1 - r.x0) * G.u; P.z = r.z0 + (r.z1 - r.z0) * G.u; P.y = r.h; if (Math.random() < dt * 10) sfx('stairs');
+  const off = G.u < 0 || G.u > 1, jump = tap('jump');
+  if (off || jump) {
+    P.grind = null; P.air = true; P.airT = 0; P.vy = jump ? 6.5 : 2;
+    const name = r.ledge ? (G.t > 1 ? 'Nosegrind no Ledge' : '5-0 no Ledge') : (G.t > 1 ? 'Boardslide' : '50-50 Grind'), pts = Math.round(80 + G.t * 120);
+    const coins = city.contest ? 0 : earn(Math.round(pts / 25)); addXP(Math.max(2, Math.round(pts / 40))); trickPop(name, pts, coins ? `$ ${coins}` : ''); if (city.contest) city.contest.score += pts; S.stats.tricks++; evProgress('trick', 1); missionEvent('trick', 'grind');
+  }
+}
+
+/* =========================================================
+   MORRO: só moradores sobem; o Ajbz é o chefe e todo mundo respeita
+   ========================================================= */
+const canEnterMorro = () => isAdm() || !!S.gang || !!(S.morador || {})[cityId()] || S.shift === 'policial';
+function morroGate(dt) {
+  if (!city.morro || canEnterMorro()) return;
+  const [d, t] = morroLocal(P.x, P.z); if (d <= 1.2 || Math.abs(t) > MORRO_W) return;
+  const [x, z] = morroWorld(0.9, t); P.x = x; P.z = z; P.v = 0; if (P.drive) P.v = -2;
+  if ((city.gateT = (city.gateT || 0) - dt) <= 0) {
+    city.gateT = 4; const th = (city.thugs || []).filter(o => !o.off).sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z))[0];
+    if (th) bubble(th.g, pick(['Aqui só morador, parceiro! Volta.', 'Ê, ê! Daqui não passa.', `Só com a benção do ${CHIEF}.`]), 3);
+    toast('Só moradores sobem o morro. Vire morador no QG da Comunidade (na entrada).', 'bad');
+  }
+}
+const CHIEF_LINES = [`Salve, chefe ${CHIEF}!`, 'O patrão chegou!', `Respeito, ${CHIEF}!`, 'Tudo nosso, chefe!', `Bença, ${CHIEF}!`];
+const RESPECT_LINES = [`Salve, ${CHIEF}!`, 'E aí, chefe!', 'Respeito, patrão!', `Olha o ${CHIEF} aí!`, 'Boa, chefe!'];
+/* algum jogador real que é o chefe por perto (para os figurantes cumprimentarem) */
+function chiefNear(x, z, r) { if (isAdm() && Math.hypot(P.x - x, P.z - z) < r) return { x: P.x, z: P.z }; for (const id in NET.peers) { const p = NET.peers[id]; if (p.adm && p.seen && Math.hypot(p.x - x, p.z - z) < r) return p; } return null; }
+
+/* =========================================================
+   TRAFICANTES: fumando, atirando para cima de vez em quando
+   ========================================================= */
+function thugLife(o, dt, t) {
+  const u = o.g.userData;
+  if ((o.smokeT = (o.smokeT ?? rand(2, 9)) - dt) <= 0) { o.smoking = o.smoking ? 0 : rand(2.2, 3.5); o.smokeT = o.smoking || rand(5, 11); if (!o.smoking) o.puffT = 0.4; }
+  if (o.smoking) { o.smoking -= dt; if (o.smoking <= 0) { o.smoking = 0; o.puffT = 0.3; } }
+  if (o.puffT > 0) { o.puffT -= dt; if (Math.random() < dt * 18) { const hb = u.R && u.R.B.Head, hp = hb ? hb.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(o.x, groundH(o.x, o.z) + 1.6, o.z); const m = new THREE.Mesh(SPH(0.07 + Math.random() * 0.06, 6, 5), new THREE.MeshBasicMaterial({ color: 0xd8dde3, transparent: true, opacity: 0.7, depthWrite: false })); m.position.set(hp.x + Math.sin(o.h) * 0.18, hp.y + 0.02, hp.z + Math.cos(o.h) * 0.18); city.scene.add(m); city.fx.push({ m, vx: Math.sin(o.h) * 0.4 + rand(-0.1, 0.1), vy: 0.35, vz: Math.cos(o.h) * 0.4 + rand(-0.1, 0.1), life: 2.2, max: 2.2 }); } }
+  // cigarro na mão esquerda
+  if (u.R && u.R.B.LeftHand && !u.cig) { const hb = u.R.B.LeftHand, ws = hb.getWorldScale(new THREE.Vector3()).x, c = new THREE.Group(); const b = new THREE.Mesh(CYL(0.006, 0.006, 0.07, 6), lam(0xf4f2ec)); b.rotation.x = Math.PI / 2; c.add(b); const e = new THREE.Mesh(SPH(0.008, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff5a1a })); e.position.z = 0.036; c.add(e); c.scale.setScalar(1 / ws); c.position.set(0.02 / ws, 0.09 / ws, 0.03 / ws); hb.add(c); u.cig = c; }
+  if (u.cig) u.cig.visible = !!o.smoking || o.puffT > 0;
+  // rajada para o alto
+  if (o.gun === 'fuzil' && !o.hostT && (o.upCd = (o.upCd ?? rand(15, 45)) - dt) <= 0) { o.upCd = rand(25, 60); o.upT = 1.6; o.upShots = 3; }
+  if (o.upT > 0) {
+    o.upT -= dt;
+    if (o.upShots > 0 && o.upT < 1.2 - (3 - o.upShots) * 0.25) { o.upShots--; const y = groundH(o.x, o.z); gunFx(o.x + Math.sin(o.h) * 0.2, y + 2.1, o.z + Math.cos(o.h) * 0.2, o.x + rand(-2, 2), y + 40, o.z + rand(-2, 2), 'fuzil'); if (Math.hypot(o.x - P.x, o.z - P.z) < 60) sfx('tiro'); }
+    if (o.upShots === 0 && !o.saidUp) { o.saidUp = true; bubble(o.g, pick(['Tá tudo dominado!', 'É nóis que manda!', `Salve, ${CHIEF}!`]), 2.5); }
+  } else o.saidUp = false;
+}
+
+/* =========================================================
+   ASSALTOS: o jogador pode assaltar (com arma) e assaltantes de mentira roubam pela cidade
+   ========================================================= */
+function robNpc(o) {
+  if (o.robbedT > 0) return toast('Essa pessoa já foi assaltada.', 'bad');
+  o.robbedT = 60; const amt = Math.round(rand(40, 220)); earn(amt); addWanted(2, 'assalto à mão armada');
+  bubble(o.g, pick(['Leva, leva! Não atira!', 'Calma! Tá aqui!', 'Socorro! Ladrão!']), 3); if (o.spd) { o.flee = 6; } sfx('coin');
+  toast(`Assalto: +$ ${amt}. A polícia já foi avisada!`, 'pink');
+}
+function onRobbed(d) {
+  if (!NET.user || d.to !== NET.user.id) return;
+  if (isAdm()) { NET.ch.send({ type: 'broadcast', event: 'assalto_ok', payload: { to: d.id, amt: 0, chief: 1 } }); toast(`${d.by} tentou te assaltar, mas desistiu quando viu quem era.`, 'pink'); return; }
+  const amt = Math.min(600, Math.floor(S.coins * 0.08)); S.coins -= amt; persist(); updateHUD();
+  NET.ch.send({ type: 'broadcast', event: 'assalto_ok', payload: { to: d.id, amt } }); toast(`${d.by} te assaltou e levou $ ${fmt(amt)}!`, 'bad'); sfx('hit');
+}
+function onRobOk(d) { if (!NET.user || d.to !== NET.user.id) return; if (d.chief) return toast(`É o ${CHIEF}! Melhor não mexer com o chefe.`, 'bad'); if (d.amt) { S.coins += d.amt; persist(); updateHUD(); toast(`Assalto: +$ ${fmt(d.amt)}.`, 'pink'); } else toast('A vítima estava lisa.'); }
+/* assaltante de mentira */
+function spawnRobber() {
+  if (!city.scene || city.interior || city.jail) return;
+  const g = makeSkater(roleLook('traficante', 0), 'Assaltante', '#ff6b6b'); g.userData.ped = true; city.scene.add(g);
+  const a = rand(0, TAU), x = clamp(P.x + Math.cos(a) * 30, -100, 100), z = clamp(P.z + Math.sin(a) * 30, -100, 100);
+  const peds = city.peds.filter(p => !p.off && !p.role && Math.hypot(p.x - P.x, p.z - P.z) < 60);
+  const target = isAdm() || P.jailT > 0 || S.shift === 'policial' || Math.random() < 0.6 || !hasMoney() ? pick(peds) : null;
+  city.robbers.push({ g, x, z, h: 0, st: 'go', tgt: target || 'player', t: 0, fallT: 0, ph0: rand(0, 40) });
+  if (S.shift === 'policial') toast('🚨 Central: assalto em andamento perto de você!', 'pink');
+}
+const hasMoney = () => S.coins > 50;
+function updateRobbers(dt, t) {
+  if (!city.robbers) return;
+  if ((city.robT = (city.robT ?? 40) - dt) <= 0) { city.robT = rand(70, 130); if (city.robbers.length < 2 && !city.interior) spawnRobber(); }
+  for (const r of city.robbers) {
+    const g = r.g; r.t += dt; g.userData.lod = Math.hypot(r.x - camera.position.x, r.z - camera.position.z) > 32;
+    if (r.st === 'gone') continue;
+    if (r.fallT > 0) { r.fallT -= dt; g.position.set(r.x, groundH(r.x, r.z), r.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t + r.ph0); if (r.fallT <= 0 && r.st !== 'preso') { r.st = 'flee'; r.t = 0; } tickBubble(g, dt); continue; }
+    const tg = r.tgt === 'player' ? { x: P.x, z: P.z } : r.tgt; let sp = 0, goal = null;
+    if (r.st === 'go') { goal = tg; sp = 3.2; if (Math.hypot(tg.x - r.x, tg.z - r.z) < 1.5) { r.st = 'rob'; r.t = 0; bubble(g, r.tgt === 'player' ? (isAdm() ? `Opa… foi mal, chefe ${CHIEF}!` : 'Perdeu! Perdeu! Passa a grana!') : 'Perdeu! Passa o celular!', 3); if (r.tgt !== 'player') { r.tgt.stopT = 3; bubble(r.tgt.g, 'Socorro! Ladrão!', 3); } } if (r.t > 40) { r.st = 'flee'; r.t = 0; } }
+    else if (r.st === 'rob') {
+      if (r.tgt === 'player' && isAdm()) { r.st = 'flee'; r.t = 0; }
+      else if (r.t > 2.5) {
+        if (r.tgt === 'player') { if (Math.hypot(P.x - r.x, P.z - r.z) < 3.5 && !P.drive) { const amt = Math.min(800, Math.floor(S.coins * 0.08)); S.coins -= amt; persist(); updateHUD(); toast(`Você foi assaltado! Levaram $ ${fmt(amt)}.`, 'bad'); sfx('hit'); } else toast('Você escapou do assalto!', 'good'); }
+        r.st = 'flee'; r.t = 0;
+      }
+    } else if (r.st === 'flee') { const a = Math.atan2(r.x - P.x, r.z - P.z); goal = { x: r.x + Math.sin(a) * 10, z: r.z + Math.cos(a) * 10 }; sp = 5.2; if (r.t > 18 && Math.hypot(r.x - P.x, r.z - P.z) > 40) { r.st = 'gone'; city.scene.remove(g); } }
+    else if (r.st === 'preso') { r.t2 = (r.t2 || 0) + dt; if (r.t2 > 2.5) { r.st = 'gone'; city.scene.remove(g); } }
+    if (goal && sp) { const a = Math.atan2(goal.x - r.x, goal.z - r.z), nx = r.x + Math.sin(a) * sp * dt, nz = r.z + Math.cos(a) * sp * dt; if (!collide(nx, nz, 0.3)) { r.x = nx; r.z = nz; } else { r.x += Math.cos(a) * sp * dt; r.z -= Math.sin(a) * sp * dt; } r.h = a; }
+    g.position.set(r.x, groundH(r.x, r.z), r.z); g.rotation.y = r.h; animSkater(g, { walk: true, v: sp, fallT: 0, wpHold: 'revolver', wpProp: r.st === 'rob' ? 'revolver' : null }, t + r.ph0); tickBubble(g, dt);
+    // PM de mentira prende assaltante que está perto
+    if (r.st === 'rob' || r.st === 'flee') for (const c of city.cops) { if (c.off || c.fallT > 0) continue; const d = Math.hypot(c.x - r.x, c.z - r.z); if (d < 26 && !c.chase) { const a = Math.atan2(r.x - c.x, r.z - c.z); c.x += Math.sin(a) * 5 * dt; c.z += Math.cos(a) * 5 * dt; c.h = a; c.busy = 0.2; } if (d < 1.5) { r.st = 'preso'; r.t2 = 0; bubble(c.g, 'Perdeu, vagabundo! Tá preso!', 3); addPrisoner('Assaltante', 90); } }
+  }
+  city.robbers = city.robbers.filter(r => r.st !== 'gone');
+}
+
+/* =========================================================
+   DELEGACIA: cadeia com tempo de pena e fiança
+   ========================================================= */
+const JAIL = { x: 700, z: 600, W: 18, D: 12 };
+function buildJail() {
+  if (city.jailG) return; const g = new THREE.Group(), cx = JAIL.x, cz = JAIL.z, W = JAIL.W, D = JAIL.D, H = 3.2; g.position.set(cx, 0, cz); city.scene.add(g); city.jailG = g;
+  const add = (geo, m, x, y, z, ry = 0) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.y = ry; k.castShadow = k.receiveShadow = true; g.add(k); return k; };
+  const col = (x, z, w, d) => city.colliders.push({ x0: cx + x - w / 2, x1: cx + x + w / 2, z0: cz + z - d / 2, z1: cz + z + d / 2, jail: true });
+  const fl = add(new THREE.PlaneGeometry(W, D), std(0x8a8f99, 0.9), 0, 0.01, 0); fl.rotation.x = -Math.PI / 2;
+  const wm = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, roughness: 0.95, side: THREE.DoubleSide });
+  for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [0, D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry);
+  col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
+  const ceil = add(new THREE.PlaneGeometry(W, D), std(0xd8dde3, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
+  const lt = new THREE.PointLight(0xfff4e0, 1.3, 30, 1.5); lt.position.set(0, H - 0.3, 0); g.add(lt); g.add(new THREE.HemisphereLight(0xffffff, 0x555555, 0.4));
+  // 3 celas no fundo com grades
+  const barM = std(0x6d717a, 0.35, 0.8), cz0 = -D / 2 + 4;
+  for (const k of [-1, 0, 1]) {
+    const x0 = k * 6; col(x0 - 3, -D / 2 + 2, 0.3, 4); add(boxGeo(0.2, H, 4), wm, x0 - 3, H / 2, -D / 2 + 2);
+    for (let b = -2.7; b <= 2.7; b += 0.3) add(CYL(0.025, 0.025, H, 6), barM, x0 + b, H / 2, cz0);
+    col(x0, cz0, 6, 0.2);
+    add(boxGeo(1.8, 0.4, 0.8), std(0x5a5f69, 0.8), x0 + 1.6, 0.2, -D / 2 + 0.5); // cama de concreto
+  }
+  col(9, -D / 2 + 2, 0.3, 4);
+  add(boxGeo(2.4, 1, 1), std(0x6b4a2f, 0.7), 4, 0.5, D / 2 - 2.5); // balcão
+  const sign = textSprite('DELEGACIA · CADEIA', { bg: '#22344f', fg: '#fff', size: 44, scale: [4.5, 0.6, 1] }); sign.position.set(0, 2.6, D / 2 - 0.1); g.add(sign);
+  const cop = makeSkater(roleLook('policial', 0), 'Delegado', '#7fb2ff'); cop.position.set(cx + 4, 0, cz + D / 2 - 3.6); cop.rotation.y = Math.PI; city.scene.add(cop); city.jailCop = cop;
+}
+const cellPos = k => [JAIL.x + (k - 1) * 6, JAIL.z - JAIL.D / 2 + 2];
+function jailPlayer(secs, by) {
+  if (P.drive) exitVehicle(true); if (P.ride) endRide(true); if (S.mission && ['job_corre'].includes(S.mission.type)) { S.mission = null; P.carry = null; rebuildMissionObjs(); renderMissionBox(); }
+  fadeTo(() => {
+    buildJail(); const [x, z] = cellPos(0); P.x = x; P.z = z; P.y = 0; P.v = 0; P.h = 0; P.onBoard = false; P.wanted = 0; P.jailT = secs; P.jailMax = secs; city.jail = true; city.camYaw = Math.PI; city.camSnap = true; city.zoom = 0.7;
+    toast(`Preso por ${by}! Pena: ${Math.round(secs)} s. Dá para pagar fiança.`, 'bad'); renderJailBox(); showPrisoners();
+  });
+}
+function releaseJail(paid) {
+  P.jailT = 0; $('jail-box').hidden = true;
+  fadeTo(() => { city.jail = false; const d = city.doors.find(d => d.kind === 'delegacia'); if (d) { P.x = d.x; P.z = d.z + 3; } else { P.x = 0; P.z = 10; } P.y = 0; city.zoom = 1; city.camSnap = true; toast(paid ? 'Fiança paga. Você está livre.' : 'Pena cumprida. Está livre!', 'good'); });
+}
+const bailCost = () => Math.round((P.jailT || 0) * 25);
+function renderJailBox() { const b = $('jail-box'); if (!b) return; b.hidden = !(P.jailT > 0); if (P.jailT > 0) b.innerHTML = `<div class="t">🔒 Preso</div><div class="d">Faltam ${Math.ceil(P.jailT)} s · <button class="btn sm" data-act="fianca" ${S.coins < bailCost() ? 'disabled' : ''}>Pagar fiança $ ${fmt(bailCost())}</button></div>`; }
+function updateJail(dt) {
+  for (const p of city.prisoners || []) p.t -= dt; if (city.prisoners) { const before = city.prisoners.length; city.prisoners = city.prisoners.filter(p => p.t > 0); if (before !== city.prisoners.length) showPrisoners(); }
+  if (!(P.jailT > 0)) return; P.jailT -= dt; if ((city.jailUi = (city.jailUi || 0) - dt) <= 0) { city.jailUi = 0.5; renderJailBox(); }
+  if (P.jailT <= 0) releaseJail(false);
+}
+function addPrisoner(name, secs) { city.prisoners = city.prisoners || []; city.prisoners.push({ name, t: secs }); showPrisoners(); }
+/* bandidos presos aparecem nas outras celas */
+function showPrisoners() {
+  if (!city.jailG) return; for (const m of city.prisonerMs || []) city.scene.remove(m); city.prisonerMs = [];
+  (city.prisoners || []).slice(0, 4).forEach((p, i) => { const [x, z] = cellPos(1 + (i % 2)), g = makeSkater(roleLook('traficante', i), p.name, '#ff6b6b'); g.position.set(x + (i > 1 ? 1 : -1), 0, z - 0.5); g.rotation.y = 0; city.scene.add(g); city.prisonerMs.push(g); });
 }
 
 /* ---------------- MORADIA (Imobiliária) ---------------- */
@@ -5977,6 +6343,7 @@ const PANELS = {
     const q = city.quiz;
     if (q) { const cur = q.qs[q.i]; return { title: 'Prova da Polícia', html: `<p class="muted">Pergunta ${q.i + 1} de ${q.qs.length} · acertos: ${q.ok}. Precisa de 7 acertos.</p><div class="card"><h4>${esc(cur[0])}</h4><div class="quiz">${cur[1].map((o, k) => `<button class="btn ghost" data-act="quiz-ans" data-k="${k}">${esc(o)}</button>`).join('')}</div></div>` }; }
     let html = `<p class="muted">Aqui você presta a prova para virar Policial e também resolve a sua situação se estiver procurado.</p>`;
+    const pr = city.prisoners || []; html += `<div class="card"><h4>🔒 Cadeia</h4>${pr.length ? pr.map(p => `<div class="row"><span class="pill">${esc(p.name)}</span><span class="muted">sai em ${Math.ceil(p.t)} s</span></div>`).join('') : '<p class="muted">Nenhum preso agora.</p>'}<p class="muted">Quem é preso fica na cela de 50 s a 100 s (depende das estrelas) ou paga fiança.</p></div>`;
     if (P.wanted) html += `<div class="note">Você está procurado ${'★'.repeat(P.wanted)}. Se entregar custa $ ${fmt(300 * P.wanted)} e limpa a ficha.</div><button class="btn" data-act="surrender" ${S.coins < 300 * P.wanted ? 'disabled' : ''}>Me entregar ($ ${fmt(300 * P.wanted)})</button>`;
     if (S.policeOk) html += `<div class="card"><h4>🚓 Você é Policial</h4><p>Comece o plantão na Agência de Empregos ou aqui mesmo.</p>${S.shift === 'policial' ? '<span class="pill on">Em plantão</span>' : '<button class="btn" data-act="shift-start" data-id="policial">Começar plantão</button>'}</div>`;
     else html += `<div class="card"><h4>📝 Prova para Policial</h4><p>10 perguntas sobre leis, trânsito e atendimento ao cidadão. Precisa acertar 7. Requisitos: nível 3, não estar em facção e não estar procurado.</p><button class="btn" data-act="quiz-start">Começar a prova</button></div>`;
@@ -5984,6 +6351,8 @@ const PANELS = {
   },
   faccao() {
     let html = `<p class="muted">Facções são grupos criados pelos jogadores, com nome, emoji e cor. Membros podem pintar a marca do grupo nos muros (chegue perto de uma parede e aperte Ação) e fincar bandeiras.</p>`;
+    const mor = (S.morador || {})[cityId()];
+    html += `<div class="card"><h4>🏠 Morar no ${esc(MORRO_NAME[cityId()])}</h4><p>Só moradores, quem é de facção e o chefe ${CHIEF} sobem o morro.</p>${isAdm() ? `<span class="pill on">Você é o chefe de todos os morros</span>` : mor ? '<span class="pill on">Você é morador</span>' : `<button class="btn" data-act="morador" ${S.coins < 500 ? 'disabled' : ''}>Virar morador ($ 500)</button>`}</div>`;
     if (!NET.user) return { title: 'QG da Comunidade', html: html + '<div class="note">Entre com sua conta para criar ou entrar num grupo.</div>' };
     if (S.gang) {
       const g = S.gang;
@@ -6105,6 +6474,9 @@ function act(a, ds, el) {
     case 'crew-disband': S.crew = null; persist(); refreshBotTags(); updateHUD(); renderPanel(); break;
     case 'edit-btns': btnEditStart(); break;
     case 'quiz-start': startQuiz(); break;
+    case 'fianca': { const c = bailCost(); if (S.coins < c || !(P.jailT > 0)) break; S.coins -= c; persist(); updateHUD(); releaseJail(true); break; }
+    case 'morador': { if (S.coins < 500) break; S.coins -= 500; S.morador = S.morador || {}; S.morador[cityId()] = true; persist(); updateHUD(); toast(`Agora você é morador do ${MORRO_NAME[cityId()]}. Pode subir o morro!`, 'good'); sfx('level'); renderPanel(); break; }
+    case 'gun-next': nextGun(); break;
     case 'quiz-ans': answerQuiz(ds.k); break;
     case 'surrender': { const f = 300 * (P.wanted || 0); if (S.coins < f) break; S.coins -= f; P.wanted = 0; persist(); updateHUD(); toast('Ficha limpa. Andou na linha, hein!', 'good'); renderPanel(); break; }
     case 'gang-emoji': city.gangE = ds.e; renderPanel(); break;
@@ -6277,7 +6649,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && NET
 
 /* aparência compacta enviada para os outros jogadores */
 const myNetLook = () => ({ w: myHandKind(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print }, b: S.board });
-const myPresence = () => ({ id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), job: S.shift || '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
+const myPresence = () => ({ id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
 function netJoinPlaza() {
   if (!NET.user || NET.ch) return;
   const ch = NET.sb.channel('praca_' + cityId(), { config: { presence: { key: NET.user.id }, broadcast: { self: false } } });
@@ -6286,6 +6658,8 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'fila' }, ({ payload }) => onPeerFila(payload))
     .on('broadcast', { event: 'voz' }, ({ payload }) => onPeerVoice(payload))
     .on('broadcast', { event: 'tiro' }, ({ payload }) => onPeerShot(payload))
+    .on('broadcast', { event: 'assalto' }, ({ payload }) => onRobbed(payload))
+    .on('broadcast', { event: 'assalto_ok' }, ({ payload }) => onRobOk(payload))
     .on('broadcast', { event: 'marca' }, ({ payload }) => renderMark(payload))
     .on('broadcast', { event: 'prisao' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id && P.wanted > 0) getArrested(payload.by); })
     .on('broadcast', { event: 'carona' }, ({ payload }) => onRideMsg('carona', payload))
@@ -6320,6 +6694,7 @@ function onPresence(state) {
       pushChat('Praça', `${st.name} entrou na praça`);
     }
     p.job = st.job || ''; p.gang = st.gang || null;
+    if (st.adm && !p.adm) { p.adm = 1; setTag(p.g, '👑 ' + st.name + ' · Chefe', '#ffd700'); toast(`👑 O chefe ${st.name} chegou na cidade! Respeito!`, 'pink'); }
   }
   for (const id in NET.peers) if (!seen[id]) { pushChat('Praça', `${NET.peers[id].name} saiu`); removePeer(id); }
   updateOnlineChip();
@@ -6560,7 +6935,7 @@ async function enterGame() {
   try { await Promise.race([Promise.all([document.fonts.load('40px Bungee'), document.fonts.load('700 40px "Barlow Condensed"')]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
   S.settings = S.settings || { quality: 'media', sound: true }; S.invite = S.invite || []; S.purchases = S.purchases || [];
   migrate(S); checkWeek();
-  if (NET.user) { await checkAdmin(); grantAdmin(); if (isAdm()) setTimeout(() => toast('Conta de administrador: tudo liberado.', 'pink'), 2000); }
+  if (NET.user) { await checkAdmin(); grantAdmin(); if (isAdm()) setTimeout(() => { toast(`Conta de administrador: tudo liberado. Chefe ${CHIEF} de todos os morros.`, 'pink'); if (city.player) setTag(city.player, myTagText(), '#ffd700'); }, 2000); }
   if (S.mission && S.mission.time != null) S.mission.time = Math.max(S.mission.time, 20);
   if (MODELS === null && !enterGame.tried) {
     enterGame.tried = true;
