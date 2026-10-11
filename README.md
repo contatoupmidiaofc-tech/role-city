@@ -115,3 +115,9 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 
 ### Tabela `comercios` (Supabase)
 - Um comércio por ponto de cada cidade (`unique(cidade, slot)`). Todos leem; só o dono cria e fecha o seu.
+
+### Polícia, bases e mansão do chefe
+- **Abordagem policial**: policial em serviço tem pistola 9mm da corporação e algemas. Chegue perto de alguém e aperte Ação: "Parado! Polícia!" — a pessoa para com as mãos na cabeça (jogador real fica travado). Peça o **documento** (carteira de identidade com nome, RG e nascimento), consulte o sistema, **reviste** (acha arma sem registro), **algeme** quem tem crime e leve até a Delegacia: o preso vai seguindo você algemado.
+- **Delegacia por dentro com 3 celas**: grades, porta de cela que fecha, cama de concreto. Coloque o preso na cela e tranque; jogador real vai para a cadeia e cumpre a pena.
+- **Veículos e bases das profissões** (de graça para quem está no turno, na garagem da base): Viatura e Moto da PM (Delegacia), Ambulância e Motolância do SAMU e carro do Médico (Hospital), Auto Bomba dos Bombeiros (Quartel), Caminhão da Coleta Seletiva (Reciclagem), Táxi da Cooperativa (Rodoviária), Moto com baú e Bike de entrega (Agência), Kombi do Grafite e Moto do Movimento (QG). Sirene pisca enquanto dirige.
+- **Mansão do Ajbz** no alto do morro, no meio da favela: 3 andares de ouro, colunas, coroa no telhado, piscina, coqueiros, seguranças armados e bandeiras do Brasil e do estado (Bahia em Salvador). Só o chefe entra. 1º andar: sinuca, bar, fliperamas, TV gigante com videogame (mini-jogos de sinuca, reflexo e pênaltis). 2º andar: cofres, montanhas de dinheiro e barras de ouro (cofre guarda dinheiro que não pode ser roubado). 3º andar: cobertura com cama king, hidromassagem, closet, aquário e trono de ouro. Elevador entre os andares.

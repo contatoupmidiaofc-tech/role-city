@@ -241,6 +241,7 @@ table.res th{font-family:var(--cond);text-transform:uppercase;color:var(--muted)
 table.res tr.me td{color:var(--wax);font-weight:700}
 table.res tr.ally td:nth-child(2){color:var(--ok)}
 .big-num{font-family:var(--display);font-size:42px;color:var(--wax);line-height:1}
+.rg{background:linear-gradient(135deg,#cfe8c6,#a9d39e);color:#15161a;border-radius:12px;padding:10px 12px;font-family:system-ui,sans-serif;box-shadow:0 2px 0 #6f9a64}.rg-h{font-weight:800;font-size:12px;text-align:center;letter-spacing:.5px;border-bottom:1px solid rgba(0,0,0,.25);padding-bottom:6px}.rg-h small{font-weight:600;font-size:10px}.rg-b{display:flex;gap:12px;padding-top:8px;align-items:center}.rg-f{font-size:44px;background:#e9f3e5;border-radius:8px;padding:4px 8px}.rg-b small{display:block;font-size:9px;opacity:.7;margin-top:2px}.rg-b b{display:block;font-size:14px}.rg-x{margin-top:6px;font-weight:700;color:#b3262e}
 .note{font-size:13px;color:var(--muted);line-height:1.45;border-left:3px solid var(--sky);padding-left:10px}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
 .seg button{min-height:38px;padding:0 12px;border-radius:8px;background:var(--panel-2);font-family:var(--cond);font-weight:700;text-transform:uppercase}
@@ -1937,7 +1938,9 @@ function lifeLayer(u, o, t, dt, p, walking) {
   if (o.emote === 'wave') hands.R = 0.02;
   if (o.emote === 'cheer') { hands.L = hands.R = 0.95; }
   if (o.emote === 'dance') { hands.L = hands.R = 0.6; }
-  if (u.smileT > 0 && walking && !o.emote && !u.gest) { hands.thumbR = true; hands.R = 1; p.rArmFwd = (p.rArmFwd || 0) + 0.6; p.rElbow = (p.rElbow || 0) + 1.2; }
+  if (o.pose === 'maos') { hands.L = hands.R = 0.15; Object.assign(p, { lArmDown: -1.15, rArmDown: -1.15, lArmFwd: 0.35, rArmFwd: 0.35, lElbow: 2.2, rElbow: 2.2, headX: 0.12, lean: 0 }); }
+  if (o.pose === 'algema') { hands.L = hands.R = 0.7; Object.assign(p, { lArmDown: 1.2, rArmDown: 1.2, lArmFwd: -0.6, rArmFwd: -0.6, lElbow: 0.9, rElbow: 0.9, headX: 0.22 }); }
+  if (u.smileT > 0 && walking && !o.emote && !u.gest && !o.pose) { hands.thumbR = true; hands.R = 1; p.rArmFwd = (p.rArmFwd || 0) + 0.6; p.rElbow = (p.rElbow || 0) + 1.2; }
   return hands;
 }
 /* rosto: boca (fala/sorriso) e olhos */
@@ -2565,7 +2568,7 @@ function cityExtras(sc) {
   buildMorro(sc);
   buildSkatepark(sc);
   { const [bx, bz] = parkWorld(50, -24), sh = new THREE.Shape(); sh.moveTo(-600, -600); sh.lineTo(600, -600); sh.lineTo(600, 600); sh.lineTo(-600, 600); const ho = new THREE.Path(); ho.absarc(bx, -bz, 7.6, 0, TAU, true); sh.holes.push(ho); city.far.geometry.dispose(); city.far.geometry = new THREE.ShapeGeometry(sh, 32); }
-  buildRoles(sc);
+  buildRoles(sc); mansionGuards(sc);
   buildDayNight(sc);
   setTimeout(loadMarks, 600);
 }
@@ -2727,7 +2730,7 @@ function buildCritters(sc) {
 function updateCritters(dt, t) {
   const night = city.dn ? city.dn.night : 0;
   for (const p of city.peds) {
-    if (p.off) continue;
+    if (p.off || p.held) continue;
     const dP = Math.hypot(p.x - P.x, p.z - P.z);
     const real = p.g.userData.real;
     if (real) p.g.userData.lod = Math.hypot(p.x - camera.position.x, p.z - camera.position.z) > 30;
@@ -2942,7 +2945,7 @@ function travelTo(id, how) {
 }
 function resetCity() {
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
-  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
+  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -3009,7 +3012,8 @@ function carWheel(r, w, alloy) {
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.5, r * 0.5, 0.02, 16), vmat('alloy')); disc.rotation.z = Math.PI / 2; disc.position.x = -w * 0.1; wg.add(disc);
   return wg;
 }
-function makeVehicleMesh(V) {
+function makeVehicleMesh(V) { const m = makeVehicleMesh0(V); if (V.deco) vehDeco(m, V); return m; }
+function makeVehicleMesh0(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
   const paint = vmat('paint', V.color), add = (geo, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, P = g) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.set(rx, ry, rz); k.castShadow = true; k.receiveShadow = true; P.add(k); return k; };
   if (V.bike) { buildBike(g, V, add, paint); g.traverse(o => { if (o.isMesh) o.castShadow = true; }); addVehicleLights(g, V); return g; }
@@ -3172,10 +3176,10 @@ function vehHorn() {
   if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'horn', payload: { id: NET.user.id, m: d.V.kind === 'moto' ? 1 : 0 } });
 }
 /* chama o seu veículo: aparece estacionado do seu lado */
-function spawnMyVehicle() {
-  if (!S.veh || !VEH[S.veh]) return toast('Você ainda não tem veículo. Compre na Concessionária.', 'bad');
+function spawnMyVehicle(Vj) {
+  if (!Vj && (!S.veh || !VEH[S.veh])) return toast('Você ainda não tem veículo. Compre na Concessionária.', 'bad');
   if (city.myVeh) city.scene.remove(city.myVeh.m);
-  const V = VEH[S.veh], m = makeVehicleMesh(V);
+  const V = Vj || VEH[S.veh], m = makeVehicleMesh(V);
   let x = P.x + Math.cos(P.h) * 3, z = P.z - Math.sin(P.h) * 3; if (collide(x, z, 1.2)) { x = P.x - Math.cos(P.h) * 3; z = P.z + Math.sin(P.h) * 3; }
   m.position.set(x, groundH(x, z), z); m.rotation.y = P.h; city.scene.add(m);
   city.myVeh = { m, V, x, z, h: P.h };
@@ -3521,7 +3525,7 @@ function inRamp(x, z) { return city.ramps.some(c => x > c.x0 && x < c.x1 && z > 
 
 let camYaw = 0;
 function updateCity(dt, t) {
-  const blocked = uiBlocking() || !!P.down;
+  const blocked = uiBlocking() || !!P.down || P.stopT > 0 || !!P.cuffBy;
   const ax = blocked || P.ride ? { x: 0, y: 0 } : axis();
   if (P.onBoard && !hasSkate()) P.onBoard = false;
   if (!blocked && tap('board')) {
@@ -3623,7 +3627,7 @@ function updateCity(dt, t) {
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
-  else if (!driving) animSkater(g, { walk: !P.onBoard, carry: hasSkate(), v: P.v, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: myHandKind(), wpProp: P.wpShowT > 0 ? myHandKind() : null, emote: P.emote && P.emote.id }, t);
+  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : null, walk: !P.onBoard, carry: hasSkate(), v: P.v, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: myHandKind(), wpProp: P.wpShowT > 0 ? myHandKind() : null, emote: P.emote && P.emote.id }, t);
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
   recordFrame(dt);
@@ -3632,7 +3636,7 @@ function updateCity(dt, t) {
   // céu e sol acompanham
   city.sky.position.copy(camera.position);
   for (const c of city.clouds.children) { c.position.x += c.userData.v * dt; if (c.position.x > 340) c.position.x = -340; }
-  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); updateShopIn(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
+  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); updateShopIn(dt, t); updatePolice(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
   const sd = city.dn ? city.dn.sunDir : [40, 80, 30]; city.sun.position.set(P.x + sd[0], sd[1], P.z + sd[2]); city.sun.target.position.set(P.x, 0, P.z);
   for (const d of city.doors) if (d.ring) d.ring.rotation.y += dt;
   updateHomeDoor(dt); if (city.seaTex) { city.seaTex.offset.x += dt * 0.01; city.seaTex.offset.y += dt * 0.02; city.foam.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.3; }
@@ -3688,13 +3692,13 @@ function updateCity(dt, t) {
   for (const o of city.bots) { if (o.off) continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 3.4 && k < nd) { nd = k; near = { type: 'bot', o }; } }
   if (city.myVeh && !P.drive) { const k = Math.hypot(city.myVeh.x - P.x, city.myVeh.z - P.z); if (k < 3.6 && k < nd + 0.5) { nd = k; near = { type: 'veh' }; } }
   if (!P.drive && !P.ride) for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen) continue; const k = Math.hypot(p.x - P.x, p.z - P.z);
-    if (p.t.vh && k < 3.8 && k < nd + 0.5) { nd = k; near = { type: 'carona', p }; }
-    else if (S.shift === 'policial' && p.t.wd > 0 && !p.t.vh && k < 2.6 && k < nd + 0.5) { nd = k; near = { type: 'prender', p }; } }
+    if (p.t.vh && S.shift !== 'policial' && k < 3.8 && k < nd + 0.5) { nd = k; near = { type: 'carona', p }; }
+    else if (S.shift === 'policial' && !city.abord && !p.adm && k < (p.t.vh ? 4 : 3) && k < nd + 0.5) { nd = k; near = { type: 'abordarP', p }; } }
   if (city.hospIn) { const k = Math.hypot(HOSP.x - P.x, HOSP.z + HOSP.D / 2 - 1 - P.z); if (k < 2.5) { nd = k; near = { type: 'hospexit' }; } }
   if (city.shopIn) for (const sp of city.shopIn.spots) { const k = Math.hypot(sp.x - P.x, sp.z - P.z); if (k < (sp.label === 'Sair' ? 1.3 : 2.1) && k < nd) { nd = k; near = { type: 'shopspot', s: sp }; } }
   if (S.shift === 'socorrista' && !P.drive) for (const id in NET.peers) { const p = NET.peers[id]; if (p.t && p.t.dn && Math.hypot(p.x - P.x, p.z - P.z) < 2.6) { near = { type: 'socorrer', p }; nd = 0; } }
   if (!P.drive && !P.ride && !(P.jailT > 0)) {
-    if (S.shift === 'policial') { for (const o of [...(city.thugs || []), ...(city.robbers || [])]) { if (o.off || o.arrestedT > 0 || o.st === 'preso' || o.st === 'gone') continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.4 && k < nd && (o.fallT > 0 || o.st === 'rob' || o.st === 'flee' || o.st === 'go')) { nd = k; near = { type: 'prenderNpc', o }; } } }
+    if (S.shift === 'policial') { if (!city.abord) { for (const o of abordCandidates()) { const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.6 && k < nd) { nd = k; near = { type: 'abordar', o }; } } } else if (!city.shopIn) { const tp = abordTarget(city.abord); if (tp && Math.hypot(tp.x - P.x, tp.z - P.z) < 3) { nd = 0; near = { type: 'abordPanel' }; } } }
     else if (myGun()) { for (const o of [...city.peds, ...city.bots]) { if (o.off || o.role || o.fallT > 0) continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.2 && k < nd) { nd = k; near = { type: 'assalto', o }; } }
       for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen || p.t.vh) continue; const k = Math.hypot(p.x - P.x, p.z - P.z); if (k < 2.2 && k < nd) { nd = k; near = { type: 'assaltoP', p }; } } }
   }
@@ -3707,6 +3711,9 @@ function updateCity(dt, t) {
     if (near.type === 'exitveh') { pr.textContent = `${key} · Sair ${P.drive.V.kind === 'car' ? 'do carro' : P.drive.V.bike ? 'da bike' : 'da moto'}`; pr.hidden = false; if (tap('act')) exitVehicle(); }
     else if (near.type === 'assalto') { pr.textContent = `${key} · Assaltar`; pr.hidden = false; if (tap('act')) robNpc(near.o); }
     else if (near.type === 'assaltoP') { pr.textContent = `${key} · Assaltar ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'assalto', payload: { id: NET.user.id, to: near.p.id, by: S.name } }); addWanted(2, 'assalto à mão armada'); } }
+    else if (near.type === 'abordar') { pr.textContent = `${key} · 🚨 Abordar: "Parado! Polícia!"`; pr.hidden = false; if (tap('act')) abordarNpc(near.o); }
+    else if (near.type === 'abordarP') { pr.textContent = `${key} · 🚨 Abordar ${near.p.name}`; pr.hidden = false; if (tap('act')) abordarPeer(near.p); }
+    else if (near.type === 'abordPanel') { pr.textContent = `${key} · 🚨 Abordagem (documento, revista, algemas)`; pr.hidden = false; if (tap('act')) openPanel('abordagem'); }
     else if (near.type === 'prenderNpc') { pr.textContent = `${key} · Prender o bandido`; pr.hidden = false; if (tap('act')) { const o = near.o; if (o.st) { o.st = 'preso'; o.t2 = 0; bubble(o.g, 'Tá bom, perdi…', 2); } else { o.arrestedT = 150; o.hostT = 0; o.fallT = 0; o.g.visible = false; } addPrisoner(o.st ? 'Assaltante' : 'Traficante', 120); const g = earn(jobPay('policial', 180)); addXP(30); toast(`Bandido preso e levado para a Delegacia! +$${fmt(g)}`, 'good'); sfx('coin'); } }
     else if (near.type === 'shopspot') { pr.textContent = `${key} · ${near.s.label}`; pr.hidden = false; if (tap('act')) near.s.fn(); }
     else if (near.type === 'hospexit') { pr.textContent = `${key} · Sair do hospital`; pr.hidden = false; if (tap('act')) leaveHospital(); }
@@ -3996,6 +4003,7 @@ function drawCityPreview(cv, id) {
 function interact(n) {
   if (n.type === 'door') {
     const k = n.d.kind;
+    if (k === 'mansao') { enterMansion(n.d); return; }
     if (k === 'biz' && !n.d.inside) { enterBiz(n.d); return; }
     if (INSIDE_KINDS.includes(k) && !n.d.inside) { enterShop(n.d); return; }
     if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
@@ -4209,9 +4217,11 @@ function startShift(id) {
   applyLook(city.player, myLook()); netTrack();
   toast(`Turno começou: ${J.name}. ${id === 'entregador' ? 'Mochila térmica nas costas!' : ''}`, 'good');
   nextJobTask();
+  if (JOB_VEH[id]) setTimeout(() => toast(`🏢 Sua base: ${BASE_NAME[JOB_BASE[id]]}. Na garagem: ${JOB_VEH[id].map(v => v.name).join(' e ')}.`, 'pink'), 1600);
+  if (id === 'policial') setTimeout(() => toast('🔫 Pistola 9mm da corporação e 🔗 algemas no cinto. Chegue perto de um suspeito e aperte Ação para abordar.', 'pink'), 3600);
 }
 function endShift() {
-  if (!S.shift) return; const J = JOBS[S.shift];
+  if (!S.shift) return; const J = JOBS[S.shift]; dropJobVeh(); if (city.abord) abordSolta();
   if (S.mission && S.mission.job) { S.mission = null; P.carry = null; }
   toast(`Turno encerrado (${J.name}).`); S.shift = null; persist();
   if (city.student) { city.scene.remove(city.student.g); city.student = null; }
@@ -4385,7 +4395,7 @@ function buildMorro(sc) {
     const fl = new THREE.Mesh(fg, flagM); fl.position.set(x, y + hpole - 0.5 * s, z); fl.rotation.y = rand(0, TAU); sc.add(fl); city.flags.push({ m: fl, ph: rand(0, 6), base: fg.attributes.position.array.slice() });
   };
   for (const o of H) { const [x, z] = morroWorld(o.d, o.t); if (o.flag) addFlag(x - 0.8, o.top + 0.2, z + 0.8, 1, 2.6); if (o.ant) { const a = new THREE.Mesh(CYL(0.02, 0.02, 1.6, 4), lam(0x3b3e46)); a.position.set(x - 0.9, o.top + 1, z - 0.9); sc.add(a); } }
-  { const [x, z] = morroWorld(MORRO_D - 2, 0); addFlag(x, morroHd(MORRO_D - 2), z, 4.5, 12); }
+  { const [x, z] = morroWorld(MORRO_D - 2, -16); addFlag(x, morroHd(MORRO_D - 2), z, 4.5, 12); }
   { const [x, z] = morroWorld(1, 5.4); addFlag(x, 0, z, 2, 6); }
   // postes, fios e varais de bandeirinhas na escadaria
   const posts = [], wire = [], bunt = [];
@@ -4402,6 +4412,7 @@ function buildMorro(sc) {
   // placa de entrada e QG da comunidade
   { const [x, z] = morroWorld(-1, 0), s = textSprite(MORRO_NAME[id].toUpperCase() + ' · TERRITÓRIO DO AJBZ', { bg: '#15161a', fg: '#ffdf00', size: 46, scale: [13, 1.3, 1], stroke: '#009c3b' }); s.position.set(x, 7.5, z); sc.add(s); }
   { const [x, z] = morroWorld(-3, -9), ring = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffdf00, transparent: true, opacity: .8, side: THREE.DoubleSide })); ring.position.set(x, 0.15, z); sc.add(ring); city.doors.push({ kind: 'qg', label: 'QG da Comunidade', x, z, ring }); }
+  buildMansion(sc);
   city.boca = morroWorld(22, 5.6);
 }
 function updateMorro(dt, t) {
@@ -4444,7 +4455,7 @@ const GUNS = [
 ];
 GUNS.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 SLOT_NAMES.gun = 'Armas de fogo';
-const myGun = () => { const it = ITEM[S.equip.gun]; return it && it.gun && it.gun !== 'none' && S.owned.includes(it.id) ? it : null; };
+const myGun = () => { const it = ITEM[S.equip.gun]; if (it && it.gun && it.gun !== 'none' && S.owned.includes(it.id)) return it; return S.shift === 'policial' ? ITEM.gun_9mm : null; }; // policial em serviço usa a pistola da corporação
 /* munição: carregador real de cada arma e recarga */
 P.ammo = {};
 const gunMag = G => P.ammo[G.id] ?? G.mag;
@@ -4554,6 +4565,7 @@ function updateRoles(dt, t) {
   for (const o of [...city.roles.bombeiro, ...city.thugs]) {
     if (o.off) continue;
     if (o.arrestedT > 0) { o.arrestedT -= dt; if (o.arrestedT <= 0) o.g.visible = true; continue; }
+    if (o.held) continue;
     const g = o.g, dP = Math.hypot(o.x - P.x, o.z - P.z);
     g.userData.lod = Math.hypot(o.x - camera.position.x, o.z - camera.position.z) > 32;
     if (o.fallT > 0) { o.fallT -= dt; g.position.set(o.x, groundH(o.x, o.z), o.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t + o.ph0); if (o.fallT <= 0 && o.cuffed) { o.cuffed = false; } continue; }
@@ -4580,13 +4592,13 @@ function updateRoles(dt, t) {
 /* ---------- procurado (estrelas) e prisão ---------- */
 function addWanted(n, why) {
   if (S.shift === 'policial' || isAdm()) return;
-  const before = P.wanted || 0; P.wanted = clamp(before + n, 0, 3); P.wantedCalm = 45;
+  const before = P.wanted || 0; P.wanted = clamp(before + n, 0, 3); P.wantedCalm = 45; P.crimes = (P.crimes || []).concat(why).slice(-6);
   if (P.wanted > before) { toast(`Procurado ${'★'.repeat(P.wanted)}: ${why}`, 'bad'); sfx('hit'); }
 }
 function updateWanted(dt) {
   const carrying = S.mission && S.mission.type === 'job_corre' && S.mission.stage === 1;
   if (carrying && (P.wanted || 0) < 1) P.wanted = 1;
-  if (P.wanted > 0 && !carrying) { P.wantedCalm = (P.wantedCalm || 45) - dt; if (P.wantedCalm <= 0) { P.wanted--; P.wantedCalm = 45; if (!P.wanted) toast('A polícia perdeu você de vista.', 'good'); } }
+  if (P.wanted > 0 && !carrying) { P.wantedCalm = (P.wantedCalm || 45) - dt; if (P.wantedCalm <= 0) { P.wanted--; P.wantedCalm = 45; if (!P.wanted) { P.crimes = []; toast('A polícia perdeu você de vista.', 'good'); } } }
   const el = $('h-wanted'); if (el) { el.hidden = !P.wanted; el.textContent = '★'.repeat(P.wanted || 0); }
 }
 function getArrested(by) {
@@ -5154,7 +5166,7 @@ function updateRobbers(dt, t) {
   if ((city.robT = (city.robT ?? 40) - dt) <= 0) { city.robT = rand(70, 130); if (city.robbers.length < 2 && !city.interior) spawnRobber(); }
   for (const r of city.robbers) {
     const g = r.g; r.t += dt; g.userData.lod = Math.hypot(r.x - camera.position.x, r.z - camera.position.z) > 32;
-    if (r.st === 'gone') continue;
+    if (r.st === 'gone' || r.held) continue;
     if (r.fallT > 0) { r.fallT -= dt; g.position.set(r.x, groundH(r.x, r.z), r.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t + r.ph0); if (r.fallT <= 0 && r.st !== 'preso') { r.st = 'flee'; r.t = 0; } tickBubble(g, dt); continue; }
     const tg = r.tgt === 'player' ? { x: P.x, z: P.z } : r.tgt; let sp = 0, goal = null;
     if (r.st === 'go') { goal = tg; sp = 3.2; if (Math.hypot(tg.x - r.x, tg.z - r.z) < 1.5) { r.st = 'rob'; r.t = 0; bubble(g, r.tgt === 'player' ? (isAdm() ? `Opa… foi mal, chefe ${CHIEF}!` : 'Perdeu! Perdeu! Passa a grana!') : 'Perdeu! Passa o celular!', 3); if (r.tgt !== 'player') { r.tgt.stopT = 3; bubble(r.tgt.g, 'Socorro! Ladrão!', 3); } } if (r.t > 40) { r.st = 'flee'; r.t = 0; } }
@@ -5205,7 +5217,7 @@ const cellPos = k => [JAIL.x + (k - 1) * 6, JAIL.z - JAIL.D / 2 + 2];
 function jailPlayer(secs, by) {
   if (P.drive) exitVehicle(true); if (P.ride) endRide(true); if (S.mission && ['job_corre'].includes(S.mission.type)) { S.mission = null; P.carry = null; rebuildMissionObjs(); renderMissionBox(); }
   fadeTo(() => {
-    buildJail(); const [x, z] = cellPos(0); P.x = x; P.z = z; P.y = 0; P.v = 0; P.h = 0; P.onBoard = false; P.wanted = 0; P.jailT = secs; P.jailMax = secs; city.jail = true; city.camYaw = Math.PI; city.camSnap = true; city.zoom = 0.7;
+    buildJail(); const [x, z] = cellPos(0); P.x = x; P.z = z; P.y = 0; P.v = 0; P.h = 0; P.onBoard = false; P.wanted = 0; P.crimes = []; P.cuffBy = null; P.stopT = 0; P.jailT = secs; P.jailMax = secs; city.jail = true; city.camYaw = Math.PI; city.camSnap = true; city.zoom = 0.7;
     toast(`Preso por ${by}! Pena: ${Math.round(secs)} s. Dá para pagar fiança.`, 'bad'); renderJailBox(); showPrisoners();
   });
 }
@@ -5445,7 +5457,7 @@ Object.assign(SPECIAL, {
 });
 Object.assign(CITY_SHOPS.rj, { hospital: '42,84', prefeitura: '84,-42', igreja: '-42,84' });
 Object.assign(CITY_SHOPS.ssa, { hospital: '84,0', prefeitura: '0,-84', igreja: '-42,-84' });
-Object.assign(DOOR_COL, { hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6', biz: '#ffcf3a' });
+Object.assign(DOOR_COL, { hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6', biz: '#ffcf3a', mansao: '#ffd700' });
 UNI_ITEMS.push(I('shirt', 'uni_samu', 'Macacão do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('pants', 'uni_samu_p', 'Calça do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('shirt', 'uni_med', 'Jaleco de Médico', 0xf4f6f8, 0, null, 'comum', { pat: 'plain' }), I('pants', 'uni_med_p', 'Calça Hospitalar', 0x3fa7a0, 0, null, 'comum', { pat: 'plain' }));
 UNI_ITEMS.forEach(i => ITEM[i.id] = i);
 Object.assign(UNIFORM, { socorrista: { shirt: 'uni_samu', pants: 'uni_samu_p' }, medico: { shirt: 'uni_med', pants: 'uni_med_p' } });
@@ -5572,14 +5584,14 @@ function exitShop() {
   const it = city.shopIn; if (!it) return;
   fadeTo(() => {
     city.scene.remove(it.g); for (const n of it.npcs) city.scene.remove(n); city.colliders = city.colliders.filter(c => !c.shop); city.shopIn = null;
-    const d = it.door, len = Math.hypot(d.x, d.z) || 1; P.x = d.x + d.x / len * 1.5; P.z = d.z + d.z / len * 1.5; P.y = 0; P.h = Math.atan2(d.x, d.z); city.camYaw = P.h; city.zoom = 1; city.camSnap = true;
+    const d = it.door, len = Math.hypot(d.x, d.z) || 1; if (d.out) { P.x = d.out[0]; P.z = d.out[1]; P.h = d.out[2]; P.y = groundH(P.x, P.z); } else { P.x = d.x + d.x / len * 1.5; P.z = d.z + d.z / len * 1.5; P.y = 0; P.h = Math.atan2(d.x, d.z); } city.camYaw = P.h; city.zoom = 1; city.camSnap = true;
   });
 }
 let _tileT = null;
 function tileTex() { return _tileT || (_tileT = (() => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#d8d3c8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2; for (let k = 0; k <= w; k += 32) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })()); }
 function buildShopInterior(d) {
-  const k = d.kind, BT = k === 'biz' && d.biz ? (BIZ_TYPES[d.biz.tipo] || BIZ_TYPES.loja) : null, info = BT ? { color: BT.c, label: `${BT.i} ${d.biz.nome}`, css: '#' + BT.c.toString(16).padStart(6, '0') } : Object.values(SPECIAL).find(s => s.kind === k) || { color: 0xcccccc, label: d.label };
-  const [W, D] = ROOM_SIZE[k] || [16, 12], H = k === 'igreja' ? 7 : k === 'concessionaria' || k === 'bombeiros' ? 5 : 3.4;
+  const k = d.kind, BT = k === 'biz' && d.biz ? (BIZ_TYPES[d.biz.tipo] || BIZ_TYPES.loja) : null, info = BT ? { color: BT.c, label: `${BT.i} ${d.biz.nome}`, css: '#' + BT.c.toString(16).padStart(6, '0') } : k.startsWith('mansao') ? { color: 0xffc83d, label: MANSAO_FLOORS[+k.slice(6) - 1], css: '#ffc83d' } : Object.values(SPECIAL).find(s => s.kind === k) || { color: 0xcccccc, label: d.label };
+  const [W, D] = ROOM_SIZE[k] || [16, 12], H = k.startsWith('mansao') ? 4.2 : k === 'igreja' ? 7 : k === 'concessionaria' || k === 'bombeiros' ? 5 : 3.4;
   const g = new THREE.Group(), cx = SHOPIN.x, cz = SHOPIN.z; g.position.set(cx, 0, cz); city.scene.add(g);
   const it = { g, kind: k, door: d, W, D, spots: [], npcs: [] };
   const add = (geo, m, x, y, z, ry = 0, rx = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, 0); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
@@ -5591,7 +5603,7 @@ function buildShopInterior(d) {
   // piso, paredes com a cor da loja, teto e luz
   const floorT = (k === 'crew' || k === 'bombeiros' || k === 'reciclagem') ? null : tileTex().clone(); if (floorT) { floorT.needsUpdate = true; floorT.repeat.set(W / 4, D / 4); }
   const wood = ['roupas', 'skate', 'igreja', 'imobiliaria'].includes(k), fl = add(new THREE.PlaneGeometry(W, D), wood ? new THREE.MeshStandardMaterial({ map: (() => { const t = woodTex().clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W / 3, D / 3); return t; })(), roughness: 0.6 }) : floorT ? new THREE.MeshStandardMaterial({ map: floorT, roughness: 0.5 }) : std(0x6d717a, 0.9), 0, 0.01, 0); fl.rotation.x = -Math.PI / 2;
-  const wc = new THREE.Color(info.color).lerp(new THREE.Color(0xffffff), k === 'igreja' ? 0.85 : 0.65), wm = new THREE.MeshStandardMaterial({ color: wc, roughness: 0.95, side: THREE.DoubleSide });
+  const wc = new THREE.Color(info.color).lerp(new THREE.Color(0xffffff), k.startsWith('mansao') ? 0.18 : k === 'igreja' ? 0.85 : 0.65), wm = new THREE.MeshStandardMaterial({ color: wc, roughness: 0.95, side: THREE.DoubleSide });
   for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [0, D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry);
   col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
   const ceil = add(new THREE.PlaneGeometry(W, D), std(0xf4f4f2, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
@@ -5650,8 +5662,9 @@ function buildShopInterior(d) {
     const show = [VEH.v_sport, VEH.v_suv, VEH.v_superbike, VEH.v_mtb]; show.forEach((V, i) => { const m = makeVehicleMesh(V), x = -8 + i * 5.3; m.position.set(x, 0.25, 2); m.rotation.y = 0.6; g.add(m); add(CYL(2.2, 2.2, 0.25, 32), std(0xe8e8e8, 0.3, 0.3), x, 0.12, 2); col(x, 2, 3.6, 3.6); });
   } else if (k === 'delegacia') {
     counter(-D / 2 + 2, 'Atendimento da Delegacia', lookOf(Object.assign({ shoes: 'shoes_basic' }, UNIFORM.policial), pick(SKINS), pick(HAIRS), 'm'), 'Delegado');
-    for (let i = 0; i < 4; i++) { const t = canvasTex(96, 128, (gg, w, h) => { gg.fillStyle = '#f2e6c8'; gg.fillRect(0, 0, w, h); gg.fillStyle = '#15161a'; gg.font = 'bold 18px Impact'; gg.textAlign = 'center'; gg.fillText('PROCURADO', w / 2, 22); gg.fillStyle = '#6d6a63'; gg.beginPath(); gg.arc(w / 2, 62, 26, 0, TAU); gg.fill(); gg.fillStyle = '#15161a'; gg.font = '14px sans-serif'; gg.fillText(pick(RIVAL_HANDLES), w / 2, 110); }); add(new THREE.PlaneGeometry(0.7, 0.95), new THREE.MeshBasicMaterial({ map: t }), -W / 2 + 0.05, 1.7, -2 + i * 1.1, Math.PI / 2); }
+    for (let i = 0; i < 4; i++) { const t = canvasTex(96, 128, (gg, w, h) => { gg.fillStyle = '#f2e6c8'; gg.fillRect(0, 0, w, h); gg.fillStyle = '#15161a'; gg.font = 'bold 18px Impact'; gg.textAlign = 'center'; gg.fillText('PROCURADO', w / 2, 22); gg.fillStyle = '#6d6a63'; gg.beginPath(); gg.arc(w / 2, 62, 26, 0, TAU); gg.fill(); gg.fillStyle = '#15161a'; gg.font = '14px sans-serif'; gg.fillText(pick(RIVAL_HANDLES), w / 2, 110); }); add(new THREE.PlaneGeometry(0.7, 0.95), new THREE.MeshBasicMaterial({ map: t }), W / 2 - 0.05, 1.7, -4.2 + i * 1.1, -Math.PI / 2); }
     solid(4, 0.45, 0.6, 0x5a5f69, W / 2 - 1, 0.25, 1, Math.PI / 2);
+    delegaciaCells(it, { box, solid, add, col, spot, W, D });
   } else if (k === 'bombeiros') {
     counter(-D / 2 + 1.8, 'Plantão dos Bombeiros', lookOf(Object.assign({ shoes: 'shoes_basic' }, UNIFORM.bombeiro), pick(SKINS), pick(HAIRS), 'm'), 'Sargento');
     const tr = new THREE.Group(); const bd = new THREE.Mesh(boxGeo(2.5, 2.4, 7.5), std(0xc62828, 0.4, 0.3)); bd.position.y = 1.6; tr.add(bd); const cab = new THREE.Mesh(boxGeo(2.4, 1.2, 1.6), std(0x1d232b, 0.1, 0.6)); cab.position.set(0, 2, 3.2); tr.add(cab); const lad = new THREE.Mesh(boxGeo(0.6, 0.15, 7), std(0xcfd3d8, 0.3, 0.8)); lad.position.y = 2.95; tr.add(lad);
@@ -5673,8 +5686,10 @@ function buildShopInterior(d) {
     npc(lookOf({ shirt: 'shirt_black', pants: 'pants_black', shoes: 'shoes_basic' }, pick(SKINS), 0x9a9a9a, 'm'), 'Padre', 0, -D / 2 + 1.3, 0);
     spot('Falar com o padre (casamentos)', 0, -D / 2 + 3.6, () => doorPanel('igreja'));
   }
+  if (k.startsWith('mansao')) mansaoDecor(it, +k.slice(6), { box, solid, add, npc, spot, W, D });
   if (k === 'biz' && d.biz) bizDecor(it, d.biz, { box, solid, add, npc, spot, W, D });
   if (!it.spots.some(s => s.label !== 'Sair')) counter();
+  if (Object.values(JOB_BASE).includes(k)) spot('🚘 Garagem da base (veículo da profissão)', W / 2 - 1.8, D / 2 - 2, () => openPanel('base'));
   for (const n of it.npcs) n.userData.lod = false;
   return it;
 }
@@ -5880,6 +5895,418 @@ function spouseGps() {
   const sp = S.spouse; if (!sp) return;
   if (sp.peer) { const p = NET.peers[sp.peer]; if (p && p.seen) return setGps(p.x, p.z, sp.name); return toast(`${sp.name} não está online nesta cidade agora.`); }
   const o = city.bots.find(o => o.b.id === sp.bot); if (o) return setGps(o.x, o.z, sp.name); toast(`${sp.name} não está pela cidade agora.`);
+}
+Object.assign(ROOM_SIZE, { delegacia: [20, 16] });
+/* =========================================================
+   POLÍCIA DE VERDADE: abordagem ("Parado! Polícia!"), documento, revista, algemas, escolta e cela na Delegacia
+   ========================================================= */
+const RG_F = ['Ana', 'Maria', 'Juliana', 'Fernanda', 'Camila', 'Patrícia', 'Aline', 'Bianca', 'Larissa', 'Jéssica'];
+const RG_M = ['José', 'João', 'Carlos', 'Paulo', 'Lucas', 'Marcos', 'Rafael', 'Bruno', 'Diego', 'Thiago', 'Wellington', 'Anderson'];
+const RG_L = ['da Silva', 'dos Santos', 'Oliveira', 'Souza', 'Pereira', 'Lima', 'Costa', 'Ferreira', 'Almeida', 'Nascimento', 'Ribeiro', 'Carvalho'];
+const UF_OF = { sp: 'SP', rj: 'RJ', ssa: 'BA' };
+const CELLS = 3;
+function rgNum(s) { let h = 7; for (const c of String(s)) h = (Math.imul(h, 31) + c.charCodeAt(0)) >>> 0; const n = String(h % 100000000).padStart(8, '0'); return `${n.slice(0, 2)}.${n.slice(2, 5)}.${n.slice(5, 8)}-${h % 10}`; }
+function apito() { try { tone('square', 2600, 2500, 0.18, 0.05); tone('square', 2600, 2450, 0.35, 0.05, 0.25); } catch (e) { } }
+function clank() { try { tone('square', 180, 90, 0.25, 0.08); noiseHit(0.2, 'highpass', 2500, 0.12); } catch (e) { } }
+function npcKind(o) { return (city.robbers || []).includes(o) ? 'robber' : (city.thugs || []).includes(o) ? 'thug' : 'ped'; }
+function npcDoc(o) {
+  if (o.doc) return o.doc; const k = npcKind(o), fem = o.g && o.g.userData.gender === 'f', name = `${pick(fem ? RG_F : RG_M)} ${pick(RG_L)} ${pick(RG_L)}`;
+  const crimes = k === 'robber' ? ['Roubo à mão armada (art. 157)'] : k === 'thug' ? ['Tráfico de drogas (art. 33)', 'Associação para o tráfico (art. 35)'] : Math.random() < 0.15 ? [pick(['Mandado de prisão em aberto: furto (art. 155)', 'Mandado de prisão em aberto: estelionato (art. 171)', 'Mandado de prisão: pensão alimentícia atrasada'])] : [];
+  const arma = k === 'robber' ? 'Revólver .38 sem registro' : k === 'thug' ? (o.gun === 'fuzil' ? 'Fuzil sem registro' : 'Pistola sem registro') : Math.random() < 0.07 ? 'Faca' : null;
+  return o.doc = { name, rg: rgNum(name), nasc: `${String(1 + Math.floor(Math.random() * 28)).padStart(2, '0')}/${String(1 + Math.floor(Math.random() * 12)).padStart(2, '0')}/${1965 + Math.floor(Math.random() * 40)}`, uf: UF_OF[cityId()] || 'SP', crimes, arma, fem };
+}
+const abordCrimes = A => !A.doc ? [] : A.doc.crimes.concat(A.rev && A.doc.arma ? [`Porte ilegal: ${A.doc.arma}`] : []);
+function abordTarget(A) { if (!A) return null; if (A.o) return { x: A.o.x, z: A.o.z }; const p = NET.peers[A.pid]; return p ? { x: p.x, z: p.z } : null; }
+/* quem o policial pode abordar: assaltantes, contenção (rendida ou sem atirar), pedestres e jogadores */
+function abordCandidates() {
+  const out = [];
+  for (const o of city.robbers || []) if (o.st !== 'gone' && o.st !== 'preso' && !o.held) out.push(o);
+  for (const o of city.thugs || []) if (!o.off && !(o.arrestedT > 0) && !o.held && (!(o.hostT > 0) || o.fallT > 0)) out.push(o);
+  for (const o of city.peds || []) if (!o.off && !o.held && o.g && o.g.userData.real && o.g.visible) out.push(o);
+  return out;
+}
+function abordarNpc(o) {
+  if (city.abord) return openPanel('abordagem');
+  const k = npcKind(o); o.held = { t: 60 }; o.fallT = 0; if (k === 'thug') o.hostT = 0; if (k === 'robber' && o.st === 'rob') { o.st = 'flee'; o.t = 0; }
+  P.v = 0; P.h = Math.atan2(o.x - P.x, o.z - P.z); apito(); bubble(city.player, pick(['Parado! Polícia!', 'Polícia! Mão na cabeça!', 'Encosta na parede! Polícia!']), 2.5);
+  bubble(o.g, k === 'robber' ? pick(['Perdi, perdi…', 'Calma, calma!']) : k === 'thug' ? pick(['Tranquilo, senhor…', 'Tô limpo, chefia!']) : pick(['Tá bom, tá bom!', 'Calma, senhor policial!', 'Eu não fiz nada!']), 2.5);
+  city.abord = { o, name: k === 'robber' ? 'Suspeito de assalto' : k === 'thug' ? 'Suspeito' : 'Cidadão', st: 'parado', doc: null, rev: false };
+  openPanel('abordagem');
+}
+function abordarPeer(p) {
+  if (city.abord) return openPanel('abordagem');
+  if (p.adm) return toast(`É o chefe ${CHIEF}. Liberado!`, 'pink');
+  if (!NET.ch) return; apito(); bubble(city.player, 'Parado! Polícia! Mão na cabeça!', 2.5);
+  NET.ch.send({ type: 'broadcast', event: 'abord', payload: { to: p.id, by: S.name, byId: NET.user.id, st: 'parar' } });
+  city.abord = { pid: p.id, name: p.name, st: 'parado', doc: null, rev: false }; openPanel('abordagem');
+}
+function abordSend(st) { const A = city.abord; if (A && A.pid && NET.ch) NET.ch.send({ type: 'broadcast', event: 'abord', payload: { to: A.pid, by: S.name, byId: NET.user.id, st } }); }
+function abordDoc() {
+  const A = city.abord; if (!A || A.doc || A.wait) return; A.wait = true; bubble(city.player, 'Documento, por favor.', 2); renderPanel();
+  if (A.o) setTimeout(() => { if (city.abord !== A) return; A.wait = false; A.doc = npcDoc(A.o); bubble(A.o.g, 'Tá aqui, senhor.', 2); sfx('ui'); if (panelKind === 'abordagem') renderPanel(); }, 1100);
+  else { abordSend('doc'); setTimeout(() => { if (city.abord === A && A.wait) { A.wait = false; A.doc = { name: A.name, rg: rgNum(A.name + A.pid), nasc: '—', uf: UF_OF[cityId()], crimes: [], arma: null, semDoc: true }; if (panelKind === 'abordagem') renderPanel(); } }, 6000); }
+}
+function onAbordDoc(d) { const A = city.abord; if (!NET.user || d.to !== NET.user.id || !A || A.pid !== d.from) return; A.wait = false; A.doc = d.doc; sfx('ui'); if (panelKind === 'abordagem') renderPanel(); }
+function abordRevista() { const A = city.abord; if (!A || !A.doc) return; A.rev = true; bubble(city.player, 'Vira de costas, vou revistar.', 2); sfx('ui'); if (A.doc.arma) toast(`🔍 Encontrado: ${A.doc.arma}!`, 'bad'); else toast('🔍 Revista: nada encontrado.'); renderPanel(); }
+function abordAlgema() {
+  const A = city.abord; if (!A || !abordCrimes(A).length) return; A.st = 'algemado'; clank();
+  if (A.o) { A.o.held = { cuff: true }; bubble(A.o.g, pick(['Ai, tá apertado!', 'Eu sou inocente!', 'Chama meu advogado!']), 2.5); } else abordSend('algema');
+  S.stats.algemas = (S.stats.algemas || 0) + 1; persist();
+  const dl = city.doors.find(d => d.kind === 'delegacia'); if (dl) setGps(dl.x, dl.z, 'Delegacia');
+  closePanel(); toast(`🔗 ${A.doc.name} algemado. Leve até a Delegacia (GPS marcado) e coloque na cela.`, 'good');
+}
+function abordSolta() {
+  const A = city.abord; if (!A) return; city.abord = null;
+  if (A.o) { A.o.held = null; bubble(A.o.g, abordCrimes(A).length ? 'Valeu, chefia!' : 'Obrigado, senhor.', 2); } else abordSend('solta');
+  closePanel(); toast('Abordagem encerrada: liberado.');
+}
+/* do outro lado: o jogador abordado */
+function onAbord(d) {
+  if (!NET.user || d.to !== NET.user.id) return;
+  if (d.st === 'parar') { if (P.drive) exitVehicle(true); if (P.ride) endRide(true); if (P.aim) setAim(false); P.stopT = 45; P.v = 0; P.copId = d.byId; apito(); toast(`🚨 ${d.by}: PARADO! POLÍCIA! Mão na cabeça!`, 'bad'); }
+  else if (d.st === 'doc') {
+    P.stopT = Math.max(P.stopT || 0, 30); const G = myGun();
+    NET.ch.send({ type: 'broadcast', event: 'abord_doc', payload: { to: d.byId, from: NET.user.id, doc: { name: S.name, rg: rgNum(S.name + NET.user.id), nasc: S.nasc || '—', uf: UF_OF[cityId()] || 'SP', crimes: P.wanted > 0 ? (P.crimes || []).slice(-4) : [], arma: G && S.shift !== 'policial' ? G.name : null, fem: S.gender === 'f' } } });
+    toast('🪪 Você entregou o documento ao policial.');
+  }
+  else if (d.st === 'algema') { P.cuffBy = { id: d.byId, name: d.by }; P.stopT = 0; clank(); toast(`🔗 Você foi algemado por ${d.by}. Ele vai levar você para a Delegacia.`, 'bad'); }
+  else if (d.st === 'solta') { P.stopT = 0; P.cuffBy = null; toast('O policial liberou você.', 'good'); }
+  else if (d.st === 'cela') { P.cuffBy = null; P.stopT = 0; city.arrestT = 0; P.wanted = Math.max(1, P.wanted || 0); getArrested('o policial ' + d.by); }
+}
+/* celas dentro da Delegacia (chamado pelo buildShopInterior) */
+function delegaciaCells(it, h) {
+  const { box, solid, add, col, spot, W, D } = h, cx = SHOPIN.x, cz = SHOPIN.z, x0 = -W / 2, x1 = -W / 2 + 4.4, Hh = 3.4, barM = std(0x6d717a, 0.35, 0.8), cw = 3.6;
+  it.cells = [];
+  for (let i = 0; i <= CELLS; i++) { const z = -D / 2 + 1 + i * cw; solid(4.4, Hh, 0.18, 0xb8bcc4, (x0 + x1) / 2, Hh / 2, z); }
+  for (let i = 0; i < CELLS; i++) {
+    const zc = -D / 2 + 1 + cw * (i + 0.5);
+    for (let b = -cw / 2 + 0.15; b <= cw / 2 - 0.1; b += 0.25) if (Math.abs(b) > 0.65) add(CYL(0.025, 0.025, Hh, 6), barM, x1, Hh / 2, zc + b);
+    box(0.08, 0.1, cw, 0x5a5f69, x1, Hh - 0.05, zc, 0, 0.4, 0.7); col(x1, zc - cw / 2 + 0.6, 0.2, 1.1); col(x1, zc + cw / 2 - 0.6, 0.2, 1.1);
+    const door = new THREE.Group(); for (let b = -0.55; b <= 0.56; b += 0.22) { const m = new THREE.Mesh(CYL(0.03, 0.03, Hh - 0.1, 6), barM); m.position.set(0, (Hh - 0.1) / 2, b); door.add(m); }
+    const lockB = new THREE.Mesh(boxGeo(0.12, 0.25, 0.2), std(0x2a2d34, 0.4, 0.8)); lockB.position.set(0, 1.1, 0.5); door.add(lockB);
+    door.position.set(x1 + 0.12, 0, zc); it.g.add(door);
+    box(1.8, 0.45, 0.8, 0x7d776e, x0 + 1.1, 0.23, zc - 0.9); box(0.45, 0.45, 0.45, 0xf4f4f2, x0 + 0.4, 0.23, zc + 1.2);
+    const lbl = textSprite(`CELA ${i + 1}`, { bg: '#22344f', fg: '#fff', size: 40, scale: [1.2, 0.3, 1] }); lbl.position.set(x1 + 0.1, Hh - 0.35, zc); it.g.add(lbl);
+    const c = { i, x: cx + x0 + 2, z: cz + zc, door, open: 0.9, tgt: 0.9, who: null, m: null };
+    it.cells.push(c);
+    it.spots.push({ get label() { const A = city.abord; return A && A.st === 'algemado' && !c.who ? `🔒 Colocar ${A.doc ? A.doc.name.split(' ')[0] : A.name} na cela ${i + 1} e trancar` : c.who ? `Cela ${i + 1}: ${c.who}` : `Cela ${i + 1} (vazia)`; }, x: cx + x1 + 1.1, z: cz + zc, fn: () => lockInCell(i) });
+  }
+  // presos que já estão na Delegacia
+  const names = [];
+  for (const j of city.jailedN || []) names.push({ name: j.name, o: j.o });
+  for (const p of city.prisoners || []) if (!names.some(n => n.name === p.name)) names.push({ name: p.name });
+  names.slice(0, CELLS).forEach((n, i) => {
+    const c = it.cells[i]; c.who = n.name; c.open = c.tgt = 0;
+    if (n.o) { n.o.held.cellXZ = [c.x, c.z]; c.m = n.o.g; }
+    else { const g = makeSkater(roleLook('traficante', i), n.name, '#ff6b6b'); g.position.set(c.x, 0, c.z); g.rotation.y = Math.PI / 2; city.scene.add(g); it.npcs.push(g); c.m = g; }
+  });
+  for (const c of it.cells) { c.door.userData.z0 = c.door.position.z; c.door.position.z += c.open; }
+}
+function lockInCell(i) {
+  const it = city.shopIn, c = it && it.cells && it.cells[i], A = city.abord; if (!c) return;
+  if (!A || A.st !== 'algemado') return toast(c.who ? `Cela ${i + 1}: ${c.who} está preso aqui.` : `Cela ${i + 1} vazia. Algeme um suspeito e traga até aqui.`);
+  if (c.who) return toast('Essa cela está ocupada. Use outra.', 'bad');
+  const name = A.doc ? A.doc.name : A.name;
+  if (A.o) { A.o.held = { jailed: true, cellXZ: [c.x, c.z] }; city.jailedN = city.jailedN || []; city.jailedN.push({ o: A.o, name, t: 150 }); A.o.x = c.x; A.o.z = c.z; c.m = A.o.g; bubble(A.o.g, pick(['Vou sair rapidinho…', 'Isso é injustiça!', 'Me tira daqui!']), 3); }
+  else abordSend('cela');
+  c.who = name; c.tgt = 0; clank(); addPrisoner(name, 150); city.abord = null;
+  const crimes = abordCrimes(A).length, g = earn(jobPay('policial', 200 + crimes * 60)); addXP(45); S.stats.prisoes = (S.stats.prisoes || 0) + 1; persist();
+  toast(`🔒 ${name} trancado na cela ${i + 1}! Ocorrência registrada. +$${fmt(g)}`, 'good'); sfx('coin');
+  if (S.mission && S.mission.job === 'policial') { S.mission = null; nextJobTask(); }
+}
+/* um frame: suspeito parado/algemado, portas das celas, sirene, jogador abordado/algemado */
+function updatePolice(dt, t) {
+  const A = city.abord;
+  if (A && A.o) {
+    const o = A.o, g = o.g, H = o.held; let sp = 0;
+    if (!H) city.abord = null;
+    else if (H.cuff) {
+      const inside = !!city.shopIn, bx = P.x - Math.sin(P.h) * 1.2, bz = P.z - Math.cos(P.h) * 1.2, d = Math.hypot(bx - o.x, bz - o.z);
+      g.visible = !P.drive; if (d > 6 || P.drive || inside !== (Math.abs(o.x) > 400)) { o.x = bx; o.z = bz; } else if (d > 0.25) { const k = Math.min(1, dt * 3.5); sp = d * 3.5; o.x += (bx - o.x) * k; o.z += (bz - o.z) * k; }
+      o.h = Math.atan2(P.x - o.x, P.z - o.z) + (d > 0.6 ? 0 : 0);
+    } else if (!H.jailed) {
+      H.t -= dt; o.h = Math.atan2(P.x - o.x, P.z - o.z); const far = Math.hypot(P.x - o.x, P.z - o.z) > 25;
+      if (H.t <= 0 || far) { o.held = null; city.abord = null; bubble(g, far ? 'Fui!' : 'Posso ir? Tô indo…', 2); if (npcKind(o) === 'robber') { o.st = 'flee'; o.t = 0; } if (panelKind === 'abordagem') closePanel(); }
+    }
+    if (o.held) { g.position.set(o.x, Math.abs(o.x) > 400 ? 0 : groundH(o.x, o.z), o.z); g.rotation.y = o.h; animSkater(g, { walk: true, v: sp, fallT: 0, pose: H.cuff ? 'algema' : 'maos' }, t + (o.ph0 || 0)); tickBubble(g, dt); }
+  }
+  if (A && A.pid && !NET.peers[A.pid]) { city.abord = null; toast('O suspeito saiu da cidade.'); }
+  // presos (figurantes) cumprindo pena dentro da Delegacia
+  if (city.jailedN && city.jailedN.length) {
+    for (const j of city.jailedN) {
+      j.t -= dt; const o = j.o, g = o.g, xz = o.held && o.held.cellXZ;
+      if (j.t <= 0) { o.held = null; g.visible = true; if (npcKind(o) === 'robber') { o.st = 'gone'; city.scene.remove(g); } else if (npcKind(o) === 'thug') { o.x = o.hx; o.z = o.hz; } continue; }
+      const here = city.shopIn && city.shopIn.kind === 'delegacia'; g.visible = !!here;
+      if (here && xz) { o.x = xz[0]; o.z = xz[1]; g.position.set(o.x, 0, o.z); g.rotation.y = Math.PI / 2; animSkater(g, { walk: true, v: 0, fallT: 0, pose: Math.sin(t * 0.3 + j.t) > 0.6 ? 'maos' : null }, t); tickBubble(g, dt); }
+    }
+    city.jailedN = city.jailedN.filter(j => j.t > 0);
+  }
+  if (city.shopIn && city.shopIn.cells) for (const c of city.shopIn.cells) { c.open = lerp(c.open, c.tgt, 1 - Math.exp(-5 * dt)); c.door.position.z = c.door.userData.z0 + c.open; }
+  // sirene das viaturas e ambulâncias das profissões
+  const on = Math.floor(t * 4) % 2;
+  for (const m of [P.drive && P.drive.m, city.myVeh && city.myVeh.m]) if (m && m.userData.siren) { m.userData.siren[0].visible = !!on; m.userData.siren[1].visible = !on; }
+  // eu fui abordado / algemado por um policial (jogador)
+  if (P.stopT > 0) { P.stopT -= dt; P.v = 0; const cp = NET.peers[P.copId]; if (!cp || Math.hypot(cp.x - P.x, cp.z - P.z) > 30) P.stopT = 0; }
+  if (P.cuffBy) {
+    const cp = NET.peers[P.cuffBy.id]; P.v = 0; P.onBoard = false;
+    if (!cp) P.cuffBy = null;
+    else if (cp.seen && Math.abs(cp.x) < 400) { const bx = cp.x - Math.sin(cp.h || 0) * 1.2, bz = cp.z - Math.cos(cp.h || 0) * 1.2, d = Math.hypot(bx - P.x, bz - P.z); if (d > 8) { P.x = bx; P.z = bz; } else if (d > 0.25) { const k = Math.min(1, dt * 3.5); P.x += (bx - P.x) * k; P.z += (bz - P.z) * k; } P.h = Math.atan2(cp.x - P.x, cp.z - P.z); P.y = groundH(P.x, P.z); }
+  }
+}
+/* =========================================================
+   VEÍCULOS E BASES DAS PROFISSÕES: cada profissão tem a sua base e o seu veículo de trabalho
+   ========================================================= */
+const JOB_BASE = { policial: 'delegacia', bombeiro: 'bombeiros', socorrista: 'hospital', medico: 'hospital', catador: 'reciclagem', taxista: 'viagem', motoboy: 'agencia', entregador: 'agencia', grafiteiro: 'agencia', instrutor: 'skate', traficante: 'qg' };
+const BASE_NAME = { delegacia: 'Delegacia / Batalhão da PM', bombeiros: 'Quartel dos Bombeiros', hospital: 'Hospital e base do SAMU', reciclagem: 'Cooperativa de Reciclagem', viagem: 'Ponto de Táxi da Rodoviária', agencia: 'Agência de Empregos', skate: 'Shape & Truck', qg: 'QG da Comunidade' };
+const JOB_VEH = {
+  policial: [['j_viatura', 'v_sedan', 0xf2f2f2, 'Viatura da PM', 'pm'], ['j_rocam', 'v_xre', 0xf2f2f2, 'Moto da PM (Rocam)', 'pm']],
+  bombeiro: [['j_abt', 'v_pickup', 0xc62828, 'Auto Bomba Tanque', 'bomb']],
+  socorrista: [['j_samu', 'v_kombi', 0xf6f6f2, 'Ambulância do SAMU', 'samu'], ['j_motolancia', 'v_cg', 0xf6f6f2, 'Motolância do SAMU', 'samu']],
+  medico: [['j_medico', 'v_suv', 0xf6f6f2, 'Carro do Plantão Médico', 'med']],
+  catador: [['j_coleta', 'v_pickup', 0x2e9e5b, 'Caminhão da Coleta Seletiva', 'lixo']],
+  taxista: [['j_taxi', 'v_taxi', 0xf2c12e, 'Táxi da Cooperativa', null]],
+  motoboy: [['j_mboy', 'v_cg', 0xd8312f, 'Moto de Entrega com Baú', 'bau']],
+  entregador: [['j_ebike', 'v_ebike', 0xff7a1a, 'Bike Elétrica de Entrega', 'bau']],
+  grafiteiro: [['j_grafkombi', 'v_kombi', 0xff4f7b, 'Kombi do Grafite', 'graf']],
+  traficante: [['j_mov', 'v_xre', 0x15161a, 'Moto do Movimento', null]],
+};
+for (const job in JOB_VEH) JOB_VEH[job] = JOB_VEH[job].map(([id, base, color, name, deco]) => (VEH[id] = Object.assign({}, VEH[base], { id, name, color, deco, job, c: null, t: null, r: 'comum', desc: `Veículo de trabalho: ${JOBS[job].name}.` })));
+// motoboy e taxista não precisam mais comprar: pegam o veículo na base
+delete JOBS.motoboy.veh; delete JOBS.taxista.veh;
+JOBS.motoboy.desc += ' A moto com baú fica na base (Agência).'; JOBS.taxista.desc += ' O táxi da cooperativa fica no ponto da Rodoviária.';
+JOBS.policial.desc = 'Só depois de passar na prova da Delegacia. Você recebe pistola da corporação e algemas. Aborde suspeitos ("Parado! Polícia!"), peça o documento, reviste, algeme quem tem crime e leve até a cela da Delegacia. Viatura e moto da PM na base.';
+/* pinturas e equipamentos: sirene, letreiro, faixas, escada, caçamba, baú */
+function vehDeco(m, V) {
+  const u = m.userData, car = V.kind === 'car', host = car ? m : (u.body || m), top = car ? (u.roof || 1.6) : (u.seatY || 1) + 0.5, L = u.len || 4.5, Wd = ((u.radius || 1.1) - 0.2) * 2;
+  const bm = c => new THREE.MeshBasicMaterial({ color: c });
+  const siren = (c1, c2) => { const bar = new THREE.Group(), w = car ? 0.45 : 0.14, a = new THREE.Mesh(boxGeo(w, 0.14, car ? 0.25 : 0.12), bm(c1)), b = new THREE.Mesh(boxGeo(w, 0.14, car ? 0.25 : 0.12), bm(c2)); a.position.x = -w * 0.55; b.position.x = w * 0.55; bar.add(a, b); bar.position.set(0, top + 0.1, car ? 0 : -0.55); host.add(bar); u.siren = [a, b]; };
+  const label = (txt, bg, fg = '#fff') => { const s = textSprite(txt, { bg, fg, size: 44, scale: car ? [1.7, 0.36, 1] : [0.9, 0.22, 1] }); s.position.set(0, top + (car ? 0.45 : 0.32), car ? 0 : -0.55); host.add(s); };
+  const stripe = (c, y) => { if (!car) return; for (const sx of [1, -1]) { const s = new THREE.Mesh(boxGeo(0.03, 0.16, L * 0.84), bm(c)); s.position.set(sx * (Wd / 2 + 0.02), y, 0); m.add(s); } };
+  const mid = (u.roof || 1.6) * 0.55;
+  if (V.deco === 'pm') { siren(0xff2020, 0x2060ff); label('POLÍCIA 190', '#22344f'); stripe(0x22344f, mid); stripe(0xd8312f, mid - 0.18); }
+  else if (V.deco === 'samu') { siren(0xff2020, 0xff2020); label('SAMU 192', '#e53935'); stripe(0xe53935, mid); }
+  else if (V.deco === 'med') { siren(0xff2020, 0xffffff); label('MÉDICO', '#2e9e5b'); stripe(0x2e9e5b, mid); }
+  else if (V.deco === 'bomb') {
+    siren(0xff2020, 0xff2020); label('BOMBEIROS 193', '#b3262e'); stripe(0xffe14a, mid);
+    const tank = new THREE.Mesh(boxGeo(Wd * 0.92, 1.2, L * 0.42), std(0xc62828, 0.4, 0.3)); tank.position.set(0, (u.roof || 1.8) - 0.2, -L * 0.25); m.add(tank);
+    const lad = new THREE.Mesh(boxGeo(0.5, 0.1, L * 0.9), std(0xcfd3d8, 0.3, 0.8)); lad.position.set(0, (u.roof || 1.8) + 0.45, -0.1); m.add(lad);
+    const reel = new THREE.Mesh(CYL(0.35, 0.35, 0.3, 16), std(0xffe14a, 0.5)); reel.rotation.z = Math.PI / 2; reel.position.set(Wd / 2 + 0.1, 1, -L * 0.25); m.add(reel);
+  }
+  else if (V.deco === 'lixo') {
+    label('COLETA SELETIVA', '#2e9e5b'); const bx = new THREE.Mesh(boxGeo(Wd * 0.96, 1.5, L * 0.48), std(0x2e9e5b, 0.6)); bx.position.set(0, (u.roof || 1.8) - 0.05, -L * 0.24); m.add(bx);
+    ['#2f6db5', '#d8312f', '#3ddc84', '#ffcf3a'].forEach((c, i) => { const p = new THREE.Mesh(boxGeo(0.03, 0.4, 0.4), bm(new THREE.Color(c).getHex())); p.position.set(Wd / 2 + 0.02, (u.roof || 1.8) - 0.1, -L * 0.42 + i * 0.5); m.add(p); });
+    const lt = new THREE.Mesh(boxGeo(0.3, 0.12, 0.2), bm(0xff9f1a)); lt.position.set(0, (u.roof || 1.8) + 0.08, 0.3); m.add(lt);
+  }
+  else if (V.deco === 'bau') { const b = new THREE.Mesh(boxGeo(0.5, 0.45, 0.5), std(V.color === 0xff7a1a ? 0xff7a1a : 0xd8312f, 0.5)); b.position.set(0, (u.seatY || 0.95) + 0.3, -0.55); host.add(b); const s = textSprite('ENTREGAS', { bg: '#15161a', fg: '#ffcf3a', size: 40, scale: [0.6, 0.15, 1] }); s.position.set(0, (u.seatY || 0.95) + 0.65, -0.55); host.add(s); }
+  else if (V.deco === 'graf') { label('ARTE DE RUA', '#15161a', '#ff4f7b'); stripe(0xffcf3a, mid); stripe(0x4fc3ff, mid - 0.2); stripe(0x3ddc84, mid - 0.4); }
+}
+const jobVehs = () => JOB_VEH[S.shift] || [];
+function nearBase(job) { const k = JOB_BASE[job]; if (!k) return true; if (city.shopIn && city.shopIn.kind === k) return true; const d = city.doors.find(d => d.kind === k); return !d || Math.hypot(d.x - P.x, d.z - P.z) < 40; }
+function takeJobVeh(id) {
+  const V = VEH[id]; if (!V || V.job !== S.shift) return toast('Esse veículo é de outra profissão.', 'bad');
+  if (!nearBase(S.shift)) { const d = city.doors.find(d => d.kind === JOB_BASE[S.shift]); if (d) setGps(d.x, d.z, BASE_NAME[JOB_BASE[S.shift]]); return toast(`Vá até a base (${BASE_NAME[JOB_BASE[S.shift]]}) para pegar o veículo. GPS marcado.`, 'bad'); }
+  closePanel();
+  const go = () => { if (P.drive) exitVehicle(true); spawnMyVehicle(V); toast(`${V.name} liberado(a)! Chegue perto e aperte Ação para ${V.kind === 'car' ? 'dirigir' : 'pilotar'}.`, 'good'); sfx('ui'); };
+  if (city.shopIn) { exitShop(); setTimeout(go, 900); } else go();
+}
+function dropJobVeh() { const mv = city.myVeh; if (!mv || !mv.V.job) return; if (P.drive) exitVehicle(true); city.scene.remove(mv.m); city.myVeh = null; }
+/* =========================================================
+   MANSÃO DO AJBZ: no alto do morro, no meio da favela; 3 andares de ouro (lazer e jogos, cofre e fortuna, cobertura)
+   ========================================================= */
+const MANSAO_FLOORS = ['MANSÃO DO AJBZ · LAZER E JOGOS', 'MANSÃO DO AJBZ · COFRE', 'MANSÃO DO AJBZ · COBERTURA DO CHEFE'];
+Object.assign(ROOM_SIZE, { mansao1: [24, 18], mansao2: [24, 18], mansao3: [24, 18] });
+const goldM = () => new THREE.MeshStandardMaterial({ color: 0xf2b01e, metalness: 0.7, roughness: 0.25, emissive: 0x5a3a00, emissiveIntensity: 0.7 });
+function stateFlagTex(id) {
+  return canvasTex(200, 140, (g, w, h) => {
+    if (id === 'ssa') { // Bahia: listras branco/vermelho e cantão azul com triângulo branco
+      for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? '#d8202f' : '#ffffff'; g.fillRect(0, i * h / 4, w, h / 4); }
+      g.fillStyle = '#0b3d91'; g.fillRect(0, 0, w * 0.36, h / 2); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(w * 0.18, h * 0.07); g.lineTo(w * 0.3, h * 0.42); g.lineTo(w * 0.06, h * 0.42); g.closePath(); g.fill();
+    } else if (id === 'sp') { // São Paulo: 13 listras pretas e brancas, cantão vermelho com o Brasil
+      for (let i = 0; i < 13; i++) { g.fillStyle = i % 2 ? '#ffffff' : '#15161a'; g.fillRect(0, i * h / 13, w, h / 13 + 1); }
+      g.fillStyle = '#d8202f'; g.fillRect(0, 0, w * 0.4, h * 7 / 13); g.fillStyle = '#fff'; g.beginPath(); g.arc(w * 0.2, h * 0.27, h * 0.2, 0, TAU); g.fill();
+      g.fillStyle = '#0b3d91'; g.beginPath(); g.moveTo(w * 0.17, h * 0.13); g.lineTo(w * 0.27, h * 0.18); g.lineTo(w * 0.26, h * 0.3); g.lineTo(w * 0.2, h * 0.41); g.lineTo(w * 0.14, h * 0.3); g.closePath(); g.fill();
+      g.fillStyle = '#ffdf00'; for (const [x, y] of [[0.07, 0.08], [0.33, 0.08], [0.07, 0.46], [0.33, 0.46]]) { g.beginPath(); g.arc(w * x, h * y, 4, 0, TAU); g.fill(); }
+    } else { // Rio de Janeiro: quartéis azul e branco com o brasão
+      g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); g.fillStyle = '#1e5bb8'; g.fillRect(0, 0, w / 2, h / 2); g.fillRect(w / 2, h / 2, w / 2, h / 2);
+      g.fillStyle = '#ffdf00'; g.beginPath(); g.arc(w / 2, h / 2, h * 0.2, 0, TAU); g.fill(); g.fillStyle = '#d8202f'; g.beginPath(); g.arc(w / 2, h / 2, h * 0.12, 0, TAU); g.fill();
+    }
+  });
+}
+function mansaoFrame() { const [ax, s] = MORRO_SIDE[cityId()] || MORRO_SIDE.sp, f = ax === 'x' ? [-s, 0] : [0, -s]; return { ry: Math.atan2(f[0], f[1]), f }; }
+function buildMansion(sc) {
+  const id = cityId(), { ry, f } = mansaoFrame(), [cx, cz] = morroWorld(101, 0), y0 = MORRO_H, g = new THREE.Group(); g.position.set(cx, y0, cz); g.rotation.y = ry; sc.add(g); city.mansaoG = g;
+  const add = (geo, m, x, y, z, rx = 0, ryy = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ryy, 0); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  const gold = goldM(), marble = std(0xf4f1ea, 0.35, 0.05), glass = new THREE.MeshStandardMaterial({ color: 0x1b2a3a, roughness: 0.1, metalness: 0.6, emissive: 0xffd27a, emissiveIntensity: 0.12 }), rail = new THREE.MeshStandardMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.35, roughness: 0.05 });
+  add(boxGeo(26, 0.6, 17), marble, 0, 0.3, 0);
+  for (let i = 0; i < 3; i++) {
+    const w = 22 - i * 1.6, d = 14 - i * 1.2, y = 0.6 + i * 4.2;
+    add(boxGeo(w, 4.2, d), gold, 0, y + 2.1, 0); add(boxGeo(w + 0.4, 0.25, d + 0.4), marble, 0, y + 4.2, 0);
+    for (let k = 0; k < 5; k++) { const x = -w / 2 + w * (k + 0.5) / 5; if (i === 0 && Math.abs(x) < 2) continue; add(boxGeo(2.2, 2.4, 0.1), glass, x, y + 2.2, d / 2 + 0.03); add(boxGeo(2.2, 2.4, 0.1), glass, x, y + 2.2, -d / 2 - 0.03); }
+    for (const sx of [1, -1]) for (let k = 0; k < 3; k++) add(boxGeo(0.1, 2.4, 2.2), glass, sx * (w / 2 + 0.03), y + 2.2, -d / 2 + d * (k + 0.5) / 3);
+    if (i > 0) { add(boxGeo(w, 1, 0.08), rail, 0, y + 0.5 + 0.02, d / 2 + 1.2); add(boxGeo(w + 0.1, 0.08, 0.14), gold, 0, y + 1.05, d / 2 + 1.2); add(boxGeo(w, 0.2, 1.4), marble, 0, y - 0.05, d / 2 + 0.6); }
+  }
+  // colunas e frontão da entrada
+  for (const x of [-3.4, -1.3, 1.3, 3.4]) { add(CYL(0.32, 0.38, 4.6, 18), marble, x, 0.6 + 2.3, 8.4); add(boxGeo(0.9, 0.3, 0.9), gold, x, 5.05, 8.4); add(boxGeo(0.9, 0.3, 0.9), gold, x, 0.75, 8.4); }
+  add(boxGeo(8.4, 0.5, 2.2), gold, 0, 5.4, 7.9); const ped = new THREE.Shape(); ped.moveTo(-4.4, 0); ped.lineTo(4.4, 0); ped.lineTo(0, 1.6); ped.closePath(); add(new THREE.ExtrudeGeometry(ped, { depth: 0.5, bevelEnabled: false }), gold, 0, 5.65, 8.6);
+  add(boxGeo(2.6, 3.4, 0.2), new THREE.MeshStandardMaterial({ color: 0x8a5a1e, metalness: 0.5, roughness: 0.35 }), 0, 0.6 + 1.7, 7.06); for (const x of [-0.25, 0.25]) add(CYL(0.04, 0.04, 0.7, 8), gold, x, 2.4, 7.2);
+  for (let k = 0; k < 6; k++) add(boxGeo(1.8, 0.2, 0.6), marble, 0, 0.1 + k * 0.1 - 0.4, 9.6 + k * -0.2);
+  const sign = textSprite('👑 MANSÃO DO AJBZ', { bg: '#15161a', fg: '#ffd700', size: 52, scale: [7, 1.1, 1], stroke: '#8a5a1e' }); sign.position.set(0, 7.9, 9.2); g.add(sign);
+  // coroa de ouro no topo, letreiro e bandeiras
+  const top = 0.6 + 3 * 4.2;
+  const crown = new THREE.Group(); const ring = new THREE.Mesh(CYL(1.6, 1.6, 0.8, 24, 1, true), gold); ring.material.side = THREE.DoubleSide; crown.add(ring); for (let k = 0; k < 8; k++) { const a = k / 8 * TAU, c = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1, 8), gold); c.position.set(Math.cos(a) * 1.6, 0.85, Math.sin(a) * 1.6); crown.add(c); const gem = new THREE.Mesh(SPH(0.15, 10, 8), new THREE.MeshStandardMaterial({ color: [0xd8202f, 0x2e9e5b, 0x1e5bb8][k % 3], emissive: [0xd8202f, 0x2e9e5b, 0x1e5bb8][k % 3], emissiveIntensity: 0.6 })); gem.position.set(Math.cos(a) * 1.62, 0.1, Math.sin(a) * 1.62); crown.add(gem); }
+  crown.position.set(0, top + 0.6, 0); g.add(crown); city.mansaoCrown = crown;
+  const fm = (tex) => new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }), poleM = std(0xcfd3d8, 0.3, 0.8);
+  [[-8, brFlagTex()], [8, stateFlagTex(id)]].forEach(([x, tex]) => {
+    const pole = add(CYL(0.07, 0.09, 6, 8), poleM, x, top + 3, -3); const fg = new THREE.PlaneGeometry(2.8, 2, 10, 1); fg.translate(1.4, 0, 0);
+    const fl = new THREE.Mesh(fg, fm(tex)); fl.position.set(x, top + 5.1, -3); g.add(fl); city.flags.push({ m: fl, ph: rand(0, 6), base: fg.attributes.position.array.slice() });
+  });
+  // piscina com borda de mármore e coqueiros na lateral
+  add(boxGeo(7, 0.3, 11), marble, 15.5, 0.75, 0); const water = add(new THREE.PlaneGeometry(6, 10), new THREE.MeshStandardMaterial({ color: 0x29b6f6, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.85 }), 15.5, 0.92, 0, -Math.PI / 2);
+  for (const [x, z] of [[19.5, -5], [19.5, 5], [11.8, -6.5], [-14, 6]]) { add(CYL(0.18, 0.26, 6, 8), std(0x8a6a4a, 0.9), x, 3.6, z); for (let k = 0; k < 6; k++) { const lg = boxGeo(0.5, 0.06, 2.6).clone(); lg.translate(0, 0, 1.2); const leaf = add(lg, std(0x2e8b3a, 0.8), x, 6.6, z); leaf.rotation.order = 'YXZ'; leaf.rotation.set(0.45, k / 6 * TAU, 0); } }
+  // muro com portão de ouro
+  for (const sx of [1, -1]) { add(boxGeo(9.5, 1.6, 0.4), marble, sx * 8.3, 1.4, 11.2); for (let k = 0; k < 9; k++) add(boxGeo(0.12, 1.4, 0.12), gold, sx * (4 + k * 1), 2.9, 11.2); }
+  // porta (anel de entrada) e saída para a escadaria
+  const [dx, dz] = morroWorld(92.4, 0), [ox, oz] = morroWorld(90.6, 0);
+  const rg = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.7, side: THREE.DoubleSide })); rg.position.set(dx, morroHd(92.4) + 0.15, dz); sc.add(rg);
+  city.doors.push({ kind: 'mansao', label: '👑 Mansão do Ajbz', x: dx, z: dz, ring: rg, out: [ox, oz, ry] });
+}
+function mansionGuards(sc) {
+  for (const t of [-3.4, 3.4]) {
+    const [x, z] = morroWorld(91.6, t), g = makeSkater(roleLook('traficante', t > 0 ? 1 : 2), 'Segurança do Chefe', '#ff6b6b'); g.userData.ped = true; sc.add(g);
+    city.thugs.push({ role: 'traficante', g, x, z, h: mansaoFrame().ry, hx: x, hz: z, idle: true, fallT: 0, ph0: rand(0, 40), gun: 'fuzil', hostT: 0, shotT: rand(1, 2), talkCd: 0, guard: true });
+  }
+}
+function enterMansion(d) {
+  if (!isAdm()) { toast(`👑 Mansão do chefe ${CHIEF}. Os seguranças só deixam o chefe entrar.`, 'bad'); const gd = (city.thugs || []).find(o => o.guard); if (gd) bubble(gd.g, 'Aqui só entra o chefe!', 2.5); return; }
+  enterShop(Object.assign({}, d, { kind: 'mansao1', label: 'Mansão do Ajbz' }));
+}
+function goFloor(n) {
+  const it = city.shopIn; if (!it || !it.kind.startsWith('mansao')) return; closePanel();
+  if (it.kind === 'mansao' + n) return;
+  fadeTo(() => {
+    city.scene.remove(it.g); for (const m of it.npcs) city.scene.remove(m); city.colliders = city.colliders.filter(c => !c.shop);
+    const d = Object.assign({}, it.door, { kind: 'mansao' + n }), nit = buildShopInterior(d); city.shopIn = nit;
+    P.x = SHOPIN.x + nit.W / 2 - 2.4; P.z = SHOPIN.z + nit.D / 2 - 2.6; P.y = 0; P.h = Math.PI; city.camYaw = Math.PI; city.camSnap = true;
+    try { tone('sine', 880, 880, 0.25, 0.06); tone('sine', 660, 660, 0.4, 0.06, 0.2); } catch (e) { }
+    toast(`🛗 ${['1º andar · Lazer e jogos', '2º andar · Cofre', '3º andar · Cobertura do chefe'][n - 1]}`, 'pink');
+  });
+}
+function marbleTex() { return canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#f2efe8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(150,140,120,.35)'; for (let i = 0; i < 14; i++) { g.lineWidth = 1 + Math.random() * 2; g.beginPath(); let x = Math.random() * w, y = 0; g.moveTo(x, y); while (y < h) { x += rand(-14, 14); y += rand(8, 22); g.lineTo(x, y); } g.stroke(); } g.strokeStyle = 'rgba(212,160,23,.5)'; g.lineWidth = 2; g.strokeRect(1, 1, w - 2, h - 2); }); }
+/* decoração dos 3 andares (chamada dentro do buildShopInterior) */
+function mansaoDecor(it, n, h) {
+  const { box, solid, add, npc, spot, W, D } = h, gold = goldM(), cx = SHOPIN.x, cz = SHOPIN.z;
+  const mt = marbleTex(); mt.wrapS = mt.wrapT = THREE.RepeatWrapping; mt.repeat.set(W / 3, D / 3);
+  const fl = add(new THREE.PlaneGeometry(W, D), n === 3 ? new THREE.MeshStandardMaterial({ map: (() => { const t = woodTex().clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W / 3, D / 3); return t; })(), roughness: 0.5 }) : new THREE.MeshStandardMaterial({ map: mt, roughness: 0.18, metalness: 0.1 }), 0, 0.02, 0); fl.rotation.x = -Math.PI / 2;
+  for (const x of [-W / 2 + 0.1, W / 2 - 0.1]) box(0.1, 0.2, D, gold, x, 4.1, 0); for (const z of [-D / 2 + 0.1, D / 2 - 0.1]) box(W, 0.2, 0.1, gold, 0, 4.1, z);
+  // lustre de cristal
+  const ch = new THREE.Group(); ch.add(new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.06, 8, 32), gold)); for (let k = 0; k < 16; k++) { const a = k / 16 * TAU, c = new THREE.Mesh(SPH(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xfff6d8 })); c.position.set(Math.cos(a) * 0.9, -0.15, Math.sin(a) * 0.9); ch.add(c); } ch.children[0].rotation.x = Math.PI / 2; ch.position.set(0, 3.6, 0); it.g.add(ch);
+  const lt = new THREE.PointLight(0xffe7b0, 0.9, 26, 1.6); lt.position.set(0, 3.3, 0); it.g.add(lt);
+  // elevador
+  box(1.8, 2.6, 0.12, gold, W / 2 - 2.4, 1.3, D / 2 - 0.08); box(0.04, 2.5, 0.14, 0x15161a, W / 2 - 2.4, 1.3, D / 2 - 0.1);
+  const el = textSprite('🛗 ELEVADOR', { bg: '#15161a', fg: '#ffd700', size: 40, scale: [1.6, 0.36, 1] }); el.position.set(W / 2 - 2.4, 2.95, D / 2 - 0.2); it.g.add(el);
+  spot('🛗 Elevador (escolher o andar)', W / 2 - 2.4, D / 2 - 1.2, () => openPanel('elevador'));
+  if (n !== 1) it.spots = it.spots.filter(s => s.label !== 'Sair');
+  const seg = (x, z, ry) => { const m = npc(lookOf({ shirt: 'shirt_black', pants: 'pants_black', shoes: 'shoes_basic', glasses: 'gl_dark' }, pick(SKINS), 0x15161a, 'm'), 'Segurança', x, z, ry); return m; };
+  if (n === 1) {
+    // duas mesas de sinuca
+    const ballC = [0xffcf3a, 0x1e5bb8, 0xd8202f, 0x6a1b9a, 0xff7a1a, 0x2e9e5b, 0x7a1f1f, 0x15161a, 0xffcf3a, 0x1e5bb8, 0xd8202f, 0x6a1b9a, 0xff7a1a, 0x2e9e5b, 0x7a1f1f];
+    for (const tz of [-3.6, 1.6]) {
+      solid(2.9, 0.8, 1.7, 0x5a3d26, -6, 0.4, tz); box(2.6, 0.04, 1.42, 0x0f6b3a, -6, 0.83, tz, 0, 0.95);
+      for (const [px, pz] of [[-1.3, -0.7], [0, -0.72], [1.3, -0.7], [-1.3, 0.7], [0, 0.72], [1.3, 0.7]]) add(CYL(0.07, 0.07, 0.05, 10), std(0x050505, 0.9), -6 + px, 0.84, tz + pz);
+      ballC.forEach((c, i) => { const r = Math.floor((-1 + Math.sqrt(1 + 8 * i)) / 2), k = i - r * (r + 1) / 2; add(SPH(0.057, 12, 10), std(c, 0.2, 0.1), -6 + 0.55 + r * 0.1, 0.9, tz + (k - r / 2) * 0.118); });
+      add(SPH(0.057, 12, 10), std(0xffffff, 0.2), -6 - 0.7, 0.9, tz);
+      add(CYL(0.012, 0.02, 1.45, 8), std(0xd8b27a, 0.5), -6 - 0.2, 0.92, tz + 0.5, 0, Math.PI / 2).rotation.z = Math.PI / 2;
+      const lamp = box(2, 0.25, 0.5, 0x0f6b3a, -6, 2.6, tz, 0, 0.4); add(boxGeo(1.9, 0.02, 0.45), new THREE.MeshBasicMaterial({ color: 0xfff1c4 }), -6, 2.47, tz);
+    }
+    for (let k = 0; k < 6; k++) add(CYL(0.012, 0.02, 1.45, 8), std(0xd8b27a, 0.5), -W / 2 + 0.15, 1.1, -1.5 + k * 0.15, 0.1);
+    // bar com garrafas
+    solid(8, 1.1, 0.8, 0x15161a, -7, 0.55, -D / 2 + 1.4); box(8.1, 0.08, 0.9, gold, -7, 1.13, -D / 2 + 1.4);
+    for (let k = 0; k < 3; k++) box(8, 0.06, 0.35, 0x8a5a1e, -7, 1.5 + k * 0.6, -D / 2 + 0.25);
+    for (let k = 0; k < 36; k++) add(CYL(0.05, 0.06, 0.32, 8), new THREE.MeshStandardMaterial({ color: pick([0x2e9e5b, 0x7a1f1f, 0xffcf3a, 0x9fd6ff, 0x5a3d26]), transparent: true, opacity: 0.85, roughness: 0.1 }), -10.6 + (k % 12) * 0.65, 1.7 + Math.floor(k / 12) * 0.6, -D / 2 + 0.25);
+    for (let k = 0; k < 5; k++) add(CYL(0.22, 0.22, 0.75, 12), gold, -10 + k * 1.5, 0.38, -D / 2 + 2.3);
+    npc(lookOf({ shirt: 'shirt_basic', pants: 'pants_black', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), 'f'), 'Barwoman', -7, -D / 2 + 0.75, 0);
+    spot('🍹 Pedir um drink no bar', -7, -D / 2 + 2.6, () => { P.hp = 100; renderHp(); sfx('coin'); toast('🍹 Drink da casa, chefe! Vida 100%.', 'good'); });
+    // fliperamas no fundo
+    const scr = canvasTex(128, 128, (gg, w, hh) => { gg.fillStyle = '#05050a'; gg.fillRect(0, 0, w, hh); for (let i = 0; i < 40; i++) { gg.fillStyle = pick(['#ff4f7b', '#4fc3ff', '#ffcf3a', '#3ddc84']); gg.fillRect(Math.random() * w | 0, Math.random() * hh | 0, 6, 6); } gg.fillStyle = '#ffcf3a'; gg.font = 'bold 20px monospace'; gg.fillText('AJBZ', 38, 70); });
+    for (let k = 0; k < 4; k++) { const x = 2.5 + k * 2.2; solid(1, 1.9, 0.9, [0xd8202f, 0x1e5bb8, 0x6a1b9a, 0x2e9e5b][k], x, 0.95, -D / 2 + 0.7); add(new THREE.PlaneGeometry(0.75, 0.6), new THREE.MeshBasicMaterial({ map: scr }), x, 1.45, -D / 2 + 1.16, 0, -0.25); box(0.9, 0.12, 0.4, 0x15161a, x, 1.02, -D / 2 + 1.25); }
+    spot('🕹️ Jogos: sinuca, fliperama e videogame', 6, -D / 2 + 2.2, () => openPanel('jogos'));
+    spot('🎱 Jogar sinuca', -6, -1, () => { city.sinuca = null; openPanel('jogos', 'sinuca'); });
+    // TV gigante, videogame e sofá
+    const tv = canvasTex(256, 144, (gg, w, hh) => { gg.fillStyle = '#2e8b3a'; gg.fillRect(0, 0, w, hh); gg.strokeStyle = '#fff'; gg.lineWidth = 3; gg.strokeRect(10, 10, w - 20, hh - 20); gg.beginPath(); gg.moveTo(w / 2, 10); gg.lineTo(w / 2, hh - 10); gg.stroke(); gg.beginPath(); gg.arc(w / 2, hh / 2, 22, 0, TAU); gg.stroke(); gg.fillStyle = '#fff'; gg.font = 'bold 18px sans-serif'; gg.fillText('AJBZ 3 x 0 RIVAIS', 60, 30); });
+    add(new THREE.PlaneGeometry(4.2, 2.4), new THREE.MeshBasicMaterial({ map: tv }), W / 2 - 0.08, 2, 3, -Math.PI / 2); box(0.1, 2.6, 4.4, 0x15161a, W / 2 - 0.03, 2, 3);
+    solid(1, 0.5, 3.6, 0x7a1f1f, W / 2 - 4.6, 0.35, 3); box(0.3, 0.8, 3.6, 0x7a1f1f, W / 2 - 5.05, 0.75, 3);
+    spot('🎮 Videogame na TV (pênaltis)', W / 2 - 3.6, 5.2, () => { city.penal = null; openPanel('jogos', 'penal'); });
+    // jukebox e segurança
+    solid(0.9, 1.6, 0.6, 0xff4f7b, -W / 2 + 0.6, 0.8, 5.5); add(SPH(0.42, 16, 10, 0, TAU, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffcf3a }), -W / 2 + 0.6, 1.6, 5.5);
+    seg(-2.2, D / 2 - 1.8, Math.PI);
+  } else if (n === 2) {
+    // três cofres gigantes
+    for (const x of [-6, 0, 6]) {
+      solid(2.6, 2.8, 1, 0x6d717a, x, 1.4, -D / 2 + 0.6); const dr = add(CYL(0.9, 0.9, 0.12, 32), std(0x9aa3ad, 0.25, 0.9), x, 1.4, -D / 2 + 1.12, 0, Math.PI / 2);
+      add(CYL(0.22, 0.22, 0.1, 20), gold, x, 1.4, -D / 2 + 1.2, 0, Math.PI / 2); for (let k = 0; k < 3; k++) { const s = add(boxGeo(0.06, 0.9, 0.06), gold, x, 1.4, -D / 2 + 1.26); s.rotation.z = k / 3 * Math.PI; }
+      const tx = textSprite('COFRE', { bg: '#15161a', fg: '#ffd700', size: 40, scale: [1, 0.25, 1] }); tx.position.set(x, 3, -D / 2 + 1.15); it.g.add(tx);
+    }
+    // montanhas de dinheiro (maços de notas) e barras de ouro
+    const billT = canvasTex(64, 32, (gg, w, hh) => { gg.fillStyle = '#3f8f4f'; gg.fillRect(0, 0, w, hh); gg.fillStyle = '#2b6b38'; gg.fillRect(0, 10, w, 12); gg.fillStyle = '#f2e6c8'; gg.fillRect(26, 0, 12, hh); });
+    const piles = [[-8, 1, 7], [-4.5, 3.5, 6], [4.5, 3.5, 6], [8, 1, 7], [0, -2.5, 5]], mats = [], cnt = piles.reduce((a, p) => a + p[2] * p[2] * 12, 0);
+    const bills = new THREE.InstancedMesh(boxGeo(0.32, 0.11, 0.15), new THREE.MeshStandardMaterial({ map: billT, roughness: 0.8 }), cnt), M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(); let bi = 0;
+    for (const [px, pz, nn] of piles) for (let yy = 0; yy < 12; yy++) { const m2 = nn - Math.floor(yy / 2); if (m2 < 1) break; for (let i = 0; i < m2; i++) for (let j = 0; j < m2; j++) { if (bi >= cnt) break; M4.compose(new THREE.Vector3(px + (i - (m2 - 1) / 2) * 0.33, 0.06 + yy * 0.112, pz + (j - (m2 - 1) / 2) * 0.16), Q, new THREE.Vector3(1, 1, 1)); bills.setMatrixAt(bi++, M4); } }
+    bills.count = bi; bills.castShadow = true; it.g.add(bills);
+    const bars = new THREE.InstancedMesh(boxGeo(0.26, 0.09, 0.12), gold, 160); let gi = 0;
+    for (const [px, pz] of [[-3, -5.5], [3, -5.5]]) { solid(2.4, 0.9, 1.2, 0x5a3d26, px, 0.45, pz); for (let yy = 0; yy < 4; yy++) for (let i = 0; i < 8 - yy * 2; i++) for (let j = 0; j < 4 - yy; j++) { if (gi >= 160) break; M4.compose(new THREE.Vector3(px + (i - (7 - yy * 2) / 2) * 0.27, 0.95 + yy * 0.09, pz + (j - (3 - yy) / 2) * 0.13), Q, new THREE.Vector3(1, 1, 1)); bars.setMatrixAt(gi++, M4); } }
+    bars.count = gi; it.g.add(bars);
+    // máquina de contar dinheiro e lasers de segurança
+    solid(2, 0.9, 1, 0x15161a, -W / 2 + 2, 0.45, 5); box(0.6, 0.35, 0.45, 0x2a2d34, -W / 2 + 2, 1.08, 5); add(new THREE.PlaneGeometry(0.3, 0.12), new THREE.MeshBasicMaterial({ color: 0x3ddc84 }), -W / 2 + 2, 1.12, 5.23);
+    for (let k = 0; k < 4; k++) add(boxGeo(16, 0.02, 0.02), new THREE.MeshBasicMaterial({ color: 0xff2020 }), 0, 0.4 + k * 0.5, -D / 2 + 2.6);
+    spot('💰 Cofre do chefe (guardar e sacar)', 0, -D / 2 + 3.4, () => openPanel('cofre'));
+    spot('🧮 Contar o dinheiro', -W / 2 + 2, 6.2, () => { for (let k = 0; k < 6; k++) setTimeout(() => sfx('coin'), k * 120); toast(`🧮 Fortuna do chefe: $ ${fmt(S.coins + (S.vault || 0))} (no bolso $ ${fmt(S.coins)} · no cofre $ ${fmt(S.vault || 0)})`, 'pink'); });
+    seg(-3, D / 2 - 2, Math.PI); seg(3, D / 2 - 2, Math.PI);
+  } else {
+    // cobertura: cama king com cabeceira de ouro, hidromassagem, closet, aquário, home theater e trono
+    solid(3.4, 0.6, 4, 0xf4f2ec, 0, 0.3, -D / 2 + 2.6); box(3.5, 0.2, 4.1, 0x7a1f1f, 0, 0.62, -D / 2 + 2.9); box(3.6, 1.8, 0.2, gold, 0, 0.9, -D / 2 + 0.5);
+    for (const x of [-1, 1]) box(1.2, 0.25, 0.5, 0xffffff, x * 0.8, 0.78, -D / 2 + 1.1);
+    for (const x of [-2.4, 2.4]) { solid(0.7, 0.6, 0.6, 0x5a3d26, x, 0.3, -D / 2 + 1); add(SPH(0.22, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffe7b0 }), x, 0.9, -D / 2 + 1); }
+    spot('🛏️ Dormir na cama king (vida 100%)', 0, -D / 2 + 5.2, () => { fadeTo(() => { P.hp = 100; renderHp(); toast('😴 Que noite boa, chefe! Vida 100%.', 'good'); }); });
+    const jac = add(CYL(1.7, 1.7, 0.7, 32), std(0xf4f1ea, 0.3), -W / 2 + 2.6, 0.35, -D / 2 + 2.6); add(CYL(1.5, 1.5, 0.05, 32), new THREE.MeshStandardMaterial({ color: 0x4fc3ff, transparent: true, opacity: 0.8, roughness: 0.05 }), -W / 2 + 2.6, 0.66, -D / 2 + 2.6);
+    for (let k = 0; k < 10; k++) add(SPH(0.06, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 }), -W / 2 + 2.6 + rand(-1.1, 1.1), 0.72, -D / 2 + 2.6 + rand(-1.1, 1.1));
+    city.colliders.push({ x0: cx - W / 2 + 0.9, x1: cx - W / 2 + 4.3, z0: cz - D / 2 + 0.9, z1: cz - D / 2 + 4.3, shop: true });
+    spot('🛁 Relaxar na hidromassagem', -W / 2 + 2.6, -D / 2 + 5, () => { P.hp = 100; renderHp(); toast('🛁 Hidromassagem com vista para a cidade. Vida 100%.', 'good'); });
+    box(0.05, 1.8, 5, 0x9aa3ad, W / 2 - 1.4, 1.6, -3, 0, 0.3, 0.8); for (let k = 0; k < 14; k++) box(0.06, 0.8, 0.5, [0x15161a, 0xffffff, 0xd8202f, 0xffc83d, 0x1e5bb8][k % 5], W / 2 - 1.4, 1.2, -5.2 + k * 0.32, Math.PI / 2);
+    spot('👔 Closet do chefe', W / 2 - 2.6, -3, () => openPanel('shop:roupas'));
+    const aq = add(boxGeo(3, 1.2, 0.4), new THREE.MeshStandardMaterial({ color: 0x29b6f6, transparent: true, opacity: 0.6, roughness: 0.05 }), -W / 2 + 0.25, 1.6, 2, 0, 0); aq.rotation.y = Math.PI / 2;
+    for (let k = 0; k < 8; k++) add(SPH(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: pick([0xff7a1a, 0xffcf3a, 0xff4f7b]) }), -W / 2 + 0.25, 1.3 + Math.random() * 0.7, 0.8 + Math.random() * 2.4);
+    add(new THREE.PlaneGeometry(3.6, 2), new THREE.MeshBasicMaterial({ color: 0x0a0a12 }), 0, 1.9, D / 2 - 0.08, Math.PI); solid(4, 0.45, 1, 0x15161a, 0, 0.3, D / 2 - 4); box(4, 0.8, 0.3, 0x15161a, 0, 0.75, D / 2 - 4.5);
+    // trono de ouro
+    solid(1.2, 0.6, 1.1, 0x7a1f1f, W / 2 - 3, 0.3, 4); box(1.3, 2.2, 0.2, gold, W / 2 - 3, 1.1, 4.6); for (const sx of [-0.6, 0.6]) box(0.15, 0.8, 1, gold, W / 2 - 3 + sx, 0.75, 4);
+    spot('👑 Sentar no trono', W / 2 - 3, 2.8, () => { P.emote = { id: 'cheer', t: 0 }; toast(`👑 O rei do morro está no trono. Respeito, ${CHIEF}!`, 'pink'); sfx('level'); });
+    for (let k = 0; k < 3; k++) { const pt = canvasTex(64, 48, (gg, w, hh) => { gg.fillStyle = pick(['#1e5bb8', '#2e9e5b', '#d8202f']); gg.fillRect(0, 0, w, hh); gg.fillStyle = '#ffcf3a'; gg.beginPath(); gg.arc(w / 2, hh / 2, 12, 0, TAU); gg.fill(); }); add(new THREE.PlaneGeometry(1.4, 1), new THREE.MeshBasicMaterial({ map: pt }), -4 + k * 4, 2.2, -D / 2 + 0.07); box(1.55, 1.15, 0.04, gold, -4 + k * 4, 2.2, -D / 2 + 0.04); }
+  }
+}
+function vaultMove(dir, amt) {
+  S.vault = S.vault || 0; amt = amt === 'all' ? (dir > 0 ? S.coins : S.vault) : +amt;
+  if (dir > 0) { amt = Math.min(amt, S.coins); S.coins -= amt; S.vault += amt; } else { amt = Math.min(amt, S.vault); S.vault -= amt; S.coins += amt; }
+  if (amt > 0) { persist(); updateHUD(); sfx('coin'); toast(dir > 0 ? `🔐 Guardou $ ${fmt(amt)} no cofre.` : `💵 Sacou $ ${fmt(amt)} do cofre.`, 'good'); } renderPanel();
+}
+/* mini-jogos da mansão */
+function sinucaShot(f) {
+  const z = city.sinuca = city.sinuca || { me: 0, ele: 0, log: [] }; if (z.end) return;
+  const pr = [0.62, 0.5, 0.38][f], foul = f === 2 && Math.random() < 0.12;
+  if (foul) z.log.unshift('Bola branca na caçapa! Falta.'); else if (Math.random() < pr) { z.me += f === 2 && Math.random() < 0.4 ? 2 : 1; z.log.unshift(f === 2 ? 'Tacada forte: encaçapou!' : 'Encaçapou!'); try { tone('sine', 300, 120, 0.12, 0.08); } catch (e) { } } else z.log.unshift('Errou a tacada.');
+  if (z.me >= 7) { z.end = 'Você ganhou a partida! 🏆'; sfx('level'); }
+  else { if (Math.random() < 0.42) { z.ele++; z.log.unshift('O segurança encaçapou uma.'); } if (z.ele >= 7) { z.end = 'O segurança ganhou dessa vez.'; sfx('hit'); } }
+  z.log = z.log.slice(0, 4); renderPanel();
+}
+function penalKick(c) {
+  const z = city.penal = city.penal || { gols: 0, n: 0, log: [] }; if (z.n >= 5) return; const gk = Math.floor(Math.random() * 3); z.n++;
+  if (gk === c) z.log.unshift(`Cobrança ${z.n}: o goleiro pegou!`); else { z.gols++; z.log.unshift(`Cobrança ${z.n}: GOOOL!`); sfx('coin'); }
+  if (z.n >= 5) { z.end = `${z.gols} de 5 gols.${z.gols >= 4 ? ' Craque!' : ''}`; if (z.gols >= 4) sfx('level'); } renderPanel();
+}
+function fliperStart() { const z = city.fliper = { st: 'wait' }; renderPanel(); setTimeout(() => { if (city.fliper !== z) return; z.st = 'go'; z.t0 = performance.now(); renderPanel(); }, rand(1200, 3200)); }
+function fliperHit() {
+  const z = city.fliper; if (!z) return;
+  if (z.st === 'wait') { z.st = 'cedo'; renderPanel(); return; }
+  if (z.st !== 'go') return; const ms = Math.round(performance.now() - z.t0); z.st = 'done'; z.ms = ms;
+  if (!S.arcadeBest || ms < S.arcadeBest) { S.arcadeBest = ms; persist(); z.rec = true; sfx('level'); } else sfx('coin'); renderPanel();
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
@@ -7018,7 +7445,7 @@ const PANELS = {
     for (const [id, J] of Object.entries(JOBS)) {
       const rec = S.jobs[id] || { done: 0, earned: 0 }, why = lvlLock(J.need) ? `Libera no nível ${J.need}` : J.skate && !hasSkate() ? 'Precisa de skate' : J.veh && !ownsKind(J.veh) ? `Precisa de ${J.veh === 'moto' ? 'moto' : 'carro'}` : J.police && !S.policeOk ? 'Faça a prova na Delegacia' : J.gang && !S.gang ? 'Entre numa facção (QG no morro)' : '', lock = !!why;
       html += `<div class="card ${lock ? 'locked' : ''}"><h4>${J.icon} ${esc(J.name)}</h4><p>${esc(J.desc)}</p><div class="meta"><span>Nível ${jobLv(id)}</span><span>${rec.done} pedidos</span><span class="coin">ganhou $ ${fmt(rec.earned)}</span><span>a partir de $ ${fmt(jobPay(id, J.base))} por pedido</span></div>
-        <div>${S.shift === id ? '<span class="pill on">Trabalhando</span>' : lock ? `<span class="pill">${why}</span>` : certOk(id) ? `<button class="btn" data-act="shift-start" data-id="${id}">Começar turno</button>` : `<button class="btn" data-act="job-test" data-id="${id}">📝 Fazer o teste</button>`}${certOk(id) ? ' <span class="pill on">Aprovado no teste</span>' : ''}${id === 'policial' && !S.policeOk ? ' <button class="btn ghost sm" data-act="gps-kind" data-k="delegacia">GPS até a Delegacia</button>' : ''}${id === 'traficante' && !S.gang ? ' <button class="btn ghost sm" data-act="gps-kind" data-k="qg">GPS até o QG</button>' : ''}</div></div>`;
+        <div>${S.shift === id ? '<span class="pill on">Trabalhando</span> <button class="btn ghost sm" data-act="open-base">🏢 Base e veículo</button>' : lock ? `<span class="pill">${why}</span>` : certOk(id) ? `<button class="btn" data-act="shift-start" data-id="${id}">Começar turno</button>` : `<button class="btn" data-act="job-test" data-id="${id}">📝 Fazer o teste</button>`}${certOk(id) ? ' <span class="pill on">Aprovado no teste</span>' : ''}${id === 'policial' && !S.policeOk ? ' <button class="btn ghost sm" data-act="gps-kind" data-k="delegacia">GPS até a Delegacia</button>' : ''}${id === 'traficante' && !S.gang ? ' <button class="btn ghost sm" data-act="gps-kind" data-k="qg">GPS até o QG</button>' : ''}</div></div>`;
     }
     return { title: 'Agência de Empregos', html };
   },
@@ -7227,6 +7654,49 @@ const PANELS = {
     html += S.contacts.length ? `<p class="muted">Amigos da cidade (quem é da sua crew aceita mais fácil):</p><div class="chips">${S.contacts.map(id => `<button class="chip" data-act="casar-bot" data-id="${id}" ${S.coins < RING_PRICE ? 'disabled' : ''}>💍 ${esc(BOT[id].name)}</button>`).join('')}</div>` : '<p class="muted">Você ainda não tem amigos na cidade. Converse com o pessoal na rua para conhecer alguém.</p>';
     return { title: 'Igreja', html };
   },
+  abordagem() {
+    const A = city.abord; if (!A) return { title: '🚨 Abordagem', html: '<p class="muted">Nenhuma abordagem em andamento. Chegue perto de um suspeito (ou de qualquer pessoa) e aperte Ação para abordar.</p>' };
+    const D = A.doc, crimes = abordCrimes(A); let html = '';
+    html += `<p class="muted">${A.st === 'algemado' ? '🔗 Suspeito algemado e seguindo você. Leve até a Delegacia e tranque numa cela.' : `🚨 ${esc(D ? D.name : A.name)} parou com as mãos na cabeça.`}</p>`;
+    if (!D) html += A.wait ? '<div class="note">🪪 Aguardando o documento...</div>' : `<div class="row"><button class="btn" data-act="ab-doc">🪪 Pedir o documento</button><button class="btn ghost" data-act="ab-solta">Liberar</button></div>`;
+    else {
+      html += `<div class="rg"><div class="rg-h">REPÚBLICA FEDERATIVA DO BRASIL<br><small>CARTEIRA DE IDENTIDADE · ${esc(D.uf)}</small></div><div class="rg-b"><div class="rg-f">${D.fem ? '👩' : '👨'}</div><div><small>NOME</small><b>${esc(D.name)}</b><small>REGISTRO GERAL</small><b>${esc(D.rg)}</b><small>NASCIMENTO</small><b>${esc(D.nasc)}</b></div></div>${D.semDoc ? '<div class="rg-x">Sem documento! Identificado pelo sistema.</div>' : ''}</div>`;
+      html += `<div class="card"><h4>💻 Consulta no sistema da PM</h4>${crimes.length ? crimes.map(c => `<p>⚠️ ${esc(c)}</p>`).join('') : '<p>✅ Nada consta.</p>'}${A.rev ? `<p>🔍 Revista: ${D.arma ? `<b>${esc(D.arma)}</b> encontrada` : 'nada encontrado'}</p>` : ''}</div>`;
+      if (A.st === 'algemado') html += `<div class="row"><button class="btn" data-act="gps-kind" data-k="delegacia">GPS até a Delegacia</button></div>`;
+      else html += `<div class="row">${A.rev ? '' : '<button class="btn ghost" data-act="ab-rev">🔍 Revistar</button>'}${crimes.length ? '<button class="btn" data-act="ab-algema">🔗 Algemar</button>' : ''}<button class="btn ghost" data-act="ab-solta">${crimes.length ? 'Liberar mesmo assim' : 'Liberar (ficha limpa)'}</button></div>`;
+    }
+    return { title: '🚨 Abordagem policial', html };
+  },
+  base() {
+    const id = S.shift, J = JOBS[id];
+    if (!id) return { title: '🏢 Base da profissão', html: '<p class="muted">Comece um turno numa profissão (Agência de Empregos) para usar a garagem da base.</p><button class="btn" data-act="open-agencia">Abrir Agência</button>' };
+    const k = JOB_BASE[id], vs = jobVehs(), ic = V => V.deco === 'pm' ? (V.kind === 'car' ? '🚓' : '🏍️') : V.deco === 'samu' ? (V.kind === 'car' ? '🚑' : '🏍️') : V.deco === 'bomb' ? '🚒' : V.deco === 'lixo' ? '🚛' : V.bike ? '🚲' : V.kind === 'car' ? (V.taxi ? '🚕' : '🚗') : '🏍️';
+    let html = `<p class="muted">${J.icon} ${esc(J.name)} · Base: <b>${esc(BASE_NAME[k] || '—')}</b>.${id === 'policial' ? ' Equipamento: pistola 9mm da corporação e algemas.' : ''}</p>`;
+    html += vs.length ? `<div class="grid-items">${vs.map(V => `<div class="item-card"><div class="swatch ico" style="--sw:${hex(V.color)}">${ic(V)}</div><div class="item-info"><b>${esc(V.name)}</b><small>Até ${Math.round(V.top * 3.6)} km/h · da profissão, de graça</small></div><div class="item-actions"><button class="btn sm" data-act="jveh" data-id="${V.id}">Pegar</button></div></div>`).join('')}</div>` : '<p class="muted">Essa profissão trabalha a pé ou de skate.</p>';
+    if (!nearBase(id)) html += `<div class="note">Você está longe da base. Os veículos ficam na garagem de lá.</div><button class="btn ghost" data-act="gps-kind" data-k="${k}">GPS até a base</button>`;
+    return { title: '🏢 Base da profissão', html };
+  },
+  elevador() {
+    const cur = city.shopIn ? +String(city.shopIn.kind).slice(6) : 1;
+    return { title: '🛗 Elevador', html: `<div class="quiz">${['1º andar · Lazer: sinuca, bar, fliperama e TV', '2º andar · Cofre: dinheiro e barras de ouro', '3º andar · Cobertura do chefe: suíte, hidro e trono'].reverse().map((l, i) => { const n = 3 - i; return `<button class="btn ${n === cur ? 'ghost' : ''}" data-act="floor" data-n="${n}" ${n === cur ? 'disabled' : ''}>${n === cur ? '● ' : ''}${l}</button>`; }).join('')}</div>` };
+  },
+  cofre() {
+    const v = S.vault || 0;
+    return { title: '💰 Cofre do chefe', html: `<p class="muted">O que fica no cofre não pode ser roubado em assalto.</p><div class="card"><h4>No cofre: $ ${fmt(v)}</h4><p>No bolso: $ ${fmt(S.coins)} · Fortuna total: <b>$ ${fmt(v + S.coins)}</b></p></div>
+      <h3>Guardar</h3><div class="chips">${[1000, 10000, 100000].map(a => `<button class="chip" data-act="vault" data-d="1" data-a="${a}" ${S.coins < a ? 'disabled' : ''}>$ ${fmt(a)}</button>`).join('')}<button class="chip" data-act="vault" data-d="1" data-a="all" ${!S.coins ? 'disabled' : ''}>Tudo</button></div>
+      <h3>Sacar</h3><div class="chips">${[1000, 10000, 100000].map(a => `<button class="chip" data-act="vault" data-d="-1" data-a="${a}" ${v < a ? 'disabled' : ''}>$ ${fmt(a)}</button>`).join('')}<button class="chip" data-act="vault" data-d="-1" data-a="all" ${!v ? 'disabled' : ''}>Tudo</button></div>` };
+  },
+  jogos(tab) {
+    tab = tab || city.jogoTab || 'sinuca'; city.jogoTab = tab;
+    let html = `<div class="chips">${[['sinuca', '🎱 Sinuca'], ['fliper', '🕹️ Fliperama'], ['penal', '🎮 Pênaltis']].map(([k, n]) => `<button class="chip ${k === tab ? 'on' : ''}" data-act="jogo-tab" data-k="${k}">${n}</button>`).join('')}</div>`;
+    if (tab === 'sinuca') { const z = city.sinuca || { me: 0, ele: 0, log: [] };
+      html += `<div class="card"><h4>🎱 Você ${z.me} x ${z.ele} Segurança</h4><p class="muted">Quem encaçapar 7 primeiro ganha. Tacada forte arrisca mais e pode valer 2.</p>${z.log.map(l => `<p>${esc(l)}</p>`).join('')}${z.end ? `<p><b>${esc(z.end)}</b></p><button class="btn" data-act="sin-new">Nova partida</button>` : `<div class="row"><button class="btn ghost" data-act="sin" data-f="0">Tacada fraca</button><button class="btn ghost" data-act="sin" data-f="1">Tacada média</button><button class="btn" data-act="sin" data-f="2">Tacada forte</button></div>`}</div>`; }
+    else if (tab === 'fliper') { const z = city.fliper;
+      html += `<div class="card"><h4>🕹️ Reflexo AJBZ</h4><p class="muted">Aperte quando a tela ficar verde. Recorde: ${S.arcadeBest ? S.arcadeBest + ' ms' : '—'}</p>${!z || z.st === 'done' || z.st === 'cedo' ? `${z && z.st === 'done' ? `<p><b>${z.ms} ms</b>${z.rec ? ' · 🏆 Novo recorde!' : ''}</p>` : ''}${z && z.st === 'cedo' ? '<p>Apertou antes da hora!</p>' : ''}<button class="btn" data-act="fl-start">Jogar</button>` : `<button class="btn ${z.st === 'go' ? '' : 'ghost'}" data-act="fl-hit" style="min-height:90px;width:100%;${z.st === 'go' ? 'background:#3ddc84;color:#15161a' : ''}">${z.st === 'go' ? 'AGORA!' : 'Espere o verde...'}</button>`}</div>`; }
+    else { const z = city.penal || { gols: 0, n: 0, log: [] };
+      html += `<div class="card"><h4>🎮 Pênaltis · ${z.gols} gol(s) em ${z.n}</h4>${z.log.slice(0, 3).map(l => `<p>${esc(l)}</p>`).join('')}${z.n >= 5 ? `<p><b>${esc(z.end || '')}</b></p><button class="btn" data-act="pen-new">Jogar de novo</button>` : `<div class="row"><button class="btn ghost" data-act="pen" data-c="0">⬅ Canto esquerdo</button><button class="btn ghost" data-act="pen" data-c="1">⬆ Meio</button><button class="btn ghost" data-act="pen" data-c="2">Canto direito ➡</button></div>`}</div>`; }
+    return { title: '🕹️ Jogos da mansão', html };
+  },
   hospital() {
     let html = `<p class="muted">Hospital Municipal e base do SAMU (192). Atendimento pelo SUS, de graça. Quando a vida chega a 0% o SAMU busca você e você acorda aqui.</p>`;
     html += `<div class="card"><h4>❤ Sua vida: ${Math.round(P.hp)}%</h4>${P.hp < 100 ? `<button class="btn" data-act="consulta" ${(S.consultaT || 0) > Date.now() ? 'disabled' : ''}>Consulta no SUS (volta a 100%)</button>${(S.consultaT || 0) > Date.now() ? `<p class="muted">Próxima consulta em ${Math.ceil((S.consultaT - Date.now()) / 60000)} min.</p>` : ''}` : '<span class="pill on">Saúde em dia</span>'}</div>`;
@@ -7370,6 +7840,21 @@ function act(a, ds, el) {
     case 'quiz-start': startQuiz(); break;
     case 'job-test': startJobTest(ds.id); break;
     case 'job-ans': answerJob(ds.k); break;
+    case 'ab-doc': abordDoc(); break;
+    case 'ab-rev': abordRevista(); break;
+    case 'ab-algema': abordAlgema(); break;
+    case 'ab-solta': abordSolta(); break;
+    case 'open-base': openPanel('base'); break;
+    case 'jveh': takeJobVeh(ds.id); break;
+    case 'floor': goFloor(+ds.n); break;
+    case 'vault': vaultMove(+ds.d, ds.a); break;
+    case 'jogo-tab': openPanel('jogos', ds.k); break;
+    case 'sin': sinucaShot(+ds.f); break;
+    case 'sin-new': city.sinuca = null; renderPanel(); break;
+    case 'pen': penalKick(+ds.c); break;
+    case 'pen-new': city.penal = null; renderPanel(); break;
+    case 'fl-start': fliperStart(); break;
+    case 'fl-hit': fliperHit(); break;
     case 'open-prefeitura': openPanel('prefeitura'); break;
     case 'biz-tipo': city.bizTipo = ds.id; renderPanel(); break;
     case 'biz-slot': city.bizSlot = +ds.id; renderPanel(); break;
@@ -7582,6 +8067,8 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'socorrido' }, ({ payload }) => onRescued(payload))
     .on('broadcast', { event: 'assalto_ok' }, ({ payload }) => onRobOk(payload))
     .on('broadcast', { event: 'marca' }, ({ payload }) => renderMark(payload))
+    .on('broadcast', { event: 'abord' }, ({ payload }) => onAbord(payload))
+    .on('broadcast', { event: 'abord_doc' }, ({ payload }) => onAbordDoc(payload))
     .on('broadcast', { event: 'venda' }, ({ payload }) => onSale(payload))
     .on('broadcast', { event: 'novo_comercio' }, ({ payload }) => { if (payload.cidade === cityId()) setBiz(payload); })
     .on('broadcast', { event: 'pedido' }, ({ payload }) => onProposal(payload))
@@ -7703,7 +8190,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
@@ -7724,7 +8211,7 @@ function netTick(dt, t) {
       if (VEH[d.vh].kind === 'car') { p.g.visible = false; } else { p.g.visible = true; p.g.position.y = groundH(p.x, p.z) + vu.seatY - 1.07; if (vu.crank) vu.crank.rotation.x = vu.spin * 0.45; animSkater(p.g, { pedal: vu.bike ? vu.spin || 0 : null, ride: true, walk: true, v: 0, fallT: 0 }, t); }
       tickBubble(p.g, dt); continue;
     } else if (p.veh) { city.scene.remove(p.veh); p.veh = null; p.vehId = null; p.g.visible = true; }
-    animSkater(p.g, { wpHold: p.wp || null, walk: !d.b, carry: true, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
+    animSkater(p.g, { pose: d.ps === 2 ? 'algema' : d.ps === 1 ? 'maos' : null, wpHold: p.wp || null, walk: !d.b, carry: true, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
     tickBubble(p.g, dt);
   }
 }
