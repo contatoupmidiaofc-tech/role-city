@@ -143,7 +143,8 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 
 ### Morros com dono, guerra, vida na favela, pátio da PM e a Hilux do chefe
 - **Tiroteio entre jogadores**: todo mundo por perto vê o disparo e escuta o tiro (antes só quem era atingido percebia).
-- **Favelas da região** (Mapa → Favelas da região): 3 em cada cidade, longe do centro e fora do comando do chefe. Qualquer jogador compra ($ 50.000 ou 400 T) e vira **dono do morro**: bandeira do grupo, contenção armada, usuários comprando na boca e caixa de $ 450 por dia. **Guerra**: outro jogador armado fica 60 s na bandeira sem cair e toma o morro (a contenção atira, o dono recebe o aviso). Tudo salvo no servidor (tabela `morros`).
+- **Favelas da região** (Mapa → Favelas da região): 3 em cada cidade, longe do centro, todas do **comando do chefe Ajbz**. Quem quiser um morro **negocia o valor com o chefe**: o chefe manda a oferta pelo jogo, o jogador aceita e o dinheiro vai para o chefe. O dono tem bandeira, contenção, usuários comprando na boca e caixa de $ 450 por dia. Morros vendidos podem ser tomados na **guerra** por outro jogador (60 s na bandeira sem cair); o que é do chefe ninguém toma, e o chefe pode retomar os que vendeu. Tudo salvo no servidor (tabela `morros`).
+- **Dinheiro infinito do chefe**: o saldo do ADM é completado sempre que baixa.
 - **Vida na favela**: traficantes e as mulheres dançando perto do **paredão** (caixas de som com LED tocando um beat de trap), usuários subindo até a boca; o mesmo no morro do chefe.
 - **Crianças** brincando de bola na praça. **Carros de som** no trânsito.
 - **Pátio da PM**: 3 viaturas (PM, Força Tática, Caminhonete) e 3 motos (Rocam, Patrulha, Rocam Esportiva) sempre estacionadas na frente da Delegacia; policial em serviço chega perto e escolhe. **Cassetete** na mão dos policiais.

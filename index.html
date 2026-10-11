@@ -599,7 +599,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-11';
+const BUILD = '2026.10.11-12';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -1587,7 +1587,7 @@ function grantAdmin() {
   if (!S.equip.gun || S.equip.gun === 'gun_none') S.equip.gun = 'gun_fuzil';
   for (const it of EXCL_ITEMS) if (!S.owned.includes(it.id)) S.owned.push(it.id);
   if (!S.ajbzSet) { S.ajbzSet = true; S.equip.shirt = 'shirt_ajbz'; S.equip.cap = 'cap_ajbz'; S.equip.pants = 'pants_ajbz'; if (city.player) applyLook(city.player, myLook()); }
-  S.coins = Math.max(S.coins, 1000000); S.tokens = Math.max(S.tokens, 100000);
+  S.coins = Math.max(S.coins, 99999999); S.tokens = Math.max(S.tokens, 999999); // dinheiro infinito do chefe (é completado sempre que baixa)
   S.crates.rara = Math.max(S.crates.rara, 10); S.crates.lendaria = Math.max(S.crates.lendaria, 10);
   persist();
 }
@@ -7282,15 +7282,19 @@ function buildRegFavelas(sc) {
     city.regFav.push(R);
     noFog(g, 0.95);
     partyAt(sc, F.x + 5, F.z - 3, F.slot, 2);
-    usersFor(sc, [F.x + 2, F.z + 34, F.x - 6, F.z - 3.8], 1, F.slot);
+    usersFor(sc, [F.x + 2, F.z + 34, F.x - 6, F.z - 3.8], 1);
+    setMorro(CHEFE_ROW(F.slot));
   }
 }
 async function loadMorros() {
   if (!NET.sb) return; const cid = cityId();
   try { const { data, error } = await NET.sb.from('morros').select('*').eq('cidade', cid); if (error || !data || cityId() !== cid) return; for (const r of data) setMorro(r); } catch (e) { }
 }
+const CHEFE_ROW = slot => ({ slot, dono: null, dono_nome: CHIEF, grupo_nome: 'Bonde do AJBZ', emoji: '👑', cor: '#d4a017', adm: true });
+const isAdmRow = r => !r || r.adm || (r.emoji === '👑' && r.grupo_nome === 'Bonde do AJBZ');
+const morroRow = slot => (city.morros || {})[slot] || CHEFE_ROW(slot);
 function setMorro(r) {
-  const R = (city.regFav || [])[r.slot]; if (!R) return; city.morros[r.slot] = r;
+  const R = (city.regFav || [])[r.slot]; if (!R) return; if (r.adm) delete city.morros[r.slot]; else city.morros[r.slot] = r;
   const gc = r.cor || '#d8202f', gg = { c: gc, e: r.emoji || '🏴', n: r.grupo_nome || r.dono_nome };
   R.flag.material.map = flagTex(gg); R.flag.material.needsUpdate = true;
   R.g.remove(R.owner); R.owner = textSprite(`${gg.e} ${(r.grupo_nome || 'Bonde de ' + r.dono_nome).toUpperCase()} · DONO: ${r.dono_nome.toUpperCase()}`, { bg: '#15161a', fg: '#fff', size: 40, scale: [10, 1, 1], stroke: gc }); R.owner.position.set(0, 10.8, 0); R.g.add(R.owner);
@@ -7298,22 +7302,51 @@ function setMorro(r) {
   for (const s of R.soldiers) { city.scene.remove(s.g); city.thugs = city.thugs.filter(o => o !== s); } R.soldiers = [];
   [[-4, 4], [4, 4], [0, -9]].forEach(([dx, dz], i) => { const x = R.F.x + dx, z = R.F.z + dz, g = makeSkater(roleLook('traficante', i + R.F.slot), `${gg.e} Contenção de ${r.dono_nome}`, '#ff6b6b'); g.userData.ped = true; city.scene.add(g); const o = { role: 'traficante', g, x, z, h: 0, hx: x, hz: z, idle: true, fallT: 0, ph0: rand(0, 40), gun: i === 2 ? 'pistola' : 'fuzil', hostT: 0, shotT: rand(1, 2), talkCd: 0, guard: true, morroSlot: R.F.slot }; city.thugs.push(o); R.soldiers.push(o); });
 }
-const iOwnMorro = r => r && NET.user && r.dono === NET.user.id;
+const iOwnMorro = r => isAdmRow(r) ? isAdm() : !!(r && NET.user && r.dono === NET.user.id);
 function visitFavela(slot) {
   const R = (city.regFav || [])[slot]; if (!R) return; closePanel(); if (P.drive) exitVehicle(true);
   fadeTo(() => {
     city.tourBack = city.tour ? city.tourBack : [P.x, P.z, P.h]; city.tour = Object.assign({}, R.area);
     P.x = R.F.x; P.z = R.F.z + 11; P.y = 0.06; P.v = 0; P.onBoard = false; P.h = Math.PI; city.camYaw = P.h; city.camSnap = true; city.zoom = 1.2;
-    const r = city.morros[slot];
+    const r = morroRow(slot);
     city.tourSpots = [
-      { label: r ? (iOwnMorro(r) ? '💰 Boca: receber o caixa do seu morro' : `🏴 Morro de ${r.dono_nome}`) : '🏚️ Comprar este morro (virar dono)', x: R.F.x - 6, z: R.F.z - 3.6, fn: () => openPanel('favela', slot) },
+      { label: iOwnMorro(r) ? '💰 Boca: receber o caixa do seu morro' : isAdmRow(r) ? `👑 Morro do chefe ${CHIEF}: negociar a compra com ele` : `🏴 Morro de ${r.dono_nome}`, x: R.F.x - 6, z: R.F.z - 3.6, fn: () => openPanel('favela', slot) },
       { label: '⚔️ Bandeira: tomar o morro na guerra', x: R.F.x + 1.6, z: R.F.z + 1.6, fn: () => startWar(slot) },
       { label: '↩ Voltar para a cidade', x: R.F.x + 3, z: R.F.z + 11, fn: tourBack },
     ];
-    tourCine(city.tour, 4); toast(`🏚️ ${R.F.n}${r ? ' · dono: ' + r.dono_nome : ' · sem dono'}`, 'pink');
+    tourCine(city.tour, 4); toast(`🏚️ ${R.F.n} · dono: ${r.dono_nome}`, 'pink');
   });
 }
+function offerMorro(slot, pid) {
+  if (!isAdm() || !NET.ch) return; const p = NET.peers[pid], R = city.regFav[slot]; if (!p || !R) return;
+  const preco = Math.max(0, Math.round(+(($('morro-preco') || {}).value || 0)));
+  NET.ch.send({ type: 'broadcast', event: 'morro_oferta', payload: { to: pid, slot, cidade: cityId(), preco, de: S.name, n: R.F.n } });
+  toast(`📨 Oferta enviada para ${p.name}: ${R.F.n} por $ ${fmt(preco)}.`, 'pink');
+}
+function onMorroOferta(d) { if (!NET.user || d.to !== NET.user.id || d.cidade !== cityId()) return; city.morroOffer = d; sfx('level'); toast(`👑 O chefe ${d.de} quer te vender o ${d.n} por $ ${fmt(d.preco)}.`, 'pink'); openPanel('oferta'); }
+async function acceptMorro() {
+  const d = city.morroOffer; if (!d || !NET.sb) return; if (S.coins < d.preco) return toast(`Você precisa de $ ${fmt(d.preco)}.`, 'bad');
+  const row = { cidade: d.cidade, slot: d.slot, dono_nome: S.name, grupo_nome: S.gang ? S.gang.n : null, emoji: S.gang ? S.gang.e : '🏴', cor: S.gang ? S.gang.c : '#d8202f' };
+  try {
+    const cur = city.morros[d.slot]; let res;
+    if (cur && cur.id) res = await NET.sb.from('morros').update(Object.assign({ dono: NET.user.id, atualizado: new Date().toISOString() }, row)).eq('id', cur.id).select().single();
+    else res = await NET.sb.from('morros').insert(row).select().single();
+    if (res.error || !res.data) return toast('Não deu para fechar a compra agora.', 'bad');
+    S.coins -= d.preco; S.morroCol = S.morroCol || {}; S.morroCol[res.data.id] = Date.now(); persist(); updateHUD(); city.morroOffer = null;
+    NET.ch && NET.ch.send({ type: 'broadcast', event: 'taxa', payload: { amt: d.preco, name: S.name, spot: 'Venda do ' + d.n } });
+    setMorro(res.data); NET.ch && NET.ch.send({ type: 'broadcast', event: 'morro_dono', payload: res.data });
+    toast(`🏴 Negócio fechado! Agora você é o dono do ${d.n}.`, 'good'); sfx('level'); postFeed(`Comprei o ${d.n} do chefe ${CHIEF}!`); closePanel();
+  } catch (e) { toast('Sem conexão com o servidor.', 'bad'); }
+}
+/* o chefe retoma um morro que tinha vendido */
+async function retakeMorro(slot) {
+  const r = city.morros[slot]; if (!isAdm() || !r || !r.id || !NET.sb) return;
+  const upd = { dono: NET.user.id, dono_nome: CHIEF, grupo_nome: 'Bonde do AJBZ', emoji: '👑', cor: '#d4a017', atualizado: new Date().toISOString() };
+  const { data, error } = await NET.sb.from('morros').update(upd).eq('id', r.id).select().single(); if (error || !data) return toast('Não deu para retomar agora.', 'bad');
+  setMorro(data); NET.ch && NET.ch.send({ type: 'broadcast', event: 'morro_dono', payload: data }); toast('👑 Morro retomado pelo chefe.', 'good'); renderPanel();
+}
 async function buyMorro(slot, cur) {
+  if (!isAdm()) return toast(`Os morros são do chefe ${CHIEF}. Fale com ele para negociar o valor.`, 'pink');
   const R = city.regFav[slot]; if (!R || city.morros[slot]) return;
   if (!NET.user || !NET.sb) return toast('Entre com sua conta para comprar um morro.', 'bad');
   if (cur === 't' ? S.tokens < MORRO_TOK : S.coins < MORRO_PRECO) return toast('Saldo insuficiente.', 'bad');
@@ -7327,15 +7360,15 @@ async function buyMorro(slot, cur) {
   } catch (e) { toast('Sem conexão com o servidor.', 'bad'); }
 }
 function collectMorro(slot) {
-  const r = city.morros[slot]; if (!iOwnMorro(r)) return; S.morroCol = S.morroCol || {};
+  const r = morroRow(slot); if (!iOwnMorro(r)) return; S.morroCol = S.morroCol || {}; r.id = r.id || ('chefe_' + cityId() + slot);
   const last = S.morroCol[r.id] || Date.now() - DAYLEN, amt = Math.floor(Math.min(5, (Date.now() - last) / DAYLEN) * 450);
   if (amt < 10) return toast('O caixa da boca ainda está vazio. Volte mais tarde.');
   S.morroCol[r.id] = Date.now(); earn(amt); persist(); updateHUD(); sfx('coin'); toast(`💰 Caixa do ${city.regFav[slot].F.n}: +$ ${fmt(amt)}`, 'good'); renderPanel();
 }
 /* guerra: fica 60 s na bandeira sem cair; a contenção do dono atira em você */
 function startWar(slot) {
-  const R = city.regFav[slot], r = city.morros[slot]; if (!R) return;
-  if (!r) return toast('Esse morro não tem dono: dá para comprar na boca.', 'pink');
+  const R = city.regFav[slot], r = morroRow(slot); if (!R) return;
+  if (isAdmRow(r)) return toast(`👑 Esse morro é do chefe ${CHIEF}: ninguém toma. Para comprar, negocie com ele.`, 'bad');
   if (iOwnMorro(r)) return toast('Esse morro já é seu. Defenda a bandeira!', 'pink');
   if (!NET.user) return toast('Entre com sua conta para guerrear.', 'bad');
   if (city.war) return; if (!myGun()) return toast('Para tomar um morro você precisa estar armado.', 'bad');
@@ -7413,6 +7446,7 @@ function updateLife(dt, t) {
   if (B) { B.a += dt * 0.9; B.m.position.set(Math.cos(B.a) * 7 + Math.sin(B.a * 2.3) * 2, 0.15 + Math.abs(Math.sin(t * 3)) * 0.4, Math.sin(B.a) * 5); B.m.rotation.x += dt * 6; }
   for (const l of (P.drive && P.drive.m.userData.leds) || []) l.material.color.setHSL((t * 0.8) % 1, 1, 0.55);
   if (S.shift === 'policial') attachBaton(city.player); else if (city.player.userData.baton) detachBaton(city.player);
+  if (isAdm() && (S.coins < 50000000 || S.tokens < 500000)) { S.coins = Math.max(S.coins, 99999999); S.tokens = Math.max(S.tokens, 999999); persist(); updateHUD(); }
   if (isAdm() && !S.vehicles.includes('v_hilux')) { S.vehicles.push('v_hilux'); persist(); $('hb-veh') && ($('hb-veh').hidden = false); }
   if (!city.lotT || (city.lotT -= dt) <= 0) city.lotT = 0.5;
   updateWar(dt); updateMusic(dt);
@@ -8924,19 +8958,27 @@ const PANELS = {
   },
   favelas() {
     const L = city.regFav || [];
-    let html = `<p class="muted">Favelas afastadas de ${esc(CITY().name)} que não são do chefe. Qualquer jogador pode <b>comprar</b> uma ($ ${fmt(MORRO_PRECO)} ou ${MORRO_TOK} T) e virar <b>dono do morro</b>: a contenção é sua, os usuários vêm comprar na boca e o caixa enche todo dia. Outros jogadores armados podem <b>tomar o morro na guerra</b>: ficar ${WAR_SECS} s na bandeira sem cair.</p>`;
-    html += L.map(R => { const r = city.morros[R.F.slot], mine = iOwnMorro(r);
-      return `<div class="card"><h4>🏚️ ${esc(R.F.n)}</h4><p>${r ? `${esc(r.emoji || '🏴')} Dono: <b>${esc(r.dono_nome)}</b>${r.grupo_nome ? ' · ' + esc(r.grupo_nome) : ''}${mine ? ' <span class="pill on">É seu</span>' : ''}` : '<span class="pill">Sem dono · à venda</span>'}</p><div class="row"><button class="btn" data-act="fav-visit" data-id="${R.F.slot}">Ir até lá</button><button class="btn ghost" data-act="fav-gps" data-id="${R.F.slot}">Detalhes</button></div></div>`; }).join('');
+    let html = `<p class="muted">Favelas afastadas de ${esc(CITY().name)}. Todas são do <b>comando do chefe ${CHIEF}</b>. Quem quiser comprar um morro precisa <b>falar com o chefe e negociar o valor</b>. Depois de vendido, o dono tem contenção, usuários comprando na boca e caixa de $ 450 por dia, e pode perder o morro na guerra para outro jogador (o que é do chefe ninguém toma).</p>`;
+    html += L.map(R => { const r = morroRow(R.F.slot), mine = iOwnMorro(r);
+      return `<div class="card"><h4>🏚️ ${esc(R.F.n)}</h4><p>${esc(r.emoji || '🏴')} Dono: <b>${esc(r.dono_nome)}</b>${r.grupo_nome ? ' · ' + esc(r.grupo_nome) : ''}${mine ? ' <span class="pill on">É seu</span>' : ''}</p><div class="row"><button class="btn" data-act="fav-visit" data-id="${R.F.slot}">Ir até lá</button><button class="btn ghost" data-act="fav-gps" data-id="${R.F.slot}">Detalhes</button></div></div>`; }).join('');
     return { title: '🏚️ Favelas da região', html };
   },
   favela(slot) {
-    const R = (city.regFav || [])[+slot]; if (!R) return { title: 'Favela', html: '' }; const r = city.morros[R.F.slot], mine = iOwnMorro(r);
-    let html = `<p class="muted">${esc(R.F.n)} · ${esc(CITY().name)}</p>`;
-    if (!r) html += `<div class="card"><h4>🏚️ Comprar o morro</h4><p>Vire dono: bandeira ${S.gang ? `do seu grupo ${esc(S.gang.e)} ${esc(S.gang.n)}` : 'com o seu nome'}, contenção armada e o caixa da boca.</p><div class="row"><button class="btn" data-act="fav-buy" data-id="${R.F.slot}" data-cur="c" ${S.coins < MORRO_PRECO ? 'disabled' : ''}>$ ${fmt(MORRO_PRECO)}</button><button class="btn tok" data-act="fav-buy" data-id="${R.F.slot}" data-cur="t" ${S.tokens < MORRO_TOK ? 'disabled' : ''}>${MORRO_TOK} T</button></div></div>`;
-    else if (mine) { const last = (S.morroCol || {})[r.id] || Date.now() - DAYLEN, amt = Math.floor(Math.min(5, (Date.now() - last) / DAYLEN) * 450);
-      html += `<div class="card"><h4>💰 Seu morro</h4><p>O caixa da boca rende $ 450 por dia do jogo (acumula até 5 dias). A receber: <b>$ ${fmt(amt)}</b>.</p><button class="btn" data-act="fav-col" data-id="${R.F.slot}" ${amt < 10 ? 'disabled' : ''}>Receber o caixa</button><p class="muted">Se alguém invadir, você recebe o aviso: corra para defender a bandeira.</p></div>`; }
-    else html += `<div class="card"><h4>⚔️ Morro de ${esc(r.dono_nome)}</h4><p>Para tomar: vá até a bandeira armado e fique ${WAR_SECS} s sem cair. A contenção do dono vai atirar em você, e o dono recebe o aviso.</p></div>`;
+    const R = (city.regFav || [])[+slot]; if (!R) return { title: 'Favela', html: '' }; const r = morroRow(R.F.slot), mine = iOwnMorro(r), admRow = isAdmRow(r);
+    let html = `<p class="muted">${esc(R.F.n)} · ${esc(CITY().name)} · dono: <b>${esc(r.dono_nome)}</b></p>`;
+    if (mine) { const id = r.id || ('chefe_' + cityId() + R.F.slot), last = (S.morroCol || {})[id] || Date.now() - DAYLEN, amt = Math.floor(Math.min(5, (Date.now() - last) / DAYLEN) * 450);
+      html += `<div class="card"><h4>💰 Caixa da boca</h4><p>Rende $ 450 por dia do jogo (acumula até 5 dias). A receber: <b>$ ${fmt(amt)}</b>.</p><button class="btn" data-act="fav-col" data-id="${R.F.slot}" ${amt < 10 ? 'disabled' : ''}>Receber o caixa</button></div>`; }
+    if (isAdm()) {
+      if (admRow) { const peers = Object.values(NET.peers || {});
+        html += `<div class="card"><h4>🤝 Vender para um jogador (valor negociado)</h4><p>Combine o valor com o jogador, escreva aqui e mande a oferta. Ele recebe, aceita e o dinheiro vem para você.</p><input id="morro-preco" type="number" min="0" step="1000" value="${city.morroPreco || 50000}" oninput="city.morroPreco=this.value" style="width:100%;min-height:44px;border-radius:10px;border:2px solid var(--line);background:var(--panel-2);color:var(--fg);padding:0 12px;font:inherit"><div class="chips">${peers.length ? peers.map(p => `<button class="chip" data-act="fav-offer" data-id="${R.F.slot}" data-p="${p.id}">📨 ${esc(p.name)}</button>`).join('') : '<span class="muted">Nenhum jogador online agora.</span>'}</div></div>`; }
+      else html += `<div class="card"><h4>👑 Retomar o morro</h4><p>Esse morro foi vendido para ${esc(r.dono_nome)}. Como chefe, você pode retomar quando quiser.</p><button class="btn ghost" data-act="fav-retake" data-id="${R.F.slot}">Retomar para o comando do chefe</button></div>`;
+    } else if (admRow) html += `<div class="card"><h4>👑 Morro do chefe ${CHIEF}</h4><p>Para comprar, fale com o chefe e negociem o valor. Quando ele mandar a oferta, ela aparece aqui para você aceitar.</p><button class="btn" data-act="fav-ask" data-id="${R.F.slot}">💬 Avisar o chefe que quero negociar</button></div>`;
+    else if (!mine) html += `<div class="card"><h4>⚔️ Morro de ${esc(r.dono_nome)}</h4><p>Para tomar: vá até a bandeira armado e fique ${WAR_SECS} s sem cair. A contenção do dono atira em você e o dono recebe o aviso.</p></div>`;
     return { title: '🏚️ ' + R.F.n, html };
+  },
+  oferta() {
+    const d = city.morroOffer; if (!d) return { title: 'Oferta', html: '<p class="muted">Nenhuma oferta no momento.</p>' };
+    return { title: '👑 Oferta do chefe', html: `<div class="card"><h4>🏚️ ${esc(d.n)}</h4><p>O chefe <b>${esc(d.de)}</b> está vendendo este morro para você por <b>$ ${fmt(d.preco)}</b>.</p><div class="row"><button class="btn" data-act="morro-aceita" ${S.coins < d.preco ? 'disabled' : ''}>Aceitar e pagar</button><button class="btn ghost" data-act="morro-recusa">Recusar</button></div></div>` };
   },
   hospital() {
     let html = `<p class="muted">Hospital Municipal e base do SAMU (192). Atendimento pelo SUS, de graça. Quando a vida chega a 0% o SAMU busca você e você acorda aqui.</p>`;
@@ -9114,6 +9156,11 @@ function act(a, ds, el) {
     case 'fav-visit': visitFavela(+ds.id); break;
     case 'fav-gps': openPanel('favela', ds.id); break;
     case 'fav-buy': buyMorro(+ds.id, ds.cur); break;
+    case 'fav-offer': offerMorro(+ds.id, ds.p); break;
+    case 'fav-retake': retakeMorro(+ds.id); break;
+    case 'fav-ask': { const R = city.regFav[+ds.id]; netChat(`👑 Chefe ${CHIEF}, quero negociar a compra do ${R.F.n}!`); pushChat(S.name, `Pedido enviado: quero negociar o ${R.F.n}`, true); toast('Mensagem enviada na praça para o chefe.', 'pink'); break; }
+    case 'morro-aceita': acceptMorro(); break;
+    case 'morro-recusa': city.morroOffer = null; closePanel(); toast('Oferta recusada.'); break;
     case 'fav-col': collectMorro(+ds.id); break;
     case 'pick-song': pickSong(); break;
     case 'open-prefeitura': openPanel('prefeitura'); break;
@@ -9333,6 +9380,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'abord_doc' }, ({ payload }) => onAbordDoc(payload))
     .on('broadcast', { event: 'disparo' }, ({ payload }) => onDisparo(payload))
     .on('broadcast', { event: 'guerra' }, ({ payload }) => onGuerra(payload))
+    .on('broadcast', { event: 'morro_oferta' }, ({ payload }) => onMorroOferta(payload))
     .on('broadcast', { event: 'morro_dono' }, ({ payload }) => onMorroDono(payload))
     .on('broadcast', { event: 'taxa' }, ({ payload }) => onTaxa(payload))
     .on('broadcast', { event: 'venda' }, ({ payload }) => onSale(payload))
