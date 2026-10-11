@@ -180,6 +180,11 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #radio-log .me b{color:var(--wax)} #radio-log b{color:#3ddc84}
 #radio .chip.call{background:#c0392b;color:#fff;border-color:#ff8a8a}
 #radio .qrow{display:flex;gap:6px} #radio input{flex:1;min-height:40px;border-radius:10px;border:2px solid var(--line);background:var(--panel-2);color:var(--fg);padding:0 10px;font:inherit}
+#h-hp{position:relative;display:block;height:14px;margin-top:4px;border-radius:7px;background:rgba(0,0,0,.45);overflow:hidden;border:1px solid rgba(255,255,255,.2)}
+#h-hp i{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,#e53935,#ff6b6b);transition:width .3s}
+#h-hp b{position:relative;font-size:10px;line-height:14px;padding-left:6px;color:#fff;text-shadow:0 1px 2px #000}
+#h-hp.low i{animation:blink .8s steps(1) infinite}
+#hurt{position:fixed;inset:0;pointer-events:none;z-index:13;opacity:0;background:radial-gradient(circle,rgba(229,57,53,0) 45%,rgba(229,57,53,.75))}
 #h-wanted{color:#ff5a5a;font-weight:700;margin-left:6px;letter-spacing:1px;text-shadow:0 0 6px rgba(255,90,90,.6)}
 .emoji-grid{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
 .emoji-grid .chip{font-size:20px;min-width:40px;min-height:40px}
@@ -489,6 +494,7 @@ canvas.swatch{background:#333}
     <span class="nm"><span class="lvl" id="h-lvl">NV 1</span><span id="h-name"></span><span id="h-wanted" hidden></span></span>
     <span class="xpbar"><i id="h-xp"></i></span>
     <span class="money"><span class="coin" id="h-coins">$ 0</span><span class="tokc" id="h-tokens">0 T</span><span class="plus" data-act="open-tokens" role="button" aria-label="Comprar tokens">+</span></span>
+    <span id="h-hp" aria-label="Vida"><i></i><b>100%</b></span>
   </button>
   <div class="hud-tr">
     <button class="hud-btn" data-act="phone-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="lbl">Celular</span></button>
@@ -530,6 +536,7 @@ canvas.swatch{background:#333}
 <div id="splat" hidden></div>
 <div id="fade" hidden></div>
 <div id="ammo" hidden></div>
+<div id="hurt"></div>
 <div id="crosshair" hidden><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 4v9M20 27v9M4 20h9M27 20h9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="1.6" fill="currentColor"/></svg></div>
 <form id="radio" hidden><div class="rhead"><b id="radio-title">📻 Rádio</b><button class="btn ghost sm" type="button" data-act="radio">✕</button></div><div id="radio-log"></div>
   <div class="chips"><button type="button" class="chip call" data-act="radio-call">🚨 Chamado (mandar localização)</button><button type="button" class="chip" data-act="radio-say" data-t="Segue eu">Segue eu</button><button type="button" class="chip" data-act="radio-say" data-t="Fica aí">Fica aí</button><button type="button" class="chip" data-act="radio-say" data-t="Protege eu">Protege</button><button type="button" class="chip" data-act="radio-say" data-t="Ataca">Ataca</button><button type="button" class="chip" data-act="radio-say" data-t="Atira pro alto">Pro alto</button><button type="button" class="chip" data-act="radio-say" data-t="Vai embora">Vai embora</button></div>
@@ -1967,7 +1974,8 @@ function animReal(u, o, t) {
   } else if (o.walk) {
     u.walking = true; u.stance.rotation.y = 0;
     const G = gait(u, o, t, dt); p = G.p; ry = down ? 0.08 : (o.air ? 0.06 : G.bob);
-    if (o.ride) { p = { lThigh: 1.35, rThigh: 1.35, lKnee: 1.45, rKnee: 1.45, lSpread: 0.24, rSpread: 0.24, lArmFwd: 1.15, rArmFwd: 1.15, lArmDown: 1.05, rArmDown: 1.05, lElbow: 0.45, rElbow: 0.45, lean: 0.32, headX: -0.28 }; ry = 0; }
+    if (o.ride) { p = { lThigh: 1.35, rThigh: 1.35, lKnee: 1.45, rKnee: 1.45, lSpread: 0.24, rSpread: 0.24, lArmFwd: 1.15, rArmFwd: 1.15, lArmDown: 1.05, rArmDown: 1.05, lElbow: 0.45, rElbow: 0.45, lean: 0.32, headX: -0.28 }; ry = 0;
+      if (o.pedal != null) { const a = o.pedal * 0.45, s = Math.sin(a), c = Math.cos(a); Object.assign(p, { lThigh: 1.05 + s * 0.35, rThigh: 1.05 - s * 0.35, lKnee: 1.15 + c * 0.45, rKnee: 1.15 - c * 0.45, lSpread: 0.05, rSpread: 0.05, lean: 0.38 }); } }
     if (o.air) Object.assign(p, { lThigh: 0.6, lKnee: 1.0, rThigh: 0.2, rKnee: 0.5, lArmDown: 0.9, rArmDown: 0.9 });
     if (o.punchT > 0) { Object.assign(p, { rArmFwd: 1.45, rElbow: 0, twist: 0.25 }); rate = 30; }
     if (o.spray) Object.assign(p, { rArmFwd: 1.3, rElbow: 0.15, rArmDown: 0.9, headX: 0.1 });
@@ -2885,7 +2893,7 @@ function travelTo(id, how) {
 }
 function resetCity() {
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
-  city.squad = []; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
+  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -2904,6 +2912,11 @@ const VEHICLES = [
   { id: 'v_suv', kind: 'car', model: 'suv', name: 'SUV Turbo', color: 0x15161a, c: null, t: 400, r: 'raro', top: 33, acc: 11, desc: 'Grandão, alto e blindado.' },
   { id: 'v_sport', kind: 'car', model: 'sport', name: 'Esportivo GT', color: 0xffcf3a, c: null, t: 900, r: 'lendario', top: 44, acc: 17, desc: 'Cupê de motor dianteiro, ronco grave.' },
   { id: 'v_super', kind: 'car', model: 'super', name: 'Supercarro V12', color: 0x9b1c2c, c: null, t: 1500, r: 'lendario', top: 52, acc: 21, desc: 'Cunha baixa com aerofólio. O mais rápido do Brasil.' },
+  // bicicletas
+  { id: 'v_bmx', kind: 'moto', bike: true, model: 'bmx', name: 'Bicicleta BMX', color: 0xff4f7b, c: 600, t: null, r: 'comum', top: 10, acc: 5, desc: 'Pequena e brava: dá pra brincar até no skatepark.' },
+  { id: 'v_mtb', kind: 'moto', bike: true, model: 'mtb', name: 'Mountain Bike', color: 0x3ddc84, c: 1400, t: null, r: 'comum', top: 12, acc: 5.5, desc: 'Pneu grosso para subir o morro.' },
+  { id: 'v_speed', kind: 'moto', bike: true, model: 'speed', name: 'Speed de Corrida', color: 0xffcf3a, c: 2600, t: null, r: 'comum', top: 15, acc: 6, desc: 'Leve e rápida no asfalto.' },
+  { id: 'v_ebike', kind: 'moto', bike: true, model: 'mtb', name: 'Bike Elétrica', color: 0x4fc3ff, c: null, t: 60, r: 'raro', top: 19, acc: 8, desc: 'Pedal assistido: sobe ladeira sem suar.' },
   // motos
   { id: 'v_biz', kind: 'moto', model: 'scooter', name: 'Biz 125', color: 0xff6fa3, c: 9000, t: null, r: 'comum', top: 22, acc: 9, desc: 'Leve e econômica para o dia a dia.' },
   { id: 'v_cg', kind: 'moto', model: 'street', name: 'CG 160', color: 0xd8312f, c: 12000, t: null, r: 'comum', top: 26, acc: 10, desc: 'A moto do trampo: ágil no trânsito.' },
@@ -2950,6 +2963,7 @@ function carWheel(r, w, alloy) {
 function makeVehicleMesh(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
   const paint = vmat('paint', V.color), add = (geo, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, P = g) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.set(rx, ry, rz); k.castShadow = true; k.receiveShadow = true; P.add(k); return k; };
+  if (V.bike) { buildBike(g, V, add, paint); g.traverse(o => { if (o.isMesh) o.castShadow = true; }); addVehicleLights(g, V); return g; }
   if (V.kind === 'car') {
     const M = V.model;
     // dimensões: [comprimento, largura, raio da roda, altura do vão]
@@ -3052,6 +3066,25 @@ function makeVehicleMesh(V) {
   addVehicleLights(g, V);
   return g;
 }
+/* bicicleta: quadro de tubos, rodas raiadas, pedivela que gira, guidão e selim */
+function buildBike(g, V, add, paint) {
+  const u = g.userData, body = new THREE.Group(); g.add(body); u.body = body; u.wheels = [];
+  const M = V.model, R = M === 'bmx' ? 0.26 : M === 'speed' ? 0.35 : 0.34, tw = M === 'mtb' ? 0.05 : 0.025, wb = M === 'bmx' ? 0.95 : 1.08, metal = vmat('chrome'), dark = vmat('trim');
+  const tube = (a, b, r, m) => { const v = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), L = v.length(), k = new THREE.Mesh(CYL(r, r, L, 8), m); k.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); k.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.normalize()); k.castShadow = true; body.add(k); return k; };
+  const wheel = z => { const wg = new THREE.Group(), sp = new THREE.Group(); wg.add(sp); wg.position.set(0, R, z); body.add(wg); add(new THREE.TorusGeometry(R - tw, tw, 8, 28), vmat('tire'), 0, 0, 0, 0, Math.PI / 2, 0, sp); add(new THREE.TorusGeometry(R - tw * 2.2, 0.012, 6, 28), metal, 0, 0, 0, 0, Math.PI / 2, 0, sp); for (let k = 0; k < 12; k++) add(boxGeo(0.004, (R - tw * 2) * 2, 0.004), metal, 0, 0, 0, k / 12 * Math.PI, 0, 0, sp); add(CYL(0.03, 0.03, 0.09, 10), metal, 0, 0, 0, 0, 0, Math.PI / 2, sp); u.wheels.push(wg); return wg; };
+  const fw = wheel(wb / 2), bw = wheel(-wb / 2); fw.userData.front = true;
+  const bb = [0, R + 0.02, -0.05], seatT = [0, R + (M === 'bmx' ? 0.42 : 0.55), -0.22], head = [0, R + (M === 'bmx' ? 0.45 : 0.55), wb / 2 - 0.12], fr = M === 'speed' ? 0.018 : 0.024, pm = vmat('paint', V.color);
+  tube(bb, seatT, fr, pm); tube(seatT, head, fr, pm); tube(bb, head, fr * 1.2, pm); tube(bb, [0, R, -wb / 2], fr * 0.8, pm); tube(seatT, [0, R, -wb / 2], fr * 0.8, pm);
+  tube(head, [0, R, wb / 2], fr, M === 'mtb' ? dark : pm); const hb = M === 'speed' ? 0.42 : 0.6; tube([0, head[1] + 0.12, head[2] - 0.05], [0, head[1] + 0.02, head[2]], 0.016, metal);
+  tube([-hb / 2, head[1] + 0.12, head[2] - 0.08], [hb / 2, head[1] + 0.12, head[2] - 0.08], 0.014, M === 'speed' ? dark : metal);
+  for (const sx of [1, -1]) add(CYL(0.02, 0.02, 0.1, 8), vmat('seat'), sx * hb / 2, head[1] + 0.12, head[2] - 0.08, 0, 0, Math.PI / 2, body);
+  tube(seatT, [0, seatT[1] + 0.12, seatT[2] - 0.02], 0.014, metal); const st = add(CAPG(0.05, 0.14), vmat('seat'), 0, seatT[1] + 0.15, seatT[2] - 0.02, Math.PI / 2, 0, 0, body); st.scale.set(1.2, 1, 0.5);
+  const crank = new THREE.Group(); crank.position.set(0, bb[1], bb[2]); body.add(crank); u.crank = crank;
+  add(CYL(0.09, 0.09, 0.02, 16), metal, 0.05, 0, 0, 0, 0, Math.PI / 2, crank);
+  for (const sx of [1, -1]) { const arm = new THREE.Group(); arm.rotation.x = sx > 0 ? 0 : Math.PI; crank.add(arm); add(boxGeo(0.02, 0.16, 0.025), metal, sx * 0.08, -0.08, 0, 0, 0, 0, arm); add(boxGeo(0.09, 0.02, 0.05), dark, sx * 0.12, -0.16, 0, 0, 0, 0, arm); }
+  if (V.id === 'v_ebike') { add(boxGeo(0.08, 0.08, 0.32), dark, 0, (bb[1] + head[1]) / 2, (bb[2] + head[2]) / 2, -0.7, 0, 0, body); }
+  u.seatY = seatT[1] + 0.2; u.camD = 5; u.radius = 0.45; u.len = wb + 0.6; u.bike = true;
+}
 /* faróis (brilho + facho no chão) e setas que piscam; ficam escondidos até ligar */
 let _glowT = null, _beamT = null;
 function addVehicleLights(g, V) {
@@ -3078,13 +3111,14 @@ function vehLightsTick(m, lights, blink, t) {
   u.blink.L.visible = (blink === 1 || blink === 3) && on; u.blink.R.visible = (blink === 2 || blink === 3) && on;
 }
 /* buzina: dois tons juntos, como buzina de carro (moto mais aguda) */
-function hornSound(moto, vol = 1) {
+function hornSound(moto, vol = 1, bike) {
+  if (bike) { tone('sine', 2400, 2350, 0.25, 0.05 * vol); tone('sine', 2400, 2350, 0.25, 0.05 * vol, 0.18); return; }
   const ac = audioCtx(); if (!ac) return;
   const f = moto ? 520 : 400; tone('square', f, f * 0.98, 0.45, 0.05 * vol); tone('square', f * 1.26, f * 1.24, 0.45, 0.045 * vol);
 }
 function vehHorn() {
   const d = P.drive; if (!d) return; if ((d.hornCd || 0) > 0) return; d.hornCd = 0.5;
-  hornSound(d.V.kind === 'moto');
+  hornSound(d.V.kind === 'moto', 1, d.V.bike);
   for (const o of [...city.bots, ...city.peds]) if (Math.hypot(o.x - P.x, o.z - P.z) < 9 && Math.random() < 0.4 && !(o.fallT > 0)) bubble(o.g, pick(['Calma aí!', 'Tô passando!', 'Que pressa!', 'Bi-bi pra você também!']), 2.5);
   if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'horn', payload: { id: NET.user.id, m: d.V.kind === 'moto' ? 1 : 0 } });
 }
@@ -3130,6 +3164,7 @@ function updateDriving(dt, ax, blocked) {
   P.y = (hf + hb) / 2; m.rotation.order = 'YXZ'; m.position.set(P.x, P.y, P.z); m.rotation.y = P.h; m.rotation.x = -Math.atan2(hf - hb, L2 * 2);
   const u = m.userData; u.spin = (u.spin || 0) + P.v * dt / 0.35;
   for (const w of u.wheels) { w.children[0].rotation.x = u.spin; if (w.children[1]) w.children[1].rotation.x = u.spin; if (w.userData.front) w.rotation.y = (w.userData.side < 0 ? Math.PI : 0) - st * 0.4; }
+  if (u.crank) u.crank.rotation.x = u.spin * 0.45;
   if (u.body) { u.lean = lerp(u.lean || 0, -st * Math.min(1, Math.abs(P.v) / 12) * 0.45, 1 - Math.exp(-6 * dt)); u.body.rotation.z = u.lean; }
   city.myVeh.x = P.x; city.myVeh.z = P.z; city.myVeh.h = P.h;
   // buzina, farol e setas
@@ -3432,12 +3467,12 @@ function nextWaypoint(o) {
   if (o.iz > 0) opts.push([o.ix, o.iz - 1]); if (o.iz < 5) opts.push([o.ix, o.iz + 1]);
   [o.ix, o.iz] = pick(opts); o.tx = ROADS[o.ix]; o.tz = ROADS[o.iz];
 }
-function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if ((city.interior || city.jail) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return Math.abs(x) > 116 || z < -116 || z > cityBoundZ(); }
+function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if ((city.interior || city.jail || city.hospIn || city.shopIn) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return Math.abs(x) > 116 || z < -116 || z > cityBoundZ(); }
 function inRamp(x, z) { return city.ramps.some(c => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1); }
 
 let camYaw = 0;
 function updateCity(dt, t) {
-  const blocked = uiBlocking();
+  const blocked = uiBlocking() || !!P.down;
   const ax = blocked || P.ride ? { x: 0, y: 0 } : axis();
   if (P.onBoard && !hasSkate()) P.onBoard = false;
   if (!blocked && tap('board')) {
@@ -3517,7 +3552,7 @@ function updateCity(dt, t) {
     P.vy -= 22 * dt; P.y += P.vy * dt; P.airT += dt;
     stepTrick(P, dt);
     tryGrind();
-    if (P.air && P.y <= gy) { const vyL = P.vy; P.y = gy; P.air = false; sfx('land'); if (P.vertAir) { P.vertAir = false; P.h += Math.PI; P.v = Math.max(2.5, Math.abs(vyL) * 0.85); P.flipT = 0.9; } if (P.onBoard) onLand(); }
+    if (P.air && P.y <= gy) { const vyL = P.vy; P.y = gy; P.air = false; sfx('land'); if (vyL < -15 && !P.vertAir) hurt(Math.round((-vyL - 13) * 5), 'queda de altura'); if (P.vertAir) { P.vertAir = false; P.h += Math.PI; P.v = Math.max(2.5, Math.abs(vyL) * 0.85); P.flipT = 0.9; } if (P.onBoard) onLand(); }
   }
   // carros
   for (const c of city.cars) {
@@ -3528,7 +3563,7 @@ function updateCity(dt, t) {
     if (c.dir < 0) c.h += Math.PI;
     c.m.position.set(c.x, 0, c.z); c.m.rotation.y = c.h;
     const dx = P.x - c.x, dz = P.z - c.z, lx = dx * Math.cos(c.h) - dz * Math.sin(c.h), lz = dx * Math.sin(c.h) + dz * Math.cos(c.h);
-    if (!driving && P.fallT <= 0 && P.y < 1.2 && Math.abs(lx) < (c.moto ? 0.7 : 1.4) && Math.abs(lz) < (c.moto ? 1.3 : 2.5)) { P.fallT = 1.6; P.v = -5; P.trick = null; P.combo = []; sfx('hit'); toast(c.moto ? 'Atropelado por uma moto!' : 'Atropelado! Cuidado com os carros.', 'bad'); playerFell('car'); }
+    if (!driving && P.fallT <= 0 && P.y < 1.2 && Math.abs(lx) < (c.moto ? 0.7 : 1.4) && Math.abs(lz) < (c.moto ? 1.3 : 2.5)) { P.fallT = 1.6; P.v = -5; P.trick = null; P.combo = []; sfx('hit'); hurt(c.moto ? 20 : 34, 'atropelado'); if (!P.down) toast((c.moto ? 'Atropelado por uma moto!' : 'Atropelado! Cuidado com os carros.') + ` Vida ${Math.round(P.hp)}%`, 'bad'); playerFell('car'); }
   }
   // bots
   for (const o of city.bots) if (!o.off) updateCityBot(o, dt, t);
@@ -3538,7 +3573,7 @@ function updateCity(dt, t) {
   if (P.ride) rideTick();
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
-  else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); }
+  else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
   else if (!driving) animSkater(g, { walk: !P.onBoard, carry: hasSkate(), v: P.v, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: myHandKind(), wpProp: P.wpShowT > 0 ? myHandKind() : null, emote: P.emote && P.emote.id }, t);
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
@@ -3548,7 +3583,7 @@ function updateCity(dt, t) {
   // céu e sol acompanham
   city.sky.position.copy(camera.position);
   for (const c of city.clouds.children) { c.position.x += c.userData.v * dt; if (c.position.x > 340) c.position.x = -340; }
-  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
+  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
   const sd = city.dn ? city.dn.sunDir : [40, 80, 30]; city.sun.position.set(P.x + sd[0], sd[1], P.z + sd[2]); city.sun.target.position.set(P.x, 0, P.z);
   for (const d of city.doors) if (d.ring) d.ring.rotation.y += dt;
   updateHomeDoor(dt); if (city.seaTex) { city.seaTex.offset.x += dt * 0.01; city.seaTex.offset.y += dt * 0.02; city.foam.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.3; }
@@ -3580,7 +3615,7 @@ function updateCity(dt, t) {
     while (cd > 1.2 && collide(P.x - fx * cd, P.z - fz * cd, 0.4)) cd -= 0.4;
     const hh = lerp(1.75, P.drive ? 3.3 : P.onBoard ? 2.9 : 2.5, clamp((z - 0.35) / 0.65, 0, 1)), side = lerp(0.45, 0, clamp((z - 0.35) / 0.5, 0, 1));
     const by = gy + (P.y - gy) * 0.5, want = new THREE.Vector3(P.x - fx * cd + fz * side, Math.max(groundH(P.x - fx * cd, P.z - fz * cd) + 0.8, by + hh + city.camPitch * cd * 0.7), P.z - fz * cd - fx * side);
-    if (city.interior || city.jail) want.y = Math.min(want.y, 2.75);
+    if (city.interior || city.jail || city.hospIn || city.shopIn) want.y = Math.min(want.y, 2.75);
     camera.position.lerp(want, city.camSnap ? 1 : 1 - Math.exp(-5 * dt)); city.camSnap = false;
     const ly = lerp(1.55, 1.25, clamp((z - 0.35) / 0.65, 0, 1));
     camera.lookAt(P.x + fx * 2.5 * z + fz * side * 0.5, by + ly, P.z + fz * 2.5 * z - fx * side * 0.5);
@@ -3606,6 +3641,8 @@ function updateCity(dt, t) {
   if (!P.drive && !P.ride) for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen) continue; const k = Math.hypot(p.x - P.x, p.z - P.z);
     if (p.t.vh && k < 3.8 && k < nd + 0.5) { nd = k; near = { type: 'carona', p }; }
     else if (S.shift === 'policial' && p.t.wd > 0 && !p.t.vh && k < 2.6 && k < nd + 0.5) { nd = k; near = { type: 'prender', p }; } }
+  if (city.hospIn) { const k = Math.hypot(HOSP.x - P.x, HOSP.z + HOSP.D / 2 - 1 - P.z); if (k < 2.5) { nd = k; near = { type: 'hospexit' }; } }
+  if (S.shift === 'socorrista' && !P.drive) for (const id in NET.peers) { const p = NET.peers[id]; if (p.t && p.t.dn && Math.hypot(p.x - P.x, p.z - P.z) < 2.6) { near = { type: 'socorrer', p }; nd = 0; } }
   if (!P.drive && !P.ride && !(P.jailT > 0)) {
     if (S.shift === 'policial') { for (const o of [...(city.thugs || []), ...(city.robbers || [])]) { if (o.off || o.arrestedT > 0 || o.st === 'preso' || o.st === 'gone') continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.4 && k < nd && (o.fallT > 0 || o.st === 'rob' || o.st === 'flee' || o.st === 'go')) { nd = k; near = { type: 'prenderNpc', o }; } } }
     else if (myGun()) { for (const o of [...city.peds, ...city.bots]) { if (o.off || o.role || o.fallT > 0) continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.2 && k < nd) { nd = k; near = { type: 'assalto', o }; } }
@@ -3617,10 +3654,12 @@ function updateCity(dt, t) {
   const pr = $('prompt');
   if (near && !blocked && !city.contest) {
     const key = IS_TOUCH ? 'Ação' : 'E';
-    if (near.type === 'exitveh') { pr.textContent = `${key} · Sair ${P.drive.V.kind === 'car' ? 'do carro' : 'da moto'}`; pr.hidden = false; if (tap('act')) exitVehicle(); }
+    if (near.type === 'exitveh') { pr.textContent = `${key} · Sair ${P.drive.V.kind === 'car' ? 'do carro' : P.drive.V.bike ? 'da bike' : 'da moto'}`; pr.hidden = false; if (tap('act')) exitVehicle(); }
     else if (near.type === 'assalto') { pr.textContent = `${key} · Assaltar`; pr.hidden = false; if (tap('act')) robNpc(near.o); }
     else if (near.type === 'assaltoP') { pr.textContent = `${key} · Assaltar ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'assalto', payload: { id: NET.user.id, to: near.p.id, by: S.name } }); addWanted(2, 'assalto à mão armada'); } }
     else if (near.type === 'prenderNpc') { pr.textContent = `${key} · Prender o bandido`; pr.hidden = false; if (tap('act')) { const o = near.o; if (o.st) { o.st = 'preso'; o.t2 = 0; bubble(o.g, 'Tá bom, perdi…', 2); } else { o.arrestedT = 150; o.hostT = 0; o.fallT = 0; o.g.visible = false; } addPrisoner(o.st ? 'Assaltante' : 'Traficante', 120); const g = earn(jobPay('policial', 180)); addXP(30); toast(`Bandido preso e levado para a Delegacia! +$${fmt(g)}`, 'good'); sfx('coin'); } }
+    else if (near.type === 'hospexit') { pr.textContent = `${key} · Sair do hospital`; pr.hidden = false; if (tap('act')) leaveHospital(); }
+    else if (near.type === 'socorrer') { pr.textContent = `${key} · Socorrer ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'socorrido', payload: { to: near.p.id, by: S.name } }); const g = earn(jobPay('socorrista', 260)); addXP(45); toast(`Você salvou ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('level'); } }
     else if (near.type === 'rideexit') { pr.textContent = `${key} · Descer`; pr.hidden = false; if (tap('act')) endRide(); }
     else if (near.type === 'carona') { pr.textContent = `${key} · Pegar carona com ${near.p.name}`; pr.hidden = false; if (tap('act')) askRide(near.p); }
     else if (near.type === 'prender') { pr.textContent = `${key} · Prender ${near.p.name} ${'★'.repeat(near.p.t.wd)}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'prisao', payload: { to: near.p.id, by: 'o policial ' + S.name } }); const g = earn(jobPay('policial', 220)); addXP(40); toast(`Você prendeu ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('coin'); } }
@@ -3635,12 +3674,12 @@ function updateCity(dt, t) {
   if (tap('esc')) { if (!$('panel').hidden) closePanel(); else if (!$('phone').hidden) togglePhone(false); }
   if (!$('phone').hidden && phoneState.screen === 'map') drawCityMap();
   if ((city.mapT -= dt) <= 0) { city.mapT = 0.1; drawCityMapOn($('hud-map'), P.x, P.z, 55, true); }
-  if (!city.interior) cullChars();
+  if (!city.interior && !city.hospIn && !city.shopIn) cullChars();
 }
 /* pouso no skate: conta o combo, dá pontos, grana e guarda replay */
 function onLand() {
   const st = myStats(), { bail, combo } = landTrick(P, st.equ);
-  if (bail) { P.fallT = 1.2 * (1 - st.equ * 0.04); P.v *= 0.3; feed('Caiu! Termine a manobra antes de pousar.'); sfx('hit'); playerFell('bail'); return; }
+  if (bail) { P.fallT = 1.2 * (1 - st.equ * 0.04); P.v *= 0.3; feed('Caiu! Termine a manobra antes de pousar.'); sfx('hit'); hurt(5, 'queda do skate'); playerFell('bail'); return; }
   if (!combo.length) { if (city.contest && P.airT > 0.55) { city.contest.score += 20; trickPop('Ollie', 20); } return; }
   const pts = comboScore(combo), names = combo.map(d => d.name).join(' + ');
   sfx('trick'); S.stats.tricks += combo.length; combo.forEach(d => S.stats.trickCount[d.id] = (S.stats.trickCount[d.id] || 0) + 1);
@@ -3918,6 +3957,7 @@ function interact(n) {
     else if (k === 'viagem') openPanel('viagem');
     else if (k === 'concessionaria') openPanel('concessionaria');
     else if (k === 'qg') { openPanel('faccao'); gangsFetch(); }
+    else if (k === 'hospital' || k === 'prefeitura' || k === 'igreja') openPanel(k);
     else if (k === 'delegacia') openPanel('delegacia');
     else if (k === 'bombeiros' || k === 'reciclagem') openPanel('agencia');
     P.v = 0;
@@ -4079,7 +4119,7 @@ function updateMission(dt, t) {
 }
 /* seta + feixe + linha da rota (GPS marcado no mapa ou alvo da missão) */
 function updateNav(dt) {
-  if (city.interior || city.jail) { city.beam.visible = false; $('waypoint').hidden = true; if (city.routeM) city.routeM.visible = false; return; }
+  if (city.interior || city.jail || city.hospIn || city.shopIn) { city.beam.visible = false; $('waypoint').hidden = true; if (city.routeM) city.routeM.visible = false; return; }
   const nxt = updateGps(dt), fin = S.gps ? [S.gps.x, S.gps.z] : missionTarget();
   if (city.routeM) city.routeM.visible = true;
   if (nxt && fin) {
@@ -4126,7 +4166,7 @@ function endShift() {
 function nextJobTask() {
   const id = S.shift; if (!id) return;
   const lv = jobLv(id);
-  if (['motoboy', 'taxista', 'catador', 'bombeiro', 'policial', 'traficante'].includes(id)) { S.mission = jobTaskNew(id, lv); persist(); rebuildMissionObjs(); renderMissionBox(); sfx('ui'); return; }
+  if (['motoboy', 'taxista', 'catador', 'bombeiro', 'policial', 'traficante', 'socorrista', 'medico'].includes(id)) { S.mission = jobTaskNew(id, lv); persist(); rebuildMissionObjs(); renderMissionBox(); sfx('ui'); return; }
   if (id === 'entregador') {
     const a = pick(city.kiosks), b = farPoint(45), dist = Math.hypot(a.x - P.x, a.z - P.z) + Math.hypot(b[0] - a.x, b[1] - a.z), sp = hasSkate() ? 8.5 : 5;
     const time = Math.round(dist / sp * 1.3 + 12);
@@ -4154,7 +4194,7 @@ function completeJobTask(m) {
   setTimeout(() => { if (S.shift === id && !S.mission) nextJobTask(); }, 2200);
 }
 function updateJobTask(m, dt, t) {
-  if (['job_taxi', 'job_lixo', 'job_fogo', 'job_pm', 'job_corre'].includes(m.type)) return updateJobNew(m, dt, t);
+  if (['job_taxi', 'job_lixo', 'job_fogo', 'job_pm', 'job_corre', 'job_resgate', 'job_consulta'].includes(m.type)) return updateJobNew(m, dt, t);
   if (m.type === 'job_ent') {
     const tg = m.stage === 0 ? m.a : m.b;
     if (m.moto && !(P.drive && P.drive.V.kind === 'moto') && Math.hypot(tg[0] - P.x, tg[1] - P.z) < 3) { city.promptBusy = true; $('prompt').hidden = false; $('prompt').textContent = 'Motoboy: chegue pilotando a sua moto'; return; }
@@ -4332,16 +4372,18 @@ Object.assign(JOBS, {
   catador: { name: 'Catador / Gari', desc: 'Recolha sacos de lixo, papelão e latas pela cidade e leve tudo para a Cooperativa de Reciclagem.', base: 70, need: 1, icon: '♻️' },
   bombeiro: { name: 'Bombeiro', desc: 'Atenda os chamados de incêndio: chegue no prédio e segure Ação para jogar água até apagar o fogo.', base: 190, need: 3, icon: '🚒' },
   policial: { name: 'Policial', desc: 'Só depois de passar na prova da Delegacia. Patrulhe, aborde suspeitos e prenda quem está procurado (inclusive jogadores com estrelas).', base: 210, need: 4, police: true, icon: '🚓' },
+  socorrista: { name: 'Socorrista do SAMU', desc: 'Atenda vítimas caídas pela cidade: chegue, segure Ação para os primeiros socorros e leve até o Hospital. Jogadores feridos te chamam pelo GPS.', base: 200, need: 2, icon: '🚑' },
+  medico: { name: 'Médico', desc: 'Atenda os pacientes que chegam no Hospital: segure Ação em cada um para examinar e tratar.', base: 240, need: 4, icon: '🩺' },
   traficante: { name: 'Traficante', desc: 'Só para quem está numa facção. Pegue a encomenda na boca do morro e entregue sem ser pego: você fica procurado pela polícia enquanto carrega.', base: 300, need: 3, gang: true, icon: '💼' },
 });
 // armas de fogo: só com tokens (dinheiro real)
 const GUNS = [
   I('gun', 'gun_none', 'Sem arma de fogo', 0x555555, 0, null, 'comum', { gun: 'none', desc: 'Mãos livres.' }),
-  I('gun', 'gun_taser', 'Taser', 0xffcf3a, null, 80, 'raro', { gun: 'taser', rng: 9, cd: 0.5, mag: 1, rel: 2.2, knock: 4, desc: '1 disparo por cartucho (recarga 2,2 s). Choque de perto: derruba por 4 s.' }),
-  I('gun', 'gun_38', 'Revólver .38', 0x6d717a, null, 120, 'raro', { gun: 'revolver', rng: 22, cd: 0.45, mag: 6, rel: 3.2, knock: 4, desc: 'Tambor de 6 tiros, recarga lenta (3,2 s).' }),
-  I('gun', 'gun_9mm', 'Pistola 9mm', 0x2a2d34, null, 160, 'raro', { gun: 'pistola', rng: 26, cd: 0.22, mag: 17, rel: 1.8, knock: 4, desc: 'Carregador de 17 tiros, semiautomática (recarga 1,8 s).' }),
-  I('gun', 'gun_12', 'Escopeta 12', 0x5a3d26, null, 280, 'lendario', { gun: 'escopeta', rng: 14, cd: 0.85, mag: 8, rel: 4, knock: 6, cone: 0.78, pellets: 8, desc: '8 cartuchos de chumbo que espalha, pump (recarga 4 s).' }),
-  I('gun', 'gun_fuzil', 'Fuzil', 0x3b4232, null, 420, 'lendario', { gun: 'fuzil', rng: 40, cd: 0.1, mag: 30, rel: 2.6, auto: true, knock: 5, desc: 'Carregador de 30 tiros, automático: segure para rajada (recarga 2,6 s).' }),
+  I('gun', 'gun_taser', 'Taser', 0xffcf3a, null, 80, 'raro', { dmg: 10, gun: 'taser', rng: 9, cd: 0.5, mag: 1, rel: 2.2, knock: 4, desc: '1 disparo por cartucho (recarga 2,2 s). Choque de perto: derruba por 4 s.' }),
+  I('gun', 'gun_38', 'Revólver .38', 0x6d717a, null, 120, 'raro', { dmg: 35, gun: 'revolver', rng: 22, cd: 0.45, mag: 6, rel: 3.2, knock: 4, desc: 'Tambor de 6 tiros, recarga lenta (3,2 s).' }),
+  I('gun', 'gun_9mm', 'Pistola 9mm', 0x2a2d34, null, 160, 'raro', { dmg: 25, gun: 'pistola', rng: 26, cd: 0.22, mag: 17, rel: 1.8, knock: 4, desc: 'Carregador de 17 tiros, semiautomática (recarga 1,8 s).' }),
+  I('gun', 'gun_12', 'Escopeta 12', 0x5a3d26, null, 280, 'lendario', { dmg: 55, gun: 'escopeta', rng: 14, cd: 0.85, mag: 8, rel: 4, knock: 6, cone: 0.78, pellets: 8, desc: '8 cartuchos de chumbo que espalha, pump (recarga 4 s).' }),
+  I('gun', 'gun_fuzil', 'Fuzil', 0x3b4232, null, 420, 'lendario', { dmg: 30, gun: 'fuzil', rng: 40, cd: 0.1, mag: 30, rel: 2.6, auto: true, knock: 5, desc: 'Carregador de 30 tiros, automático: segure para rajada (recarga 2,6 s).' }),
 ];
 GUNS.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 SLOT_NAMES.gun = 'Armas de fogo';
@@ -4382,7 +4424,7 @@ Object.assign(CITY_SHOPS.rj, { delegacia: '0,-84', bombeiros: '84,42', reciclage
 Object.assign(CITY_SHOPS.ssa, { delegacia: '42,-42', bombeiros: '-42,84', reciclagem: '-84,-84' });
 
 /* ---------- figurantes por profissão (somem quando entram jogadores reais da mesma profissão) ---------- */
-const ROLE_BASE = { policial: 4, bombeiro: 2, catador: 3, traficante: 8, taxista: 1, motoboy: 1 };
+const ROLE_BASE = { socorrista: 0, medico: 0, policial: 4, bombeiro: 2, catador: 3, traficante: 8, taxista: 1, motoboy: 1 };
 function roleLook(role, i) {
   const f = i % 3 === 1, eq = { shirt: 'shirt_basic', pants: 'pants_jeans', shoes: 'shoes_basic', cap: 'cap_none', glasses: 'gl_none', acc: 'ac_none' };
   if (UNIFORM[role]) Object.assign(eq, UNIFORM[role], { shoes: 'shoes_black' in ITEM ? 'shoes_black' : 'shoes_basic' });
@@ -4463,7 +4505,7 @@ function updateRoles(dt, t) {
       if (S.shift === 'policial' && !isAdm() && dP < 22 && !o.hostT) { o.hostT = 15; bubble(g, 'Sujou! Polícia!', 2); }
       if (hostile && dP < 38 && !P.drive && !city.interior && P.fallT <= 0 && (o.shotT -= dt) <= 0) {
         o.shotT = rand(1.2, 2.4); gunFx(o.x, groundH(o.x, o.z) + 1.4, o.z, P.x, P.y + 1.2, P.z, o.gun); sfx('tiro');
-        if (Math.random() < 0.33) { P.fallT = 3; P.v = 0; toast('Você foi atingido e caiu! Saia da linha de tiro.', 'bad'); playerFell('tiro'); if (S.mission && S.mission.type === 'job_corre') failMission('derrubaram você e levaram a encomenda.'); }
+        if (Math.random() < 0.33) { hurt(22, 'tiro no morro'); P.fallT = Math.max(P.fallT, 1); P.v = 0; if (!P.down) toast(`Você foi atingido! Vida ${Math.round(P.hp)}%. Saia da linha de tiro.`, 'bad'); playerFell('tiro'); if (S.mission && S.mission.type === 'job_corre') failMission('derrubaram você e levaram a encomenda.'); }
       }
       if (!hostile && dP < 4 && (o.talkCd -= dt) <= 0) { o.talkCd = 7; bubble(g, roleSay('traficante'), 2.5); }
     } else if (dP < 4 && (o.talkCd = (o.talkCd || 0) - dt) <= 0) { o.talkCd = 9; bubble(g, roleSay(o.role), 2.5); }
@@ -4498,7 +4540,7 @@ function gunFx(x0, y0, z0, x1, y1, z1, kind) {
   city.fx.push({ m: ln, vx: 0, vy: 0, vz: 0, life: 0.08, max: 0.08, line: true }, { m: fl, vx: 0, vy: 0, vz: 0, life: 0.07, max: 0.07 });
 }
 function shootGun(G) {
-  if ((P.wpCd || 0) > 0 || P.drive || P.ride || P.jailT > 0) return;
+  if ((P.wpCd || 0) > 0 || P.drive || P.ride || P.jailT > 0 || P.down) return;
   if (!useRound(G)) return;
   if (aimOn()) return shootAimed(G); P.wpCd = G.cd; P.wpShowT = 0.8; P.emote = null;
   const fx = Math.sin(P.h), fz = Math.cos(P.h), cone = G.cone || 0.9;
@@ -4523,7 +4565,7 @@ function shootGun(G) {
 }
 function onPeerShot(d) {
   if (!NET.user || d.to !== NET.user.id) return;
-  if (P.drive) return; P.fallT = Math.max(P.fallT, d.k || 3.5); P.v = 0; toast(`${d.by} derrubou você!`, 'bad'); sfx('hit');
+  if (P.drive || P.down) return; hurt(d.dmg || 25, `tiro de ${d.by}`); if (P.down) return; P.fallT = Math.max(P.fallT, 1.2); P.v = 0; toast(`${d.by} acertou você! Vida ${Math.round(P.hp)}%`, 'bad'); sfx('hit');
   if (S.mission && S.mission.type === 'job_corre') failMission('derrubaram você e levaram a encomenda.');
 }
 
@@ -4533,7 +4575,7 @@ function askRide(p) { if (!NET.ch) return; NET.ch.send({ type: 'broadcast', even
 function onRideMsg(ev, d) {
   if (!NET.user || d.to !== NET.user.id) return;
   if (ev === 'carona') {
-    const dr = P.drive; if (!dr) return; dr.pass = dr.pass || []; const max = SEATS[dr.V.kind === 'moto' ? 'moto' : 'car'].length;
+    const dr = P.drive; if (!dr) return; dr.pass = dr.pass || []; const max = dr.V.bike ? 0 : SEATS[dr.V.kind === 'moto' ? 'moto' : 'car'].length;
     if (dr.pass.includes(d.id)) return; if (dr.pass.length >= max) { NET.ch.send({ type: 'broadcast', event: 'carona_nao', payload: { to: d.id } }); return; }
     const seat = [...Array(max).keys()].find(k => !dr.pass.some((x, i) => dr.seat && dr.seat[x] === k)) ?? dr.pass.length; dr.seat = dr.seat || {}; dr.seat[d.id] = seat; dr.pass.push(d.id);
     NET.ch.send({ type: 'broadcast', event: 'carona_ok', payload: { to: d.id, id: NET.user.id, seat } }); toast(`${d.name} subiu ${dr.V.kind === 'moto' ? 'na garupa' : 'no carro'}.`, 'good');
@@ -4685,6 +4727,8 @@ function jobTaskNew(id, lv) {
     const sp = farPoint(40);
     return { job: id, type: 'job_pm', title: 'Patrulha', pts, got: 0, sus: sp, stage: 0, pay: jobPay(id, JOBS[id].base), time: 150, timeMax: 150 };
   }
+  if (id === 'socorrista') { const v = farPoint(35), h = city.doors.find(d => d.kind === 'hospital'); return { job: id, type: 'job_resgate', title: 'Vítima na rua', v, hosp: [h.x, h.z], stage: 0, p: 0, pay: jobPay(id, JOBS[id].base), time: 120, timeMax: 120 }; }
+  if (id === 'medico') { const h = city.doors.find(d => d.kind === 'hospital'), n = 2 + Math.min(3, lv); const pats = []; for (let i = 0; i < n; i++) pats.push([h.x + (i - n / 2) * 1.8, h.z + 4 + (i % 2) * 1.6, 0, 0]); return { job: id, type: 'job_consulta', title: 'Plantão no hospital', pats, got: 0, goal: n, pay: jobPay(id, JOBS[id].base + n * 30), time: 60 + n * 25, timeMax: 60 + n * 25 }; }
   if (id === 'traficante') {
     const b = farPoint(70), dist = Math.hypot(city.boca[0] - P.x, city.boca[1] - P.z) + Math.hypot(b[0] - city.boca[0], b[1] - city.boca[1]), time = Math.round(dist / 7 * 1.3 + 20);
     return { job: id, type: 'job_corre', title: 'Corre da encomenda', a: city.boca, b, stage: 0, pay: jobPay(id, JOBS[id].base + dist * 0.6), time, timeMax: time };
@@ -4697,6 +4741,8 @@ function jobTarget(m) {
   if (m.type === 'job_fogo') return m.tgt;
   if (m.type === 'job_pm') return m.got < m.pts.length ? m.pts[m.got] : m.sus;
   if (m.type === 'job_corre') return m.stage === 0 ? m.a : m.b;
+  if (m.type === 'job_resgate') return m.stage === 0 ? m.v : m.hosp;
+  if (m.type === 'job_consulta') { const q = m.pats.find(q => !q[2]); return q ? [q[0], q[1]] : null; }
   return null;
 }
 function jobObjsNew(m) {
@@ -4715,7 +4761,11 @@ function jobObjsNew(m) {
   if (m.type === 'job_pm' && m.got >= m.pts.length && !m.arrested) {
     const g = makeSkater(roleLook('traficante', 0), 'Suspeito', '#ff6b6b'); g.userData.ped = true; g.position.set(m.sus[0], 0, m.sus[1]); g.userData.sus = { x: m.sus[0], z: m.sus[1], run: false, h: 0 }; city.scene.add(g); city.mObjs.push(g);
   }
-  if (m.type === 'job_pm' || m.type === 'job_corre' || m.type === 'job_taxi') {
+  if ((m.type === 'job_resgate' && m.stage === 0) || m.type === 'job_consulta') {
+    const pts = m.type === 'job_resgate' ? [[m.v[0], m.v[1]]] : m.pats.filter(q => !q[2]);
+    pts.forEach((q, i) => { const g = MODELS ? makeRealPed(Math.random() < 0.5) : makePed({ shirt: 0x9aa3ad, pants: 0x2f4f86, skin: pick(SKINS), hair: pick(HAIRS) }); g.position.set(q[0], groundH(q[0], q[1]), q[1]); g.userData.pat = m.type === 'job_resgate' ? 0 : m.pats.indexOf(q); city.scene.add(g); city.mObjs.push(g); bubble(g, m.type === 'job_resgate' ? 'Socorro! Me ajuda!' : pick(['Doutor, tô com dor!', 'Tô com febre…', 'Machuquei o braço.']), 30); });
+  }
+  if (m.type === 'job_pm' || m.type === 'job_corre' || m.type === 'job_taxi' || m.type === 'job_resgate') {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(2, 0.18, 8, 28), new THREE.MeshBasicMaterial({ color: m.type === 'job_pm' ? 0x4fc3ff : m.type === 'job_corre' ? 0xff4f7b : 0xffcf3a })); ring.userData.ring = true; ring.rotation.x = Math.PI / 2; city.scene.add(ring); city.mObjs.push(ring);
   }
 }
@@ -4761,6 +4811,19 @@ function updateJobNew(m, dt, t) {
       }
       if (d > 70) return failMission('o suspeito escapou.');
     }
+  } else if (m.type === 'job_resgate' || m.type === 'job_consulta') {
+    for (const o of city.mObjs) if (o.userData.pat != null) { if (o.userData.real) animSkater(o, { walk: true, v: 0, fallT: 1 }, t); tickBubble(o, dt); }
+    if (m.type === 'job_resgate' && m.stage === 1) { if (near < 3.5) { toast('Paciente entregue no Hospital!', 'good'); return completeMission(); } return; }
+    if (near < 2.4 && !P.drive) {
+      city.promptBusy = true; pr.hidden = false;
+      if (input.held.KeyE || input.hold.act || tap('act')) { m.p = (m.p || 0) + dt / 2.6; P.v = 0; P.emote = { id: 'sit', t: 0.3 }; }
+      pr.textContent = `Segure ${key} · ${m.type === 'job_resgate' ? 'Primeiros socorros' : 'Examinar e tratar'} ${Math.round((m.p || 0) * 100)}%`;
+      if (m.p >= 1) {
+        m.p = 0; sfx('coin');
+        if (m.type === 'job_resgate') { m.stage = 1; P.carry = true; toast('Vítima estabilizada! Leve até o Hospital.', 'pink'); rebuildMissionObjs(); renderMissionBox(); }
+        else { const q = m.pats.find(q => !q[2]); q[2] = 1; m.got++; toast(pick(['Paciente medicado.', 'Curativo feito.', 'Receita entregue.']), 'good'); rebuildMissionObjs(); renderMissionBox(); if (m.got >= m.goal) return completeMission(); }
+      }
+    }
   } else if (m.type === 'job_corre') {
     if (near < 3) {
       if (m.stage === 0) { m.stage = 1; P.carry = true; P.wanted = Math.max(P.wanted || 0, 1); toast('Encomenda na mochila. A polícia está de olho: entregue sem ser pego!', 'pink'); sfx('coin'); renderMissionBox(); }
@@ -4774,6 +4837,8 @@ function missionBoxNew(m) {
   if (m.type === 'job_fogo') return `Apague o incêndio · ${Math.round(m.p * 100)}%`;
   if (m.type === 'job_pm') return m.got < m.pts.length ? `Ponto de patrulha ${m.got + 1} / ${m.pts.length}` : 'Aborde o suspeito';
   if (m.type === 'job_corre') return m.stage === 0 ? 'Pegue a encomenda na boca do morro' : 'Entregue sem ser preso';
+  if (m.type === 'job_resgate') return m.stage === 0 ? 'Vá até a vítima e faça os primeiros socorros' : 'Leve a vítima ao Hospital';
+  if (m.type === 'job_consulta') return `Pacientes atendidos ${m.got} / ${m.goal}`;
   return '';
 }
 
@@ -5163,7 +5228,7 @@ function shootAimed(G) {
 /* o que acontece com quem leva o tiro (usado pela mira e pelo tiro automático) */
 function applyShot(best, kind, G) {
   if (kind === 'peer') {
-    NET.ch && NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: best.p.id, by: S.name, k: G.knock } });
+    NET.ch && NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: best.p.id, by: S.name, k: G.knock, dmg: G.dmg || 25 } });
     if (!(S.shift === 'policial' && best.p.t && best.p.t.wd > 0)) addWanted(1, 'atirou em alguém'); toast(`Acertou ${best.p.name}!`); return;
   }
   if (kind === 'squad') { best.fallT = 3; bubble(best.g, 'Ô! Sou do seu lado, chefe!', 2); return; }
@@ -5306,6 +5371,114 @@ function updateSquad(dt, t) {
     animSkater(g, { walk: true, v: sp, fallT: 0, wpHold: s.gun, wpProp: aim ? s.gun : null, shootUp: s.upT > 0 }, t + s.ph0); tickBubble(g, dt);
   }
   city.squad = L.filter(s => !s.gone);
+}
+
+/* =========================================================
+   VIDA, SAMU E HOSPITAL: tiro, atropelamento e queda tiram vida; com 0% o SAMU vem e você acorda no hospital
+   ========================================================= */
+Object.assign(SPECIAL, {
+  '0,84': { kind: 'hospital', label: 'Hospital', sub: 'HOSPITAL · SAMU', color: 0xf2f2f2, css: '#e53935' },
+  '-42,-84': { kind: 'prefeitura', label: 'Prefeitura', sub: 'PREFEITURA', color: 0xd9c9a3, css: '#c9a227' },
+  '84,42': { kind: 'igreja', label: 'Igreja', sub: 'IGREJA · CASAMENTOS', color: 0xf6f1e7, css: '#b58ad6' },
+});
+Object.assign(CITY_SHOPS.rj, { hospital: '42,84', prefeitura: '84,-42', igreja: '-42,84' });
+Object.assign(CITY_SHOPS.ssa, { hospital: '84,0', prefeitura: '0,-84', igreja: '-42,-84' });
+Object.assign(DOOR_COL, { hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6' });
+UNI_ITEMS.push(I('shirt', 'uni_samu', 'Macacão do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('pants', 'uni_samu_p', 'Calça do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('shirt', 'uni_med', 'Jaleco de Médico', 0xf4f6f8, 0, null, 'comum', { pat: 'plain' }), I('pants', 'uni_med_p', 'Calça Hospitalar', 0x3fa7a0, 0, null, 'comum', { pat: 'plain' }));
+UNI_ITEMS.forEach(i => ITEM[i.id] = i);
+Object.assign(UNIFORM, { socorrista: { shirt: 'uni_samu', pants: 'uni_samu_p' }, medico: { shirt: 'uni_med', pants: 'uni_med_p' } });
+P.hp = 100;
+function hurt(n, cause) {
+  if (P.down || P.jailT > 0 || city.hospIn || mode !== 'city') return;
+  P.hp = Math.max(0, P.hp - n); P.hurtT = 0; city.hurtFlash = 0.5; renderHp();
+  if (P.hp <= 0) goDown(cause);
+}
+function renderHp() {
+  const el = $('h-hp'); if (!el) return; const v = Math.round(P.hp);
+  el.querySelector('i').style.width = v + '%'; el.querySelector('b').textContent = v + '%'; el.classList.toggle('low', v < 35);
+}
+function updateHealth(dt) {
+  P.hurtT = (P.hurtT || 0) + dt;
+  if (!P.down && P.hp < 100 && P.hurtT > 10) { P.hp = Math.min(100, P.hp + 1.5 * dt); if ((city.hpUi = (city.hpUi || 0) - dt) <= 0) { city.hpUi = 0.5; renderHp(); } }
+  if (city.hurtFlash > 0) { city.hurtFlash -= dt; $('hurt').style.opacity = Math.max(0, city.hurtFlash * 1.4); }
+  if (P.down) { P.fallT = Math.max(P.fallT, 0.5); P.v = 0; updateSamu(dt); }
+}
+/* caído: chama o SAMU (jogador socorrista na cidade tem prioridade; senão vem a ambulância) */
+function goDown(cause) {
+  if (P.drive) exitVehicle(true); if (P.ride) endRide(true); if (P.aim) setAim(false);
+  P.down = true; P.onBoard = false; P.wanted = 0; P.fallT = 2;
+  if (S.mission && ['job_corre', 'job_ent', 'entrega'].includes(S.mission.type)) failMission('você se feriu.');
+  toast(`Você caiu ferido (${cause}). Chamando o SAMU 192…`, 'bad'); sfx('hit');
+  const realMedic = Object.values(NET.peers).some(p => p.job === 'socorrista');
+  if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'samu', payload: { id: NET.user.id, name: S.name, x: Math.round(P.x), z: Math.round(P.z) } });
+  city.samu = { t: 0, st: 'chamado', wait: realMedic ? 22 : 3 };
+}
+function ambulanceMesh() {
+  const m = makeVehicleMesh(Object.assign({}, VEH.v_kombi, { color: 0xf6f6f2 })), u = m.userData, roof = u.roof || 2;
+  const bar = new THREE.Group(), r = new THREE.Mesh(boxGeo(0.5, 0.16, 0.3), new THREE.MeshBasicMaterial({ color: 0xff2020 })), b = new THREE.Mesh(boxGeo(0.5, 0.16, 0.3), new THREE.MeshBasicMaterial({ color: 0xff2020 }));
+  r.position.x = -0.3; b.position.x = 0.3; bar.add(r, b); bar.position.y = roof + 0.1; m.add(bar); u.siren = [r, b];
+  const s = textSprite('SAMU 192', { bg: '#e53935', fg: '#fff', size: 46, scale: [1.8, 0.4, 1] }); s.position.set(0, roof + 0.45, 0); m.add(s);
+  return m;
+}
+function updateSamu(dt) {
+  const S2 = city.samu; if (!S2) return; S2.t += dt;
+  if (S2.st === 'chamado' && S2.t > S2.wait) {
+    const a = rand(0, TAU); let x = P.x + Math.cos(a) * 45, z = P.z + Math.sin(a) * 45; x = clamp(x, -105, 105); z = clamp(z, -105, 105);
+    S2.m = ambulanceMesh(); S2.x = x; S2.z = z; city.scene.add(S2.m); S2.st = 'vindo'; toast('A ambulância do SAMU está chegando!', 'pink');
+  }
+  if (S2.st === 'vindo') {
+    const d = Math.hypot(P.x - S2.x, P.z - S2.z), a = Math.atan2(P.x - S2.x, P.z - S2.z);
+    if (d > 5) { S2.x += Math.sin(a) * 14 * dt; S2.z += Math.cos(a) * 14 * dt; } else { S2.st = 'medicos'; S2.t2 = 0; S2.medics = [0, 1].map(i => { const g = makeSkater(lookOf(Object.assign({}, UNIFORM.socorrista, { shoes: 'shoes_basic' }), pick(SKINS), pick(HAIRS), i ? 'f' : 'm'), 'SAMU', '#ff8a8a'); g.userData.ped = true; city.scene.add(g); return { g, x: S2.x + (i ? 1 : -1), z: S2.z }; }); }
+    S2.m.position.set(S2.x, groundH(S2.x, S2.z), S2.z); S2.m.rotation.y = a;
+  }
+  if (S2.m && S2.m.userData.siren) { const on = Math.floor(performance.now() / 180) % 2; S2.m.userData.siren[0].visible = !!on; S2.m.userData.siren[1].visible = !on; }
+  if (S2.st === 'medicos') {
+    S2.t2 += dt;
+    for (const [i, md] of S2.medics.entries()) { const tx = P.x + (i ? 0.7 : -0.7), tz = P.z, a = Math.atan2(tx - md.x, tz - md.z), d = Math.hypot(tx - md.x, tz - md.z); if (d > 0.3) { md.x += Math.sin(a) * 3 * dt; md.z += Math.cos(a) * 3 * dt; } md.g.position.set(md.x, groundH(md.x, md.z), md.z); md.g.rotation.y = d > 0.3 ? a : Math.atan2(P.x - md.x, P.z - md.z); animSkater(md.g, { walk: true, v: d > 0.3 ? 3 : 0, fallT: 0, emote: d <= 0.3 ? 'sit' : null }, performance.now() / 1000); }
+    if (S2.t2 > 1.2 && !S2.said) { S2.said = true; bubble(S2.medics[0].g, 'Calma, estamos com você!', 3); }
+    if (S2.t2 > 4.5) toHospital('SAMU');
+  }
+}
+function clearSamu() { const S2 = city.samu; if (!S2) return; if (S2.m) city.scene.remove(S2.m); for (const md of S2.medics || []) city.scene.remove(md.g); city.samu = null; }
+/* hospital: quarto com leitos onde você acorda */
+const HOSP = { x: 800, z: 600, W: 16, D: 12 };
+function buildHospital() {
+  if (city.hospG) return; const g = new THREE.Group(), cx = HOSP.x, cz = HOSP.z, W = HOSP.W, D = HOSP.D, H = 3.2; g.position.set(cx, 0, cz); city.scene.add(g); city.hospG = g;
+  const add = (geo, m, x, y, z, ry = 0) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.y = ry; k.castShadow = k.receiveShadow = true; g.add(k); return k; };
+  const col = (x, z, w, d) => city.colliders.push({ x0: cx + x - w / 2, x1: cx + x + w / 2, z0: cz + z - d / 2, z1: cz + z + d / 2, hosp: true });
+  const fl = add(new THREE.PlaneGeometry(W, D), std(0xdfe7ea, 0.6), 0, 0.01, 0); fl.rotation.x = -Math.PI / 2;
+  const wm = new THREE.MeshStandardMaterial({ color: 0xeef4f6, roughness: 0.9, side: THREE.DoubleSide });
+  for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [0, D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry);
+  col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
+  const ceil = add(new THREE.PlaneGeometry(W, D), std(0xffffff, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
+  const lt = new THREE.PointLight(0xffffff, 1.3, 30, 1.5); lt.position.set(0, H - 0.3, 0); g.add(lt); g.add(new THREE.HemisphereLight(0xffffff, 0x9fb8c0, 0.5));
+  for (let i = 0; i < 4; i++) { const x = -6 + i * 4; add(boxGeo(1.1, 0.55, 2.1), std(0xcfd8dc, 0.4, 0.5), x, 0.35, -D / 2 + 1.4); add(boxGeo(1, 0.12, 2), std(0xffffff, 0.9), x, 0.68, -D / 2 + 1.4); add(boxGeo(0.7, 0.12, 0.4), std(0xe3f2fd, 0.9), x, 0.78, -D / 2 + 0.6); add(boxGeo(0.06, 1.8, 2.2), std(0x80cbc4, 0.9), x + 1.5, 0.9, -D / 2 + 1.4); col(x, -D / 2 + 1.4, 1.1, 2.1); }
+  const cross = new THREE.Group(); for (const [w, h] of [[0.9, 0.3], [0.3, 0.9]]) { const k = new THREE.Mesh(boxGeo(w, h, 0.05), new THREE.MeshBasicMaterial({ color: 0xe53935 })); cross.add(k); } cross.position.set(0, 2.4, D / 2 - 0.05); g.add(cross);
+  add(boxGeo(2.6, 1.05, 0.8), std(0xb0bec5, 0.6), 4.5, 0.52, D / 2 - 2); col(4.5, D / 2 - 2, 2.6, 0.8);
+  const nurse = makeSkater(lookOf({ shirt: 'uni_med', pants: 'uni_med_p', shoes: 'shoes_white' in ITEM ? 'shoes_white' : 'shoes_basic' }, pick(SKINS), pick(HAIRS), 'f'), 'Enfermeira', '#8fd3ff'); nurse.position.set(cx + 4.5, 0, cz + D / 2 - 3); nurse.rotation.y = 0; city.scene.add(nurse); city.nurse = nurse;
+  const s = textSprite('HOSPITAL MUNICIPAL', { bg: '#e53935', fg: '#fff', size: 44, scale: [4.5, 0.6, 1] }); s.position.set(0, 2.9, -D / 2 + 0.1); g.add(s);
+}
+function toHospital(by) {
+  fadeTo(() => {
+    clearSamu(); buildHospital(); P.down = false; P.fallT = 0; P.hp = 70; renderHp();
+    P.x = HOSP.x - 6 + 1.2; P.z = HOSP.z - HOSP.D / 2 + 2.6; P.y = 0; P.v = 0; P.h = Math.PI; city.hospIn = true; city.camYaw = 0; city.camSnap = true; city.zoom = 0.7;
+    toast(`Você acordou no Hospital (trazido pelo ${by}). Vida 70%. Atendimento pelo SUS: de graça!`, 'pink');
+    if (city.nurse) bubble(city.nurse, 'Que bom que acordou! Já pode ir, mas vai com calma.', 5);
+  });
+}
+function leaveHospital() {
+  fadeTo(() => { city.hospIn = false; const d = city.doors.find(d => d.kind === 'hospital'); if (d) { P.x = d.x; P.z = d.z + 2.5; } else { P.x = 0; P.z = 10; } P.y = 0; city.zoom = 1; city.camSnap = true; });
+}
+/* jogador socorrista: atende quem caiu */
+function onSamuCall(d) {
+  if (S.shift !== 'socorrista') return; city.calls = city.calls || {}; city.calls[d.id] = d;
+  setGps(d.x, d.z, `Vítima: ${d.name}`); toast(`🚑 Chamado do SAMU: ${d.name} ferido! Local no GPS.`, 'pink'); sfx('level');
+}
+function onRescued(d) { if (NET.user && d.to === NET.user.id && P.down) { clearSamu(); toHospital(`socorrista ${d.by}`); } }
+/* ferimento na corrida: com 0% de vida a corrida acaba e você vai para o hospital */
+function raceHurt(n) {
+  if (!R || R.state !== 'race') return; P.hp = Math.max(0, P.hp - n); renderHp();
+  if (P.hp <= 0 && !R.hurtOut) { R.hurtOut = true; toast('Você se machucou feio na corrida! O SAMU vai te levar ao hospital.', 'bad'); setTimeout(() => { if (mode === 'race') { $('panel').hidden = true; panelKind = null; backToCity(); } toHospital('SAMU'); }, 1600); }
 }
 
 /* ---------------- MORADIA (Imobiliária) ---------------- */
@@ -5910,7 +6083,7 @@ function knock(r, by, cause) {
   }
   if (r.invT > 0 || r.fallT > 0 || r.finished || r.climb) return false;
   r.fallT = 1.5 * (1 - (r.stats.equ || 0) * 0.04); r.v *= 0.15; r.inAir = false; r.air = 0; r.trick = null; r.combo = []; r.invT = 3;
-  if (r.isPlayer) { sfx('hit'); toast(by ? `${by.name} te derrubou!` : ({ barrier: 'Bateu na barreira! Pule por cima.', car: 'Bateu no carro! Esse não dá pra pular.', bail: 'Caiu! Termine o kickflip antes de pousar.', stairs: 'Desceu a escada no chão e capotou! Pule antes dos degraus.', banana: 'Escorregou na banana!' }[cause] || 'Caiu!'), 'bad'); }
+  if (r.isPlayer) { raceHurt(by ? 22 : 12); sfx('hit'); toast(by ? `${by.name} te derrubou!` : ({ barrier: 'Bateu na barreira! Pule por cima.', car: 'Bateu no carro! Esse não dá pra pular.', bail: 'Caiu! Termine o kickflip antes de pousar.', stairs: 'Desceu a escada no chão e capotou! Pule antes dos degraus.', banana: 'Escorregou na banana!' }[cause] || 'Caiu!'), 'bad'); }
   else if (by && by.isPlayer) { sfx('hit'); toast(`Você derrubou ${r.name}!`, 'good'); S.stats.knocks++; }
   else if (by) feed(`${by.name} derrubou ${r.name}`);
   return true;
@@ -6590,7 +6763,7 @@ const PANELS = {
     if (S.vehicles.length) html += `<div class="note">Seu veículo: <b>${esc(VEH[S.veh] ? VEH[S.veh].name : '—')}</b>. ${IS_TOUCH ? 'Botão Carro' : 'Tecla V'} chama ele para perto de você; chegue perto e aperte Ação para dirigir.</div><div class="row"><button class="btn" data-act="veh-call">Chamar meu veículo</button></div>`;
     html += `<div class="grid-items">${VEHICLES.map(v => { const own = S.vehicles.includes(v.id), on = S.veh === v.id;
       const act = on ? '<span class="pill on">Usando</span>' : own ? `<button class="btn ghost sm" data-act="veh-use" data-id="${v.id}">Usar</button>` : (v.c != null ? `<button class="btn sm" data-act="veh-buy" data-id="${v.id}" data-cur="c" ${S.coins < v.c ? 'disabled' : ''}>$ ${fmt(v.c)}</button>` : '') + (v.t != null ? `<button class="btn tok sm" data-act="veh-buy" data-id="${v.id}" data-cur="t">${fmt(v.t)} T</button>` : '');
-      return `<div class="item-card r-${v.r} ${on ? 'is-on' : ''}"><div class="swatch ico" style="--sw:${hex(v.color)}">${v.kind === 'car' ? '🚗' : '🏍️'}</div><div class="item-info"><b>${esc(v.name)}</b>${rarBadge(v)}<small>${esc(v.desc)} · até ${Math.round(v.top * 3.6)} km/h</small></div><div class="item-actions">${act}</div></div>`; }).join('')}</div>`;
+      return `<div class="item-card r-${v.r} ${on ? 'is-on' : ''}"><div class="swatch ico" style="--sw:${hex(v.color)}">${v.bike ? '🚲' : v.kind === 'car' ? '🚗' : '🏍️'}</div><div class="item-info"><b>${esc(v.name)}</b>${rarBadge(v)}<small>${esc(v.desc)} · até ${Math.round(v.top * 3.6)} km/h</small></div><div class="item-actions">${act}</div></div>`; }).join('')}</div>`;
     return { title: 'Concessionária', html };
   },
   viagem() {
@@ -6600,6 +6773,14 @@ const PANELS = {
       <div class="row">${id === cur ? '<span class="pill on">Você está aqui</span>' : `${hasV ? `<button class="btn" data-act="travel" data-id="${id}" data-how="veh">Ir de ${VEH[S.veh].kind === 'car' ? 'carro' : 'moto'}</button>` : ''}<button class="btn ghost" data-act="travel" data-id="${id}" data-how="bus" ${S.coins < 150 ? 'disabled' : ''}>Ônibus ($ 150)</button>`}</div></div>`).join('');
     if (!hasV) html += `<p class="muted">Compre um carro ou moto na Concessionária para viajar de graça.</p>`;
     return { title: 'Rodoviária', html };
+  },
+  prefeitura() { return { title: 'Prefeitura', html: '<p class="muted">Em breve.</p>' }; },
+  igreja() { return { title: 'Igreja', html: '<p class="muted">Em breve.</p>' }; },
+  hospital() {
+    let html = `<p class="muted">Hospital Municipal e base do SAMU (192). Atendimento pelo SUS, de graça. Quando a vida chega a 0% o SAMU busca você e você acorda aqui.</p>`;
+    html += `<div class="card"><h4>❤ Sua vida: ${Math.round(P.hp)}%</h4>${P.hp < 100 ? `<button class="btn" data-act="consulta" ${(S.consultaT || 0) > Date.now() ? 'disabled' : ''}>Consulta no SUS (volta a 100%)</button>${(S.consultaT || 0) > Date.now() ? `<p class="muted">Próxima consulta em ${Math.ceil((S.consultaT - Date.now()) / 60000)} min.</p>` : ''}` : '<span class="pill on">Saúde em dia</span>'}</div>`;
+    html += `<div class="card"><h4>🚑 Trabalhe aqui</h4><p>Socorrista do SAMU e Médico ficam na Agência de Empregos (com teste).</p><button class="btn ghost" data-act="open-agencia">Abrir Agência</button></div>`;
+    return { title: 'Hospital', html };
   },
   delegacia() {
     const q = city.quiz;
@@ -6736,6 +6917,8 @@ function act(a, ds, el) {
     case 'crew-disband': S.crew = null; persist(); refreshBotTags(); updateHUD(); renderPanel(); break;
     case 'edit-btns': btnEditStart(); break;
     case 'quiz-start': startQuiz(); break;
+    case 'consulta': { P.hp = 100; renderHp(); S.consultaT = Date.now() + 3 * 60000; persist(); toast('Consulta feita! Vida 100%.', 'good'); sfx('level'); renderPanel(); break; }
+    case 'open-agencia': openPanel('agencia'); break;
     case 'radio': toggleRadio(); break;
     case 'radio-call': makeCall(); break;
     case 'radio-say': radioSend(ds.t); break;
@@ -6926,6 +7109,8 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'voz' }, ({ payload }) => onPeerVoice(payload))
     .on('broadcast', { event: 'tiro' }, ({ payload }) => onPeerShot(payload))
     .on('broadcast', { event: 'assalto' }, ({ payload }) => onRobbed(payload))
+    .on('broadcast', { event: 'samu' }, ({ payload }) => onSamuCall(payload))
+    .on('broadcast', { event: 'socorrido' }, ({ payload }) => onRescued(payload))
     .on('broadcast', { event: 'assalto_ok' }, ({ payload }) => onRobOk(payload))
     .on('broadcast', { event: 'marca' }, ({ payload }) => renderMark(payload))
     .on('broadcast', { event: 'prisao' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id && P.wanted > 0) getArrested(payload.by); })
@@ -7043,7 +7228,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
@@ -7061,7 +7246,7 @@ function netTick(dt, t) {
     if (d.vh && VEH[d.vh]) {
       if (!p.veh || p.vehId !== d.vh) { if (p.veh) city.scene.remove(p.veh); p.veh = makeVehicleMesh(VEH[d.vh]); p.vehId = d.vh; city.scene.add(p.veh); }
       p.veh.position.set(p.x, groundH(p.x, p.z), p.z); p.veh.rotation.y = p.h; const vu = p.veh.userData; vu.spin = (vu.spin || 0) + d.v * dt / 0.35; for (const w of vu.wheels) w.children[0].rotation.x = vu.spin; vehLightsTick(p.veh, d.vl, d.bk, t);
-      if (VEH[d.vh].kind === 'car') { p.g.visible = false; } else { p.g.visible = true; p.g.position.y = vu.seatY - 1.07; animSkater(p.g, { ride: true, walk: true, v: 0, fallT: 0 }, t); }
+      if (VEH[d.vh].kind === 'car') { p.g.visible = false; } else { p.g.visible = true; p.g.position.y = groundH(p.x, p.z) + vu.seatY - 1.07; if (vu.crank) vu.crank.rotation.x = vu.spin * 0.45; animSkater(p.g, { pedal: vu.bike ? vu.spin || 0 : null, ride: true, walk: true, v: 0, fallT: 0 }, t); }
       tickBubble(p.g, dt); continue;
     } else if (p.veh) { city.scene.remove(p.veh); p.veh = null; p.vehId = null; p.g.visible = true; }
     animSkater(p.g, { wpHold: p.wp || null, walk: !d.b, carry: true, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
