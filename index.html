@@ -457,6 +457,17 @@ canvas.swatch{background:#333}
   #prompt{bottom:calc(env(safe-area-inset-bottom,0px) + 186px)}
   #feed{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 240px)}
 }
+/* avisos pequenos no canto esquerdo (nada na frente da visão) */
+#prompt{left:10px!important;right:auto!important;transform:none!important;top:calc(env(safe-area-inset-top,0px) + 214px)!important;bottom:auto!important;font-size:11px!important;padding:3px 8px!important;border-radius:6px!important;box-shadow:none!important;max-width:min(250px,44vw)!important;white-space:normal!important;text-transform:none!important;letter-spacing:0!important;line-height:1.2;opacity:.95;z-index:15}
+#music-chip{left:10px!important;transform:none!important;top:calc(env(safe-area-inset-top,0px) + 248px)!important;bottom:auto!important;font-size:10px!important;padding:2px 8px!important;border-width:1px!important;max-width:min(230px,44vw);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
+#toasts{left:10px!important;transform:none!important;top:calc(env(safe-area-inset-top,0px) + 272px)!important;width:min(220px,40vw)!important;justify-items:start!important;gap:3px!important}
+.toast{font-size:11px!important;padding:3px 7px!important;border-width:1px!important;border-left-width:3px!important;text-align:left!important;line-height:1.2}
+.toast:nth-last-child(n+3){display:none}
+.toast{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#feed div{font-size:11px!important;padding:2px 6px!important}
+#big-banner{left:128px!important;top:calc(env(safe-area-inset-top,0px) + 116px)!important;transform:none!important;font-size:14px!important;text-shadow:0 1px 2px #000!important;background:rgba(21,22,26,.8);padding:2px 8px;border-radius:6px}
+#big-banner.on{animation:bban2 2.4s ease-out forwards!important}
+@keyframes bban2{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.toast{animation:none}}
 </style>
 </head>
@@ -621,7 +632,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-18';
+const BUILD = '2026.10.11-19';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -9180,8 +9191,35 @@ function updateHandHold() {
 }
 
 /* monta tudo na cidade (chamado no fim do cityExtras) */
+/* escolhe lotes livres para banco, arena, praça, quadra e vila (em Salvador o morro fica a leste) */
+const LIFE_DEF = { bank: [126, -84], arena: [126, -42], praca: [126, 0], quadra: [126, 42], vila: [126, 84] };
+function lotFree(cx, cz) {
+  const zones = spotZones(), A = AIRPORT[cityId()];
+  for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) {
+    const x = cx + i * 5, z = cz + j * 5;
+    if (inInner(x, z, -4) || morroBand(x, z) || inHill(x, z, 4) || (city.park && inPark(x, z, -4))) return false;
+    if (Math.abs(x) > OUT_N - 12 || z < -OUT_N + 12 || z > outZMax() - 14) return false;
+    if (A && Math.abs(x - A.x) < 90 && Math.abs(z) < 155) return false;
+    for (const F of regFav()) if (Math.hypot(x - F.x, z - F.z) < 52) return false;
+    for (const q of zones) if (q.c ? Math.hypot(x - q.c[0], z - q.c[1]) < q.r + 4 : (x > q.x0 - 4 && x < q.x1 + 4 && z > q.z0 - 4 && z < q.z1 + 4)) return false;
+    if (oColHit(x, z, 0.5) || city.colliders.some(c => x > c.x0 - 1 && x < c.x1 + 1 && z > c.z0 - 1 && z < c.z1 + 1)) return false;
+  }
+  return true;
+}
+function pickLifeLots() {
+  const cand = [];
+  for (const cx of [126, -126]) for (const cz of [-84, -42, 0, 42, 84]) cand.push([cx, cz]);
+  for (const cz of [-126, 126]) for (const cx of [-84, -42, 0, 42, 84]) cand.push([cx, cz]);
+  for (const c of [168, -168]) for (const o of [-84, -42, 0, 42, 84]) cand.push([c, o], [o, c]);
+  for (const pk of (city.outer && city.outer.parks) || []) cand.push([pk[0], pk[1]]);
+  const free = cand.filter(([x, z]) => lotFree(x, z)), used = [];
+  const take = (def) => { if (free.some(f => f[0] === def[0] && f[1] === def[1]) && !used.includes(def + '')) { used.push(def + ''); return def; } const f = free.filter(f => !used.includes(f + '')).sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]))[0]; if (f) { used.push(f + ''); return f; } return def; };
+  const set = (arr, v) => { arr[0] = v[0]; arr[1] = v[1]; };
+  set(BANK_POS, take(LIFE_DEF.bank)); set(ARENA_POS, take(LIFE_DEF.arena)); set(PRACA_POS, take(LIFE_DEF.praca)); set(QUADRA_POS, take(LIFE_DEF.quadra)); set(VILA_POS, take(LIFE_DEF.vila));
+}
 function buildLife(sc) {
   city.domino = []; city.morad = []; city.walkers = [];
+  try { pickLifeLots(); } catch (e) { console.warn('lotes', e); }
   try { buildBank(sc); buildATMs(sc); } catch (e) { console.warn('banco', e); }
   try { buildPraca(sc); for (const F of regFav()) dominoTable(sc, F.x + 6.5, F.z + 6.5, 0.3); if (city.morro) { const [mx, mz] = morroWorld(2.5, 13); dominoTable(sc, mx, mz, 0); } } catch (e) { console.warn('dominó', e); }
   try { buildCasas(sc); } catch (e) { console.warn('casas', e); }
