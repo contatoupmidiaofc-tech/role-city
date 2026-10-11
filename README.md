@@ -140,3 +140,12 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - O app instalado (PWA) agora sempre busca a versão nova da página (sem cache velho).
 - **Heliponto em casa**: quem tem helicóptero (e o chefe) ganha uma laje com heliponto em cima da casa, com **elevador de vidro direto para cima** e o helicóptero estacionado. Lá em cima: "Pilotar o helicóptero" ou "Descer pelo elevador". O telhado da mansão também tem o botão "Pilotar".
 - **Controles do helicóptero**: os botões normais do veículo (Subir e Descer no lugar das setas, Frente/Trás e ◀ ▶). No PC: Espaço ou R sobe, Shift, Q ou F desce, setas/WASD direção.
+
+### Morros com dono, guerra, vida na favela, pátio da PM e a Hilux do chefe
+- **Tiroteio entre jogadores**: todo mundo por perto vê o disparo e escuta o tiro (antes só quem era atingido percebia).
+- **Favelas da região** (Mapa → Favelas da região): 3 em cada cidade, longe do centro e fora do comando do chefe. Qualquer jogador compra ($ 50.000 ou 400 T) e vira **dono do morro**: bandeira do grupo, contenção armada, usuários comprando na boca e caixa de $ 450 por dia. **Guerra**: outro jogador armado fica 60 s na bandeira sem cair e toma o morro (a contenção atira, o dono recebe o aviso). Tudo salvo no servidor (tabela `morros`).
+- **Vida na favela**: traficantes e as mulheres dançando perto do **paredão** (caixas de som com LED tocando um beat de trap), usuários subindo até a boca; o mesmo no morro do chefe.
+- **Crianças** brincando de bola na praça. **Carros de som** no trânsito.
+- **Pátio da PM**: 3 viaturas (PM, Força Tática, Caminhonete) e 3 motos (Rocam, Patrulha, Rocam Esportiva) sempre estacionadas na frente da Delegacia; policial em serviço chega perto e escolhe. **Cassetete** na mão dos policiais.
+- **Casa do chefe de ouro** (a da Imobiliária), com o retrato dele na frente e a bandeira dele.
+- **Hilux de Ouro do Chefe** (Concessionária → Usar) com paredão na caçamba tocando o "Trap do Chefe" (beat original do jogo). Tocando no chip de música dentro da Hilux, o chefe escolhe uma música do próprio celular para tocar no som dela.
