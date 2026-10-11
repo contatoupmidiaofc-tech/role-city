@@ -599,7 +599,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-12';
+const BUILD = '2026.10.11-13';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -4437,7 +4437,7 @@ function buildMorro(sc) {
   sc.add(win); sc.add(door);
   // antenas, bandeiras do Brasil nas lajes e bandeirão no alto
   const fT = brFlagTex(), flagM = new THREE.MeshLambertMaterial({ map: fT, side: THREE.DoubleSide }), poleM = lam(0xcfd3d8);
-  city.flags = [];
+  city.flags = city.flags || [];
   const addFlag = (x, y, z, s, hpole) => {
     const pole = new THREE.Mesh(CYL(0.04 * s, 0.05 * s, hpole, 6), poleM); pole.position.set(x, y + hpole / 2, z); sc.add(pole);
     const fg = new THREE.PlaneGeometry(1.4 * s, 1 * s, 8, 1); fg.translate(0.7 * s, 0, 0);
@@ -7129,7 +7129,7 @@ function sightseeing(id) {
 const myHeli = () => isAdm() ? VEH.v_heli : (S.aircraft || []).map(id => VEH[id]).find(V => V && V.heli) || null;
 const HELI_IN = {};
 function buildHome() {
-  buildHome0(); city.homePad = null; goldHome();
+  buildHome0(); city.homePad = null; try { goldHome(); } catch (e) { console.warn('goldHome', e); }
   const g = city.homeG, V = myHeli(); if (!g || !S.home || !V) return;
   const [cx, cz] = HOME_LOT, top = 13.3, gold = goldM();
   const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
@@ -7494,7 +7494,7 @@ function goldHome() {
   if (src) { const img = new Image(); img.onload = () => { const t = new THREE.Texture(img); t.needsUpdate = true; t.encoding = THREE.sRGBEncoding; const pl = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 4.6), new THREE.MeshBasicMaterial({ map: t, transparent: true })); pl.position.set(-12.37, 4.2, -8.4); pl.rotation.y = -Math.PI / 2; const bg = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 4.6), new THREE.MeshBasicMaterial({ color: 0x15161a })); bg.position.set(-12.36, 4.2, -8.4); bg.rotation.y = -Math.PI / 2; g.add(bg); g.add(pl); }; img.src = src; }
   const cap = textSprite(`👑 ${S.name.toUpperCase()} · O CHEFE`, { bg: '#15161a', fg: '#ffd700', size: 44, scale: [5, 0.8, 1] }); cap.position.set(-12.6, 7.4, -8.4); g.add(cap);
   const pole = new THREE.Mesh(CYL(0.08, 0.1, 9, 8), std(0xcfd3d8, 0.3, 0.8)); pole.position.set(-11.5, 4.5, 10.5); g.add(pole);
-  const fg = new THREE.PlaneGeometry(3, 2, 8, 1); fg.translate(1.5, 0, 0); const fl = new THREE.Mesh(fg, new THREE.MeshLambertMaterial({ map: S.gang ? flagTex(S.gang) : crownFlagTex(), side: THREE.DoubleSide })); fl.position.set(cx - 11.5, 8, cz + 10.5); city.scene.add(fl); city.flags.push({ m: fl, ph: rand(0, 6), base: fg.attributes.position.array.slice() });
+  const fg = new THREE.PlaneGeometry(3, 2, 8, 1); fg.translate(1.5, 0, 0); const fl = new THREE.Mesh(fg, new THREE.MeshLambertMaterial({ map: S.gang ? flagTex(S.gang) : crownFlagTex(), side: THREE.DoubleSide })); fl.position.set(cx - 11.5, 8, cz + 10.5); city.scene.add(fl); (city.flags = city.flags || []).push({ m: fl, ph: rand(0, 6), base: fg.attributes.position.array.slice() });
 }
 /* =========================================================
    HILUX DE OURO DO CHEFE com paredão na caçamba, e carros de som no trânsito
