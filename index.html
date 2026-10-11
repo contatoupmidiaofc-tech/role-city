@@ -639,7 +639,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-25';
+const BUILD = '2026.10.11-26';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -10033,15 +10033,23 @@ function entGirls(E, on, skin, x, z) {
 function stepTo(o, tx, tz, sp, dt) { const dx = tx - o.x, dz = tz - o.z, d = Math.hypot(dx, dz); if (d > 0.15) { const v = Math.min(sp, d * 3); o.x += dx / d * v * dt; o.z += dz / d * v * dt; o.v = v; o.h = Math.atan2(dx, dz); } else o.v = 0; return d; }
 function updateEntourage(E, own, dt, t) {
   // own = { x, z, h, hidden, me, drive, sp (nome da esposa), lib }
-  const vis = !own.hidden && !city.interior && !city.shopIn && !city.inCine && mode === 'city';
-  // ---- seguranças: um de cada lado, um passo atrás ----
+  const inside = own.me && (city.interior || city.shopIn || city.inCine), vis = !own.hidden && !inside && mode === 'city';
+  // modo dos seguranças: perto (do lado), porta (esperando num lugar) ou longe (seguindo à distância)
+  if (vis) E.lastOut = [own.x, own.z, own.h];
+  let gm = own.m || 'perto', anc = own.anc;
+  if (inside && gm !== 'porta') { gm = 'porta'; anc = E.lastOut || [own.x, own.z, own.h]; }
+  E.mode = gm;
+  // ---- seguranças ----
   for (const s of E.guards) {
-    s.g.visible = vis && own.seg; if (!s.g.visible) { s.x = own.x; s.z = own.z; continue; }
+    s.g.visible = own.seg && mode === 'city' && (gm === 'porta' ? !!anc : vis); if (!s.g.visible) { s.x = own.x; s.z = own.z; continue; }
     const fx = Math.sin(own.h), fz = Math.cos(own.h), rx = Math.cos(own.h), rz = -Math.sin(own.h);
-    let tx = own.x - fx * 0.7 + rx * 1.15 * s.side, tz = own.z - fz * 0.7 + rz * 1.15 * s.side;
+    let tx = own.x - fx * 0.7 + rx * 1.15 * s.side, tz = own.z - fz * 0.7 + rz * 1.15 * s.side, faceH = own.h;
+    if (gm === 'longe') { tx = own.x - fx * 6 + rx * 2.6 * s.side; tz = own.z - fz * 6 + rz * 2.6 * s.side; }
+    if (gm === 'porta' && anc) { const ah = anc[2] || 0, arx = Math.cos(ah), arz = -Math.sin(ah); tx = anc[0] + arx * 1.3 * s.side; tz = anc[1] + arz * 1.3 * s.side; faceH = ah + Math.PI; }
+    if (gm !== 'perto') s.block = 0;
     if (s.block > 0) { s.block -= dt; tx = s.bx; tz = s.bz; }
-    if (Math.hypot(s.x - own.x, s.z - own.z) > 25) { s.x = tx; s.z = tz; }
-    stepTo(s, tx, tz, 7, dt); if (s.v < 0.1) s.h += Math.atan2(Math.sin((s.block > 0 ? s.fh : own.h) - s.h), Math.cos((s.block > 0 ? s.fh : own.h) - s.h)) * (1 - Math.exp(-6 * dt));
+    if (Math.hypot(s.x - tx, s.z - tz) > 30) { s.x = tx; s.z = tz; }
+    stepTo(s, tx, tz, 7, dt); if (s.v < 0.1) s.h += Math.atan2(Math.sin((s.block > 0 ? s.fh : faceH) - s.h), Math.cos((s.block > 0 ? s.fh : faceH) - s.h)) * (1 - Math.exp(-6 * dt));
     s.g.position.set(s.x, groundH(s.x, s.z), s.z); s.g.rotation.y = s.h;
     animSkater(s.g, { walk: true, v: s.v, fallT: 0, armR: s.block > 0 ? { rArmFwd: 1.4, rElbow: 0.15, rArmDown: 1.2 } : null, fp: s.v < 0.1 && s.block <= 0 ? { lArmFwd: 0.35, rArmFwd: 0.35, lElbow: 0.9, rElbow: 0.9, lArmDown: 1.15, rArmDown: 1.15 } : null }, t + s.side); tickBubble(s.g, dt);
   }
@@ -10097,18 +10105,18 @@ function updateFamilia(dt, t) {
   if (isAdm()) {
     const E = entFor('me'), hidden = !!P.drive || !!P.ride || P.swim;
     if (!!(S.filhas && S.filhas.comigo) !== !!E.girls) entGirls(E, !!(S.filhas && S.filhas.comigo), S.skin, P.x, P.z);
-    updateEntourage(E, { x: P.x, z: P.z, h: P.h, v: Math.abs(P.v), hidden, seg: !S.segOff }, dt, t);
+    updateEntourage(E, { me: true, x: P.x, z: P.z, h: P.h, v: Math.abs(P.v), hidden, seg: !S.segOff, m: S.segMode || 'perto', anc: S.segAnchor }, dt, t);
     // figurantes que chegam perto demais: o segurança entra na frente
-    if (!S.segOff && !hidden) for (const o of city.peds) { const d = Math.hypot(o.x - P.x, o.z - P.z); if (d < 1.6 && !(o.fallT > 0)) { o.stopT = 2.5; o.flee = 1.5; const s = E.guards[0]; if (s.block <= 0) { s.block = 1.2; s.bx = (o.x + P.x) / 2; s.bz = (o.z + P.z) / 2; s.fh = Math.atan2(o.x - P.x, o.z - P.z); bubble(s.g, pick(['Afasta do chefe!', 'Aqui não, amigo.', 'Circulando!']), 2); } } }
+    if (!S.segOff && !hidden && (S.segMode || 'perto') === 'perto') for (const o of city.peds) { const d = Math.hypot(o.x - P.x, o.z - P.z); if (d < 1.6 && !(o.fallT > 0)) { o.stopT = 2.5; o.flee = 1.5; const s = E.guards[0]; if (s.block <= 0) { s.block = 1.2; s.bx = (o.x + P.x) / 2; s.bz = (o.z + P.z) / 2; s.fh = Math.atan2(o.x - P.x, o.z - P.z); bubble(s.g, pick(['Afasta do chefe!', 'Aqui não, amigo.', 'Circulando!']), 2); } } }
   } else if (ENT.me) entRemove('me');
   // outros jogadores que são o chefe
   const seen = {};
   for (const id in NET.peers) {
     const p = NET.peers[id]; if (!p.adm || !p.t) continue; seen[id] = true;
     const E = entFor(id), d = p.t; if (!!d.fk !== !!E.girls) entGirls(E, !!d.fk, p.skin ?? SKINS[2], p.x, p.z);
-    updateEntourage(E, { x: p.x, z: p.z, h: p.h, v: d.v || 0, hidden: !!d.vh || !!d.rd || (d.rm || '') !== roomKey(), seg: p.seg !== 0 }, dt, t);
+    updateEntourage(E, { x: p.x, z: p.z, h: p.h, v: d.v || 0, hidden: !!d.vh || !!d.rd || (d.rm || '') !== roomKey(), seg: p.seg !== 0, m: p.segm || 'perto', anc: p.sa }, dt, t);
     // eu não posso chegar perto (a não ser liberado, esposa ou filha)
-    if (p.seg !== 0 && !segAllowed(p) && !P.drive && !d.vh) {
+    if (p.seg !== 0 && (p.segm || 'perto') === 'perto' && !segAllowed(p) && !P.drive && !d.vh) {
       const dd = Math.hypot(P.x - p.x, P.z - p.z);
       if (dd < 2.4) { const a = Math.atan2(P.x - p.x, P.z - p.z); P.x = p.x + Math.sin(a) * 2.5; P.z = p.z + Math.cos(a) * 2.5; P.v = 0; const s = E.guards[0]; s.block = 1.2; s.bx = p.x + Math.sin(a) * 1.3; s.bz = p.z + Math.cos(a) * 1.3; s.fh = a; if ((city.segMsgT || 0) < performance.now()) { city.segMsgT = performance.now() + 5000; bubble(s.g, pick(['Afasta do chefe!', 'Opa, opa. Pra trás.', 'Sem chegar perto.']), 2.2); toast(`🕶️ Os seguranças do ${CHIEF} não deixam ninguém chegar perto sem ser liberado.`, 'bad'); } }
     }
@@ -10118,6 +10126,8 @@ function updateFamilia(dt, t) {
 const PANEL_SEGURANCA = function () {
   const lib = S.segLib || [], near = Object.values(NET.peers).filter(p => p.t && Math.hypot(p.x - P.x, p.z - P.z) < 40);
   let html = `<p>Dois seguranças de terno preto e óculos escuros andam sempre do seu lado. Ninguém chega perto de você, só quem você liberar, sua esposa${S.spouse ? ` (<b>${esc(S.spouse.name)}</b>)` : ''} e suas filhas.</p>`;
+  const sm = S.segMode || 'perto';
+  html += `<h4>Onde os seguranças ficam</h4><div class="seg" role="group"><button data-act="seg-mode" data-m="perto" aria-pressed="${sm === 'perto'}">Comigo (do lado)</button><button data-act="seg-mode" data-m="porta" aria-pressed="${sm === 'porta'}">Esperar aqui na porta</button><button data-act="seg-mode" data-m="longe" aria-pressed="${sm === 'longe'}">Se afastar um pouco</button></div><p class="muted">Quando você entra num lugar, eles esperam na porta sozinhos. "Comigo" barra quem chega perto; esperando na porta ou afastados, eles liberam a passagem.</p>`;
   html += `<div class="row"><button class="btn ${S.segOff ? '' : 'ghost'}" data-act="seg-toggle">${S.segOff ? '🕶️ Chamar os seguranças' : '🕶️ Dispensar os seguranças'}</button><button class="btn" data-act="familia">👧 ${S.filhas && S.filhas.comigo ? 'Mandar as meninas para casa' : 'Buscar as meninas'}</button></div>`;
   html += `<h4>Liberar pessoas para chegar perto</h4>`;
   html += near.length ? near.map(p => `<div class="card"><h4>${esc(p.name)}</h4><div class="row"><button class="btn sm ${lib.includes(p.id) ? 'ghost' : ''}" data-act="seg-lib" data-id="${p.id}">${lib.includes(p.id) ? '✅ Liberado (tocar para bloquear)' : '⛔ Bloqueado (tocar para liberar)'}</button></div></div>`).join('') : '<p class="muted">Ninguém por perto agora.</p>';
@@ -11899,7 +11909,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
@@ -12122,7 +12132,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && NET
 /* aparência compacta enviada para os outros jogadores */
 const myNetLook = () => { const L = myNetLook0(); if (S.beachWear) Object.assign(L.e, beachEquip()); return L; };
 const myNetLook0 = () => ({ bd: S.body || null, w: handNow(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print, wrist: S.equip.wrist, ear: S.equip.ear, tats: S.tats || null, tn: S.name, hol: holsterNow() }, b: S.board });
-const myPresence = () => ({ lib: isAdm() ? (S.segLib || []) : null, seg: isAdm() && S.segOff ? 0 : 1, id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', sp: S.spouse ? S.spouse.name : '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
+const myPresence = () => ({ lib: isAdm() ? (S.segLib || []) : null, seg: isAdm() && S.segOff ? 0 : 1, segm: isAdm() ? S.segMode || 'perto' : null, sa: isAdm() && S.segMode === 'porta' && S.segAnchor ? S.segAnchor.map(v => Math.round(v * 10) / 10) : null, id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', sp: S.spouse ? S.spouse.name : '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
 function netJoinPlaza() {
   if (!NET.user || NET.ch) return;
   const ch = NET.sb.channel('praca_' + cityId(), { config: { presence: { key: NET.user.id }, broadcast: { self: false } } });
@@ -12191,7 +12201,7 @@ function onPresence(state) {
       p = NET.peers[st.id] = { wp: L.w || null, id: st.id, name: st.name, g, lookKey, x: 0, y: 0, z: 0, h: 0, t: null, seen: false };
       pushChat('Praça', `${st.name} entrou na praça`);
     }
-    p.job = st.job || ''; p.gang = st.gang || null; p.sp = st.sp || ''; p.lib = st.lib || []; p.seg = st.seg === 0 ? 0 : 1; p.skin = (st.look || {}).sk;
+    p.job = st.job || ''; p.gang = st.gang || null; p.sp = st.sp || ''; p.lib = st.lib || []; p.seg = st.seg === 0 ? 0 : 1; p.segm = st.segm || 'perto'; p.sa = st.sa || null; p.skin = (st.look || {}).sk;
     if (st.adm && !p.adm) { p.adm = 1; setTag(p.g, '👑 ' + st.name + ' · Chefe', '#ffd700'); toast(`👑 O chefe ${st.name} chegou na cidade! Respeito!`, 'pink'); }
   }
   for (const id in NET.peers) if (!seen[id]) { pushChat('Praça', `${NET.peers[id].name} saiu`); removePeer(id); }

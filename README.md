@@ -232,3 +232,4 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 ## Cinema e parquinho (todas as cidades)
 - Cine Rolê: ingresso de $ 15, três filmes passando no telão com plateia, pipoca.
 - Parquinho com balanço, escorregador, gangorra, gira-gira e caixa de areia, cheio de crianças brincando e mães olhando.
+- **Seguranças – liberar** (build 2026.10.11-26): no painel 🕶️ Seguranças dá pra escolher "Comigo (do lado)", "Esperar aqui na porta" ou "Se afastar um pouco". Ao entrar em lojas, casas ou cinema eles esperam sozinhos na porta. Só barram quem chega perto no modo "Comigo". Outros jogadores veem o mesmo modo (presença `segm`/`sa`).
