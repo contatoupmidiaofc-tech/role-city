@@ -3631,7 +3631,7 @@ function updateCity(dt, t) {
   // céu e sol acompanham
   city.sky.position.copy(camera.position);
   for (const c of city.clouds.children) { c.position.x += c.userData.v * dt; if (c.position.x > 340) c.position.x = -340; }
-  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
+  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); updateShopIn(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
   const sd = city.dn ? city.dn.sunDir : [40, 80, 30]; city.sun.position.set(P.x + sd[0], sd[1], P.z + sd[2]); city.sun.target.position.set(P.x, 0, P.z);
   for (const d of city.doors) if (d.ring) d.ring.rotation.y += dt;
   updateHomeDoor(dt); if (city.seaTex) { city.seaTex.offset.x += dt * 0.01; city.seaTex.offset.y += dt * 0.02; city.foam.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.3; }
@@ -3660,7 +3660,7 @@ function updateCity(dt, t) {
     if (sinceDrag > 3) city.camPitch *= 1 - Math.exp(-1.5 * dt);
     const fx = Math.sin(city.camYaw), fz = Math.cos(city.camYaw), z = city.zoom;
     let cd = (P.drive ? P.drive.m.userData.camD : P.onBoard ? 5.6 : 4.4) * z;
-    while (cd > 1.2 && collide(P.x - fx * cd, P.z - fz * cd, 0.4)) cd -= 0.4;
+    while (cd > 0.9 && (collide(P.x - fx * cd, P.z - fz * cd, 0.4) || !inRoomXZ(P.x - fx * cd, P.z - fz * cd))) cd -= 0.3;
     const hh = lerp(1.75, P.drive ? 3.3 : P.onBoard ? 2.9 : 2.5, clamp((z - 0.35) / 0.65, 0, 1)), side = lerp(0.45, 0, clamp((z - 0.35) / 0.5, 0, 1));
     const by = gy + (P.y - gy) * 0.5, want = new THREE.Vector3(P.x - fx * cd + fz * side, Math.max(groundH(P.x - fx * cd, P.z - fz * cd) + 0.8, by + hh + city.camPitch * cd * 0.7), P.z - fz * cd - fx * side);
     if (city.interior || city.jail || city.hospIn || city.shopIn) want.y = Math.min(want.y, 2.75);
@@ -3690,6 +3690,7 @@ function updateCity(dt, t) {
     if (p.t.vh && k < 3.8 && k < nd + 0.5) { nd = k; near = { type: 'carona', p }; }
     else if (S.shift === 'policial' && p.t.wd > 0 && !p.t.vh && k < 2.6 && k < nd + 0.5) { nd = k; near = { type: 'prender', p }; } }
   if (city.hospIn) { const k = Math.hypot(HOSP.x - P.x, HOSP.z + HOSP.D / 2 - 1 - P.z); if (k < 2.5) { nd = k; near = { type: 'hospexit' }; } }
+  if (city.shopIn) for (const sp of city.shopIn.spots) { const k = Math.hypot(sp.x - P.x, sp.z - P.z); if (k < (sp.label === 'Sair' ? 1.3 : 2.1) && k < nd) { nd = k; near = { type: 'shopspot', s: sp }; } }
   if (S.shift === 'socorrista' && !P.drive) for (const id in NET.peers) { const p = NET.peers[id]; if (p.t && p.t.dn && Math.hypot(p.x - P.x, p.z - P.z) < 2.6) { near = { type: 'socorrer', p }; nd = 0; } }
   if (!P.drive && !P.ride && !(P.jailT > 0)) {
     if (S.shift === 'policial') { for (const o of [...(city.thugs || []), ...(city.robbers || [])]) { if (o.off || o.arrestedT > 0 || o.st === 'preso' || o.st === 'gone') continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.4 && k < nd && (o.fallT > 0 || o.st === 'rob' || o.st === 'flee' || o.st === 'go')) { nd = k; near = { type: 'prenderNpc', o }; } } }
@@ -3706,6 +3707,7 @@ function updateCity(dt, t) {
     else if (near.type === 'assalto') { pr.textContent = `${key} · Assaltar`; pr.hidden = false; if (tap('act')) robNpc(near.o); }
     else if (near.type === 'assaltoP') { pr.textContent = `${key} · Assaltar ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'assalto', payload: { id: NET.user.id, to: near.p.id, by: S.name } }); addWanted(2, 'assalto à mão armada'); } }
     else if (near.type === 'prenderNpc') { pr.textContent = `${key} · Prender o bandido`; pr.hidden = false; if (tap('act')) { const o = near.o; if (o.st) { o.st = 'preso'; o.t2 = 0; bubble(o.g, 'Tá bom, perdi…', 2); } else { o.arrestedT = 150; o.hostT = 0; o.fallT = 0; o.g.visible = false; } addPrisoner(o.st ? 'Assaltante' : 'Traficante', 120); const g = earn(jobPay('policial', 180)); addXP(30); toast(`Bandido preso e levado para a Delegacia! +$${fmt(g)}`, 'good'); sfx('coin'); } }
+    else if (near.type === 'shopspot') { pr.textContent = `${key} · ${near.s.label}`; pr.hidden = false; if (tap('act')) near.s.fn(); }
     else if (near.type === 'hospexit') { pr.textContent = `${key} · Sair do hospital`; pr.hidden = false; if (tap('act')) leaveHospital(); }
     else if (near.type === 'socorrer') { pr.textContent = `${key} · Socorrer ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'socorrido', payload: { to: near.p.id, by: S.name } }); const g = earn(jobPay('socorrista', 260)); addXP(45); toast(`Você salvou ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('level'); } }
     else if (near.type === 'rideexit') { pr.textContent = `${key} · Descer`; pr.hidden = false; if (tap('act')) endRide(); }
@@ -3993,6 +3995,7 @@ function drawCityPreview(cv, id) {
 function interact(n) {
   if (n.type === 'door') {
     const k = n.d.kind;
+    if (INSIDE_KINDS.includes(k) && !n.d.inside) { enterShop(n.d); return; }
     if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
     else if (k === 'arena') openPanel('arena');
     else if (k === 'tokens') openPanel('tokens');
@@ -4195,6 +4198,7 @@ function startShift(id) {
   if (lvlLock(J.need)) return toast(`Libera no nível ${J.need}.`, 'bad');
   if (J.veh && !ownsKind(J.veh)) return toast(`Precisa ter ${J.veh === 'moto' ? 'uma moto' : 'um carro'} (Concessionária).`, 'bad');
   if (J.police && !S.policeOk) return toast('Primeiro passe na prova da Delegacia.', 'bad');
+  if (!certOk(id)) { toast(`Para trabalhar como ${J.name}, primeiro passe no teste.`, 'pink'); return startJobTest(id); }
   if (J.gang && !S.gang) return toast('Primeiro entre ou crie um grupo no QG da Comunidade (no morro).', 'bad');
   if (S.shift && S.shift !== id) endShift();
   if (J.skate && !hasSkate()) return toast('Precisa de um skate para dar aula.', 'bad');
@@ -5537,6 +5541,180 @@ function raceHurt(n) {
   if (P.hp <= 0 && !R.hurtOut) { R.hurtOut = true; toast('Você se machucou feio na corrida! O SAMU vai te levar ao hospital.', 'bad'); setTimeout(() => { if (mode === 'race') { $('panel').hidden = true; panelKind = null; backToCity(); } toHospital('SAMU'); }, 1600); }
 }
 
+/* =========================================================
+   LOJAS E PRÉDIOS POR DENTRO: entra pela porta, anda lá dentro e fala no balcão
+   ========================================================= */
+const SHOPIN = { x: 950, z: 600 };
+const INSIDE_KINDS = ['roupas', 'skate', 'celular', 'arena', 'tokens', 'crew', 'agencia', 'imobiliaria', 'viagem', 'concessionaria', 'delegacia', 'bombeiros', 'reciclagem', 'hospital', 'prefeitura', 'igreja'];
+function doorPanel(k) {
+  if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
+  else if (k === 'bombeiros' || k === 'reciclagem') openPanel('agencia');
+  else if (k === 'qg') { openPanel('faccao'); gangsFetch(); }
+  else openPanel(k);
+}
+const ROOM_SIZE = { concessionaria: [26, 18], igreja: [14, 24], bombeiros: [18, 14], viagem: [20, 14], arena: [18, 14] };
+/* retângulo do cômodo atual (casa, loja, hospital, cadeia) para a câmera não sair pela parede */
+function inRoomXZ(x, z) {
+  let r = null;
+  if (city.shopIn) r = [SHOPIN.x, SHOPIN.z, city.shopIn.W, city.shopIn.D]; else if (city.hospIn) r = [HOSP.x, HOSP.z, HOSP.W, HOSP.D]; else if (city.jail) r = [JAIL.x, JAIL.z, JAIL.W, JAIL.D]; else if (city.interior) r = [INSIDE.x, INSIDE.z, city.interior.W, city.interior.D];
+  return !r || (Math.abs(x - r[0]) < r[2] / 2 - 0.35 && Math.abs(z - r[1]) < r[3] / 2 - 0.35);
+}
+function enterShop(d) {
+  if (city.shopIn) return; P.v = 0; P.onBoard = false; if (P.aim) setAim(false);
+  fadeTo(() => {
+    const it = buildShopInterior(d); city.shopIn = it; P.x = SHOPIN.x; P.z = SHOPIN.z + it.D / 2 - 2.8; P.y = 0; P.h = Math.PI; city.camYaw = Math.PI; city.zoom = 0.75; city.camSnap = true;
+    toast(`Você entrou: ${d.label}`, 'pink');
+  });
+}
+function exitShop() {
+  const it = city.shopIn; if (!it) return;
+  fadeTo(() => {
+    city.scene.remove(it.g); for (const n of it.npcs) city.scene.remove(n); city.colliders = city.colliders.filter(c => !c.shop); city.shopIn = null;
+    const d = it.door, len = Math.hypot(d.x, d.z) || 1; P.x = d.x + d.x / len * 1.5; P.z = d.z + d.z / len * 1.5; P.y = 0; P.h = Math.atan2(d.x, d.z); city.camYaw = P.h; city.zoom = 1; city.camSnap = true;
+  });
+}
+let _tileT = null;
+function tileTex() { return _tileT || (_tileT = (() => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#d8d3c8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2; for (let k = 0; k <= w; k += 32) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })()); }
+function buildShopInterior(d) {
+  const k = d.kind, info = Object.values(SPECIAL).find(s => s.kind === k) || { color: 0xcccccc, label: d.label };
+  const [W, D] = ROOM_SIZE[k] || [16, 12], H = k === 'igreja' ? 7 : k === 'concessionaria' || k === 'bombeiros' ? 5 : 3.4;
+  const g = new THREE.Group(), cx = SHOPIN.x, cz = SHOPIN.z; g.position.set(cx, 0, cz); city.scene.add(g);
+  const it = { g, kind: k, door: d, W, D, spots: [], npcs: [] };
+  const add = (geo, m, x, y, z, ry = 0, rx = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, 0); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  const box = (w, h, dd, c, x, y, z, ry = 0, rough = 0.8, metal = 0) => add(boxGeo(w, h, dd), typeof c === 'number' ? std(c, rough, metal) : c, x, y, z, ry);
+  const col = (x, z, w, dd) => city.colliders.push({ x0: cx + x - w / 2, x1: cx + x + w / 2, z0: cz + z - dd / 2, z1: cz + z + dd / 2, shop: true });
+  const solid = (w, h, dd, c, x, y, z, ry = 0) => { const o = box(w, h, dd, c, x, y, z, ry); col(x, z, Math.abs(Math.sin(ry)) > 0.5 ? dd : w, Math.abs(Math.sin(ry)) > 0.5 ? w : dd); return o; };
+  const npc = (look, name, x, z, ry) => { const n = makeSkater(look, name, '#ffe9a3'); n.position.set(cx + x, 0, cz + z); n.rotation.y = ry; city.scene.add(n); it.npcs.push(n); return n; };
+  const spot = (label, x, z, fn) => it.spots.push({ label, x: cx + x, z: cz + z, fn });
+  // piso, paredes com a cor da loja, teto e luz
+  const floorT = (k === 'crew' || k === 'bombeiros' || k === 'reciclagem') ? null : tileTex().clone(); if (floorT) { floorT.needsUpdate = true; floorT.repeat.set(W / 4, D / 4); }
+  const wood = ['roupas', 'skate', 'igreja', 'imobiliaria'].includes(k), fl = add(new THREE.PlaneGeometry(W, D), wood ? new THREE.MeshStandardMaterial({ map: (() => { const t = woodTex().clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W / 3, D / 3); return t; })(), roughness: 0.6 }) : floorT ? new THREE.MeshStandardMaterial({ map: floorT, roughness: 0.5 }) : std(0x6d717a, 0.9), 0, 0.01, 0); fl.rotation.x = -Math.PI / 2;
+  const wc = new THREE.Color(info.color).lerp(new THREE.Color(0xffffff), k === 'igreja' ? 0.85 : 0.65), wm = new THREE.MeshStandardMaterial({ color: wc, roughness: 0.95, side: THREE.DoubleSide });
+  for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [0, D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry);
+  col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
+  const ceil = add(new THREE.PlaneGeometry(W, D), std(0xf4f4f2, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
+  for (const x of [-W / 4, W / 4]) for (const z of [-D / 4, D / 4]) add(boxGeo(1.2, 0.05, 0.3), new THREE.MeshBasicMaterial({ color: 0xfffbea }), x, H - 0.03, z);
+  const lt = new THREE.PointLight(0xfff4e0, 1.4, Math.max(W, D) * 1.8, 1.5); lt.position.set(0, H - 0.4, 0); g.add(lt); g.add(new THREE.HemisphereLight(0xffffff, 0x7a6a5a, 0.5));
+  box(1.6, 2.4, 0.1, 0x6b4a2f, 0, 1.2, D / 2 - 0.06); // porta
+  const sign = textSprite(info.label.toUpperCase(), { bg: info.css || '#15161a', fg: '#15161a', size: 54, scale: [Math.min(W * 0.5, 7), 0.9, 1] }); sign.position.set(0, H - 0.8, -D / 2 + 0.12); g.add(sign);
+  spot('Sair', 0, D / 2 - 0.9, exitShop);
+  const counter = (z = -D / 2 + 2.2, label = 'Falar no balcão', look = null, name = 'Atendente') => {
+    solid(4, 1.05, 0.9, 0x5a3d26, 0, 0.52, z); box(4.1, 0.06, 1, 0x2a2d34, 0, 1.07, z, 0, 0.3);
+    box(0.4, 0.3, 0.3, 0x15161a, 1.2, 1.25, z); // caixa registradora
+    npc(look || lookOf({ shirt: pick(['shirt_basic', 'shirt_black', 'shirt_wax']), pants: 'pants_black', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), Math.random() < 0.5 ? 'f' : 'm'), name, 0, z - 1, 0);
+    spot(label, 0, z + 1.4, () => doorPanel(k));
+  };
+  const C = pick, rnd = mulberry32(k.length * 97);
+  if (k === 'roupas') {
+    counter();
+    for (const x of [-W / 2 + 2, W / 2 - 2]) for (const z of [-1.5, 2]) { box(0.05, 1.6, 2.6, 0x9aa3ad, x, 0.8, z, 0, 0.3, 0.8); box(0.05, 0.05, 2.6, 0xcfd3d8, x, 1.6, z, 0, 0.3, 0.8); for (let i = 0; i < 8; i++) box(0.5, 0.65, 0.04, [0xff4f7b, 0x4fc3ff, 0xffcf3a, 0x3ddc84, 0x15161a, 0xf4f2ec, 0xa66bff, 0xd8312f][(i + Math.floor(z)) & 7], x, 1.2, z - 1.15 + i * 0.32, Math.PI / 2); col(x, z, 0.6, 2.6); }
+    const byS = s => ITEMS.filter(i => i.slot === s && i.r !== 'lendario');
+    for (const [x, z] of [[-2.5, 1], [2.5, 1]]) { const m = npc(lookOf({ shirt: pick(byS('shirt')).id, pants: pick(byS('pants')).id, shoes: pick(byS('shoes')).id, cap: pick(byS('cap')).id }, 0xd8d3c8, 0x2a2018, Math.random() < 0.5 ? 'f' : 'm'), null, x, z, Math.PI); m.userData.statue = true; col(x, z, 0.6, 0.6); }
+    add(new THREE.PlaneGeometry(1.4, 2.2), new THREE.MeshStandardMaterial({ color: 0xc8e0f0, roughness: 0.05, metalness: 0.9 }), W / 2 - 0.05, 1.3, -D / 2 + 3, -Math.PI / 2);
+  } else if (k === 'skate') {
+    counter();
+    for (let i = 0; i < 12; i++) { const side = i < 6 ? -1 : 1, z = -D / 2 + 2 + (i % 6) * 1.3, m = add(deckGeo(), new THREE.MeshStandardMaterial({ map: deckTex([0xff4f7b, 0xffcf3a, 0x4fc3ff, 0x3ddc84, 0xa66bff, 0x15161a][i % 6], ['stars', 'flames', 'bolt', 'check', 'stripes', 'none'][i % 6]) }), side * (W / 2 - 0.12), 1.5, z); m.rotation.set(0, side * Math.PI / 2, Math.PI / 2); }
+    const r = add(wedgeGeo(3, 2.4, 0.8), std(0xd9d2c3, 0.7), 0, 0, 2.5, Math.PI); col(0, 2.5, 3, 2.4);
+    for (let i = 0; i < 10; i++) add(CYL(0.08, 0.08, 0.05, 12), std([0xf0f0f0, 0xffcf3a, 0x4fc3ff, 0xff7a1a][i % 4], 0.5), -3 + (i % 5) * 0.3, 1.2 + Math.floor(i / 5) * 0.25, -D / 2 + 0.3, 0, Math.PI / 2);
+  } else if (k === 'celular') {
+    counter();
+    for (const x of [-3.5, 3.5]) { solid(2.4, 0.9, 1.2, 0xf4f4f2, x, 0.45, 1, 0); add(boxGeo(2.4, 0.04, 1.2), new THREE.MeshStandardMaterial({ color: 0xbfe3ff, transparent: true, opacity: 0.4, roughness: 0.05 }), x, 0.95, 1); for (let i = 0; i < 5; i++) { box(0.18, 0.02, 0.36, 0x15161a, x - 0.9 + i * 0.45, 0.93, 1, 0, 0.2, 0.6); add(boxGeo(0.16, 0.005, 0.32), new THREE.MeshBasicMaterial({ color: [0x4fc3ff, 0xff4f7b, 0x3ddc84, 0xffcf3a, 0xa66bff][i] }), x - 0.9 + i * 0.45, 0.945, 1); } }
+  } else if (k === 'tokens') {
+    counter(undefined, 'Comprar tokens');
+    for (const x of [-W / 2 + 1.5, W / 2 - 1.5]) for (const z of [-1, 2]) { solid(1, 1.9, 0.9, 0x2a1d4a, x, 0.95, z); add(boxGeo(0.7, 0.55, 0.02), new THREE.MeshBasicMaterial({ color: 0xa66bff }), x + (x < 0 ? 0.51 : -0.51), 1.35, z, Math.PI / 2); }
+    for (const z of [-D / 2 + 0.1, D / 2 - 0.1]) add(boxGeo(W, 0.08, 0.04), new THREE.MeshBasicMaterial({ color: 0xa66bff }), 0, H - 0.3, z);
+  } else if (k === 'arena') {
+    counter(undefined, 'Inscrição nos campeonatos');
+    for (let i = 0; i < 6; i++) { box(0.18, 0.4 + (i % 3) * 0.1, 0.18, 0xd4a017, -W / 2 + 0.6, 1.3, -3 + i * 1.2, 0, 0.3, 0.9); }
+    box(0.1, 1.2, 8, 0x5a3d26, -W / 2 + 0.6, 0.6, 0); col(-W / 2 + 0.6, 0, 0.5, 8);
+    COUNTRIES.forEach((c, i) => { const t = canvasTex(128, 80, (gg, w, h) => { gg.fillStyle = c.flag[0]; gg.fillRect(0, 0, w / 2, h); gg.fillStyle = c.flag[1]; gg.fillRect(w / 2, 0, w / 2, h); gg.fillStyle = '#fff'; gg.font = 'bold 16px sans-serif'; gg.fillText(c.name, 6, h - 8); }); add(new THREE.PlaneGeometry(1.6, 1), new THREE.MeshBasicMaterial({ map: t }), W / 2 - 0.05, 2, -D / 2 + 2 + i * 2, -Math.PI / 2); });
+  } else if (k === 'crew') {
+    counter(undefined, 'Garagem da Crew');
+    const car = makeVehicleMesh(VEH.v_gol); car.position.set(-3, 0.5, 1); car.rotation.y = 0.4; g.add(car); col(-3, 1, 2.4, 4.4);
+    for (const x of [-4.2, -1.8]) box(0.2, 0.5, 4, 0xffcf3a, x, 0.25, 1);
+    for (let i = 0; i < 6; i++) box(0.08, 0.5, 0.05, 0x9aa3ad, W / 2 - 0.1, 1.3 + (i % 2) * 0.6, -3 + Math.floor(i / 2) * 0.5, 0, 0.3, 0.8);
+  } else if (k === 'agencia' || k === 'imobiliaria' || k === 'prefeitura') {
+    for (let r = 0; r < 2; r++) for (const x of [-4, 0, 4]) { const z = -2 + r * 3; solid(2, 0.78, 1, 0x8a6a48, x, 0.39, z); box(0.6, 0.4, 0.05, 0x15161a, x, 1.0, z - 0.3); add(boxGeo(0.55, 0.34, 0.01), new THREE.MeshBasicMaterial({ color: 0x4fc3ff }), x, 1.0, z - 0.27); box(0.5, 0.5, 0.5, 0x2a2d34, x, 0.25, z + 0.8); }
+    counter(-D / 2 + 1.6, k === 'prefeitura' ? 'Atendimento da Prefeitura' : k === 'agencia' ? 'Vagas de emprego' : 'Ver imóveis');
+    if (k === 'prefeitura') { const f = add(new THREE.PlaneGeometry(1.8, 1.25), new THREE.MeshLambertMaterial({ map: brFlagTex(), side: THREE.DoubleSide }), -W / 2 + 0.06, 2.1, 0, Math.PI / 2); box(0.06, 3, 0.06, 0xd4a017, -W / 2 + 0.3, 1.5, -1.2); }
+    if (k === 'imobiliaria') for (let i = 0; i < 4; i++) { const t = canvasTex(128, 96, (gg, w, h) => { gg.fillStyle = '#9fd6ff'; gg.fillRect(0, 0, w, h); gg.fillStyle = '#3f8f3a'; gg.fillRect(0, h * 0.7, w, h); gg.fillStyle = ['#f2c94c', '#e07a5f', '#f6f1e7', '#7fb3e0'][i]; gg.fillRect(30, 30, 68, 40); gg.fillStyle = '#b5502e'; gg.beginPath(); gg.moveTo(24, 32); gg.lineTo(64, 8); gg.lineTo(104, 32); gg.fill(); }); add(new THREE.PlaneGeometry(1.2, 0.9), new THREE.MeshBasicMaterial({ map: t }), W / 2 - 0.05, 1.8, -3 + i * 2, -Math.PI / 2); }
+  } else if (k === 'viagem') {
+    counter(-D / 2 + 1.8, 'Comprar passagem');
+    for (let r = 0; r < 3; r++) for (const x of [-5, 5]) { solid(4, 0.45, 0.6, 0x4fc3ff, x, 0.25, r * 1.8 - 0.5); box(4, 0.5, 0.1, 0x4fc3ff, x, 0.6, r * 1.8 - 0.25); }
+    const bt = canvasTex(512, 160, (gg, w, h) => { gg.fillStyle = '#15161a'; gg.fillRect(0, 0, w, h); gg.font = '28px VT323, monospace'; gg.fillStyle = '#ffcf3a'; ['DESTINO        PLAT  SAÍDA', 'SÃO PAULO       03   10:30', 'RIO DE JANEIRO  05   11:15', 'SALVADOR        07   12:40'].forEach((l, i) => gg.fillText(l, 16, 34 + i * 34)); });
+    add(new THREE.PlaneGeometry(5, 1.6), new THREE.MeshBasicMaterial({ map: bt }), 0, 3, -D / 2 + 0.08);
+  } else if (k === 'concessionaria') {
+    counter(-D / 2 + 2, 'Falar com o vendedor');
+    const show = [VEH.v_sport, VEH.v_suv, VEH.v_superbike, VEH.v_mtb]; show.forEach((V, i) => { const m = makeVehicleMesh(V), x = -8 + i * 5.3; m.position.set(x, 0.25, 2); m.rotation.y = 0.6; g.add(m); add(CYL(2.2, 2.2, 0.25, 32), std(0xe8e8e8, 0.3, 0.3), x, 0.12, 2); col(x, 2, 3.6, 3.6); });
+  } else if (k === 'delegacia') {
+    counter(-D / 2 + 2, 'Atendimento da Delegacia', lookOf(Object.assign({ shoes: 'shoes_basic' }, UNIFORM.policial), pick(SKINS), pick(HAIRS), 'm'), 'Delegado');
+    for (let i = 0; i < 4; i++) { const t = canvasTex(96, 128, (gg, w, h) => { gg.fillStyle = '#f2e6c8'; gg.fillRect(0, 0, w, h); gg.fillStyle = '#15161a'; gg.font = 'bold 18px Impact'; gg.textAlign = 'center'; gg.fillText('PROCURADO', w / 2, 22); gg.fillStyle = '#6d6a63'; gg.beginPath(); gg.arc(w / 2, 62, 26, 0, TAU); gg.fill(); gg.fillStyle = '#15161a'; gg.font = '14px sans-serif'; gg.fillText(pick(RIVAL_HANDLES), w / 2, 110); }); add(new THREE.PlaneGeometry(0.7, 0.95), new THREE.MeshBasicMaterial({ map: t }), -W / 2 + 0.05, 1.7, -2 + i * 1.1, Math.PI / 2); }
+    solid(4, 0.45, 0.6, 0x5a5f69, W / 2 - 1, 0.25, 1, Math.PI / 2);
+  } else if (k === 'bombeiros') {
+    counter(-D / 2 + 1.8, 'Plantão dos Bombeiros', lookOf(Object.assign({ shoes: 'shoes_basic' }, UNIFORM.bombeiro), pick(SKINS), pick(HAIRS), 'm'), 'Sargento');
+    const tr = new THREE.Group(); const bd = new THREE.Mesh(boxGeo(2.5, 2.4, 7.5), std(0xc62828, 0.4, 0.3)); bd.position.y = 1.6; tr.add(bd); const cab = new THREE.Mesh(boxGeo(2.4, 1.2, 1.6), std(0x1d232b, 0.1, 0.6)); cab.position.set(0, 2, 3.2); tr.add(cab); const lad = new THREE.Mesh(boxGeo(0.6, 0.15, 7), std(0xcfd3d8, 0.3, 0.8)); lad.position.y = 2.95; tr.add(lad);
+    for (const sx of [1, -1]) for (const z of [-2.5, 2.5]) { const w = new THREE.Mesh(CYL(0.55, 0.55, 0.4, 16), std(0x111111, 0.9)); w.rotation.z = Math.PI / 2; w.position.set(sx * 1.2, 0.55, z); tr.add(w); }
+    tr.position.set(-3.5, 0, 1); g.add(tr); col(-3.5, 1, 2.6, 7.6);
+    for (let i = 0; i < 5; i++) add(SPH(0.2, 10, 8, 0, TAU, 0, Math.PI / 2), std(0xd8312f, 0.4), W / 2 - 0.3, 1.8, -3 + i * 0.7);
+  } else if (k === 'reciclagem') {
+    counter(-D / 2 + 1.8, 'Cooperativa');
+    [[0x2f6db5, 'PAPEL'], [0xd8312f, 'PLÁSTICO'], [0x2e7d4f, 'VIDRO'], [0xf2c12e, 'METAL']].forEach(([c, n], i) => { const x = -5 + i * 3.3; solid(1.2, 1.4, 1.2, c, x, 0.7, 2.5); const s = textSprite(n, { bg: '#15161a', fg: '#fff', size: 40, scale: [1.4, 0.35, 1] }); s.position.set(x, 1.8, 2.5); g.add(s); for (let j = 0; j < 3; j++) solid(1.4, 1, 1.4, c, x + (j - 1) * 0.1, 0.5 + j, -1.5); });
+  } else if (k === 'hospital') {
+    counter(-D / 2 + 1.8, 'Recepção do hospital', lookOf({ shirt: 'uni_med', pants: 'uni_med_p', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), 'f'), 'Recepcionista');
+    for (const x of [-4, 4]) { solid(1.1, 0.6, 2.1, 0xcfd8dc, x, 0.35, 1.5); box(1, 0.12, 2, 0xffffff, x, 0.68, 1.5); box(0.06, 1.8, 2.2, 0x80cbc4, x + 0.8, 0.9, 1.5); }
+    const cr = new THREE.Group(); for (const [w, h] of [[0.9, 0.3], [0.3, 0.9]]) cr.add(new THREE.Mesh(boxGeo(w, h, 0.05), new THREE.MeshBasicMaterial({ color: 0xe53935 }))); cr.position.set(-W / 2 + 0.06, 2.3, 0); cr.rotation.y = Math.PI / 2; g.add(cr);
+  } else if (k === 'igreja') {
+    const carpet = add(new THREE.PlaneGeometry(1.8, D - 2), std(0x8b1e2b, 0.95), 0, 0.02, 0); carpet.rotation.x = -Math.PI / 2;
+    for (let r = 0; r < 7; r++) for (const x of [-3.5, 3.5]) { const z = -D / 2 + 6 + r * 2.1; solid(4.4, 0.45, 0.5, 0x6b4a2f, x, 0.25, z); box(4.4, 0.6, 0.08, 0x6b4a2f, x, 0.6, z + 0.25); }
+    solid(4, 1, 1.5, 0xf6f1e7, 0, 0.5, -D / 2 + 2.2); box(0.2, 2.6, 0.2, 0xd4a017, 0, 2.5, -D / 2 + 0.6, 0, 0.3, 0.8); box(1.4, 0.2, 0.2, 0xd4a017, 0, 3.2, -D / 2 + 0.6, 0, 0.3, 0.8);
+    for (let i = 0; i < 4; i++) for (const sx of [-1, 1]) add(new THREE.PlaneGeometry(1.2, 2.6), new THREE.MeshBasicMaterial({ color: [0x4fc3ff, 0xff4f7b, 0xffcf3a, 0x3ddc84][(i + (sx > 0 ? 1 : 0)) & 3], transparent: true, opacity: 0.85 }), sx * (W / 2 - 0.05), 3.6, -D / 2 + 5 + i * 4.5, -sx * Math.PI / 2);
+    npc(lookOf({ shirt: 'shirt_black', pants: 'pants_black', shoes: 'shoes_basic' }, pick(SKINS), 0x9a9a9a, 'm'), 'Padre', 0, -D / 2 + 1.3, 0);
+    spot('Falar com o padre (casamentos)', 0, -D / 2 + 3.6, () => doorPanel('igreja'));
+  }
+  if (!it.spots.some(s => s.label !== 'Sair')) counter();
+  for (const n of it.npcs) n.userData.lod = false;
+  return it;
+}
+function updateShopIn(dt, t) {
+  const it = city.shopIn; if (!it) return;
+  for (const n of it.npcs) { if (n.userData.statue) { if (!n.userData.posed) { n.userData.posed = true; animSkater(n, { walk: true, v: 0, fallT: 0 }, 0); } continue; } animSkater(n, { walk: true, v: 0, fallT: 0 }, t); n.rotation.y = Math.atan2(P.x - n.position.x, P.z - n.position.z); tickBubble(n, dt); }
+}
+
+/* =========================================================
+   TESTES DAS PROFISSÕES: para trabalhar em qualquer profissão, passe no teste dela
+   (a resposta certa é sempre a primeira da lista aqui; na tela as opções são embaralhadas)
+   ========================================================= */
+const JOB_QUIZ = {
+  entregador: [['O pedido é frágil (um bolo). Como levar?', ['Com cuidado, sem cair', 'Correndo e pulando', 'Jogado na mochila de qualquer jeito', 'Tanto faz']], ['O cliente não atende. O que fazer?', ['Ligar ou mandar mensagem e aguardar', 'Ir embora com o lanche', 'Comer o lanche', 'Deixar na rua']], ['Qual pedido entregar primeiro?', ['O mais antigo ou que está no caminho', 'Só o que dá mais gorjeta', 'Nenhum', 'Sempre o mais longe']], ['A mochila térmica serve para:', ['Manter a temperatura da comida', 'Carregar o skate', 'Guardar ferramentas', 'Nada']], ['Atravessar a rua com o pedido:', ['Na faixa, olhando os dois lados', 'No meio dos carros', 'Sem olhar', 'Correndo de costas']], ['A gorjeta é maior quando:', ['A entrega é rápida e o pedido chega inteiro', 'A entrega atrasa', 'A comida vira', 'Nunca']]],
+  grafiteiro: [['Grafitar o muro de alguém exige:', ['Autorização do dono', 'Nada', 'Fazer escondido à noite', 'Correr da polícia']], ['Diferença entre grafite e pichação:', ['Grafite é arte autorizada; pichação é sem autorização', 'São a mesma coisa', 'Pichação é sempre mais bonita', 'Grafite é sempre crime']], ['Usando spray em lugar fechado:', ['Máscara e ambiente ventilado', 'Respirar fundo', 'Fechar as janelas', 'Tanto faz']], ['Cores primárias de tinta:', ['Ciano, magenta e amarelo', 'Preto e branco', 'Verde e rosa', 'Marrom e cinza']], ['Antes de pintar, o muro deve estar:', ['Limpo e seco', 'Molhado', 'Sujo de óleo', 'Com cartaz colado']], ['Para traço fino e contorno usa-se:', ['Bico (cap) fino', 'Rolo de parede', 'Mangueira', 'Vassoura']]],
+  instrutor: [['A primeira manobra para aprender a pular é o:', ['Ollie', 'Kickflip', '540', 'Hardflip']], ['Equipamento de segurança do aluno:', ['Capacete, joelheira e cotoveleira', 'Só óculos escuros', 'Nada', 'Luva de boxe']], ['Base "regular" é com qual pé na frente?', ['Esquerdo', 'Direito', 'Os dois', 'Nenhum']], ['Base "goofy" é com qual pé na frente?', ['Direito', 'Esquerdo', 'Os dois', 'Nenhum']], ['No kickflip o shape:', ['Gira no próprio eixo comprido', 'Gira para trás por cima', 'Não gira', 'Some']], ['O aluno caiu e sente dor forte:', ['Parar a aula e chamar socorro', 'Mandar continuar', 'Rir', 'Ir embora']]],
+  motoboy: [['Capacete na moto é obrigatório para:', ['Piloto e garupa', 'Só o piloto', 'Ninguém', 'Só na estrada']], ['O farol da moto deve ficar:', ['Aceso de dia e de noite', 'Só aceso à noite', 'Sempre apagado', 'Só na chuva']], ['Carteira para pilotar moto:', ['Categoria A', 'Categoria B', 'Não precisa', 'Categoria D']], ['Passar no corredor entre carros:', ['Com muito cuidado e devagar', 'A toda velocidade', 'Na contramão', 'Buzinando sem parar']], ['Chuva forte:', ['Reduzir a velocidade e aumentar a distância', 'Acelerar mais', 'Frear forte na curva', 'Fechar os olhos']], ['O baú de entrega deve:', ['Estar bem preso e no tamanho permitido', 'Ficar solto', 'Ser gigante', 'Ficar no guidão']]],
+  taxista: [['Carteira exigida para taxista:', ['Categoria B com atividade remunerada (EAR)', 'Categoria A', 'Não precisa', 'Só a identidade']], ['Cinto de segurança no táxi:', ['Todos usam', 'Só o motorista', 'Ninguém', 'Só na estrada']], ['O valor da corrida aparece no:', ['Taxímetro', 'Relógio', 'Rádio', 'Chute do motorista']], ['A bandeira 2 vale:', ['À noite, domingos e feriados', 'Sempre', 'Nunca', 'Só de manhã']], ['O passageiro esqueceu a carteira no carro:', ['Devolver ao dono', 'Ficar com ela', 'Jogar fora', 'Vender']], ['Antes de virar o carro:', ['Ligar a seta', 'Buzinar', 'Acelerar', 'Apagar o farol']]],
+  catador: [['Lixeira azul é para:', ['Papel', 'Vidro', 'Metal', 'Orgânico']], ['Lixeira vermelha é para:', ['Plástico', 'Papel', 'Vidro', 'Metal']], ['Lixeira verde é para:', ['Vidro', 'Plástico', 'Papel', 'Metal']], ['Lixeira amarela é para:', ['Metal', 'Papel', 'Vidro', 'Plástico']], ['Vidro quebrado:', ['Embrulhar em jornal antes de descartar', 'Jogar solto no saco', 'Deixar na calçada', 'Pegar com a mão']], ['Proteção do catador:', ['Luvas e botas', 'Chinelo', 'Nada', 'Só óculos de sol']]],
+  bombeiro: [['Telefone dos Bombeiros:', ['193', '190', '192', '181']], ['Fogo em aparelho elétrico se apaga com:', ['Extintor de CO2 ou pó, desligando a energia', 'Água', 'Álcool', 'Abanando']], ['Óleo de cozinha pegando fogo:', ['Abafar com uma tampa, nunca jogar água', 'Jogar água', 'Soprar', 'Mexer a panela']], ['O triângulo do fogo é:', ['Combustível, oxigênio e calor', 'Água, terra e ar', 'Fumaça, luz e som', 'Nenhum']], ['Em ambiente com fumaça:', ['Sair abaixado, perto do chão', 'Ficar em pé', 'Correr abrindo tudo', 'Parar e gritar']], ['Antes de entrar num prédio em chamas:', ['Usar o equipamento e avaliar a cena', 'Entrar correndo sem nada', 'Esperar apagar sozinho', 'Filmar']]],
+  socorrista: [['Telefone do SAMU:', ['192', '190', '193', '100']], ['Ritmo da massagem cardíaca:', ['100 a 120 por minuto', '10 por minuto', '300 por minuto', '1 por minuto']], ['Vítima com suspeita de lesão na coluna:', ['Não mover sem imobilizar', 'Sentar a pessoa', 'Levantar pelos braços', 'Sacudir']], ['Sangramento forte:', ['Pressão direta sobre o ferimento', 'Lavar com refrigerante', 'Deixar sangrar', 'Esfregar terra']], ['Vítima desmaiada que respira:', ['Posição lateral de segurança', 'Sentada', 'Em pé', 'Dar água na boca']], ['Primeiro passo ao chegar no acidente:', ['Garantir a segurança da cena', 'Correr para o meio da rua', 'Tirar foto', 'Ir embora']]],
+  medico: [['Febre é a partir de:', ['37,8 °C', '35 °C', '36 °C', '33 °C']], ['Pressão normal de um adulto:', ['Por volta de 12 por 8', '20 por 15', '5 por 2', '30 por 20']], ['Antibiótico:', ['Só com receita médica', 'Para toda gripe', 'Sem receita', 'Para qualquer dor']], ['Antes de examinar o paciente:', ['Lavar as mãos', 'Comer', 'Correr', 'Nada']], ['Glicemia normal em jejum:', ['70 a 99 mg/dL', '200 mg/dL', '10 mg/dL', '500 mg/dL']], ['Sigilo médico significa:', ['Não contar os dados do paciente', 'Contar para todos', 'Postar na rede', 'Nada']]],
+  traficante: [['Quem é o chefe de todos os morros?', ['Ajbz', 'A polícia', 'O padre', 'Ninguém']], ['A polícia está subindo o morro. O que fazer?', ['Avisar no rádio do grupo', 'Gritar no meio da rua', 'Ir dormir', 'Chamar a polícia']], ['O morador da comunidade se trata com:', ['Respeito', 'Ameaça', 'Desprezo', 'Assalto']], ['A encomenda tem que chegar:', ['Sem ser pego pela polícia', 'Atrasada', 'Aberta', 'Nunca']], ['O chamado no rádio serve para:', ['Mandar a localização e pedir reforço', 'Ouvir música', 'Nada', 'Falar com a polícia']]],
+  comerciante: [['Para abrir um comércio precisa de:', ['Alvará da Prefeitura', 'Nada', 'Só uma placa', 'Só o celular']], ['O microempreendedor individual é o:', ['MEI', 'SUS', 'CNH', 'IPVA']], ['Toda venda deve ter:', ['Nota fiscal', 'Brinde', 'Desconto', 'Fila']], ['Compra feita pela internet pode ser devolvida em:', ['7 dias', '1 ano', 'Nunca', '1 hora']], ['O preço do produto deve estar:', ['Visível para o cliente', 'Escondido', 'Só no caixa', 'Na cabeça do vendedor']], ['Lucro é:', ['O que sobra depois de pagar os custos', 'Tudo o que entra', 'A dívida', 'O aluguel']]],
+};
+const certOk = id => id === 'policial' ? !!S.policeOk : !!(S.certs || {})[id];
+function startJobTest(id) {
+  if (id === 'policial') { openPanel('delegacia'); startQuiz(); return; }
+  const bank = JOB_QUIZ[id]; if (!bank) return;
+  S.jwait = S.jwait || {}; if (S.jwait[id] && Date.now() < S.jwait[id]) return toast(`Você reprovou há pouco. Tente de novo em ${Math.ceil((S.jwait[id] - Date.now()) / 60000)} min.`, 'bad');
+  const qs = shuffle(bank.slice()).slice(0, 5).map(([q, opts]) => { const o = opts.map((t, i) => ({ t, ok: i === 0 })); return { q, o: shuffle(o) }; });
+  city.jquiz = { id, qs, i: 0, ok: 0 }; openPanel('teste', id);
+}
+function answerJob(k) {
+  const z = city.jquiz; if (!z) return; const q = z.qs[z.i]; if (q.o[+k].ok) { z.ok++; sfx('coin'); } else sfx('hit'); z.i++;
+  if (z.i >= z.qs.length) {
+    const pass = z.ok >= 4, J = JOBS[z.id] || { name: 'Comerciante' }; city.jquiz = null;
+    if (pass) { S.certs = S.certs || {}; S.certs[z.id] = true; persist(); toast(`Aprovado no teste de ${J.name} (${z.ok}/5)!`, 'good'); sfx('level'); postFeed(`Passei no teste de ${J.name}!`); city.jdone = { id: z.id, ok: z.ok, pass }; }
+    else { S.jwait = S.jwait || {}; S.jwait[z.id] = Date.now() + 2 * 60000; persist(); toast(`Reprovado (${z.ok}/5). Precisa de 4 acertos. Tente de novo em 2 minutos.`, 'bad'); city.jdone = { id: z.id, ok: z.ok, pass }; }
+  }
+  renderPanel();
+}
+
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },
@@ -6674,7 +6852,7 @@ const PANELS = {
     for (const [id, J] of Object.entries(JOBS)) {
       const rec = S.jobs[id] || { done: 0, earned: 0 }, why = lvlLock(J.need) ? `Libera no nível ${J.need}` : J.skate && !hasSkate() ? 'Precisa de skate' : J.veh && !ownsKind(J.veh) ? `Precisa de ${J.veh === 'moto' ? 'moto' : 'carro'}` : J.police && !S.policeOk ? 'Faça a prova na Delegacia' : J.gang && !S.gang ? 'Entre numa facção (QG no morro)' : '', lock = !!why;
       html += `<div class="card ${lock ? 'locked' : ''}"><h4>${J.icon} ${esc(J.name)}</h4><p>${esc(J.desc)}</p><div class="meta"><span>Nível ${jobLv(id)}</span><span>${rec.done} pedidos</span><span class="coin">ganhou $ ${fmt(rec.earned)}</span><span>a partir de $ ${fmt(jobPay(id, J.base))} por pedido</span></div>
-        <div>${S.shift === id ? '<span class="pill on">Trabalhando</span>' : lock ? `<span class="pill">${why}</span>` : `<button class="btn" data-act="shift-start" data-id="${id}">Começar turno</button>`}${id === 'policial' && !S.policeOk ? ' <button class="btn ghost sm" data-act="gps-kind" data-k="delegacia">GPS até a Delegacia</button>' : ''}${id === 'traficante' && !S.gang ? ' <button class="btn ghost sm" data-act="gps-kind" data-k="qg">GPS até o QG</button>' : ''}</div></div>`;
+        <div>${S.shift === id ? '<span class="pill on">Trabalhando</span>' : lock ? `<span class="pill">${why}</span>` : certOk(id) ? `<button class="btn" data-act="shift-start" data-id="${id}">Começar turno</button>` : `<button class="btn" data-act="job-test" data-id="${id}">📝 Fazer o teste</button>`}${certOk(id) ? ' <span class="pill on">Aprovado no teste</span>' : ''}${id === 'policial' && !S.policeOk ? ' <button class="btn ghost sm" data-act="gps-kind" data-k="delegacia">GPS até a Delegacia</button>' : ''}${id === 'traficante' && !S.gang ? ' <button class="btn ghost sm" data-act="gps-kind" data-k="qg">GPS até o QG</button>' : ''}</div></div>`;
     }
     return { title: 'Agência de Empregos', html };
   },
@@ -6833,6 +7011,12 @@ const PANELS = {
     if (!hasV) html += `<p class="muted">Compre um carro ou moto na Concessionária para viajar de graça.</p>`;
     return { title: 'Rodoviária', html };
   },
+  teste(id) {
+    const z = city.jquiz, J = JOBS[id] || { name: 'Comerciante', icon: '🏪' };
+    if (z && z.id === id) { const q = z.qs[z.i]; return { title: `Teste: ${J.name}`, html: `<p class="muted">Pergunta ${z.i + 1} de ${z.qs.length} · acertos: ${z.ok}. Precisa de 4 acertos.</p><div class="card"><h4>${esc(q.q)}</h4><div class="quiz">${q.o.map((o, k) => `<button class="btn ghost" data-act="job-ans" data-k="${k}">${esc(o.t)}</button>`).join('')}</div></div>` }; }
+    const d = city.jdone && city.jdone.id === id ? city.jdone : null;
+    return { title: `Teste: ${J.name}`, html: d ? `<div class="card"><h4>${d.pass ? '✅ Aprovado!' : '❌ Reprovado'}</h4><p>Você acertou ${d.ok} de 5.</p>${d.pass ? (JOBS[id] ? `<button class="btn" data-act="shift-start" data-id="${id}">Começar turno</button>` : '<button class="btn" data-act="open-prefeitura">Voltar à Prefeitura</button>') : '<p class="muted">Estude e tente de novo em 2 minutos.</p>'}</div>` : `<p class="muted">Responda 5 perguntas sobre a profissão.</p><button class="btn" data-act="job-test" data-id="${id}">Começar o teste</button>` };
+  },
   prefeitura() { return { title: 'Prefeitura', html: '<p class="muted">Em breve.</p>' }; },
   igreja() { return { title: 'Igreja', html: '<p class="muted">Em breve.</p>' }; },
   hospital() {
@@ -6976,6 +7160,9 @@ function act(a, ds, el) {
     case 'crew-disband': S.crew = null; persist(); refreshBotTags(); updateHUD(); renderPanel(); break;
     case 'edit-btns': btnEditStart(); break;
     case 'quiz-start': startQuiz(); break;
+    case 'job-test': startJobTest(ds.id); break;
+    case 'job-ans': answerJob(ds.k); break;
+    case 'open-prefeitura': openPanel('prefeitura'); break;
     case 'consulta': { P.hp = 100; renderHp(); S.consultaT = Date.now() + 3 * 60000; persist(); toast('Consulta feita! Vida 100%.', 'good'); sfx('level'); renderPanel(); break; }
     case 'open-agencia': openPanel('agencia'); break;
     case 'radio': toggleRadio(); break;
