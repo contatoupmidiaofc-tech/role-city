@@ -637,7 +637,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-23';
+const BUILD = '2026.10.11-24';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -1550,7 +1550,7 @@ function applyLook(g, look) {
 function setTag(g, text, color) { const u = g.userData; if (u.tag) { g.remove(u.tag); u.tag.material.map.dispose(); u.tag.material.dispose(); } u.tag = nameTag(text, color); u.tag.position.y = 2.1; g.add(u.tag); }
 /* balão de fala acima da cabeça */
 function bubble(g, text, secs = 4) {
-  const u = g.userData;
+  const u = g.userData; try { if (typeof bubbleVoice === 'function') bubbleVoice(g, text); } catch (e) { }
   if (u.bubble) { g.remove(u.bubble); u.bubble.material.map.dispose(); u.bubble.material.dispose(); }
   const short = text.length > 34 ? text.slice(0, 33) + '…' : text;
   u.bubble = textSprite(short, { w: 640, h: 96, bg: '#ffffff', fg: '#15161a', font: '"Barlow", system-ui, sans-serif', weight: 600, size: 40, r: 40, scale: [2.7, 0.405, 1], dy: 2, fog: false, stroke: '#15161a' });
@@ -2858,13 +2858,14 @@ function updateCritters(dt, t) {
     if (real) animSkater(p.g, { walk: true, carry: false, v: sp, fallT: 0 }, t + p.ph0); else animPed(p.g.userData, p.ph, sp > 0 ? 1 : 0, false); tickBubble(p.g, dt);
   }
   for (const d of city.dogs) {
+    if (dogChaseTick(d, dt, t)) continue;
     const dP = Math.hypot(d.x - P.x, d.z - P.z), u = d.g.userData;
     d.stopT -= dt; const sp = d.stopT > 0 ? 0 : d.spd; d.u += sp * dt; d.ph += sp * dt * 9;
     if (Math.random() < dt * 0.05) d.stopT = rand(1, 3);
     const [x, z, h] = pedPos(d); d.x = x; d.z = z; d.g.position.set(x, 0, z); d.g.rotation.y = d.stopT > 0 && dP < 8 ? Math.atan2(P.x - x, P.z - z) : h;
     u.legs.forEach((L, i) => L.rotation.x = Math.sin(d.ph + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0)) * 0.5 * (sp ? 1 : 0));
     u.tail.rotation.y = Math.sin(t * (dP < 8 ? 18 : 6)) * 0.5;
-    if ((d.barkT -= dt) <= 0) { d.barkT = rand(6, 14); if (dP < 25) { amb.bark(dP); if (dP < 10) d.stopT = 1.5; } }
+    if ((d.barkT -= dt) <= 0) { d.barkT = rand(6, 14); if (dP < 25) { barkReal(dP); if (dP < 10) d.stopT = 1.5; } }
   }
   for (const c of city.cats) {
     const dP = Math.hypot(c.x - P.x, c.z - P.z), u = c.g.userData;
@@ -3620,7 +3621,7 @@ function updateDriving(dt, ax, blocked) {
   const r = d.m.userData.radius, nx = P.x + Math.sin(P.h) * P.v * dt, nz = P.z + Math.cos(P.h) * P.v * dt;
   if (!collide(nx, nz, r) && !(beachCity() && nz > SEA_Z - 2)) { P.x = nx; P.z = nz; }
   else { if (Math.abs(P.v) > 8) { sfx('hit'); toast('Bateu!', 'bad'); } P.v *= -0.25; }
-  for (const o of [...city.bots, ...city.peds]) { const dd = Math.hypot(o.x - P.x, o.z - P.z); if (dd < r + 0.8 && Math.abs(P.v) > 3 && !(o.fallT > 0)) { o.fallT = 1.6; bubble(o.g, pick(['Ô barbeiro!', 'Olha a faixa!', 'Quase me atropela!']), 3); P.v *= 0.7; sfx('hit'); } }
+  for (const o of [...city.bots, ...city.peds]) { const dd = Math.hypot(o.x - P.x, o.z - P.z); if (dd < r + 0.8 && Math.abs(P.v) > 3 && !(o.fallT > 0)) { o.fallT = 1.6; scream(0, o.g.userData.k === 'f'); bubble(o.g, pick(['Ô barbeiro!', 'Olha a faixa!', 'Quase me atropela!']), 3); P.v *= 0.7; sfx('hit'); } }
   for (const c of city.cars) { const dx = P.x - c.x, dz = P.z - c.z; if (Math.hypot(dx, dz) < (c.moto ? 1.6 : 2.6) + r * 0.5) { P.v *= -0.3; P.x += dx * 0.1; P.z += dz * 0.1; if (!d.crashT || d.crashT < 0) { sfx('hit'); d.crashT = 1; } } }
   d.crashT = (d.crashT || 0) - dt;
   const m = d.m, L2 = (m.userData.len || 4) / 2, hf = groundH(P.x + Math.sin(P.h) * L2, P.z + Math.cos(P.h) * L2), hb = groundH(P.x - Math.sin(P.h) * L2, P.z - Math.cos(P.h) * L2);
@@ -4034,7 +4035,7 @@ function updateCity(dt, t) {
     if (c.dir < 0) c.h += Math.PI;
     c.m.position.set(c.x, 0, c.z); c.m.rotation.y = c.h;
     const dx = P.x - c.x, dz = P.z - c.z, lx = dx * Math.cos(c.h) - dz * Math.sin(c.h), lz = dx * Math.sin(c.h) + dz * Math.cos(c.h);
-    if (!driving && P.fallT <= 0 && P.y < 1.2 && Math.abs(lx) < (c.moto ? 0.7 : 1.4) && Math.abs(lz) < (c.moto ? 1.3 : 2.5)) { P.fallT = 1.6; P.v = -5; P.trick = null; P.combo = []; sfx('hit'); hurt(c.moto ? 20 : 34, 'atropelado'); if (!P.down) toast((c.moto ? 'Atropelado por uma moto!' : 'Atropelado! Cuidado com os carros.') + ` Vida ${Math.round(P.hp)}%`, 'bad'); playerFell('car'); }
+    if (!driving && P.fallT <= 0 && P.y < 1.2 && Math.abs(lx) < (c.moto ? 0.7 : 1.4) && Math.abs(lz) < (c.moto ? 1.3 : 2.5)) { P.fallT = 1.6; P.v = -5; P.trick = null; P.combo = []; sfx('hit'); scream(0, S.gender === 'f'); hurt(c.moto ? 20 : 34, 'atropelado'); if (!P.down) toast((c.moto ? 'Atropelado por uma moto!' : 'Atropelado! Cuidado com os carros.') + ` Vida ${Math.round(P.hp)}%`, 'bad'); playerFell('car'); }
   }
   // bots
   for (const o of city.bots) if (!o.off) updateCityBot(o, dt, t);
@@ -9309,6 +9310,7 @@ function updateLife25(dt, t) {
   try { sportGuard(); } catch (e) { console.warn('esporte', e); }
   if (mode !== 'city') return;
   try { lockTick(); peerHpBars(); } catch (e) { console.warn('carro/vida', e); }
+  try { heliSoundTick(); } catch (e) { }
   if ((city.dailyT = (city.dailyT || 0) - dt) <= 0) { city.dailyT = 20; bankDaily(); casaDaily(); }
   try { updateDomino(dt, t); } catch (e) { console.warn('dominó', e); }
   try { updateMoradores(dt, t); } catch (e) { console.warn('moradores', e); }
@@ -9505,7 +9507,7 @@ function fightTakeHit(d) {
   crowdReact(blocked ? 0.3 : 1);
   if (F.hp <= 0) { if (!F.vsNpc) ringSend({ op: 'ko', id: myId() }); fightEnd(false, true); }
 }
-function crowdReact(k) { for (const c of RING.crowd) if (Math.random() < 0.35 * k) { c.cheer = 1.5; if (Math.random() < 0.2) bubble(c.g, pick(['Uhhh!', 'Bate nele!', 'Vai, vai!', 'Que porrada!', 'Defende!', 'Isso!']), 1.6); } }
+function crowdReact(k) { try { if (Math.hypot(ARENA_POS[0] - P.x, ARENA_POS[1] - P.z) < 50 && (RING.roarT || 0) < performance.now()) { RING.roarT = performance.now() + 900; crowdRoar(k >= 2 ? 4 : 1.3, k >= 2 ? 0.25 : 0.11); } } catch (e) { } for (const c of RING.crowd) if (Math.random() < 0.35 * k) { c.cheer = 1.5; if (Math.random() < 0.2) bubble(c.g, pick(['Uhhh!', 'Bate nele!', 'Vai, vai!', 'Que porrada!', 'Defende!', 'Isso!']), 1.6); } }
 function fightAttack(F, k) {
   const M = FMOVES[k]; if (F.cd > 0 || F.st < 3) return;
   F.cd = M.cd; F.act = k; F.actT = 0; F.st = Math.max(0, F.st - M.st); P.fpc = k; tone('triangle', 220, 120, 0.06, 0.05);
@@ -9708,6 +9710,7 @@ function onFsState(d) { const M = FS.m; if (!M || M.host) return; M.last = Date.
 function onFsKick(d) { const M = FS.m; if (!M || !M.host) return; if (d.op) { fsDo(d.id, d.op); return; } const p = NET.peers[d.id], b = FS.ball; if (!p) return; if (Math.hypot(p.x - b.x, p.z - b.z) > 1.6) return; fsKick(p.x, p.z, d.dx, d.dz, d.pow, d.loft); }
 function onFsEnd(d) { if (FS.m && !FS.m.host) { fsResult(d); fsEnd(); } }
 function fsGoal(team) {
+  try { const near = Math.hypot(QUADRA_POS[0] - P.x, QUADRA_POS[1] - P.z) < 70; if (near) { crowdRoar(4.5, 0.26); say('Goooooool! ' + pick(['Que golaço!', 'É do ' + FS.m.tn[team] + '!', 'Que pintura!']), { force: true, pitch: 1.0, rate: 0.95 }); } } catch (e) { }
   const M = FS.m; M.sc[team]++; M.ph = 'gol'; M.golT = 3; bigBanner('GOOOOL!'); for (const c of FS.crowd) c.cheer = 2.5; tone('square', 660, 880, 0.4, 0.07);
   if (M.lastTouch === myId() && M.me && M.me.team === team) { S.futsal = S.futsal || {}; S.futsal.g = (S.futsal.g || 0) + 1; persist(); toast('⚽ Gol seu!', 'good'); }
 }
@@ -9912,6 +9915,88 @@ function lockTick() {
     if (S.vehLock && P.drive.pass && P.drive.pass.length) toast('Quem já está dentro continua até descer.');
   }
   const b = $('tb-lock'); if (b && P.drive) { const on = !!S.vehLock; if (b.dataset.on !== String(on)) { b.dataset.on = on; b.classList.toggle('on', on); b.querySelector('span').textContent = on ? 'Trancado' : 'Aberto'; } }
+}
+/* =========================================================
+   VOZES E SONS: os figurantes falam de verdade (voz do próprio celular, em português),
+   torcida no gol, grito de quem é atropelado, cachorro que late e corre atrás, barulho do helicóptero.
+   ========================================================= */
+const VOZ = { last: 0, voices: null, busy: 0 };
+function vozVoices() { if (!('speechSynthesis' in window)) return []; if (!VOZ.voices || !VOZ.voices.length) { const all = speechSynthesis.getVoices() || []; VOZ.voices = all.filter(v => /^pt(-|_)?BR/i.test(v.lang)).concat(all.filter(v => /^pt/i.test(v.lang) && !/BR/i.test(v.lang))); } return VOZ.voices; }
+if ('speechSynthesis' in window) try { speechSynthesis.onvoiceschanged = () => { VOZ.voices = null; }; } catch (e) { }
+const vozOn = () => S && S.settings.sound && S.settings.vozes !== false && 'speechSynthesis' in window && mode === 'city';
+/* fala um texto; g = personagem (a voz muda conforme a pessoa), d = distância (mais longe, mais baixo) */
+function say(text, o = {}) {
+  if (!vozOn() || document.hidden) return;
+  const now = performance.now(); if (!o.force && now - VOZ.last < (o.gap || 1400)) return;
+  if (speechSynthesis.speaking && !o.force) return; if (o.force) speechSynthesis.cancel();
+  VOZ.last = now;
+  const t = String(text).replace(/Ajbz/gi, 'A, jota, bê, zê').replace(/[🔥💀⚽🥊🛡️💸🎵🔊]/gu, '');
+  const u = new SpeechSynthesisUtterance(t), vs = vozVoices(), seed = o.seed || 0;
+  u.lang = 'pt-BR'; if (vs.length) u.voice = vs[Math.abs(seed) % vs.length];
+  u.pitch = clamp(o.pitch ?? (0.85 + (Math.abs(seed) % 7) * 0.08), 0, 2); u.rate = clamp(o.rate ?? 1.05, 0.5, 2);
+  u.volume = clamp((o.vol ?? 1) * (o.d != null ? clamp(1 - o.d / 26, 0.15, 1) : 1), 0, 1);
+  try { speechSynthesis.speak(u); } catch (e) { }
+}
+/* personagens falam o que aparece no balão (só quem está perto, sem encavalar) */
+const VOZ_SKIP = /^(…|\.\.\.|[0-9$])/;
+function bubbleVoice(g, text) {
+  if (!g || g === city.player || !city.player || VOZ_SKIP.test(text)) return;
+  const p = g.getWorldPosition(_vozV), d = Math.hypot(p.x - P.x, p.z - P.z); if (d > 16) return;
+  const u = g.userData, seed = u.vozSeed ?? (u.vozSeed = Math.floor(Math.random() * 1000)), fem = u.k === 'f' || u.gender === 'f';
+  const kid = g.scale.y < 0.8;
+  say(text, { d, seed, pitch: kid ? 1.6 : fem ? 1.25 + (seed % 3) * 0.08 : 0.8 + (seed % 4) * 0.07, rate: kid ? 1.15 : 1.05 });
+}
+const _vozV = new THREE.Vector3();
+/* torcida: ruído de multidão gritando */
+function crowdRoar(dur = 3, vol = 0.22) {
+  const ac = audioCtx(); if (!ac || !NOISE) return; const t = ac.currentTime;
+  for (const [f, q, k] of [[420, 0.7, 1], [900, 1.2, 0.6], [1800, 1.5, 0.35]]) {
+    const src = ac.createBufferSource(); src.buffer = NOISE; src.loop = true; const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q; const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * k, t + 0.35); g.gain.setValueAtTime(vol * k, t + dur * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 3 + Math.random() * 2; lg.gain.value = vol * k * 0.25; lfo.connect(lg); lg.connect(g.gain); lfo.start(t); lfo.stop(t + dur);
+    src.connect(bp); bp.connect(g); g.connect(ac.destination); src.start(t, Math.random()); src.stop(t + dur + 0.1);
+  }
+}
+/* grito de dor/susto */
+function scream(d = 0, fem = Math.random() < 0.5) {
+  const ac = audioCtx(); if (ac) { const v = clamp(1 - d / 30, 0.1, 1) * 0.12, f0 = fem ? 820 : 520; tone('sawtooth', f0, f0 * 1.35, 0.25, v); tone('sawtooth', f0 * 1.35, f0 * 0.7, 0.55, v, 0.22); noiseHit(0.6, 'bandpass', fem ? 2200 : 1500, v * 0.5, 3); }
+  say(pick(['Aaai!', 'Socorro!', 'Ai, minha perna!', 'Ô barbeiro!', 'Tá maluco?!']), { d, force: true, pitch: fem ? 1.5 : 1.1, rate: 1.25 });
+}
+/* latido mais real (dois "au") */
+function barkReal(d) {
+  const ac = audioCtx(); if (!ac) return; const v = clamp(1 - d / 25, 0.05, 1) * 0.22;
+  for (let i = 0; i < 2; i++) { const at = i * 0.24; tone('sawtooth', 560, 210, 0.13, v, at); tone('square', 280, 140, 0.11, v * 0.5, at); noiseHit(0.09, 'bandpass', 1100, v * 0.8, 2.5); }
+}
+/* helicóptero: batida das pás (fica tocando enquanto tem helicóptero voando perto) */
+const HELI = { g: null };
+function heliSoundTick() {
+  const ac = audioCtx(); let v = 0;
+  if (P.drive && P.drive.V.heli) v = 0.5;
+  for (const id in NET.peers) { const p = NET.peers[id]; if (p.t && p.t.vh && VEH[p.t.vh] && VEH[p.t.vh].heli) v = Math.max(v, 0.45 * clamp(1 - Math.hypot(p.x - P.x, p.z - P.z) / 160, 0, 1)); }
+  if (mode === 'trip' && typeof TRIP !== 'undefined' && TRIP && TRIP.how === 'air' && TRIP.V && TRIP.V.heli) v = 0.45;
+  if (!ac || !NOISE) return;
+  if (!HELI.g && v > 0) {
+    const src = ac.createBufferSource(); src.buffer = NOISE; src.loop = true; const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; const chop = ac.createGain(); chop.gain.value = 0.5;
+    const lfo = ac.createOscillator(); lfo.type = 'sawtooth'; lfo.frequency.value = 16; const lg = ac.createGain(); lg.gain.value = 0.5; lfo.connect(lg); lg.connect(chop.gain);
+    const hum = ac.createOscillator(); hum.type = 'triangle'; hum.frequency.value = 64; const hg = ac.createGain(); hg.gain.value = 0.18;
+    const out = ac.createGain(); out.gain.value = 0; src.connect(lp); lp.connect(chop); chop.connect(out); hum.connect(hg); hg.connect(out); out.connect(ac.destination); src.start(); lfo.start(); hum.start();
+    HELI.g = out; HELI.parts = [src, lfo, hum];
+  }
+  if (HELI.g) { HELI.g.gain.value += (v * 0.55 - HELI.g.gain.value) * 0.1; if (v <= 0 && HELI.g.gain.value < 0.005) { for (const n of HELI.parts) try { n.stop(); } catch (e) { } HELI.g.disconnect(); HELI.g = null; } }
+}
+/* cachorro que late e corre atrás de quem passa a pé */
+function dogChaseTick(d, dt, t) {
+  const dP = Math.hypot(d.x - P.x, d.z - P.z), onFoot = !P.drive && !P.ride && mode === 'city' && !city.interior;
+  d.brave = d.brave ?? Math.random() < 0.6; d.chaseCd = (d.chaseCd || 0) - dt;
+  if (!d.chase && d.brave && onFoot && dP < 7 && d.chaseCd <= 0) { d.chase = rand(5, 9); d.chaseCd = rand(25, 45); barkReal(dP); }
+  if (!d.chase) return false;
+  d.chase -= dt; const u = d.g.userData;
+  if (d.chase <= 0 || dP > 22 || !onFoot) { d.chase = 0; d.back = true; }
+  if (d.back) { const [x, z] = pedPos(d), bx = x - d.x, bz = z - d.z, bd = Math.hypot(bx, bz); if (bd < 0.6) { d.back = false; return false; } d.x += bx / bd * 4 * dt; d.z += bz / bd * 4 * dt; d.g.rotation.y = Math.atan2(bx, bz); }
+  else { const sp = dP > 1.4 ? Math.max(5, Math.abs(P.v) * 0.95) : 0, a = Math.atan2(P.x - d.x, P.z - d.z); d.x += Math.sin(a) * sp * dt; d.z += Math.cos(a) * sp * dt; d.g.rotation.y = a; if ((d.barkC = (d.barkC || 0) - dt) <= 0) { d.barkC = rand(0.5, 0.9); barkReal(dP); } if (dP < 1.6 && Math.random() < dt * 0.4) bubble(city.player, pick(['Sai, cachorro!', 'Xô! Xô!', 'Calma, totó!']), 2); }
+  d.g.position.set(d.x, groundH(d.x, d.z), d.z); d.ph += 14 * dt;
+  u.legs.forEach((L, i) => L.rotation.x = Math.sin(d.ph + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0)) * 0.7); u.tail.rotation.y = Math.sin(t * 20) * 0.6;
+  return true;
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
@@ -10950,6 +11035,7 @@ const OLD_PANELS = {
       <p class="muted"><b>Automática (recomendada):</b> o jogo mede a fluidez e ajusta sozinho a resolução e as sombras para ficar sempre liso, no máximo de qualidade que o seu aparelho aguenta. A média é boa aparência sem pesar no celular. Use a baixa se o jogo engasgar. A Ultra usa a resolução máxima da tela e sombras finas, ideal para ver os rostos de perto (pede um aparelho bom).</p>
       <h3>Som</h3><div class="seg"><button data-act="sound" data-on="1" aria-pressed="${S.settings.sound}">Ligado</button><button data-act="sound" data-on="0" aria-pressed="${!S.settings.sound}">Desligado</button></div>
       <h3>Baixar no celular</h3><p class="muted">${isStandalone() ? 'O jogo já está instalado como app neste aparelho.' : 'Instale o Rolê City na tela inicial: abre em tela cheia, como um aplicativo.'}</p>${isStandalone() ? '' : '<button class="btn" data-act="install-app">📲 Baixar o jogo no celular</button>'}
+      <h3>Vozes dos figurantes</h3><div class="seg"><button data-act="vozes-set" data-on="1" aria-pressed="${S.settings.vozes !== false}">Falando</button><button data-act="vozes-set" data-on="0" aria-pressed="${S.settings.vozes === false}">Mudos</button></div><p class="muted">Os figurantes falam com a voz do próprio celular (traficante dando "Salve, Ajbz!", torcida, grito de atropelado...).</p>
       <h3>Áudios dos jogadores</h3><div class="seg"><button data-act="voice-set" data-on="1" aria-pressed="${S.settings.voice !== false}">Ouvir</button><button data-act="voice-set" data-on="0" aria-pressed="${S.settings.voice === false}">Silenciar</button></div><p class="muted">Segure o botão Áudio (ou a tecla B), fale e solte: todo mundo na mesma cidade ouve, mais alto quem está perto.</p>
       <h3>Controle do carro e da moto</h3><div class="seg"><button data-act="drive-ctl" data-v="botoes" aria-pressed="${S.settings.driveCtl !== 'joystick'}">Botões ◀ ▶ e ré</button><button data-act="drive-ctl" data-v="joystick" aria-pressed="${S.settings.driveCtl === 'joystick'}">Joystick</button></div>
       <h3>Botões da tela</h3><p class="muted">Arraste o joystick e cada botão (a pé e no carro/moto) para onde for mais confortável no seu celular. Dá para aumentar ou diminuir o tamanho também.</p><button class="btn" data-act="edit-btns">Editar posição dos botões</button>
@@ -11548,7 +11634,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;

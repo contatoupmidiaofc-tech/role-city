@@ -219,3 +219,8 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - Qualidade **Automática** (padrão): mede a fluidez a cada segundo e ajusta sozinha a resolução e as sombras; as sombras atualizam um quadro sim, outro não.
 - Peças paradas de cada carro e das rodas viraram uma malha só por material (menos chamadas de desenho).
 - Personagens fora da tela ou longe atualizam a animação menos vezes; avisos da tela só são reescritos quando mudam.
+
+## Vozes e sons
+- Os figurantes falam o que aparece no balão, com a voz do próprio celular em português (traficantes dando "Salve, Ajbz!", crianças, plateia, moradores...). Dá para desligar em Configurações → Vozes dos figurantes.
+- Gol no futsal: narrador gritando "Goooool!" e a torcida vibrando. Golpes no ringue fazem a plateia reagir.
+- Atropelou alguém (ou foi atropelado): grito. Cachorros latem e correm atrás de quem passa a pé. Helicóptero voando faz o barulho das pás.
