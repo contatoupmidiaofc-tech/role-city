@@ -139,4 +139,4 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Helicóptero do chefe sempre visível** no heliponto do telhado da mansão; o elevador da mansão tem o botão "Telhado · Heliponto".
 - O app instalado (PWA) agora sempre busca a versão nova da página (sem cache velho).
 - **Heliponto em casa**: quem tem helicóptero (e o chefe) ganha uma laje com heliponto em cima da casa, com **elevador de vidro direto para cima** e o helicóptero estacionado. Lá em cima: "Pilotar o helicóptero" ou "Descer pelo elevador". O telhado da mansão também tem o botão "Pilotar".
-- **Controles do helicóptero**: botões grandes **Subir / Descer** à esquerda e **Frente / Trás / ◀ ▶** à direita, mais o botão Sair (só pousado). No PC: Espaço ou R sobe, Shift, Q ou F desce, setas/WASD direção.
+- **Controles do helicóptero**: os botões normais do veículo (Subir e Descer no lugar das setas, Frente/Trás e ◀ ▶). No PC: Espaço ou R sobe, Shift, Q ou F desce, setas/WASD direção.

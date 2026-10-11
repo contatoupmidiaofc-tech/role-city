@@ -598,7 +598,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-8';
+const BUILD = '2026.10.11-9';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -6715,7 +6715,7 @@ function heliLabels(on) {
 function updateFlying(dt, ax, blocked) {
   const d = P.drive, m = d.m, u = m.userData;
   if (!d.lbl) { d.lbl = true; heliLabels(true); toast(IS_TOUCH ? '🚁 Subir e Descer nos botões, Frente/Trás e ◀ ▶ para virar.' : '🚁 Espaço sobe · Shift/Q desce · W/S frente e trás · A/D vira · E sai (pousado).', 'pink'); }
-  heliCtl(true); const HI = HELI_IN;
+  const HI = HELI_IN; // controles do helicóptero: os botões normais do veículo (como era antes)
   const thr = blocked ? 0 : clamp(ax.y + (HI.fwd ? 1 : 0) - (HI.back ? 1 : 0), -1, 1), st = blocked ? 0 : clamp(ax.x + (HI.right ? 1 : 0) - (HI.left ? 1 : 0), -1, 1), H = input.held, B = input.hold;
   const up = !blocked && (H.Space || H.KeyR || B.blinkR || B.jump || HI.up) ? 1 : 0, dn = !blocked && (H.ShiftLeft || H.ShiftRight || H.KeyQ || H.KeyF || B.blinkL || HI.down) ? 1 : 0;
   u.rpm = Math.min(1, (u.rpm || 0) + dt * 0.9);
