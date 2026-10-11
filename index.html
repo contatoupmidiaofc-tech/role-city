@@ -167,6 +167,11 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 .install-btn{width:100%;margin:6px 0 10px}
 #crosshair{position:fixed;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;color:#fff;filter:drop-shadow(0 0 2px #000);pointer-events:none;z-index:14}
 #crosshair.hit{color:#ff4040}
+#tb-rel{right:176px;bottom:182px;width:48px;height:48px;font-size:9px}
+#tb-rel svg{width:20px;height:20px}
+#ammo{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);background:rgba(21,22,26,.88);border:2px solid var(--line);border-radius:10px;padding:4px 10px;font-family:var(--cond);font-weight:700;z-index:13;pointer-events:none}
+#ammo b{font-size:20px;color:var(--wax)}
+#ammo.aim{right:auto;left:50%;bottom:auto;top:calc(50% + 34px);transform:translateX(-50%)}
 #tb-aim{right:110px;bottom:180px;width:56px;height:56px;border-color:rgba(255,90,90,.85)}
 #tb-aim.on{background:radial-gradient(circle at 50% 35%,rgba(255,90,90,.95),rgba(200,30,40,.9))}
 #radio{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 180px);width:min(420px,calc(100vw - 24px));background:rgba(16,22,18,.95);border:2px solid #3ddc84;border-radius:14px;padding:8px;display:grid;gap:6px;pointer-events:auto;z-index:21}
@@ -524,6 +529,7 @@ canvas.swatch{background:#333}
 <div id="banner" hidden></div>
 <div id="splat" hidden></div>
 <div id="fade" hidden></div>
+<div id="ammo" hidden></div>
 <div id="crosshair" hidden><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 4v9M20 27v9M4 20h9M27 20h9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="1.6" fill="currentColor"/></svg></div>
 <form id="radio" hidden><div class="rhead"><b id="radio-title">📻 Rádio</b><button class="btn ghost sm" type="button" data-act="radio">✕</button></div><div id="radio-log"></div>
   <div class="chips"><button type="button" class="chip call" data-act="radio-call">🚨 Chamado (mandar localização)</button><button type="button" class="chip" data-act="radio-say" data-t="Segue eu">Segue eu</button><button type="button" class="chip" data-act="radio-say" data-t="Fica aí">Fica aí</button><button type="button" class="chip" data-act="radio-say" data-t="Protege eu">Protege</button><button type="button" class="chip" data-act="radio-say" data-t="Ataca">Ataca</button><button type="button" class="chip" data-act="radio-say" data-t="Atira pro alto">Pro alto</button><button type="button" class="chip" data-act="radio-say" data-t="Vai embora">Vai embora</button></div>
@@ -546,6 +552,7 @@ canvas.swatch{background:#333}
     <button class="tbtn wp fb" data-btn="weapon" id="tb-wp" hidden aria-label="Usar arma"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span>Arma</span><b class="badge" id="tb-wp-n">2</b></button>
     <button class="tbtn mic" id="tb-mic" aria-label="Segure para mandar áudio"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Áudio</span></button>
     <button class="tbtn fb" data-btn="aim" id="tb-aim" hidden aria-label="Mirar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg><span>Mirar</span></button>
+    <button class="tbtn fb" data-btn="reload" id="tb-rel" hidden aria-label="Recarregar"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg><span>Recarga</span></button>
     <button class="tbtn fb" data-btn="gunsw" id="tb-gsw" hidden aria-label="Trocar arma"><svg viewBox="0 0 24 24"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg><span>Trocar</span></button>
     <button class="tbtn vb" data-btn="horn" id="tb-horn" aria-label="Buzinar"><svg viewBox="0 0 24 24"><path d="M3 10v4h4l6 4V6L7 10z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6M19 6c3 3 3 9 0 12"/></svg><span>Buzina</span></button>
     <button class="tbtn vb" data-btn="lights" id="tb-lights" aria-label="Farol"><svg viewBox="0 0 24 24"><path d="M10 6c-4 0-6 3-6 6s2 6 6 6c1 0 2-3 2-6s-1-6-2-6z"/><path d="M15 8h6M15 12h6M15 16h6"/></svg><span>Farol</span></button>
@@ -2023,7 +2030,7 @@ function animReal(u, o, t) {
 /* ---------------- INPUT ---------------- */
 const input = { held: {}, pressed: {}, hold: {}, joy: { x: 0, y: 0 }, tbtn: {} };
 addEventListener('mouseup', () => { input.hold = {}; });
-const KEYMAP = { KeyN: 'aim', KeyY: 'gunsw', KeyH: 'horn', KeyL: 'lights', KeyZ: 'blinkL', KeyX: 'blinkR', KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
+const KEYMAP = { KeyI: 'reload', KeyN: 'aim', KeyY: 'gunsw', KeyH: 'horn', KeyL: 'lights', KeyZ: 'blinkL', KeyX: 'blinkR', KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
 addEventListener('keydown', e => {
   if (e.target.matches && e.target.matches('input,textarea')) { if (e.code === 'Escape') e.target.blur(); return; }
   input.held[e.code] = true;
@@ -2042,7 +2049,7 @@ function camDrag(dx, dy) {
 }
 $('gl').addEventListener('wheel', e => { camZoom(e.deltaY * 0.0012); e.preventDefault(); }, { passive: false });
 (() => {
-  let drag = null; $('gl').addEventListener('mousedown', e => { drag = [e.clientX, e.clientY]; if (mode === 'city') { if (e.button === 2) setAim(true); else if (e.button === 0 && P.aim) input.pressed.weapon = true; } });
+  let drag = null; $('gl').addEventListener('mousedown', e => { drag = [e.clientX, e.clientY]; if (mode === 'city') { if (e.button === 2) setAim(true); else if (e.button === 0 && P.aim) { input.pressed.weapon = true; input.hold.weapon = true; } } });
   $('gl').addEventListener('contextmenu', e => e.preventDefault()); addEventListener('mouseup', e => { if (e.button === 2 && P.aim && !IS_TOUCH) setAim(false); });
   addEventListener('mousemove', e => { if (!drag) return; camDrag(e.clientX - drag[0], e.clientY - drag[1]); drag = [e.clientX, e.clientY]; });
   addEventListener('mouseup', () => { drag = null; });
@@ -2115,9 +2122,9 @@ async function installApp() {
   if (box && !$('menu').hidden) { box.innerHTML = html; box.hidden = false; } else { closePanel(); toast(isIOS() ? 'No Safari: Compartilhar ⬆ → Adicionar à Tela de Início.' : 'No Chrome: menu ⋮ → Instalar app.', 'pink'); }
 }
 /* ---------------- POSIÇÃO DOS BOTÕES (editável nas Configurações) ---------------- */
-const BTN_IDS = ['tb-aim', 'tb-gsw', 'tb-left', 'tb-right', 'tb-gas', 'tb-rev', 'tb-mic', 'tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
+const BTN_IDS = ['tb-rel', 'tb-aim', 'tb-gsw', 'tb-left', 'tb-right', 'tb-gas', 'tb-rev', 'tb-mic', 'tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
 // celular em pé: tela estreita, os botões ficam num bloco compacto à direita para não encostar no joystick
-const BTN_PORTRAIT = { 'tb-aim': [150, 236], 'tb-gsw': [88, 170], 'tb-mic': [24, 290], 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [20, 126], 'tb-lights': [104, 100], 'tb-blL': [160, 172], 'tb-blR': [104, 172], 'tb-gas': [14, 20], 'tb-rev': [118, 14], 'tb-vexit': [20, 204] };
+const BTN_PORTRAIT = { 'tb-rel': [210, 240], 'tb-aim': [150, 236], 'tb-gsw': [88, 170], 'tb-mic': [24, 290], 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [20, 126], 'tb-lights': [104, 100], 'tb-blL': [160, 172], 'tb-blR': [104, 172], 'tb-gas': [14, 20], 'tb-rev': [118, 14], 'tb-vexit': [20, 204] };
 const btnOrient = () => innerWidth < innerHeight ? 'port' : 'land';
 const btnEditing = () => $('touch').classList.contains('editing');
 function btnCfg() { const st = S.settings; st.btnPos = st.btnPos || { port: {}, land: {} }; st.joyPos = st.joyPos || {}; return st; }
@@ -3441,13 +3448,15 @@ function updateCity(dt, t) {
   if (!blocked && tap('chat')) act('qchat', {});
   if (!blocked && tap('veh')) act('veh-call', {});
   P.wpShowT = (P.wpShowT || 0) - dt; P.wpCd = (P.wpCd || 0) - dt;
-  if (!blocked && tap('weapon')) cityWeapon();
+  if (!blocked && (tap('weapon') || ((input.hold.weapon || input.held.KeyG) && myGun() && myGun().auto))) cityWeapon();
+  if (!blocked && tap('reload')) reloadGun();
+  updateAmmo(dt);
   if (!blocked && tap('gunsw')) nextGun();
   if (!blocked && tap('aim')) setAim(!P.aim);
   if (IS_TOUCH) $('tb-aim').hidden = !myGun() || !!P.drive;
   updateAim(dt); updateSquad(dt, t); if ((city.radT = (city.radT || 0) - dt) <= 0) { city.radT = 3; radioSync(); }
   if (IS_TOUCH) $('tb-gsw').hidden = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)).length < 2;
-  if (IS_TOUCH) { const wk = myHandKind(); $('tb-wp').hidden = !wk; if (wk) { $('tb-wp').classList.toggle('off', P.wpCd > 0); $('tb-wp-n').textContent = '∞'; } }
+  if (IS_TOUCH) { const wk = myHandKind(); $('tb-wp').hidden = !wk; if (wk) { $('tb-wp').classList.toggle('off', P.wpCd > 0); if (!myGun()) $('tb-wp-n').textContent = '∞'; } }
   updateCityFx(dt);
   if (!blocked && tap('map')) openPanel('mapa');
   const st = P.onBoard ? myStats() : { spd: 1, acc: 1, ctl: 1, pop: 1, tec: 1, equ: 0 };
@@ -4328,15 +4337,36 @@ Object.assign(JOBS, {
 // armas de fogo: só com tokens (dinheiro real)
 const GUNS = [
   I('gun', 'gun_none', 'Sem arma de fogo', 0x555555, 0, null, 'comum', { gun: 'none', desc: 'Mãos livres.' }),
-  I('gun', 'gun_taser', 'Taser', 0xffcf3a, null, 80, 'raro', { gun: 'taser', rng: 9, cd: 1.4, knock: 4, desc: 'Choque de perto: derruba por 4 s.' }),
-  I('gun', 'gun_38', 'Revólver .38', 0x6d717a, null, 120, 'raro', { gun: 'revolver', rng: 22, cd: 1.0, knock: 4, desc: 'Seis tiros, recarga lenta.' }),
-  I('gun', 'gun_9mm', 'Pistola 9mm', 0x2a2d34, null, 160, 'raro', { gun: 'pistola', rng: 26, cd: 0.6, knock: 4, desc: 'Leve e rápida.' }),
-  I('gun', 'gun_12', 'Escopeta 12', 0x5a3d26, null, 280, 'lendario', { gun: 'escopeta', rng: 14, cd: 1.3, knock: 6, cone: 0.78, desc: 'Espalha: acerta fácil de perto.' }),
-  I('gun', 'gun_fuzil', 'Fuzil', 0x3b4232, null, 420, 'lendario', { gun: 'fuzil', rng: 40, cd: 0.28, knock: 5, desc: 'Longo alcance e rajada.' }),
+  I('gun', 'gun_taser', 'Taser', 0xffcf3a, null, 80, 'raro', { gun: 'taser', rng: 9, cd: 0.5, mag: 1, rel: 2.2, knock: 4, desc: '1 disparo por cartucho (recarga 2,2 s). Choque de perto: derruba por 4 s.' }),
+  I('gun', 'gun_38', 'Revólver .38', 0x6d717a, null, 120, 'raro', { gun: 'revolver', rng: 22, cd: 0.45, mag: 6, rel: 3.2, knock: 4, desc: 'Tambor de 6 tiros, recarga lenta (3,2 s).' }),
+  I('gun', 'gun_9mm', 'Pistola 9mm', 0x2a2d34, null, 160, 'raro', { gun: 'pistola', rng: 26, cd: 0.22, mag: 17, rel: 1.8, knock: 4, desc: 'Carregador de 17 tiros, semiautomática (recarga 1,8 s).' }),
+  I('gun', 'gun_12', 'Escopeta 12', 0x5a3d26, null, 280, 'lendario', { gun: 'escopeta', rng: 14, cd: 0.85, mag: 8, rel: 4, knock: 6, cone: 0.78, pellets: 8, desc: '8 cartuchos de chumbo que espalha, pump (recarga 4 s).' }),
+  I('gun', 'gun_fuzil', 'Fuzil', 0x3b4232, null, 420, 'lendario', { gun: 'fuzil', rng: 40, cd: 0.1, mag: 30, rel: 2.6, auto: true, knock: 5, desc: 'Carregador de 30 tiros, automático: segure para rajada (recarga 2,6 s).' }),
 ];
 GUNS.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 SLOT_NAMES.gun = 'Armas de fogo';
 const myGun = () => { const it = ITEM[S.equip.gun]; return it && it.gun && it.gun !== 'none' && S.owned.includes(it.id) ? it : null; };
+/* munição: carregador real de cada arma e recarga */
+P.ammo = {};
+const gunMag = G => P.ammo[G.id] ?? G.mag;
+function reloadGun(G) {
+  G = G || myGun(); if (!G || P.reloadT > 0 || gunMag(G) >= G.mag) return;
+  P.reloadT = G.rel; P.reloadId = G.id; P.wpShowT = 0; tone('square', 900, 700, 0.05, 0.03); tone('square', 600, 500, 0.06, 0.03, G.rel * 0.6);
+}
+function updateAmmo(dt) {
+  if (P.reloadT > 0) { P.reloadT -= dt; if (P.reloadT <= 0) { const G = ITEM[P.reloadId]; if (G) P.ammo[G.id] = G.mag; tone('square', 1200, 1000, 0.05, 0.04); } }
+  const G = myGun(), el = $('ammo');
+  if (!G || mode !== 'city') { el.hidden = true; if (IS_TOUCH) $('tb-rel').hidden = true; return; }
+  el.hidden = IS_TOUCH && !P.aim; el.classList.toggle('aim', !!P.aim);
+  el.innerHTML = P.reloadT > 0 && P.reloadId === G.id ? `<b>Recarregando…</b> ${esc(G.name)}` : `<b>${gunMag(G)}</b> / ${G.mag} · ${esc(G.name)}${IS_TOUCH ? '' : ' · I recarrega'}`;
+  if (IS_TOUCH) { $('tb-wp-n').textContent = P.reloadT > 0 ? '…' : gunMag(G); $('tb-rel').hidden = !(gunMag(G) < G.mag) || P.reloadT > 0 || !!P.drive; }
+}
+/* gasta uma bala; sem bala recarrega sozinho */
+function useRound(G) {
+  if (P.reloadT > 0) return false;
+  const n = gunMag(G); if (n <= 0) { reloadGun(G); return false; }
+  P.ammo[G.id] = n - 1; if (n - 1 <= 0) setTimeout(() => reloadGun(G), 250); return true;
+}
 function nextGun() {
   const L = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)); if (!L.length) return toast('Você não tem armas de fogo. Compre no Arsenal com tokens.', 'bad');
   const i = L.findIndex(g => g.id === S.equip.gun), n = L[(i + 1) % L.length]; S.equip.gun = n.id; persist(); netTrack(); toast(`Arma: ${n.name}`); sfx('ui');
@@ -4469,6 +4499,7 @@ function gunFx(x0, y0, z0, x1, y1, z1, kind) {
 }
 function shootGun(G) {
   if ((P.wpCd || 0) > 0 || P.drive || P.ride || P.jailT > 0) return;
+  if (!useRound(G)) return;
   if (aimOn()) return shootAimed(G); P.wpCd = G.cd; P.wpShowT = 0.8; P.emote = null;
   const fx = Math.sin(P.h), fz = Math.cos(P.h), cone = G.cone || 0.9;
   let best = null, bd = G.rng, kind = null;
@@ -5119,8 +5150,10 @@ function aimCamera(dt, head) {
   camera.lookAt(camera.position.x + fx * Math.cos(e) * 10, camera.position.y + Math.sin(e) * 10, camera.position.z + fz * Math.cos(e) * 10);
 }
 function shootAimed(G) {
-  if ((P.wpCd || 0) > 0) return; P.wpCd = G.cd; P.wpShowT = 0.8;
-  const r = aimRay(G.rng * 1.4), fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
+  P.wpCd = G.cd; P.wpShowT = 0.8;
+  let r = aimRay(G.rng * 1.4);
+  if (G.pellets && !r.best) { const y0 = city.camYaw, p0 = city.camPitch; for (let k = 0; k < G.pellets && !r.best; k++) { city.camYaw = y0 + rand(-0.06, 0.06); city.camPitch = p0 + rand(-0.06, 0.06); aimCamera(1, null); const q = aimRay(G.rng * 1.2); if (q.best) r = q; } city.camYaw = y0; city.camPitch = p0; aimCamera(1, null); }
+  const fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
   gunFx(P.x + fx * 0.6 + rx * 0.25, P.y + 1.42, P.z + fz * 0.6 + rz * 0.25, r.x, r.y, r.z, G.gun); sfx(G.gun === 'taser' ? 'spray' : 'tiro');
   const sp = new THREE.Mesh(SPH(0.1, 6, 4), new THREE.MeshBasicMaterial({ color: r.best ? 0xff5a5a : 0xd8c8a8, transparent: true })); sp.position.set(r.x, r.y, r.z); city.scene.add(sp); city.fx.push({ m: sp, vx: 0, vy: 0.5, vz: 0, life: 0.35, max: 0.35 });
   for (const o of city.thugs || []) if (Math.hypot(o.x - P.x, o.z - P.z) < 30 && !isAdm()) o.hostT = Math.max(o.hostT, 18);
