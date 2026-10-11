@@ -541,6 +541,7 @@ canvas.swatch{background:#333}
 <div id="banner" hidden></div>
 <div id="splat" hidden></div>
 <div id="fade" hidden></div>
+<small id="build-ver" style="position:fixed;left:6px;bottom:2px;font-size:10px;opacity:.45;color:#fff;z-index:5;pointer-events:none"></small>
 <div id="ammo" hidden></div>
 <div id="hurt"></div>
 <div id="crosshair" hidden><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 4v9M20 27v9M4 20h9M27 20h9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="1.6" fill="currentColor"/></svg></div>
@@ -595,6 +596,19 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
+/* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
+const BUILD = '2026.10.11-7';
+addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
+(function checkUpdate() {
+  const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
+    const m = t.match(/const BUILD = '([^']+)'/); if (!m || m[1] === BUILD) return;
+    const k = 'rc_reload_' + m[1]; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) { }
+    if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.update())).catch(() => { });
+    if (window.caches) caches.keys().then(ks => ks.forEach(k2 => caches.delete(k2))).catch(() => { });
+    setTimeout(() => location.replace(location.pathname + '?v=' + m[1]), 400);
+  }).catch(() => { });
+  if (location.protocol.startsWith('http')) { addEventListener('load', go); setInterval(go, 5 * 60 * 1000); }
+})();
 'use strict';
 THREE.ColorManagement.legacyMode = false;
 /* =========================================================
@@ -9230,6 +9244,7 @@ async function enterGame() {
   if (S.shift && !S.mission) setTimeout(() => { if (S.shift && !S.mission) nextJobTask(); }, 1500);
   $('hb-veh').hidden = !S.vehicles.length; if (S.veh) spawnMyVehicle();
   setTimeout(() => toast(`Você está em ${CITY().name}. Viaje pela Rodoviária.`, 'pink'), 3400);
+  setTimeout(() => { if (isAdm()) toast('👑 Chefe: seu helicóptero está no telhado da mansão (topo do morro; elevador → Telhado). O Hangar AJBZ fica na porta dourada ao lado da Rodoviária. Veja no Mapa.', 'pink'); }, 7000);
   if (!S.mission && S.stats.missions === 0) setTimeout(() => toast(hasSkate() ? 'Vá até o Quadro de Missões (marcador amarelo) para fazer sua primeira grana.' : 'Você está a pé. Vá até o Quadro de Missões (marcador amarelo): a primeira missão te dá um skate.', 'pink'), 800);
   updateEventChip(); setInterval(updateEventChip, 30000);
   if (NET.user) { cloudSave(); netJoinPlaza(); updateOnlineChip(); }
