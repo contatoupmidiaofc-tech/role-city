@@ -244,6 +244,7 @@ table.res tr.ally td:nth-child(2){color:var(--ok)}
 .rg{background:linear-gradient(135deg,#cfe8c6,#a9d39e);color:#15161a;border-radius:12px;padding:10px 12px;font-family:system-ui,sans-serif;box-shadow:0 2px 0 #6f9a64}.rg-h{font-weight:800;font-size:12px;text-align:center;letter-spacing:.5px;border-bottom:1px solid rgba(0,0,0,.25);padding-bottom:6px}.rg-h small{font-weight:600;font-size:10px}.rg-b{display:flex;gap:12px;padding-top:8px;align-items:center}.rg-f{font-size:44px;background:#e9f3e5;border-radius:8px;padding:4px 8px}.rg-b small{display:block;font-size:9px;opacity:.7;margin-top:2px}.rg-b b{display:block;font-size:14px}.rg-x{margin-top:6px;font-weight:700;color:#b3262e}
 .item-card.has-thumb{grid-template-columns:72px 1fr auto}.swatch.thumb{width:72px;height:72px;padding:0;cursor:pointer;background:radial-gradient(circle at 50% 40%,#3a3f4a,#15161a);overflow:hidden;display:grid;place-items:center}.swatch.thumb img{width:100%;height:100%;object-fit:cover}.item-card.r-raro .swatch.thumb{border-color:#4fc3ff}.item-card.r-lendario .swatch.thumb{border-color:#ffb627}.thumb-big{width:min(100%,300px);aspect-ratio:1;margin:0 auto 10px;border-radius:16px;background:radial-gradient(circle at 50% 40%,#444a56,#15161a);border:3px solid #9aa3ad;overflow:hidden;display:grid;place-items:center}.thumb-big.r-raro{border-color:#4fc3ff}.thumb-big.r-lendario{border-color:#ffb627}.thumb-big img{width:100%;height:100%;object-fit:cover}.thumb-big.sw .swatch{transform:scale(3.2)}#beachbar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 118px);display:flex;gap:8px;z-index:30}#beachbar button{font:700 14px/1 var(--display,system-ui);padding:10px 14px;border-radius:999px;border:2px solid #ffcf3a;background:rgba(21,22,26,.88);color:#fff;cursor:pointer}
 #trip-hud{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translateX(-50%);width:min(92vw,560px);background:rgba(21,22,26,.88);border:2px solid #ffcf3a;border-radius:14px;padding:10px 14px;color:#fff;z-index:40;display:grid;gap:6px;font-family:var(--cond,system-ui)}#trip-hud[hidden]{display:none}#trip-hud .tr-t{font-weight:800;font-size:17px}#trip-hud .tr-s{font-size:14px;color:#cfd3d8}#trip-hud .tr-bar{height:8px;border-radius:6px;background:#2a2d34;overflow:hidden}#trip-hud .tr-bar i{display:block;height:100%;background:linear-gradient(90deg,#3ddc84,#ffcf3a)}#trip-hud .tr-fast{justify-self:start;padding:8px 12px;border-radius:999px;border:2px solid #3ddc84;background:#15161a;color:#fff;font-weight:700;touch-action:none}
+#heli-ctl{position:fixed;inset:auto 0 0 0;height:0;z-index:35}#heli-ctl[hidden]{display:none}#heli-ctl button{position:fixed;border-radius:50%;border:3px solid rgba(255,255,255,.7);background:rgba(21,22,26,.72);color:#fff;font:800 26px/1 system-ui;display:grid;place-items:center;touch-action:none;user-select:none;-webkit-user-select:none}#heli-ctl button small{display:block;font-size:11px;font-weight:700;margin-top:2px}#heli-ctl button.down{background:rgba(255,207,58,.85);color:#15161a}#heli-ctl .hc-l button{left:calc(env(safe-area-inset-left) + 18px);width:84px;height:84px}#heli-ctl .hc-l button[data-h=up]{bottom:124px;border-color:#3ddc84}#heli-ctl .hc-l button[data-h=down]{bottom:24px;border-color:#ff6b6b}#heli-ctl .hc-r button{width:70px;height:70px}#heli-ctl .hc-f{right:96px;bottom:160px}#heli-ctl .hc-b{right:96px;bottom:16px}#heli-ctl .hc-a{right:172px;bottom:88px}#heli-ctl .hc-d{right:20px;bottom:88px}#heli-ctl .hc-x{right:20px;bottom:auto;top:calc(env(safe-area-inset-top) + 120px);width:64px!important;height:64px!important;border-radius:16px!important;font-size:15px!important;border-color:#3ddc84!important}
 .note{font-size:13px;color:var(--muted);line-height:1.45;border-left:3px solid var(--sky);padding-left:10px}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
 .seg button{min-height:38px;padding:0 12px;border-radius:8px;background:var(--panel-2);font-family:var(--cond);font-weight:700;text-transform:uppercase}
@@ -597,7 +598,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-7';
+const BUILD = '2026.10.11-8';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -2593,7 +2594,7 @@ function cityExtras(sc) {
   setTimeout(loadMarks, 600);
 }
 /* lote da casa do jogador */
-function buildHome() {
+function buildHome0() {
   const sc = city.scene; if (!sc) return;
   city.homeDoorPivot = null;
   if (city.homeG) { sc.remove(city.homeG); city.colliders = city.colliders.filter(c => !c.home); city.doors = city.doors.filter(d => d.kind !== 'casa'); }
@@ -2968,7 +2969,7 @@ function travelToOld(id, how) {
 }
 function resetCity() {
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
-  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
+  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.homePad = null; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -3217,7 +3218,7 @@ function enterVehicle() {
 function exitVehicle(silent) {
   const d = P.drive; if (!d) return;
   city.myVeh.x = P.x; city.myVeh.z = P.z; city.myVeh.h = P.h;
-  if (d.V.heli) { if (!silent && P.y - groundH(P.x, P.z) > 0.8) return toast('Pouse antes de sair (segure Descer).', 'bad'); heliLabels(false); }
+  if (d.V.heli) { if (!silent && P.y - groundH(P.x, P.z) > 0.8) return toast('Pouse antes de sair (segure Descer).', 'bad'); heliLabels(false); heliCtl(false); }
   vehLightsTick(d.m, 0, 0, 0); P.drive = null; P.v = 0; city.player.visible = true;
   let x = P.x + Math.cos(P.h) * 1.8, z = P.z - Math.sin(P.h) * 1.8; if (collide(x, z, 0.5)) { x = P.x - Math.cos(P.h) * 1.8; z = P.z + Math.sin(P.h) * 1.8; }
   P.x = x; P.z = z; P.y = groundH(x, z); if (!silent) sfx('ui');
@@ -3553,7 +3554,7 @@ function nextWaypoint(o) {
   if (o.iz > 0) opts.push([o.ix, o.iz - 1]); if (o.iz < 5) opts.push([o.ix, o.iz + 1]);
   [o.ix, o.iz] = pick(opts); o.tx = ROADS[o.ix]; o.tz = ROADS[o.iz];
 }
-function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if ((city.tour || city.helipad) && walkAreaY(x, z, r) != null) return false; if ((city.interior || city.jail || city.hospIn || city.shopIn) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return Math.abs(x) > 116 || z < -116 || z > cityBoundZ(); }
+function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if ((city.tour || city.helipad || city.homePad) && walkAreaY(x, z, r) != null) return false; if ((city.interior || city.jail || city.hospIn || city.shopIn) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return Math.abs(x) > 116 || z < -116 || z > cityBoundZ(); }
 function inRamp(x, z) { return city.ramps.some(c => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1); }
 
 let camYaw = 0;
@@ -3727,9 +3728,9 @@ function updateCity(dt, t) {
   updateMission(dt, t);
   updateNav(dt);
   let near = null, nd = 1e9;
-  for (const d of city.doors) { const k = Math.hypot(d.x - P.x, d.z - P.z); if (k < 3 && k < nd) { nd = k; near = { type: 'door', d }; } }
+  for (const d of city.doors) { if (Math.abs(P.y - (d.y || 0)) > 4) continue; const k = Math.hypot(d.x - P.x, d.z - P.z); if (k < 3 && k < nd) { nd = k; near = { type: 'door', d }; } }
   for (const o of city.bots) { if (o.off) continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 3.4 && k < nd) { nd = k; near = { type: 'bot', o }; } }
-  if (city.myVeh && !P.drive) { const k = Math.hypot(city.myVeh.x - P.x, city.myVeh.z - P.z); if (k < 3.6 && k < nd + 0.5) { nd = k; near = { type: 'veh' }; } }
+  if (city.myVeh && !P.drive) { const k = Math.hypot(city.myVeh.x - P.x, city.myVeh.z - P.z); if (k < (city.myVeh.V.heli || city.myVeh.V.plane ? 6.5 : 3.6) && k < nd + 0.5) { nd = k; near = { type: 'veh' }; } }
   if (!P.drive && !P.ride) for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen || (p.t.rm || '') !== roomKey()) continue; const k = Math.hypot(p.x - P.x, p.z - P.z);
     if (p.t.vh && S.shift !== 'policial' && k < 3.8 && k < nd + 0.5) { nd = k; near = { type: 'carona', p }; }
     else if (S.shift === 'policial' && !city.abord && !p.adm && k < (p.t.vh ? 4 : 3) && k < nd + 0.5) { nd = k; near = { type: 'abordarP', p }; } }
@@ -4045,6 +4046,7 @@ function interact(n) {
     const k = n.d.kind;
     if (k === 'mansao') { enterMansion(n.d); return; }
     if (k === 'hangar') { openPanel('hangar'); return; }
+    if (k === 'elevadorCasa') { goHomePad(); return; }
     if (k === 'biz' && !n.d.inside) { enterBiz(n.d); return; }
     if (INSIDE_KINDS.includes(k) && !n.d.inside) { enterShop(n.d); return; }
     if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
@@ -4344,7 +4346,7 @@ function morroWorld(d, t, id) { const [ax, s] = MORRO_SIDE[id || cityId()] || MO
 function inMorro(x, z, m = 0) { const [d, t] = morroLocal(x, z); return d > -6 && d < MORRO_D - m && Math.abs(t) < MORRO_W - m; }
 const morroHd = d => { const k = clamp(d / 85, 0, 1); return MORRO_H * k * k * (3 - 2 * k); };
 function groundH(x, z) {
-  if (city.tour || city.helipad) { const wa = walkAreaY(x, z); if (wa != null) return wa; }
+  if (city.tour || city.helipad || city.homePad) { const wa = walkAreaY(x, z); if (wa != null) return wa; }
   let b = 0; if (city.morro) { const [d, t] = morroLocal(x, z); if (d > 0 && Math.abs(t) <= MORRO_W + 1) b = morroHd(Math.min(d, MORRO_D + 12)); }
   if (city.surf.length) { const s = surfaceH(x, z); if (s != null) return b + s; }
   return b;
@@ -6218,7 +6220,7 @@ function buildMansion(sc) {
   // porta (anel de entrada) e saída para a escadaria
   const [dx, dz] = morroWorld(92.4, 0), [ox, oz] = morroWorld(90.6, 0);
   const rg = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.7, side: THREE.DoubleSide })); rg.position.set(dx, morroHd(92.4) + 0.15, dz); sc.add(rg);
-  city.doors.push({ kind: 'mansao', label: '👑 Mansão do Ajbz', x: dx, z: dz, ring: rg, out: [ox, oz, ry] });
+  city.doors.push({ kind: 'mansao', label: '👑 Mansão do Ajbz', x: dx, z: dz, y: morroHd(92.4), ring: rg, out: [ox, oz, ry] });
 }
 function mansionGuards(sc) {
   for (const t of [-3.4, 3.4]) {
@@ -6440,6 +6442,7 @@ function walkAreaY(x, z, r = 0) {
   const T = city.tour;
   if (T) { if (T.rect ? (x > T.rect[0] + r && x < T.rect[1] - r && z > T.rect[2] + r && z < T.rect[3] - r) : Math.hypot(x - T.x, z - T.z) < T.r - r) return T.y; }
   const Hp = city.helipad; if (Hp && Math.hypot(x - Hp.x, z - Hp.z) < Hp.r - r && Math.abs(P.y - Hp.y) < 3) return Hp.y;
+  const Hh = city.homePad; if (Hh && Math.abs(x - Hh.x) < Hh.r - r && Math.abs(z - Hh.z) < Hh.r - r && Math.abs(P.y - Hh.y) < 3) return Hh.y;
   return null;
 }
 /* praças de visitação (piso, placa e corrimão) e os cartões-postais que faltavam */
@@ -6712,8 +6715,9 @@ function heliLabels(on) {
 function updateFlying(dt, ax, blocked) {
   const d = P.drive, m = d.m, u = m.userData;
   if (!d.lbl) { d.lbl = true; heliLabels(true); toast(IS_TOUCH ? '🚁 Subir e Descer nos botões, Frente/Trás e ◀ ▶ para virar.' : '🚁 Espaço sobe · Shift/Q desce · W/S frente e trás · A/D vira · E sai (pousado).', 'pink'); }
-  const thr = blocked ? 0 : ax.y, st = blocked ? 0 : ax.x, H = input.held, B = input.hold;
-  const up = !blocked && (H.Space || B.blinkR || B.jump) ? 1 : 0, dn = !blocked && (H.ShiftLeft || H.ShiftRight || H.KeyQ || B.blinkL) ? 1 : 0;
+  heliCtl(true); const HI = HELI_IN;
+  const thr = blocked ? 0 : clamp(ax.y + (HI.fwd ? 1 : 0) - (HI.back ? 1 : 0), -1, 1), st = blocked ? 0 : clamp(ax.x + (HI.right ? 1 : 0) - (HI.left ? 1 : 0), -1, 1), H = input.held, B = input.hold;
+  const up = !blocked && (H.Space || H.KeyR || B.blinkR || B.jump || HI.up) ? 1 : 0, dn = !blocked && (H.ShiftLeft || H.ShiftRight || H.KeyQ || H.KeyF || B.blinkL || HI.down) ? 1 : 0;
   u.rpm = Math.min(1, (u.rpm || 0) + dt * 0.9);
   const gnd = groundH(P.x, P.z), lift = u.rpm > 0.8;
   d.vy = lerp(d.vy || 0, lift ? (up - dn) * 8 : -1, 1 - Math.exp(-2.5 * dt));
@@ -6737,7 +6741,7 @@ function goRoof() {
     P.x = Hp.sx; P.z = Hp.sz; P.y = Hp.y; P.v = 0; P.onBoard = false; P.h = Math.atan2(Hp.x - P.x, Hp.z - P.z); city.camYaw = P.h; city.zoom = 1.3; city.camSnap = true;
     if (!city.myVeh || !city.myVeh.V.heli) spawnMyVehicle(VEH.v_heli);
     const mv = city.myVeh; mv.x = Hp.x; mv.z = Hp.z; mv.h = Hp.ry; mv.m.position.set(Hp.x, Hp.y, Hp.z); mv.m.rotation.set(0, Hp.ry, 0); if (city.heliParked) city.heliParked.visible = false;
-    city.tourSpots = [{ label: '🚪 Descer para a cobertura', x: Hp.dx, z: Hp.dz, fn: () => { city.tourSpots = null; const d = city.doors.find(d => d.kind === 'mansao'); enterShop(Object.assign({}, d, { kind: 'mansao3', label: 'Mansão do Ajbz' })); } }];
+    city.tourSpots = [{ label: '🚁 Pilotar o helicóptero', x: Hp.x + 3.4, z: Hp.z + 3.4, fn: () => pilotFrom(Hp, VEH.v_heli) }, { label: '🚪 Descer para a cobertura', x: Hp.dx, z: Hp.dz, fn: () => { city.tourSpots = null; const d = city.doors.find(d => d.kind === 'mansao'); enterShop(Object.assign({}, d, { kind: 'mansao3', label: 'Mansão do Ajbz' })); } }];
     toast('🚁 Heliponto da mansão. Chegue perto do helicóptero e aperte Ação para pilotar.', 'pink');
   });
 }
@@ -7112,6 +7116,68 @@ function sightseeing(id) {
   TRIP = { from: cityId(), dest: cityId(), how: id, V, air: true, km: 0, t: 0, prog: 0, scenic: true };
   $('hud').hidden = true; $('touch').hidden = true; tripHud(true); camera.far = 2600; camera.updateProjectionMatrix();
   fadeTo(() => { TRIP.m = V.heli ? makeAnyHeli(V) : makePlaneMesh(V); city.scene.add(TRIP.m); city.player.visible = false; startPath(true); mode = 'trip'; TRIP.scenicLoop = true; });
+}
+/* =========================================================
+   HELIPONTO EM CASA (com elevador direto para cima) e CONTROLES PRÓPRIOS DO HELICÓPTERO
+   ========================================================= */
+const myHeli = () => isAdm() ? VEH.v_heli : (S.aircraft || []).map(id => VEH[id]).find(V => V && V.heli) || null;
+const HELI_IN = {};
+function buildHome() {
+  buildHome0(); city.homePad = null;
+  const g = city.homeG, V = myHeli(); if (!g || !S.home || !V) return;
+  const [cx, cz] = HOME_LOT, top = 13.3, gold = goldM();
+  const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  // laje do heliponto sobre a casa, com pilares dourados
+  add(boxGeo(14.4, 0.4, 14.4), std(0x9aa3ad, 0.8), 0, top, -2);
+  for (const [x, z] of [[-6.9, -8.9], [6.9, -8.9], [-6.9, 4.9], [6.9, 4.9]]) add(CYL(0.3, 0.3, top, 10), gold, x, top / 2, z);
+  const padT = canvasTex(128, 128, (gg) => { gg.fillStyle = '#2a2d34'; gg.beginPath(); gg.arc(64, 64, 63, 0, TAU); gg.fill(); gg.strokeStyle = '#ffd700'; gg.lineWidth = 6; gg.beginPath(); gg.arc(64, 64, 52, 0, TAU); gg.stroke(); gg.fillStyle = '#fff'; gg.font = 'bold 72px sans-serif'; gg.textAlign = 'center'; gg.fillText('H', 64, 90); });
+  const pad = new THREE.Mesh(new THREE.CircleGeometry(5, 36), new THREE.MeshLambertMaterial({ map: padT })); pad.rotation.x = -Math.PI / 2; pad.position.set(0, top + 0.22, -2); g.add(pad);
+  for (let k = 0; k < 10; k++) { const a = k / 10 * TAU, l = new THREE.Mesh(SPH(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: 0x3ddc84 })); l.position.set(Math.cos(a) * 5.3, top + 0.28, -2 + Math.sin(a) * 5.3); g.add(l); }
+  for (const [x, z, w, d] of [[0, -9.1, 14.4, 0.1], [0, 5.1, 14.4, 0.1], [-7.1, -2, 0.1, 14.4], [7.1, -2, 0.1, 14.4]]) add(boxGeo(w, 1, d), new THREE.MeshStandardMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.35 }), x, top + 0.7, z);
+  // elevador de vidro do chão até a laje
+  add(boxGeo(2.6, top + 1.2, 2.6), new THREE.MeshStandardMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.4, roughness: 0.05 }), -8.6, (top + 1.2) / 2, 4.6);
+  for (const [x, z] of [[-9.9, 3.3], [-7.3, 3.3], [-9.9, 5.9], [-7.3, 5.9]]) add(boxGeo(0.15, top + 1.2, 0.15), gold, x, (top + 1.2) / 2, z);
+  const cab = add(boxGeo(2.2, 2.4, 2.2), gold, -8.6, 1.2, 4.6); city.homeLift = cab;
+  const s = textSprite('🛗 ELEVADOR · HELIPONTO', { bg: '#15161a', fg: '#ffd700', size: 40, scale: [4.4, 0.7, 1] }); s.position.set(-8.6, 3.2, 6.4); g.add(s);
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: .8, side: THREE.DoubleSide })); ring.position.set(cx - 10.6, 0.13, cz + 6.6); city.scene.add(ring);
+  city.doors = city.doors.filter(d => d.kind !== 'elevadorCasa'); city.doors.push({ kind: 'elevadorCasa', label: '🛗 Elevador para o heliponto', x: cx - 10.6, z: cz + 6.6, ring });
+  // helicóptero estacionado
+  const ph = makeAnyHeli(V); ph.position.set(0, top + 0.22, -2); g.add(ph);
+  city.homePad = { x: cx, z: cz - 2, y: top + 0.22, r: 7, ry: 0, parked: ph, V, lx: cx - 6, lz: cz + 3.8 };
+}
+function goHomePad() {
+  const Hp = city.homePad; if (!Hp) return toast('Compre um helicóptero no Hangar AJBZ para ter heliponto em casa.', 'bad');
+  fadeTo(() => {
+    P.x = Hp.lx; P.z = Hp.lz; P.y = Hp.y; P.v = 0; P.onBoard = false; P.h = Math.atan2(Hp.x - P.x, Hp.z - P.z); city.camYaw = P.h; city.zoom = 1.3; city.camSnap = true;
+    try { tone('sine', 880, 880, 0.2, 0.06); tone('sine', 1100, 1100, 0.3, 0.06, 0.18); } catch (e) { }
+    city.tourSpots = [{ label: '🚁 Pilotar o helicóptero', x: Hp.x + 3.2, z: Hp.z + 3.2, fn: () => pilotFrom(Hp) }, { label: '🛗 Descer pelo elevador', x: Hp.lx, z: Hp.lz - 0.2, fn: leaveHomePad }];
+    toast('🚁 Heliponto da sua casa. Chegue no helicóptero e aperte "Pilotar".', 'pink');
+  });
+}
+function leaveHomePad() { const [cx, cz] = HOME_LOT; fadeTo(() => { city.tourSpots = null; P.x = cx - 11.6; P.z = cz + 8; P.y = 0; P.h = -Math.PI / 2; city.camYaw = P.h; city.camSnap = true; }); }
+/* entra no helicóptero que está no heliponto (casa ou mansão) */
+function pilotFrom(Hp, V) {
+  V = V || Hp.V || myHeli(); if (!V) return;
+  if (!city.myVeh || city.myVeh.V !== V) spawnMyVehicle(V);
+  const mv = city.myVeh; mv.x = Hp.x; mv.z = Hp.z; mv.h = Hp.ry || 0; mv.m.position.set(Hp.x, Hp.y, Hp.z); mv.m.rotation.set(0, mv.h, 0);
+  if (Hp.parked) Hp.parked.visible = false; if (city.heliParked && Hp === city.helipad) city.heliParked.visible = false;
+  city.tourSpots = null; enterVehicle();
+}
+/* controles do helicóptero: Subir / Descer à esquerda, direções à direita */
+function heliCtl(on) {
+  let el = $('heli-ctl');
+  if (!el && on) {
+    el = document.createElement('div'); el.id = 'heli-ctl';
+    el.innerHTML = '<div class="hc-l"><button data-h="up">⬆<small>Subir</small></button><button data-h="down">⬇<small>Descer</small></button></div><div class="hc-r"><button data-h="fwd" class="hc-f">▲<small>Frente</small></button><button data-h="left" class="hc-a">◀</button><button data-h="right" class="hc-d">▶</button><button data-h="back" class="hc-b">▼<small>Trás</small></button></div><button data-h="exit" class="hc-x">Sair</button>';
+    document.body.appendChild(el);
+    el.querySelectorAll('button').forEach(b => {
+      const k = b.dataset.h, set = v => e => { e.preventDefault(); if (k === 'exit') { if (v) exitVehicle(); return; } HELI_IN[k] = v; b.classList.toggle('down', v); };
+      b.addEventListener('pointerdown', set(true)); b.addEventListener('pointerup', set(false)); b.addEventListener('pointerleave', set(false)); b.addEventListener('pointercancel', set(false));
+    });
+  }
+  if (el) el.hidden = !on;
+  if (!on) for (const k in HELI_IN) HELI_IN[k] = false;
+  const T = $('touch'); if (T && IS_TOUCH) T.style.visibility = on ? 'hidden' : '';
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
