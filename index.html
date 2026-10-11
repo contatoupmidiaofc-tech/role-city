@@ -210,6 +210,9 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #btnedit b{font-family:var(--cond);text-transform:uppercase;font-size:13px;width:100%;text-align:center}
 .touch-hint{position:absolute;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);font-family:var(--cond);font-weight:600;color:rgba(255,255,255,.5);font-size:14px;pointer-events:none}
 
+#tb-lock{right:262px;bottom:156px;width:50px;height:50px;font-size:9px}
+#tb-lock svg{width:20px;height:20px}
+#tb-lock.on{background:radial-gradient(circle at 50% 35%,rgba(255,90,90,.95),rgba(190,30,40,.9))}
 /* controles dos esportes (luta e futsal) */
 #touch:not(.sport) .sb,#touch.driving .sb{display:none!important}
 #touch.driving.sport .vb{display:grid}
@@ -612,6 +615,7 @@ canvas.swatch{background:#333}
     <button class="tbtn sb" data-btn="sp3" id="sb-sp3"><span>3</span></button>
     <button class="tbtn sb" data-btn="sp4" id="sb-sp4"><span>4</span></button>
     <button class="tbtn sb" data-btn="sp5" id="sb-sp5"><span>5</span></button>
+    <button class="tbtn vb" data-btn="lock" id="tb-lock" aria-label="Trancar ou destrancar"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Aberto</span></button>
     <button class="tbtn vb" data-btn="act" id="tb-vexit" aria-label="Sair do veículo"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg><span>Sair</span></button>
   </div>
 </div>
@@ -633,7 +637,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-20';
+const BUILD = '2026.10.11-21';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -4084,7 +4088,7 @@ function updateCity(dt, t) {
     else if (near.type === 'hospexit') { pr.textContent = `${key} · Sair do hospital`; pr.hidden = false; if (tap('act')) leaveHospital(); }
     else if (near.type === 'socorrer') { pr.textContent = `${key} · Socorrer ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'socorrido', payload: { to: near.p.id, by: S.name } }); const g = earn(jobPay('socorrista', 260)); addXP(45); toast(`Você salvou ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('level'); } }
     else if (near.type === 'rideexit') { pr.textContent = `${key} · Descer`; pr.hidden = false; if (tap('act')) endRide(); }
-    else if (near.type === 'carona') { pr.textContent = `${key} · Pegar carona com ${near.p.name}`; pr.hidden = false; if (tap('act')) askRide(near.p); }
+    else if (near.type === 'carona') { const lk = near.p.t && near.p.t.lk, moto = near.p.t && VEH[near.p.t.vh] && VEH[near.p.t.vh].kind === 'moto'; pr.textContent = lk ? `🔒 ${moto ? 'Moto' : 'Carro'} de ${near.p.name} trancado` : `${key} · Entrar ${moto ? 'na garupa da moto' : 'no carro'} de ${near.p.name}`; pr.hidden = false; if (tap('act')) { if (lk) toast('🔒 Está trancado.', 'bad'); else askRide(near.p); } }
     else if (near.type === 'prender') { pr.textContent = `${key} · Prender ${near.p.name} ${'★'.repeat(near.p.t.wd)}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'prisao', payload: { to: near.p.id, by: 'o policial ' + S.name } }); const g = earn(jobPay('policial', 220)); addXP(40); toast(`Você prendeu ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('coin'); } }
     else if (near.type === 'paint') { pr.textContent = `${key} · Pintar a marca ${S.gang.e} ${S.gang.n} no muro`; pr.hidden = false; if (tap('act')) { const w = near.w; city.paintCd = 6; P.spray = true; P.v = 0; P.h = Math.atan2(-w.nx, -w.nz); sfx('spray'); setTimeout(() => { P.spray = false; }, 900); placeMark('muro', w.wx + w.nx * 0.05, w.wz + w.nz * 0.05, Math.atan2(w.nx, w.nz), w.y != null ? w.y : 0); addWanted(1, 'pichação'); } }
     else { pr.textContent = near.type === 'veh' ? `${key} · ${city.myVeh.V.kind === 'car' ? 'Dirigir' : 'Pilotar'}: ${city.myVeh.V.name}` : near.type === 'door' ? (near.d.inside ? `${key} · ${near.d.label}` : near.d.kind === 'casa' ? `${key} · Abrir a porta e entrar` : `${key} · Entrar: ${near.d.label}`) : (S.contacts.includes(near.o.b.id) ? `${key} · Falar com ${near.o.b.name}` : `${key} · Conhecer ${near.o.b.name}`);
@@ -4996,35 +5000,27 @@ function shootGun(G) {
   gunFx(P.x + fx * 0.6, y0, P.z + fz * 0.6, tx, groundH(tx, tz) + 1.1, tz, G.gun); sfx(G.gun === 'taser' ? 'spray' : 'tiro'); netShotFx(P.x + fx * 0.6, y0, P.z + fz * 0.6, tx, groundH(tx, tz) + 1.1, tz, G.gun);
   for (const o of city.thugs || []) if (Math.hypot(o.x - P.x, o.z - P.z) < 30) o.hostT = Math.max(o.hostT, 18);
   if (!best) { if (G.gun !== 'taser') addWanted(1, 'disparo em via pública'); return; }
-  if (kind === 'peer') {
-    NET.ch && NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: best.p.id, by: S.name, k: G.knock } });
-    if (!(S.shift === 'policial' && best.p.t && best.p.t.wd > 0)) addWanted(1, 'atirou em alguém');
-    toast(`Derrubou ${best.p.name}!`); return;
-  }
-  best.fallT = G.knock + (kind === 'thug' ? 2 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2);
-  if (kind === 'robber') { best.fallT = G.knock + 3; return; }
-  if (kind === 'cop') addWanted(2, 'atacou um policial');
-  else if (kind === 'thug') { if (S.shift !== 'policial') addWanted(1, 'tiroteio no morro'); }
-  else if (!(S.shift === 'policial')) addWanted(1, 'atacou um pedestre');
+  applyShot(best, kind, G); shootoutNear(P.x, P.z);
 }
 function onPeerShot(d) {
   if (!NET.user || d.to !== NET.user.id) return;
-  if (P.drive || P.down) return; hurt(d.dmg || 25, `tiro de ${d.by}`); if (P.down) return; P.fallT = Math.max(P.fallT, 1.2); P.v = 0; toast(`${d.by} acertou você! Vida ${Math.round(P.hp)}%`, 'bad'); sfx('hit');
+  if (P.drive || P.down) return; city.lastShooter = d.id; shootoutNear(P.x, P.z); hurt(d.dmg || 25, `tiro de ${d.by}`); if (P.down) return; P.fallT = Math.max(P.fallT, 1.2); P.v = 0; toast(`${d.by} acertou você! Vida ${Math.round(P.hp)}%`, 'bad'); sfx('hit');
   if (S.mission && S.mission.type === 'job_corre') failMission('derrubaram você e levaram a encomenda.');
 }
 
 /* ---------- carona (moto leva 1, carro leva até 3 além do motorista) ---------- */
-const SEATS = { moto: [[0, -0.5]], car: [[0.4, 0.05], [-0.4, -0.8], [0.4, -0.8]] };
+const SEATS = { moto: [[0, -0.5]], car: [[0.4, 0.05], [-0.45, -0.8], [0, -0.8], [0.45, -0.8]] };
 function askRide(p) { if (!NET.ch) return; NET.ch.send({ type: 'broadcast', event: 'carona', payload: { id: NET.user.id, to: p.id, name: S.name } }); toast(`Pedindo carona para ${p.name}…`); }
 function onRideMsg(ev, d) {
   if (!NET.user || d.to !== NET.user.id) return;
   if (ev === 'carona') {
-    const dr = P.drive; if (!dr) return; dr.pass = dr.pass || []; const max = dr.V.bike ? 0 : SEATS[dr.V.kind === 'moto' ? 'moto' : 'car'].length;
+    const dr = P.drive; if (!dr) return; dr.pass = dr.pass || [];
+    if (S.vehLock) { NET.ch.send({ type: 'broadcast', event: 'carona_nao', payload: { to: d.id, why: 'trancado' } }); toast(`${d.name} tentou entrar, mas o ${dr.V.kind === 'moto' ? 'veículo' : 'carro'} está trancado.`); return; } const max = dr.V.bike ? 0 : SEATS[dr.V.kind === 'moto' ? 'moto' : 'car'].length;
     if (dr.pass.includes(d.id)) return; if (dr.pass.length >= max) { NET.ch.send({ type: 'broadcast', event: 'carona_nao', payload: { to: d.id } }); return; }
     const seat = [...Array(max).keys()].find(k => !dr.pass.some((x, i) => dr.seat && dr.seat[x] === k)) ?? dr.pass.length; dr.seat = dr.seat || {}; dr.seat[d.id] = seat; dr.pass.push(d.id);
     NET.ch.send({ type: 'broadcast', event: 'carona_ok', payload: { to: d.id, id: NET.user.id, seat } }); toast(`${d.name} subiu ${dr.V.kind === 'moto' ? 'na garupa' : 'no carro'}.`, 'good');
   } else if (ev === 'carona_ok') { const p = NET.peers[d.id]; if (!p || !p.t || !p.t.vh) return; if (P.drive) exitVehicle(true); P.ride = { id: d.id, seat: d.seat, moto: VEH[p.t.vh].kind === 'moto' }; P.onBoard = false; P.emote = null; toast(`Carona com ${p.name}. ${IS_TOUCH ? 'Ação' : 'E'} para descer.`, 'good'); sfx('ui'); }
-  else if (ev === 'carona_nao') toast('Não tem mais lugar nesse veículo.', 'bad');
+  else if (ev === 'carona_nao') toast(d.why === 'trancado' ? '🔒 Está trancado. O dono precisa destrancar.' : 'Não tem mais lugar nesse veículo.', 'bad');
   else if (ev === 'carona_sair') { const dr = P.drive; if (dr && dr.pass) { dr.pass = dr.pass.filter(x => x !== d.id); if (dr.seat) delete dr.seat[d.id]; } }
 }
 function endRide(silent) {
@@ -5671,12 +5667,17 @@ function shootAimed(G) {
 }
 /* o que acontece com quem leva o tiro (usado pela mira e pelo tiro automático) */
 function applyShot(best, kind, G) {
+  const dmg = G.dmg || 25; shootoutNear(P.x, P.z);
   if (kind === 'peer') {
-    NET.ch && NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: best.p.id, by: S.name, k: G.knock, dmg: G.dmg || 25 } });
-    if (!(S.shift === 'policial' && best.p.t && best.p.t.wd > 0)) addWanted(1, 'atirou em alguém'); toast(`Acertou ${best.p.name}!`); return;
+    NET.ch && NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: best.p.id, by: S.name, k: G.knock, dmg } });
+    dmgPop(best.p.x, (best.p.y || groundH(best.p.x, best.p.z)) + 2.1, best.p.z, dmg);
+    if (!(S.shift === 'policial' && best.p.t && best.p.t.wd > 0)) addWanted(1, 'atirou em alguém'); toast(`Acertou ${best.p.name}! (-${dmg})`); return;
   }
   if (kind === 'squad') { best.fallT = 3; bubble(best.g, 'Ô! Sou do seu lado, chefe!', 2); return; }
-  best.fallT = G.knock + (kind === 'thug' ? 2 : kind === 'robber' ? 3 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2);
+  // vida dos figurantes (pedestres, policiais, traficantes, ladrões): cada tiro tira vida; com 0 eles caem baleados
+  if (!(best.hp > 0)) best.hp = 100; best.hp -= dmg; dmgPop(best.x, groundH(best.x, best.z) + 2.1, best.z, dmg);
+  if (best.hp <= 0) { best.fallT = 45; best.hp = 0; if (best.g) bubble(best.g, pick(['Fui baleado...', 'Chama o SAMU...', 'Aaai...']), 3); feed(`💀 ${kind === 'cop' ? 'Policial' : kind === 'thug' ? 'Traficante' : 'Figurante'} baleado`); }
+  else { best.fallT = G.knock + (kind === 'thug' ? 2 : kind === 'robber' ? 3 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2); }
   if (kind === 'robber') return;
   if (kind === 'cop') addWanted(2, 'atacou um policial');
   else if (kind === 'thug') { if (S.shift !== 'policial') addWanted(1, 'tiroteio no morro'); }
@@ -5779,10 +5780,12 @@ function squadThreats(s, want) {
   const L = [];
   if (s.side === 'faccao') { if (want !== 'robber') for (const c of city.cops || []) if (!c.off && !(c.fallT > 0) && (want === 'cop' || c.chase)) L.push(c); if (want !== 'cop') for (const r of city.robbers || []) if (r.st !== 'preso' && r.st !== 'gone' && !(r.fallT > 0) && (want === 'robber' || r.tgt === 'player' || s.st === 'attack')) L.push(r); if (!want) for (const o of city.thugs || []) if (o.hostT > 0 && !(o.fallT > 0) && !isAdm()) L.push(o); }
   else { for (const r of city.robbers || []) if (r.st !== 'preso' && r.st !== 'gone' && !(r.fallT > 0)) L.push(r); for (const o of city.thugs || []) if (o.hostT > 0 && !(o.fallT > 0)) L.push(o); }
+  const sh = city.fireT > 0 && city.lastShooter && NET.peers[city.lastShooter]; if (sh && sh.t && !sh.t.vh && !sh.t.dn) L.push({ x: sh.x, z: sh.z, peer: sh.id, g: sh.g });
   return L;
 }
 function updateSquad(dt, t) {
-  city.callCd = (city.callCd || 0) - dt; const L = city.squad; if (!L || !L.length) return;
+  city.callCd = (city.callCd || 0) - dt; city.fireT = (city.fireT || 0) - dt; const L = city.squad; if (!L || !L.length) return;
+  if (city.fireT > 0 && (city.sqTalkT = (city.sqTalkT || 0) - dt) <= 0) { city.sqTalkT = rand(4, 7); const s0 = pick(L); if (s0 && s0.g) bubble(s0.g, pick(isAdm() ? ['Protege o patrão!', 'Cerca o chefe!', 'Ninguém encosta no chefe!', 'Fecha em volta dele!'] : ['Protege o parceiro!', 'Cerca ele!', 'Tamo junto!']), 2.5); }
   for (const s of L) {
     const g = s.g; g.userData.lod = Math.hypot(s.x - camera.position.x, s.z - camera.position.z) > 32;
     if (s.fallT > 0) { s.fallT -= dt; g.position.set(s.x, groundH(s.x, s.z), s.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t + s.ph0); continue; }
@@ -5792,7 +5795,7 @@ function updateSquad(dt, t) {
     else {
       // posição na formação em volta do chefe
       if (dP > 70) { const a = rand(0, TAU); s.x = P.x + Math.cos(a) * 22; s.z = P.z + Math.sin(a) * 22; }
-      const ring = s.spread ? 7 : 2.6 + (s.k % 3) * 0.9, ang = P.h + Math.PI + (s.k - (L.length - 1) / 2) * (s.spread ? 0.9 : 0.55);
+      const fire = city.fireT > 0 && !s.spread, ring = fire ? 2.3 + (s.k % 2) * 0.5 : s.spread ? 7 : 2.6 + (s.k % 3) * 0.9, ang = fire ? P.h + (s.k / L.length) * TAU : P.h + Math.PI + (s.k - (L.length - 1) / 2) * (s.spread ? 0.9 : 0.55);
       const slot = { x: P.x + Math.sin(ang) * ring, z: P.z + Math.cos(ang) * ring };
       const threats = squadThreats(s, s.want); let tg = null, td = s.st === 'attack' ? 60 : 26;
       for (const o of threats) { const d = Math.hypot(o.x - s.x, o.z - s.z); if (d < td) { td = d; tg = o; } }
@@ -5804,7 +5807,8 @@ function updateSquad(dt, t) {
         aim = true; s.h = Math.atan2(tg.x - s.x, tg.z - s.z);
         if ((s.shotT -= dt) <= 0 && td < 30) {
           s.shotT = rand(0.9, 1.8); const y = groundH(s.x, s.z); gunFx(s.x + Math.sin(s.h) * 0.5, y + 1.4, s.z + Math.cos(s.h) * 0.5, tg.x, groundH(tg.x, tg.z) + 1.1, tg.z, s.gun); if (dP < 60) sfx('tiro');
-          if (Math.random() < 0.45) { tg.fallT = 6; if (tg.g) bubble(tg.g, pick(['Ai!', 'Recua!', 'Tô baleado!']), 2); if (tg.chase) tg.chase = false; if (tg.st === 'rob' || tg.st === 'go') { tg.st = 'flee'; tg.t = 0; } }
+          if (Math.random() < 0.45 && tg.peer) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: tg.peer, by: (s.side === 'pm' ? 'Reforço da PM' : 'Tropa do ') + (isAdm() ? CHIEF : S.name), k: 1, dmg: 12 } }); dmgPop(tg.x, groundH(tg.x, tg.z) + 2.1, tg.z, 12); }
+          else if (Math.random() < 0.45) { tg.fallT = 6; if (tg.g) bubble(tg.g, pick(['Ai!', 'Recua!', 'Tô baleado!']), 2); if (tg.chase) tg.chase = false; if (tg.st === 'rob' || tg.st === 'go') { tg.st = 'flee'; tg.t = 0; } }
         }
       }
       if (s.upT > 0) { s.upT -= dt; if (s.upShots > 0 && s.upT < 1.2 - (3 - s.upShots) * 0.25) { s.upShots--; const y = groundH(s.x, s.z); gunFx(s.x, y + 2.1, s.z, s.x + rand(-2, 2), y + 40, s.z + rand(-2, 2), s.gun); sfx('tiro'); } }
@@ -5834,7 +5838,7 @@ Object.assign(UNIFORM, { socorrista: { shirt: 'uni_samu', pants: 'uni_samu_p' },
 P.hp = 100;
 function hurt(n, cause) {
   if (P.down || P.jailT > 0 || city.hospIn || mode !== 'city') return;
-  P.hp = Math.max(0, P.hp - n); P.hurtT = 0; city.hurtFlash = 0.5; renderHp();
+  P.hp = Math.max(0, P.hp - n); P.hurtT = 0; city.hurtFlash = 0.5; renderHp(); if (/tiro/.test(cause || '')) shootoutNear(P.x, P.z);
   if (P.hp <= 0) goDown(cause);
 }
 function renderHp() {
@@ -5911,7 +5915,10 @@ function toHospital(by) {
   });
 }
 function leaveHospital() {
-  fadeTo(() => { city.hospIn = false; const d = city.doors.find(d => d.kind === 'hospital'); if (d) { P.x = d.x; P.z = d.z + 2.5; } else { P.x = 0; P.z = 10; } P.y = 0; city.zoom = 1; city.camSnap = true; });
+  fadeTo(() => { city.hospIn = false; const d = city.doors.find(d => d.kind === 'hospital'); if (d) { P.x = d.x; P.z = d.z + 2.5; } else { P.x = 0; P.z = 10; } P.y = 0; city.zoom = 1; city.camSnap = true;
+    // o seu carro/moto fica esperando na porta do hospital: volte dirigindo até onde estava (sem teletransporte)
+    const V = S.veh && VEH[S.veh]; if (V && !V.heli && !V.plane) { spawnMyVehicle(); toast(`Seu ${V.kind === 'car' ? 'carro' : 'veículo'} (${V.name}) está esperando na porta do hospital.`, 'pink'); } else toast('Alta do hospital! Volte a pé (ou de táxi) até onde estava.', 'pink');
+  });
 }
 /* jogador socorrista: atende quem caiu */
 function onSamuCall(d) {
@@ -7515,6 +7522,7 @@ function netShotFx(x0, y0, z0, x1, y1, z1, kind) {
 }
 function onDisparo(d) {
   if (!NET.user || d.id === NET.user.id || (d.rm || '') !== roomKey()) return; const [a, b, c, e, f, g] = d.a; if (Math.hypot(a - P.x, c - P.z) > 140) return;
+  if (Math.hypot(a - P.x, c - P.z) < 45 || Math.hypot(e - P.x, g - P.z) < 12) shootoutNear(a, c);
   gunFx(a, b, c, e, f, g, d.k); sfx(d.k === 'taser' ? 'spray' : 'tiro'); const p = NET.peers[d.id]; if (p) p.wp = d.k;
 }
 /* =========================================================
@@ -9240,6 +9248,7 @@ function sportGuard() {
 function updateLife25(dt, t) {
   try { sportGuard(); } catch (e) { console.warn('esporte', e); }
   if (mode !== 'city') return;
+  try { lockTick(); peerHpBars(); } catch (e) { console.warn('carro/vida', e); }
   if ((city.dailyT = (city.dailyT || 0) - dt) <= 0) { city.dailyT = 20; bankDaily(); casaDaily(); }
   try { updateDomino(dt, t); } catch (e) { console.warn('dominó', e); }
   try { updateMoradores(dt, t); } catch (e) { console.warn('moradores', e); }
@@ -9631,24 +9640,58 @@ function fsHome(r) {
   if (r.gk) return [0, s * (CL - 0.7)];
   const P4 = [[-3.5, 7.5], [3.5, 7.5], [-2.5, 3.2], [2.5, 3.2]][Math.max(0, i) % 4]; return [P4[0], s * P4[1]];
 }
-function fsKickoff(team) { const b = FS.ball, [x, z] = QUADRA_POS; b.x = x; b.z = z; b.y = 0.2; b.vx = b.vz = b.vy = 0; FS.koT = 2; if (!FS.m) return; for (const n of FS.npcs) { const h = fsHome(n.r); n.x = x + h[0]; n.z = z + h[1]; } }
+function fsKickoff(team) { const b = FS.ball, [x, z] = QUADRA_POS; b.x = x; b.z = z; b.y = 0.2; b.vx = b.vz = b.vy = 0; FS.koT = 2; if (!FS.m) return; FS.m.own = null; FS.m.passTo = null; for (const n of FS.npcs) { const h = fsHome(n.r); n.x = x + h[0]; n.z = z + h[1]; } }
 function fsKick(px, pz, dx, dz, pow, loft) { const b = FS.ball, L = Math.hypot(dx, dz) || 1; b.vx = dx / L * pow; b.vz = dz / L * pow; b.vy = loft; sfxKick(); }
 function sfxKick() { tone('sine', 140, 60, 0.08, 0.15); tone('triangle', 500, 300, 0.03, 0.04); }
 function onFsStart(m) { if (FS.m && FS.m.host && m.host !== myId()) return; fsBegin(m); }
-function onFsState(d) { const M = FS.m; if (!M || M.host) return; M.last = Date.now(); const b = FS.ball, [x, z] = QUADRA_POS; b.tx = x + d.b[0]; b.ty = d.b[1]; b.tz = z + d.b[2]; M.sc = d.sc; M.clock = d.t; M.ph = d.ph; M.half = d.hf; d.n.forEach((a, i) => { const n = FS.npcs[i]; if (n) { n.tx = x + a[0]; n.tz = z + a[1]; n.h = a[2]; n.v = a[3]; if (a[4] && a[4] !== n.act) { n.act = a[4]; n.actT = 0; } } }); }
-function onFsKick(d) { const M = FS.m; if (!M || !M.host) return; const p = NET.peers[d.id], b = FS.ball; if (!p) return; if (Math.hypot(p.x - b.x, p.z - b.z) > 1.6) return; fsKick(p.x, p.z, d.dx, d.dz, d.pow, d.loft); }
+function onFsState(d) { const M = FS.m; if (!M || M.host) return; M.last = Date.now(); const b = FS.ball, [x, z] = QUADRA_POS; b.tx = x + d.b[0]; b.ty = d.b[1]; b.tz = z + d.b[2]; M.sc = d.sc; M.own = d.o || null; M.clock = d.t; M.ph = d.ph; M.half = d.hf; d.n.forEach((a, i) => { const n = FS.npcs[i]; if (n) { n.tx = x + a[0]; n.tz = z + a[1]; n.h = a[2]; n.v = a[3]; if (a[4] && a[4] !== n.act) { n.act = a[4]; n.actT = 0; } } }); }
+function onFsKick(d) { const M = FS.m; if (!M || !M.host) return; if (d.op) { fsDo(d.id, d.op); return; } const p = NET.peers[d.id], b = FS.ball; if (!p) return; if (Math.hypot(p.x - b.x, p.z - b.z) > 1.6) return; fsKick(p.x, p.z, d.dx, d.dz, d.pow, d.loft); }
 function onFsEnd(d) { if (FS.m && !FS.m.host) { fsResult(d); fsEnd(); } }
 function fsGoal(team) {
   const M = FS.m; M.sc[team]++; M.ph = 'gol'; M.golT = 3; bigBanner('GOOOOL!'); for (const c of FS.crowd) c.cheer = 2.5; tone('square', 660, 880, 0.4, 0.07);
   if (M.lastTouch === myId() && M.me && M.me.team === team) { S.futsal = S.futsal || {}; S.futsal.g = (S.futsal.g || 0) + 1; persist(); toast('⚽ Gol seu!', 'good'); }
 }
 const FS_HALF = 150;
+/* todos que estão na quadra (posição, direção, velocidade) */
+function fsAll() {
+  const out = []; if (!FS.m) return out;
+  for (const r of FS.m.roster) {
+    if (r.npc) { const n = FS.npcs.find(n => n.r === r); if (n) out.push({ r, x: n.x, z: n.z, h: n.h, v: n.v, npc: n }); }
+    else if (r.id === myId()) out.push({ r, x: P.x, z: P.z, h: P.h, v: P.v, me: true });
+    else { const p = NET.peers[r.id]; if (p) out.push({ r, x: p.x, z: p.z, h: p.h, v: (p.t && p.t.v) || 0 }); }
+  }
+  return out;
+}
+const fsTeamPos = team => fsAll().filter(a => a.r.team === team);
+/* ações com a bola (o organizador decide; os outros mandam pedido) */
+function fsDo(id, op, dx, dz) {
+  const M = FS.m, b = FS.ball; if (!M || M.ph !== 'jogo') return; const A = fsAll(), me = A.find(a => a.r.id === id); if (!me) return;
+  const now = performance.now(), owns = M.own === id, near = Math.hypot(b.x - me.x, b.z - me.z) < 1.3;
+  const [x0, z0] = QUADRA_POS;
+  if (op === 'shot' && (owns || near)) {
+    const gz = me.r.team ? z0 - CL : z0 + CL, gx = x0 + clamp((me.x - x0) * 0.3 + rand(-1.1, 1.1), -GOAL_W + 0.3, GOAL_W - 0.3);
+    const fx = Math.sin(me.h), fz = Math.cos(me.h), tx = gx - me.x, tz = gz - me.z, L = Math.hypot(tx, tz) || 1, dot = (fx * tx + fz * tz) / L;
+    const sx = dot > 0.3 ? tx / L * 0.75 + fx * 0.25 : fx, sz = dot > 0.3 ? tz / L * 0.75 + fz * 0.25 : fz;
+    M.own = null; M.passTo = null; M.cd[id] = now + 450; b.x = me.x + fx * 0.6; b.z = me.z + fz * 0.6; fsKick(me.x, me.z, sx, sz, 18, 2.4); M.lastTouch = id; return true;
+  }
+  if (op === 'pass' && (owns || near)) {
+    const mates = A.filter(a => a.r.team === me.r.team && a !== me); const fx = Math.sin(me.h), fz = Math.cos(me.h); let best = null, bs = -1e9;
+    for (const a of mates) { const ddx = a.x - me.x, ddz = a.z - me.z, L = Math.hypot(ddx, ddz) || 1; const sc = (ddx * fx + ddz * fz) / L * 3 - L * 0.12 - (a.r.gk ? 4 : 0); if (sc > bs) { bs = sc; best = a; } }
+    if (!best) return; const ddx = best.x + Math.sin(best.h) * best.v * 0.3 - me.x, ddz = best.z + Math.cos(best.h) * best.v * 0.3 - me.z, L = Math.hypot(ddx, ddz);
+    M.own = null; M.passTo = best.r.id; M.cd[id] = now + 500; b.x = me.x + ddx / L * 0.6; b.z = me.z + ddz / L * 0.6; fsKick(me.x, me.z, ddx, ddz, clamp(L * 1.5 + 4, 7, 16), 0.3); M.lastTouch = id; return true;
+  }
+  if (op === 'tackle') {
+    if (M.own && M.own !== id) { const o = A.find(a => a.r.id === M.own); if (o && o.r.team !== me.r.team && Math.hypot(o.x - me.x, o.z - me.z) < 1.6) { M.cd[o.r.id] = now + 900; M.own = id; M.passTo = null; M.lastTouch = id; sfxKick(); if (o.npc) bubble(o.npc.g, pick(['Ei!', 'Falta!', 'Ô!']), 1.5); return true; } }
+    else if (!M.own && near) { M.own = id; return true; }
+  }
+}
 function updateFutsal(dt, t) {
   const b = FS.ball; if (!b) return; const [x0, z0] = QUADRA_POS, M = FS.m;
   const near = Math.hypot(x0 - P.x, z0 - P.z) < 80 && !city.interior && !city.shopIn;
   for (const c of FS.crowd) { c.g.visible = near; if (!near) continue; c.cheer = Math.max(0, c.cheer - dt); animSkater(c.g, { walk: true, v: 0, fallT: 0, emote: c.cheer > 0 ? 'cheer' : M && Math.sin(t + c.ph) > 0.7 ? 'wave' : null }, t + c.ph); c.g.position.y = c.by; }
   if (FS.board && (FS.bT = (FS.bT || 0) - dt) <= 0) { FS.bT = 1; const txt = M ? `⚽ ${M.tn[0]} ${M.sc[0]} x ${M.sc[1]} ${M.tn[1]}` : FS.q.length ? `⚽ Fila do futsal: ${FS.q.length}` : '⚽ QUADRA DO ROLÊ · futsal'; if (FS.bTxt !== txt) { FS.bTxt = txt; const p = FS.board.position.clone(); city.scene.remove(FS.board); FS.board = textSprite(txt, { bg: '#15161a', fg: '#ffd76a', size: 44, scale: [8, 1.2, 1] }); FS.board.position.copy(p); city.scene.add(FS.board); } }
   if (!M) { if (P.sport === 'futsal') setSport(null); b.m.position.set(b.x, b.y, b.z); return; }
+  M.cd = M.cd || {};
   if (!M.host && Date.now() - M.last > 8000 && Date.now() > M.t0 + 6000) { toast('O jogo de futsal caiu (o organizador saiu).', 'bad'); fsEnd(); return; }
   // ---- relógio e fases (organizador) ----
   if (M.host) {
@@ -9663,82 +9706,90 @@ function updateFutsal(dt, t) {
   if (M.me) {
     P.sprint = spHold('sp4', 'Digit4') ? 1.3 : 1;
     P.x = clamp(P.x, x0 - CW - 1, x0 + CW + 1); P.z = clamp(P.z, z0 - CL - 1.2, z0 + CL + 1.2);
-    const bd = Math.hypot(b.x - P.x, b.z - P.z);
+    const act = op => { if (M.host) fsDo(myId(), op); else fsSend('fs_k', { id: myId(), op }); };
     if (playing) {
-      if (spTap('sp1', 'punch') && bd < 1.2) { const gz = M.me.team ? z0 - CL : z0 + CL, aimX = x0 + clamp((P.x - x0) * 0.3 + rand(-1.2, 1.2), -GOAL_W + 0.3, GOAL_W - 0.3); const fx = Math.sin(P.h), fz = Math.cos(P.h), tx = aimX - P.x, tz = gz - P.z, Lg = Math.hypot(tx, tz) || 1, dot = (fx * tx + fz * tz) / Lg; const dx = dot > 0.5 ? tx / Lg * 0.7 + fx * 0.3 : fx, dz = dot > 0.5 ? tz / Lg * 0.7 + fz * 0.3 : fz; fsMyKick(dx, dz, 17, 2.5); P.fpc = 'fk'; M.kickT = 0.35; }
-      else if (spTap('sp2', 'item') && bd < 1.2) { const fx = Math.sin(P.h), fz = Math.cos(P.h); let best = null, bs = -1; for (const r of fsTeamPos(M.me.team)) { if (r.me) continue; const dx = r.x - P.x, dz = r.z - P.z, L = Math.hypot(dx, dz); if (L < 2) continue; const sc = (dx * fx + dz * fz) / L - L * 0.02; if (sc > bs) { bs = sc; best = r; } } const dx = best ? best.x - P.x : fx, dz = best ? best.z - P.z : fz; fsMyKick(dx, dz, best ? clamp(Math.hypot(dx, dz) * 1.3 + 5, 7, 15) : 10, 0.6); P.fpc = 'fp'; M.kickT = 0.3; }
-      else if (spTap('sp3') && !(M.tackleT > 0)) { M.tackleT = 0.5; P.fpc = 'ft'; M.kickT = 0.45; P.x += Math.sin(P.h) * 1.4; P.z += Math.cos(P.h) * 1.4; if (Math.hypot(b.x - P.x, b.z - P.z) < 1.3) fsMyKick(Math.sin(P.h), Math.cos(P.h), 7, 0.3); }
+      if (spTap('sp1', 'punch')) { act('shot'); P.fpc = 'fk'; M.kickT = 0.35; }
+      else if (spTap('sp2', 'item')) { act('pass'); P.fpc = 'fp'; M.kickT = 0.3; }
+      else if (spTap('sp3') && !(M.tackleT > 0)) { M.tackleT = 0.6; P.fpc = 'ft'; M.kickT = 0.45; P.x += Math.sin(P.h) * 1.2; P.z += Math.cos(P.h) * 1.2; act('tackle'); }
       else if (spTap('sp5') && !P.air) { P.vy = 6; P.air = true; }
     } else { tap('sp1'); tap('sp2'); tap('sp3'); tap('sp5'); }
-    M.tackleT = (M.tackleT || 0) - dt; M.kickT -= dt; if (M.kickT <= 0) P.fpc = 0;
+    M.tackleT = (M.tackleT || 0) - dt; M.kickT = (M.kickT || 0) - dt; if (M.kickT <= 0) P.fpc = 0;
     P.fp = P.fpc ? fpPose(P.fpc, 1 - M.kickT / 0.35) : null;
-    // conduzir a bola (o organizador calcula; os outros mandam o chute)
-    if (playing && M.host && bd < 0.6 && P.v > 0.5 && b.y < 0.5) { const sp = P.v * 1.12; b.vx = lerp(b.vx, Math.sin(P.h) * sp, 0.5); b.vz = lerp(b.vz, Math.cos(P.h) * sp, 0.5); M.lastTouch = myId(); }
-    else if (playing && !M.host && bd < 0.6 && P.v > 0.5 && (M.drT = (M.drT || 0) - dt) <= 0) { M.drT = 0.15; fsSend('fs_k', { id: myId(), dx: Math.sin(P.h), dz: Math.cos(P.h), pow: P.v * 1.12, loft: 0 }); }
   }
-  // ---- bola e figurantes ----
+  // ---- bola e figurantes (organizador) ----
   if (M.host) {
     if (playing) fsNpcAI(dt, t);
-    // outros jogadores reais conduzem a bola
-    for (const r of M.roster) { if (r.npc || r.id === myId()) continue; const p = NET.peers[r.id]; if (!p || !p.t) continue; const d = Math.hypot(p.x - b.x, p.z - b.z); if (playing && d < 0.6 && (p.t.v || 0) > 0.5 && b.y < 0.5) { b.vx = lerp(b.vx, Math.sin(p.h) * p.t.v * 1.12, 0.5); b.vz = lerp(b.vz, Math.cos(p.h) * p.t.v * 1.12, 0.5); M.lastTouch = r.id; } }
-    // física
-    b.vy -= 18 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
-    if (b.y < 0.2) { b.y = 0.2; b.vy = Math.abs(b.vy) > 1.5 ? -b.vy * 0.55 : 0; }
-    const fr = Math.pow(b.y > 0.25 ? 0.9 : 0.45, dt); b.vx *= fr; b.vz *= fr;
-    // gol e paredes do alambrado
+    const A = fsAll(), now = performance.now();
+    if (playing && M.own) {
+      // bola grudada no pé de quem conduz
+      const o = A.find(a => a.r.id === M.own);
+      if (!o) M.own = null;
+      else {
+        const fx = Math.sin(o.h), fz = Math.cos(o.h), tx = o.x + fx * 0.55, tz = o.z + fz * 0.55, k = 1 - Math.exp(-20 * dt);
+        b.x = lerp(b.x, tx, k); b.z = lerp(b.z, tz, k); b.y = 0.2; b.vx = fx * o.v; b.vz = fz * o.v; b.vy = 0;
+        // quem entra na frente pode tomar a bola
+        if ((M.stealT = (M.stealT || 0) - dt) <= 0) { M.stealT = 0.45; for (const a of A) if (a.r.team !== o.r.team && Math.hypot(a.x - b.x, a.z - b.z) < 0.55 && ((a.x - o.x) * fx + (a.z - o.z) * fz) > 0.2 && Math.random() < (a.me ? 0.6 : 0.25)) { M.cd[o.r.id] = now + 700; M.own = a.r.id; M.lastTouch = a.r.id; sfxKick(); break; } }
+      }
+    } else if (playing) {
+      // bola solta: quem chega primeiro domina (o passe gruda no parceiro)
+      b.vy -= 18 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
+      if (b.y < 0.2) { b.y = 0.2; b.vy = Math.abs(b.vy) > 1.5 ? -b.vy * 0.55 : 0; }
+      const fr = Math.pow(b.y > 0.25 ? 0.9 : 0.45, dt); b.vx *= fr; b.vz *= fr;
+      let got = null, gd = 1e9;
+      for (const a of A) { if ((M.cd[a.r.id] || 0) > now) continue; const d = Math.hypot(a.x - b.x, a.z - b.z), r = M.passTo === a.r.id ? 1.1 : 0.7; if (d < r && b.y < 1.0 && d < gd) { gd = d; got = a; } }
+      if (got) { M.own = got.r.id; M.passTo = null; M.lastTouch = got.r.id; }
+    } else { b.vx *= 0.9; b.vz *= 0.9; }
     const lx = b.x - x0, lz = b.z - z0;
     // goleiro figurante defende (às vezes)
-    if (Math.abs(lz) > CL - 0.9 && Math.abs(lz) < CL + 0.2 && Math.abs(lx) < GOAL_W + 0.3 && M.ph === 'jogo' && !(M.saveT > 0)) { const gk = FS.npcs.find(n => n.r.gk && (n.r.team ? 1 : -1) === Math.sign(lz)); if (gk && Math.hypot(gk.x - b.x, gk.z - b.z) < 1.3) { M.saveT = 0.8; if (Math.random() < 0.6) { b.vz = -Math.sign(lz) * Math.abs(b.vz) * 0.45; b.vx += rand(-3, 3); b.vy = 2; gk.act = 'ft'; gk.actT = 0; sfxKick(); } } }
+    if (!M.own && Math.abs(lz) > CL - 0.9 && Math.abs(lz) < CL + 0.2 && Math.abs(lx) < GOAL_W + 0.3 && M.ph === 'jogo' && !(M.saveT > 0)) { const gk = FS.npcs.find(n => n.r.gk && (n.r.team ? 1 : -1) === Math.sign(lz)); if (gk && Math.hypot(gk.x - b.x, gk.z - b.z) < 1.3) { M.saveT = 0.8; if (Math.random() < 0.55) { M.own = gk.r.id; gk.holdT = 0.6; gk.act = 'ft'; gk.actT = 0; sfxKick(); } } }
     M.saveT = (M.saveT || 0) - dt;
-    if (Math.abs(lz) > CL && Math.abs(lx) < GOAL_W && b.y < GOAL_H && M.ph === 'jogo') { fsGoal(lz > 0 ? 0 : 1); b.vx *= 0.2; b.vz *= 0.2; }
+    if (Math.abs(lz) > CL && Math.abs(lx) < GOAL_W && b.y < GOAL_H && M.ph === 'jogo') { M.own = null; fsGoal(lz > 0 ? 0 : 1); b.vx *= 0.2; b.vz *= 0.2; }
     if (Math.abs(lx) > CW + 1.4) { b.x = x0 + Math.sign(lx) * (CW + 1.4); b.vx = -b.vx * 0.6; }
-    if (Math.abs(lz) > CL + 1.6) { b.z = z0 + Math.sign(lz) * (CL + 1.6); b.vz = -b.vz * 0.6; if (Math.abs(lx) >= GOAL_W && M.ph === 'jogo') { b.x = x0 + Math.sign(lx) * Math.min(Math.abs(lx), CW); b.z = z0 + Math.sign(lz) * (CL - 0.5); b.vx = b.vz = 0; } }
-    if ((M.sendT = (M.sendT || 0) - dt) <= 0) { M.sendT = 0.1; const r2 = v => Math.round(v * 100) / 100; fsSend('fs_st', { b: [r2(b.x - x0), r2(b.y), r2(b.z - z0)], sc: M.sc, t: Math.round(M.clock || 0), ph: M.ph, hf: M.half, n: FS.npcs.map(n => [r2(n.x - x0), r2(n.z - z0), r2(n.h), r2(n.v), n.act || 0]) }); }
+    if (Math.abs(lz) > CL + 1.6) { b.z = z0 + Math.sign(lz) * (CL + 1.6); b.vz = -b.vz * 0.6; if (Math.abs(lx) >= GOAL_W && M.ph === 'jogo') { M.own = null; b.x = x0 + Math.sign(lx) * Math.min(Math.abs(lx), CW); b.z = z0 + Math.sign(lz) * (CL - 0.5); b.vx = b.vz = 0; } }
+    if ((M.sendT = (M.sendT || 0) - dt) <= 0) { M.sendT = 0.08; const r2 = v => Math.round(v * 100) / 100; fsSend('fs_st', { b: [r2(b.x - x0), r2(b.y), r2(b.z - z0)], o: M.own || 0, sc: M.sc, t: Math.round(M.clock || 0), ph: M.ph, hf: M.half, n: FS.npcs.map(n => [r2(n.x - x0), r2(n.z - z0), r2(n.h), r2(n.v), n.act || 0]) }); }
   } else {
-    if (b.tx != null) { const k = 1 - Math.exp(-14 * dt); b.x = lerp(b.x, b.tx, k); b.y = lerp(b.y, b.ty, k); b.z = lerp(b.z, b.tz, k); }
+    // quem não organiza: se a bola está comigo, ela fica no meu pé na hora (sem atraso)
+    if (M.own === myId() && M.me) { const k = 1 - Math.exp(-20 * dt); b.x = lerp(b.x, P.x + Math.sin(P.h) * 0.55, k); b.z = lerp(b.z, P.z + Math.cos(P.h) * 0.55, k); b.y = 0.2; }
+    else if (b.tx != null) { const k = 1 - Math.exp(-14 * dt); b.x = lerp(b.x, b.tx, k); b.y = lerp(b.y, b.ty, k); b.z = lerp(b.z, b.tz, k); }
     for (const n of FS.npcs) if (n.tx != null) { const k = 1 - Math.exp(-10 * dt); n.x = lerp(n.x, n.tx, k); n.z = lerp(n.z, n.tz, k); }
   }
   b.m.position.set(b.x, b.y, b.z); b.m.rotation.x += (b.vz || 0) * dt * 3; b.m.rotation.z -= (b.vx || 0) * dt * 3;
   for (const n of FS.npcs) { n.actT += dt; if (n.act && n.actT > 0.35) n.act = null; n.g.position.set(n.x, 0, n.z); n.g.rotation.y = n.h; n.g.visible = near; if (near) { animSkater(n.g, { walk: true, v: n.v, fallT: 0, fp: n.act ? fpPose(n.act, n.actT / 0.35) : null }, t + n.r.id.length); tickBubble(n.g, dt); } }
-  // placar na tela
-  const hud = $('sport-hud'); if (hud && M.me) { const mm = Math.floor((FS_HALF - (M.clock || 0)) / 60), ss = String(Math.max(0, Math.floor((FS_HALF - (M.clock || 0)) % 60))).padStart(2, '0'); hud.innerHTML = `<div class="sh-row"><div class="sh-side"><b>${esc(M.tn[0])}</b></div><div class="sh-mid"><small>${M.ph === 'intervalo' ? 'INTERVALO' : M.half + 'º TEMPO'}</small><b>${M.sc[0]} x ${M.sc[1]}</b><small>${Math.max(0, mm)}:${ss}</small></div><div class="sh-side r"><b>${esc(M.tn[1])}</b></div></div>`; }
+  const hud = $('sport-hud'); if (hud && M.me) { const mm = Math.floor((FS_HALF - (M.clock || 0)) / 60), ss = String(Math.max(0, Math.floor((FS_HALF - (M.clock || 0)) % 60))).padStart(2, '0'); hud.innerHTML = `<div class="sh-row"><div class="sh-side"><b>${esc(M.tn[0])}</b></div><div class="sh-mid"><small>${M.ph === 'intervalo' ? 'INTERVALO' : M.half + 'º TEMPO'}${M.own === myId() ? ' · ⚽ com você' : ''}</small><b>${M.sc[0]} x ${M.sc[1]}</b><small>${Math.max(0, mm)}:${ss}</small></div><div class="sh-side r"><b>${esc(M.tn[1])}</b></div></div>`; }
 }
-function fsMyKick(dx, dz, pow, loft) { const M = FS.m; M.lastTouch = myId(); if (M.host) fsKick(P.x, P.z, dx, dz, pow, loft); else { fsSend('fs_k', { id: myId(), dx, dz, pow, loft }); sfxKick(); } }
-/* posições de todos de um time (figurantes, eu e os outros jogadores reais) */
-function fsTeamPos(team) {
-  const out = []; for (const r of FS.m.roster) { if (r.team !== team) continue; if (r.npc) { const n = FS.npcs.find(n => n.r === r); if (n) out.push({ r, x: n.x, z: n.z, npc: n }); } else if (r.id === myId()) out.push({ r, x: P.x, z: P.z, me: true }); else { const p = NET.peers[r.id]; if (p) out.push({ r, x: p.x, z: p.z }); } }
-  return out;
-}
+/* figurantes: quem está com a bola conduz até o gol, chuta ou toca; os outros marcam ou se posicionam */
 function fsNpcAI(dt, t) {
-  const M = FS.m, b = FS.ball, [x0, z0] = QUADRA_POS;
+  const M = FS.m, b = FS.ball, [x0, z0] = QUADRA_POS, A = fsAll(), owner = M.own && A.find(a => a.r.id === M.own);
   for (const team of [0, 1]) {
-    const mates = fsTeamPos(team), field = mates.filter(m => !m.r.gk); let chaser = null, cd = 1e9;
-    for (const m of field) { const d = Math.hypot(m.x - b.x, m.z - b.z); if (d < cd) { cd = d; chaser = m; } }
-    const attackZ = team ? z0 - CL : z0 + CL, s = team ? 1 : -1;
+    const mates = A.filter(a => a.r.team === team), field = mates.filter(m => !m.r.gk), attackZ = team ? z0 - CL : z0 + CL, s = team ? 1 : -1;
+    const haveBall = owner && owner.r.team === team;
+    let chaser = null, cd = 1e9; if (!haveBall) for (const m of field) { const d = Math.hypot(m.x - b.x, m.z - b.z); if (d < cd) { cd = d; chaser = m; } }
     for (const m of mates) {
-      const n = m.npc; if (!n) continue; n.kickT -= dt;
-      let tx, tz, sp = 4.8;
-      if (m.r.gk) { tx = x0 + clamp(b.x - x0, -GOAL_W + 0.2, GOAL_W - 0.2); tz = z0 + s * (CL - 0.6); if (Math.hypot(b.x - n.x, b.z - n.z) < 3 && Math.sign(b.z - z0) === s) { tx = b.x; tz = b.z; sp = 5.2; } }
-      else if (m === chaser) { tx = b.x - (attackZ > b.z ? -0.25 : 0.25) * 0; tz = b.z - Math.sign(attackZ - b.z) * 0.3; sp = 5.4; }
-      else { const h = fsHome(m.r); tx = x0 + h[0] + (b.x - x0) * 0.3; tz = z0 + h[1] * 0.55 + (b.z - z0) * 0.5; sp = 4.2; }
+      const n = m.npc; if (!n) continue; n.kickT = (n.kickT || 0) - dt;
+      let tx, tz, sp = 4.6;
+      if (owner && owner.npc === n) {
+        // conduzindo
+        if (m.r.gk) { n.holdT = (n.holdT || 0.6) - dt; tx = n.x; tz = n.z; if (n.holdT <= 0) { n.holdT = 0.6; n.h = Math.atan2(x0 - n.x, (z0 + s * -4) - n.z); fsDo(m.r.id, Math.random() < 0.6 ? 'pass' : 'shot'); n.act = 'fk'; n.actT = 0; } }
+        else {
+          const dg = Math.hypot(x0 - n.x, attackZ - n.z), press = A.some(o => o.r.team !== team && Math.hypot(o.x - n.x, o.z - n.z) < 1.8 && ((o.x - n.x) * Math.sin(n.h) + (o.z - n.z) * Math.cos(n.h)) > 0);
+          tx = x0 + Math.sin(t * 0.8 + m.r.id.length) * 2.5; tz = attackZ; sp = 4.4;
+          if (n.kickT <= 0 && (dg < 8 || (press && Math.random() < 0.5))) { n.h = Math.atan2(tx - n.x, tz - n.z); fsDo(m.r.id, dg < 8 ? 'shot' : 'pass'); n.act = dg < 8 ? 'fk' : 'fp'; n.actT = 0; n.kickT = 0.9; }
+        }
+      }
+      else if (m.r.gk) { tx = x0 + clamp(b.x - x0, -GOAL_W + 0.2, GOAL_W - 0.2); tz = z0 + s * (CL - 0.6); if (!M.own && Math.hypot(b.x - n.x, b.z - n.z) < 3 && Math.sign(b.z - z0) === s) { tx = b.x; tz = b.z; sp = 5.2; } }
+      else if (m === chaser) {
+        tx = b.x; tz = b.z; sp = 5.2;
+        // perto de quem está com a bola: dá o carrinho às vezes
+        if (owner && owner.r.team !== team && Math.hypot(owner.x - n.x, owner.z - n.z) < 1.4 && n.kickT <= 0) { n.kickT = 1.4; if (Math.random() < 0.35) { fsDo(m.r.id, 'tackle'); n.act = 'ft'; n.actT = 0; } }
+      }
+      else { const h = fsHome(m.r); tx = x0 + h[0] + (b.x - x0) * 0.3; tz = z0 + h[1] * 0.55 + (b.z - z0) * 0.5 + (haveBall ? -s * 3 : 0); sp = 4.2; }
       const dx = tx - n.x, dz = tz - n.z, d = Math.hypot(dx, dz);
       if (d > 0.25) { const v = Math.min(sp, d * 3); n.x += dx / d * v * dt; n.z += dz / d * v * dt; n.v = v; n.h = Math.atan2(dx, dz); } else { n.v = 0; n.h = Math.atan2(b.x - n.x, b.z - n.z); }
       n.x = clamp(n.x, x0 - CW, x0 + CW); n.z = clamp(n.z, z0 - CL - 0.3, z0 + CL + 0.3);
-      // com a bola no pé: chuta, passa ou conduz
-      const bd = Math.hypot(b.x - n.x, b.z - n.z);
-      if (bd < 0.75 && n.kickT <= 0 && b.y < 0.6) {
-        M.lastTouch = n.r.id; const gx = x0 + rand(-GOAL_W + 0.3, GOAL_W - 0.3), dg = Math.hypot(gx - n.x, attackZ - n.z);
-        if (m.r.gk || dg < 9 || Math.random() < 0.02) { fsKick(n.x, n.z, gx - n.x, attackZ - n.z, m.r.gk ? 13 : rand(13, 18), m.r.gk ? 3 : rand(0.5, 2.5)); n.act = 'fk'; n.actT = 0; n.kickT = 0.8; }
-        else {
-          const ahead = mates.filter(o => o !== m && !o.r.gk && Math.sign(attackZ - n.z) * (o.z - n.z) > 1.5);
-          const press = fsTeamPos(1 - team).some(o => Math.hypot(o.x - n.x, o.z - n.z) < 1.6);
-          if (ahead.length && (press || Math.random() < 0.3)) { const o = pick(ahead); fsKick(n.x, n.z, o.x - n.x, o.z - n.z, clamp(Math.hypot(o.x - n.x, o.z - n.z) * 1.3 + 5, 7, 14), 0.4); n.act = 'fp'; n.actT = 0; n.kickT = 0.7; }
-          else { const ddx = gx - n.x, ddz = attackZ - n.z, L = Math.hypot(ddx, ddz); b.vx = lerp(b.vx, ddx / L * 5, 0.5); b.vz = lerp(b.vz, ddz / L * 5, 0.5); n.kickT = 0.15; }
-        }
-      }
     }
   }
 }
+function fsMyKick(dx, dz, pow, loft) { const M = FS.m; M.lastTouch = myId(); if (M.host) fsKick(P.x, P.z, dx, dz, pow, loft); else { fsSend('fs_k', { id: myId(), dx, dz, pow, loft }); sfxKick(); } }
 function fsFinish() {
   const M = FS.m; const res = { sc: M.sc, tn: M.tn, tid: M.tid, champ: M.champ, stage: M.stage, wait: M.wait, rosters: M.rosters };
   fsSend('fs_end', res); fsResult(res);
@@ -9765,6 +9816,43 @@ function fsEnd(silent) {
 }
 function fsQuit() { if (FS.m && FS.m.host) { fsSend('fs_end', { sc: FS.m.sc, tn: FS.m.tn, tid: FS.m.tid }); } fsEnd(); renderPanel(); }
 
+/* =========================================================
+   TIROTEIO DE VERDADE: dano em todo mundo, número do dano, vida dos outros jogadores,
+   e a tropa vem cercar o chefe (ou o membro da facção) quando começa o tiroteio.
+   Carro com 4 lugares e moto com garupa: porta trancada ou aberta.
+   ========================================================= */
+function shootoutNear(x, z) {
+  if (mode !== 'city' || !(isAdm() || S.gang) || P.down || city.interior || city.jail || city.shopIn) return;
+  if (Math.hypot(x - P.x, z - P.z) > 50) return;
+  const first = !(city.fireT > 0); city.fireT = 20;
+  const live = (city.squad || []).filter(s => !s.gone && s.st !== 'leave');
+  if (!live.length && performance.now() > (city.autoSqT || 0)) { city.autoSqT = performance.now() + 45000; spawnSquad(); toast(isAdm() ? '🛡️ Tiroteio! A tropa está vindo cercar o chefe.' : '🛡️ Tiroteio! Os parceiros da facção estão vindo.', 'pink'); }
+  else if (first) for (const s of live) if (s.st === 'hold') { s.st = 'follow'; s.spread = false; }
+}
+function dmgPop(x, y, z, n) {
+  if (!city.scene) return; const sp = textSprite(`-${Math.round(n)}`, { bg: 'rgba(0,0,0,0)', fg: '#ff4040', size: 48, scale: [0.9, 0.45, 1] });
+  sp.position.set(x, y, z); sp.material.transparent = true; sp.material.depthTest = false; sp.renderOrder = 5; city.scene.add(sp); city.fx.push({ m: sp, vx: 0, vy: 1.3, vz: 0, life: 0.9, max: 0.9 });
+}
+/* barrinha de vida em cima dos outros jogadores (quando estão machucados) */
+function peerHpBars() {
+  for (const id in NET.peers) {
+    const p = NET.peers[id], hp = p.t && p.t.hp != null ? p.t.hp : 100, show = hp < 100 && hp > 0 && p.g.visible && !(p.t && p.t.vh);
+    if (!p.hpBar && !show) continue;
+    if (!p.hpBar) { const c = document.createElement('canvas'); c.width = 64; c.height = 8; const t = new THREE.CanvasTexture(c), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true })); sp.scale.set(0.8, 0.1, 1); sp.position.y = 2.34; sp.renderOrder = 4; p.g.add(sp); p.hpBar = { sp, c, t, v: -1 }; }
+    p.hpBar.sp.visible = show;
+    if (show && p.hpBar.v !== hp) { p.hpBar.v = hp; const g = p.hpBar.c.getContext('2d'); g.fillStyle = '#111'; g.fillRect(0, 0, 64, 8); g.fillStyle = hp < 35 ? '#ff3b3b' : '#3ddc84'; g.fillRect(1, 1, 62 * hp / 100, 6); p.hpBar.t.needsUpdate = true; }
+  }
+}
+/* trancar / destrancar o carro ou a moto (botão 🔒 e tecla U) */
+Object.assign(KEYMAP, { KeyU: 'lock' });
+function lockTick() {
+  if (P.drive && tap('lock')) {
+    S.vehLock = !S.vehLock; persist(); sfx('ui'); tone('square', S.vehLock ? 900 : 600, S.vehLock ? 900 : 600, 0.08, 0.05);
+    toast(S.vehLock ? '🔒 Trancado: ninguém entra.' : `🔓 Destrancado: até ${P.drive.V.kind === 'moto' ? '1 pessoa na garupa' : '4 pessoas'} podem entrar.`, 'pink');
+    if (S.vehLock && P.drive.pass && P.drive.pass.length) toast('Quem já está dentro continua até descer.');
+  }
+  const b = $('tb-lock'); if (b && P.drive) { const on = !!S.vehLock; if (b.dataset.on !== String(on)) { b.dataset.on = on; b.classList.toggle('on', on); b.querySelector('span').textContent = on ? 'Trancado' : 'Aberto'; } }
+}
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },
@@ -11774,7 +11862,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {

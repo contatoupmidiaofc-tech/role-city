@@ -207,3 +207,10 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 ## Quadra de Futsal
 - Quadra com gols, rede, alambrado, arquibancada e placar. Times pela camisa (Azul do Rolê, Vermelho da Vila, Verde do Morro, Amarelo da Praça), vendidas do lado da quadra.
 - Com 10 jogadores online na fila vira campeonato (com 20, semifinais e final); com menos, pelada 5 contra 5 completada com figurantes. Controles próprios: Chutar, Passe, Carrinho, Correr e Pular.
+
+## Tiroteio, tropa, hospital e caronas
+- Todo tiro tira vida (jogadores, figurantes, policiais e traficantes), inclusive os tiros do ADM, com o número do dano subindo. Outros jogadores machucados mostram uma barrinha de vida.
+- Com a vida zerada a pessoa cai, o SAMU leva para o hospital e ela sai de lá: o carro/moto dela fica esperando na porta (sem teletransporte; quem não tem veículo volta a pé).
+- Tiroteio perto do chefe (ou de quem é de facção): a tropa chega sozinha, cerca a pessoa em volta e atira em quem começou.
+- Futsal: a bola fica no pé de quem conduz; só sai no chute, no passe (vai para o parceiro do lado e gruda no pé dele), no carrinho ou quando o adversário entra na frente.
+- Carro com 4 lugares e moto com garupa. Botão 🔒 (tecla U) tranca ou destranca: trancado ninguém entra.
