@@ -637,7 +637,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-21';
+const BUILD = '2026.10.11-23';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -964,7 +964,7 @@ function newSave(name, skin, gender, hair) {
     owned: ['shirt_basic', 'pants_basic', 'cap_none', 'shoes_basic', 'ph_basic', 'pr_none', 'gl_none', 'ac_none', 'wp_none'],
     equip: { shirt: 'shirt_basic', pants: 'pants_basic', cap: 'cap_none', shoes: 'shoes_basic', glasses: 'gl_none', acc: 'ac_none', weapon: 'wp_none', skate: null, wheels: null, print: 'pr_none', phone: 'ph_basic' },
     contacts: [], crew: null, chats: {}, best: {}, stats: { races: 0, wins: 0, tricks: 0, missions: 0, knocks: 0 },
-    mission: null, invite: [], settings: { quality: 'media', sound: true }, purchases: [],
+    mission: null, invite: [], settings: { quality: 'auto', sound: true, qAuto: 1 }, purchases: [],
   });
 }
 /* completa saves antigos com os campos novos */
@@ -987,6 +987,7 @@ function migrate(s) {
   s.vehicles = (s.vehicles || []).filter(id => VEH[id]); if (s.owned && !s.owned.includes('gun_none')) s.owned.push('gun_none'); if (s.veh && !s.vehicles.includes(s.veh)) s.veh = null; s.cityId = s.cityId || 'sp';
   s.jobs = s.jobs || {}; s.home = s.home || null; s.shift = s.shift || null; s.day = s.day || 0;
   s.stats.trickCount = s.stats.trickCount || {}; s.stats.bestCombo = s.stats.bestCombo || 0; s.stats.contests = s.stats.contests || 0;
+  if (!s.settings.qAuto) { s.settings.qAuto = 1; if (s.settings.quality === 'media' || !s.settings.quality) s.settings.quality = 'auto'; }
   return bankInstall(s);
 }
 function loadSave() { try { const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
@@ -1119,16 +1120,41 @@ function envFrom(sky) { const s = new THREE.Scene(); s.add(sky.clone()); return 
 const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 700);
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-const QUALITY = { baixa: { pr: 0.75, shadows: false, fog: 0.75, map: 512 }, media: { pr: 1.5, shadows: true, fog: 1, map: 1024 }, alta: { pr: 2, shadows: true, fog: 1.3, map: 2048, soft: true }, ultra: { pr: 3, shadows: true, fog: 1.5, map: 4096, soft: true } };
+const QUALITY = { auto: { pr: 1.5, shadows: true, fog: 1, map: 1024, auto: true }, baixa: { pr: 0.75, shadows: false, fog: 0.75, map: 512 }, media: { pr: 1.5, shadows: true, fog: 1, map: 1024 }, alta: { pr: 2, shadows: true, fog: 1.3, map: 2048, soft: true }, ultra: { pr: 3, shadows: true, fog: 1.5, map: 4096, soft: true } };
+/* qualidade automática: mede a fluidez a cada segundo e ajusta a resolução e as sombras para não travar */
+const AQ = { pr: Math.min(devicePixelRatio || 1, 1.5), n: 0, t0: 0, lo: 0, hi: 0, shOff: false, fps: 0, fr: 0 };
+function autoQualityTick(now) {
+  AQ.fr++;
+  // sombras atualizam um quadro sim, outro não no modo automático (metade do custo, ninguém percebe)
+  renderer.shadowMap.autoUpdate = !(S && S.settings.quality === 'auto'); if (!renderer.shadowMap.autoUpdate) renderer.shadowMap.needsUpdate = AQ.fr % 2 === 0;
+  if (!S || S.settings.quality !== 'auto' || document.hidden || mode === 'menu') { AQ.t0 = now; AQ.n = 0; return; }
+  AQ.n++; const el = now - AQ.t0; if (el < 1000) return; const fps = AQ.n * 1000 / el; AQ.t0 = now; AQ.n = 0; AQ.fps = fps;
+  const cap = Math.min(devicePixelRatio || 1, 2), set = () => { renderer.setPixelRatio(AQ.pr); resize(); };
+  if (fps < 40) { AQ.hi = 0; if (++AQ.lo >= 2) { AQ.lo = 0;
+      if (AQ.pr > 1.01) { AQ.pr = Math.max(1, AQ.pr - 0.2); set(); }
+      else if (!AQ.shOff) { AQ.shOff = true; applyShadows(false); }
+      else if (AQ.pr > 0.61) { AQ.pr = Math.max(0.6, AQ.pr - 0.1); set(); } } }
+  else if (fps > 55) { AQ.lo = 0; if (++AQ.hi >= 6) { AQ.hi = 0;
+      if (AQ.pr < 0.99) { AQ.pr = Math.min(1, AQ.pr + 0.1); set(); }
+      else if (AQ.shOff) { AQ.shOff = false; applyShadows(true); }
+      else if (AQ.pr < cap - 0.01) { AQ.pr = Math.min(cap, AQ.pr + 0.1); set(); } } }
+  else { AQ.lo = 0; AQ.hi = Math.max(0, AQ.hi - 1); }
+  if (panelKind === 'config' && (AQ.uiT = (AQ.uiT || 0) + 1) % 2 === 0) { const el2 = $('aq-info'); if (el2) el2.textContent = aqInfo(); }
+}
+const aqInfo = () => `Agora: ${Math.round(AQ.fps)} quadros por segundo · resolução ${AQ.pr.toFixed(1)}x · sombras ${AQ.shOff ? 'desligadas' : 'ligadas'}`;
+function applyShadows(on) {
+  renderer.shadowMap.enabled = on; if (city.sun) city.sun.castShadow = on;
+  [city.scene, R && R.sc].forEach(sc => sc && sc.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; }); }));
+}
 function applyQuality() {
   const q = QUALITY[S.settings.quality] || QUALITY.media;
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, q.pr));
-  renderer.shadowMap.enabled = q.shadows;
+  renderer.setPixelRatio(q.auto ? AQ.pr : Math.min(devicePixelRatio || 1, q.pr));
+  renderer.shadowMap.enabled = q.shadows && !(q.auto && AQ.shOff);
   renderer.shadowMap.type = q.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   for (const L of [city.sun, R && R.sun]) if (L) { L.castShadow = q.shadows; L.shadow.mapSize.set(q.map, q.map); if (L.shadow.map) { L.shadow.map.dispose(); L.shadow.map = null; } }
   const an = q.pr >= 2 ? renderer.capabilities.getMaxAnisotropy() : 4;
   [city.scene, R && R.sc].forEach(sc => sc && sc.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; if (o.isSkinnedMesh && m.map) { m.map.anisotropy = an; m.map.needsUpdate = true; } }); }));
-  if (city.sun) city.sun.castShadow = q.shadows;
+  if (city.sun) city.sun.castShadow = q.shadows && !(q.auto && AQ.shOff);
   if (city.scene) { city.scene.fog.far = 210 * q.fog; }
   resize();
 }
@@ -1532,9 +1558,18 @@ function bubble(g, text, secs = 4) {
 }
 function tickBubble(g, dt) { const u = g.userData; if (u.bubble && (u.bubbleT -= dt) <= 0) { g.remove(u.bubble); u.bubble.material.map.dispose(); u.bubble.material.dispose(); u.bubble = null; } }
 function poseLeg(L, x, thigh, knee, rz = 0) { L.hip.position.x = x; L.hip.rotation.set(thigh, 0, rz); L.knee.rotation.x = knee; L.ankle.rotation.x = -(thigh + knee); }
+/* personagens fora da tela ou longe atualizam a animação menos vezes (o celular agradece) */
+const _afr = new THREE.Frustum(), _afm = new THREE.Matrix4(), _afs = new THREE.Sphere(); let _afN = -1;
+function animSkip(g) {
+  if (typeof AQ === 'undefined' || mode !== 'city' || g === city.player) return false;
+  if (_afN !== AQ.fr) { _afN = AQ.fr; camera.updateMatrixWorld(); _afm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); _afr.setFromProjectionMatrix(_afm); }
+  _afs.center.setFromMatrixPosition(g.matrixWorld); _afs.radius = 1.8;
+  const d = _afs.center.distanceTo(camera.position), every = !g.visible || !_afr.intersectsSphere(_afs) ? 10 : d > 70 ? 5 : d > 35 ? 2 : 1;
+  if (every === 1) return false; const u = g.userData; u.skN = (u.skN || 0) + 1; return u.skN % every !== 0;
+}
 function animSkater(g, o, t) {
   const u = g.userData;
-  if (u.real) return animReal(u, o, t);
+  if (u.real) { if (animSkip(g)) return; return animReal(u, o, t); }
   if (o.walk || o.climb != null) return animWalk(u, o, t);
   if (u.walking) { u.walking = false; u.board.visible = true; u.board.position.set(0, 0, 0); u.board.rotation.set(0, 0, 0); }
   const down = o.fallT > 0;
@@ -3093,7 +3128,7 @@ function carWheel(r, w, alloy) {
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.5, r * 0.5, 0.02, 16), vmat('alloy')); disc.rotation.z = Math.PI / 2; disc.position.x = -w * 0.1; wg.add(disc);
   return wg;
 }
-function makeVehicleMesh(V) { if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.deco) vehDeco(m, V); return m; }
+function makeVehicleMesh(V) { if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.deco) vehDeco(m, V); if (V.kind === 'car' && V.deco !== 'paredao') { try { const u = m.userData, keep = new Set([].concat(u.siren || [])); mergeByMaterial(m, keep); } catch (e) { console.warn('juntar carro', e); } } return m; }
 function makeVehicleMesh0(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
   const paint = vmat('paint', V.color), add = (geo, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, P = g) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.set(rx, ry, rz); k.castShadow = true; k.receiveShadow = true; P.add(k); return k; };
@@ -3397,6 +3432,7 @@ function carWheelHQ(r, w, style, caliper) {
     }
     const dm = new THREE.Mesh(new THREE.CylinderGeometry(rimR * 0.8, rimR * 0.8, 0.025, 24), vmat('disc')); dm.rotation.z = Math.PI / 2; dm.position.x = face - 0.12; disc.add(dm);
     const cm = new THREE.Mesh(boxGeo(0.06, rimR * 0.5, rimR * 0.34), caliper ? vmat('paint', caliper) : vmat('trim')); cm.position.set(face - 0.1, rimR * 0.52, -rimR * 0.3); cm.rotation.x = 0.5; cal.add(cm);
+    try { mergeByMaterial(spin); } catch (e) { }
     WHEEL_TPL[key] = wg;
   }
   const wg = WHEEL_TPL[key].clone(true); wg.traverse(o => { if (o.isMesh) o.castShadow = true; }); return wg;
@@ -3416,6 +3452,30 @@ function carGlassMat(M, color) {
   const key = 'ghm_' + M + '_' + color; if (VMAT[key]) return VMAT[key];
   return (VMAT[key] = new THREE.MeshPhysicalMaterial({ map: carGlassTex(M, color), metalness: 0.35, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03 }));
 }
+/* junta as peças paradas de um grupo numa malha só por material (muito menos trabalho para o celular desenhar) */
+function mergeByMaterial(root, skip) {
+  root.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), buckets = new Map(), rm = [];
+  for (const o of root.children) {
+    if (!o.isMesh || o.isSkinnedMesh || o.isInstancedMesh || !o.geometry || Array.isArray(o.material) || (skip && skip.has(o)) || o.children.length || !o.visible) continue;
+    const k = o.material; if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(o);
+  }
+  for (const [mat, list] of buckets) {
+    if (list.length < 2) continue;
+    const pos = [], nor = [], uv = [], col = [], needCol = !!mat.vertexColors; let cast = false, recv = false;
+    const M = new THREE.Matrix4(), N = new THREE.Matrix3(), v = new THREE.Vector3();
+    for (const o of list) {
+      M.multiplyMatrices(inv, o.matrixWorld); N.getNormalMatrix(M); let g = o.geometry; if (g.index) g = g.toNonIndexed(); if (!g.attributes.normal) g.computeVertexNormals();
+      const P = g.attributes.position, Nn = g.attributes.normal, U = g.attributes.uv, C = g.attributes.color;
+      for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(M); pos.push(v.x, v.y, v.z); v.fromBufferAttribute(Nn, i).applyMatrix3(N).normalize(); nor.push(v.x, v.y, v.z); if (U) uv.push(U.getX(i), U.getY(i)); else uv.push(0, 0); if (needCol) { if (C) col.push(C.getX(i), C.getY(i), C.getZ(i)); else col.push(1, 1, 1); } }
+      cast = cast || o.castShadow; recv = recv || o.receiveShadow; rm.push(o);
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); if (needCol) g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    const m = new THREE.Mesh(g, mat); m.castShadow = cast; m.receiveShadow = recv; root.add(m);
+  }
+  for (const o of rm) root.remove(o);
+  return root;
+}
+const MERGE_CACHE = {};
 /* monta o carro: substitui a carroceria antiga (mesmos dados: rodas, teto, comprimento) */
 function buildCarHQ(g, V, add) {
   const M = V.model, kit = carKit(M), K = carShape(M), s = K.s, l = K.l, u = g.userData, W = s.W;
@@ -7564,7 +7624,7 @@ function updateMusic(dt) {
   const radio = radioTick(useFile ? 0 : MUSIC.vol);
   if (MUSIC.vol > 0.01 && !useFile && !radio) { musicTick(); if (MUSIC.g) MUSIC.g.gain.value = MUSIC.vol * 0.35; } else if (MUSIC.g) MUSIC.g.gain.value = 0;
   if (MUSIC.file) { MUSIC.file.volume = useFile ? 0.9 : 0; if (useFile && MUSIC.file.paused) MUSIC.file.play().catch(() => { }); if (!useFile && !MUSIC.file.paused) MUSIC.file.pause(); }
-  const chip = $('music-chip'); if (chip) { if (!chip.dataset.h) { chip.dataset.h = 1; chip.addEventListener('click', () => openPanel('fm')); } chip.hidden = MUSIC.vol < 0.15; if (!chip.hidden) { const rn = radioNow(); chip.textContent = `🔊 ${useFile ? MUSIC.fileName : rn ? rn.m.n + ' · ' + rn.m.g : 'Trap do Chefe (instrumental)'} · toque para ver a rádio`; } }
+  const chip = $('music-chip'); if (chip) { if (!chip.dataset.h) { chip.dataset.h = 1; chip.addEventListener('click', () => openPanel('fm')); } const hid = MUSIC.vol < 0.15; if (chip.hidden !== hid) chip.hidden = hid; if (!hid) { const rn = radioNow(), tx = `🔊 ${useFile ? MUSIC.fileName : rn ? rn.m.n + ' · ' + rn.m.g : 'Trap do Chefe (instrumental)'} · toque para ver a rádio`; if (chip.textContent !== tx) chip.textContent = tx; } }
 }
 function pickSong() {
   let inp = $('song-in'); if (!inp) { inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'audio/*'; inp.id = 'song-in'; inp.hidden = true; document.body.appendChild(inp);
@@ -10885,8 +10945,9 @@ const OLD_PANELS = {
   config() {
     const q = S.settings.quality;
     return {
-      title: 'Configurações', html: `<h3>Qualidade gráfica</h3><div class="seg" role="group" aria-label="Qualidade"><button data-act="quality" data-q="baixa" aria-pressed="${q === 'baixa'}">Baixa</button><button data-act="quality" data-q="media" aria-pressed="${q === 'media'}">Média</button><button data-act="quality" data-q="alta" aria-pressed="${q === 'alta'}">Alta</button><button data-act="quality" data-q="ultra" aria-pressed="${q === 'ultra'}">Ultra (rostos)</button></div>
-      <p class="muted">A média é o padrão: boa aparência sem pesar no celular. Use a baixa se o jogo engasgar. A Ultra usa a resolução máxima da tela e sombras finas, ideal para ver os rostos de perto (pede um aparelho bom).</p>
+      title: 'Configurações', html: `<h3>Qualidade gráfica</h3><div class="seg" role="group" aria-label="Qualidade"><button data-act="quality" data-q="auto" aria-pressed="${q === 'auto'}">Automática</button><button data-act="quality" data-q="baixa" aria-pressed="${q === 'baixa'}">Baixa</button><button data-act="quality" data-q="media" aria-pressed="${q === 'media'}">Média</button><button data-act="quality" data-q="alta" aria-pressed="${q === 'alta'}">Alta</button><button data-act="quality" data-q="ultra" aria-pressed="${q === 'ultra'}">Ultra (rostos)</button></div>
+      ${q === 'auto' ? `<p class="note" id="aq-info">${aqInfo()}</p>` : ''}
+      <p class="muted"><b>Automática (recomendada):</b> o jogo mede a fluidez e ajusta sozinho a resolução e as sombras para ficar sempre liso, no máximo de qualidade que o seu aparelho aguenta. A média é boa aparência sem pesar no celular. Use a baixa se o jogo engasgar. A Ultra usa a resolução máxima da tela e sombras finas, ideal para ver os rostos de perto (pede um aparelho bom).</p>
       <h3>Som</h3><div class="seg"><button data-act="sound" data-on="1" aria-pressed="${S.settings.sound}">Ligado</button><button data-act="sound" data-on="0" aria-pressed="${!S.settings.sound}">Desligado</button></div>
       <h3>Baixar no celular</h3><p class="muted">${isStandalone() ? 'O jogo já está instalado como app neste aparelho.' : 'Instale o Rolê City na tela inicial: abre em tela cheia, como um aplicativo.'}</p>${isStandalone() ? '' : '<button class="btn" data-act="install-app">📲 Baixar o jogo no celular</button>'}
       <h3>Áudios dos jogadores</h3><div class="seg"><button data-act="voice-set" data-on="1" aria-pressed="${S.settings.voice !== false}">Ouvir</button><button data-act="voice-set" data-on="0" aria-pressed="${S.settings.voice === false}">Silenciar</button></div><p class="muted">Segure o botão Áudio (ou a tecla B), fale e solte: todo mundo na mesma cidade ouve, mais alto quem está perto.</p>
@@ -12063,6 +12124,7 @@ function loop(now) {
     else if (mode === 'trip' && TRIP) { updateTrip(dt, t); renderer.render(TRIP.sc || city.scene, camera); }
     else if (mode === 'replay' && RP) { updateReplay(dt, t); renderer.render(city.scene, camera); }
   } catch (err) { console.error(err); }
+  try { autoQualityTick(now); } catch (e) { }
   if (mode !== 'city' && (P.sport || (FS.m && FS.m.me) || RING.mine)) try { sportGuard(); } catch (e) { }
   input.pressed = {};
   requestAnimationFrame(loop);

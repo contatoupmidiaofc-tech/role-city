@@ -214,3 +214,8 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - Tiroteio perto do chefe (ou de quem é de facção): a tropa chega sozinha, cerca a pessoa em volta e atira em quem começou.
 - Futsal: a bola fica no pé de quem conduz; só sai no chute, no passe (vai para o parceiro do lado e gruda no pé dele), no carrinho ou quando o adversário entra na frente.
 - Carro com 4 lugares e moto com garupa. Botão 🔒 (tecla U) tranca ou destranca: trancado ninguém entra.
+
+## Jogo mais leve no celular
+- Qualidade **Automática** (padrão): mede a fluidez a cada segundo e ajusta sozinha a resolução e as sombras; as sombras atualizam um quadro sim, outro não.
+- Peças paradas de cada carro e das rodas viraram uma malha só por material (menos chamadas de desenho).
+- Personagens fora da tela ou longe atualizam a animação menos vezes; avisos da tela só são reescritos quando mudam.
