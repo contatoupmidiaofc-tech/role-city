@@ -599,7 +599,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-16';
+const BUILD = '2026.10.11-17';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -7240,7 +7240,7 @@ function musicTick() {
 }
 /* volume pela distância até a fonte mais próxima (paredão, carro de som, Hilux) */
 function updateMusic(dt) {
-  if (mode !== 'city' || !S.settings.sound) { if (MUSIC.g) MUSIC.g.gain.value = 0; if (MUSIC.file) MUSIC.file.volume = 0; return; }
+  if (mode !== 'city' || !S.settings.sound) { if (MUSIC.g) MUSIC.g.gain.value = 0; if (MUSIC.file) MUSIC.file.volume = 0; if (FM.el && !FM.el.paused) FM.el.pause(); return; }
   let v = 0, near = null;
   for (const s of city.soundSrc || []) { const x = s.m ? s.m.position.x : s.x, z = s.m ? s.m.position.z : s.z; if (s.m && !s.m.visible) continue; const d = Math.hypot(x - P.x, z - P.z), k = clamp(1 - d / (s.r || 40), 0, 1) * (s.k || 1); if (k > v) { v = k; near = s; } }
   if (P.drive && P.drive.V.som) { v = 1; near = { n: P.drive.V.name }; }
@@ -7248,9 +7248,10 @@ function updateMusic(dt) {
   if (Math.abs(camera.position.x) > 400) v = 0;
   MUSIC.vol = lerp(MUSIC.vol, v, 1 - Math.exp(-4 * dt));
   const useFile = MUSIC.file && P.drive && P.drive.V.som;
-  if (MUSIC.vol > 0.01 && !useFile) { musicTick(); if (MUSIC.g) MUSIC.g.gain.value = MUSIC.vol * 0.35; } else if (MUSIC.g) MUSIC.g.gain.value = 0;
+  const radio = radioTick(useFile ? 0 : MUSIC.vol * 0.9);
+  if (MUSIC.vol > 0.01 && !useFile && !radio) { musicTick(); if (MUSIC.g) MUSIC.g.gain.value = MUSIC.vol * 0.35; } else if (MUSIC.g) MUSIC.g.gain.value = 0;
   if (MUSIC.file) { MUSIC.file.volume = useFile ? 0.9 : 0; if (useFile && MUSIC.file.paused) MUSIC.file.play().catch(() => { }); if (!useFile && !MUSIC.file.paused) MUSIC.file.pause(); }
-  const chip = $('music-chip'); if (chip) { if (!chip.dataset.h) { chip.dataset.h = 1; chip.addEventListener('click', () => { if (P.drive && P.drive.V.som) pickSong(); }); } chip.hidden = MUSIC.vol < 0.15; if (!chip.hidden) chip.textContent = `🔊 ${useFile ? MUSIC.fileName : 'Trap do Chefe (instrumental)'}${P.drive && P.drive.V.som ? ' · 🎵 toque para escolher uma música do celular' : ''}`; }
+  const chip = $('music-chip'); if (chip) { if (!chip.dataset.h) { chip.dataset.h = 1; chip.addEventListener('click', () => openPanel('fm')); } chip.hidden = MUSIC.vol < 0.15; if (!chip.hidden) { const rn = radioNow(); chip.textContent = `🔊 ${useFile ? MUSIC.fileName : rn ? rn.m.n + ' · ' + rn.m.g : 'Trap do Chefe (instrumental)'} · toque para ver a rádio`; } }
 }
 function pickSong() {
   let inp = $('song-in'); if (!inp) { inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'audio/*'; inp.id = 'song-in'; inp.hidden = true; document.body.appendChild(inp);
@@ -8439,6 +8440,51 @@ function rpmTorsoDetail(info, mesh, scene) {
   }
   A.torso = det;
 }
+/* =========================================================
+   RÁDIO DO JOGO: músicas de verdade (arquivos em musicas/) nos paredões, caixas da favela, carros de som e Hilux.
+   Todo mundo ouve a mesma música no mesmo trecho (a programação segue o relógio); o chefe escolhe o que toca.
+   ========================================================= */
+const FM = { list: null, el: null, cur: -1, anchor: { i: 0, t0: 0 }, loading: false, sentT: 0 };
+function loadRadio() {
+  if (FM.loading || FM.list) return; FM.loading = true;
+  fetch(`musicas/lista.json?v=${BUILD}`).then(r => r.ok ? r.json() : null).then(L => { if (L && L.length) FM.list = L; }).catch(() => { });
+  try { const a = JSON.parse(localStorage.getItem('rc_radio') || 'null'); if (a && a.t0) FM.anchor = a; } catch (e) { }
+}
+/* música e trecho que estão tocando agora (iguais para todos) */
+function radioNow() {
+  const L = FM.list; if (!L) return null; const tot = L.reduce((s, m) => s + m.dur, 0); if (tot <= 0) return null;
+  const A = FM.anchor; let el = ((Date.now() - A.t0) / 1000) % tot; if (el < 0) el += tot; let i = A.i % L.length;
+  for (let k = 0; k < L.length * 2 && el >= L[i].dur; k++) { el -= L[i].dur; i = (i + 1) % L.length; }
+  return { i, pos: el, m: L[i] };
+}
+function radioTick(vol) {
+  const now = radioNow(); if (!now) return false;
+  let a = FM.el; if (!a) { a = FM.el = new Audio(); a.preload = 'auto'; a.crossOrigin = 'anonymous'; }
+  if (vol < 0.01) { if (!a.paused) a.pause(); a.volume = 0; return true; }
+  if (FM.cur !== now.i) { FM.cur = now.i; a.src = `musicas/${now.m.id}.mp3?v=${BUILD}`; a.currentTime = 0; FM.seekNeed = true; }
+  if (a.paused) { FM.seekNeed = true; a.play().catch(() => { }); }
+  if (a.readyState >= 1 && (FM.seekNeed || Math.abs(a.currentTime - now.pos) > 2.5)) { try { a.currentTime = now.pos; } catch (e) { } FM.seekNeed = false; }
+  a.volume = clamp(vol, 0, 1);
+  // o chefe reenvia a programação de vez em quando (quem entrou depois fica sincronizado)
+  if (isAdm() && FM.anchor.t0 && NET.ch && NET.online && (FM.sentT -= 1 / 30) <= 0) { FM.sentT = 600; NET.ch.send({ type: 'broadcast', event: 'fm', payload: FM.anchor }); }
+  return true;
+}
+function radioPlay(i) {
+  if (!isAdm() || !FM.list) return; FM.anchor = { i, t0: Date.now() }; try { localStorage.setItem('rc_radio', JSON.stringify(FM.anchor)); } catch (e) { }
+  FM.cur = -1; if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'fm', payload: FM.anchor });
+  toast(`🎵 Tocando para todos: ${FM.list[i].n}`, 'pink'); renderPanel();
+}
+function onRadio(d) { if (!d || typeof d.i !== 'number' || !d.t0) return; if (d.i === FM.anchor.i && d.t0 === FM.anchor.t0) return; FM.anchor = { i: d.i, t0: d.t0 }; FM.cur = -1; const m = FM.list && FM.list[d.i]; if (m && MUSIC.vol > 0.1) toast(`🎵 O chefe colocou: ${m.n}`, 'pink'); }
+const PANEL_RADIO = function () {
+  const L = FM.list, now = radioNow();
+  if (!L) return { title: '🎵 Rádio do Rolê', html: '<p class="muted">Carregando as músicas…</p>' };
+  const fm = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  let html = `<p class="muted">A rádio toca nos paredões, nas caixas da favela, nos carros de som e na Hilux. Todo mundo perto ouve a mesma música.${isAdm() ? ' <b>Você é o chefe:</b> toque em uma música para colocar para todos.' : ''}</p>`;
+  if (now) html += `<div class="note">▶ Agora: <b>${esc(now.m.n)}</b> · ${esc(now.m.g)} · ${fm(now.pos)} / ${fm(now.m.dur)}</div>`;
+  html += L.map((m, i) => `<div class="card"><h4>${now && now.i === i ? '🔊' : '🎵'} ${esc(m.n)}</h4><p class="muted">${esc(m.g)} · ${fm(m.dur)} · instrumental original do Rolê City</p>${isAdm() ? `<div class="row"><button class="btn sm" data-act="radio-play" data-i="${i}">▶ Tocar agora para todos</button></div>` : ''}</div>`).join('');
+  html += P.drive && P.drive.V.som ? `<div class="row"><button class="btn ghost" data-act="pick-song">📱 Tocar uma música do meu celular no som do carro</button></div>` : `<p class="muted">Dirigindo a Hilux ou um carro com som, você também pode tocar uma música do seu celular (só você ouve).</p>`;
+  return { title: '🎵 Rádio do Rolê', html };
+};
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },
@@ -9952,7 +9998,7 @@ const PANELS = {
 ['tokens', 'crew', 'config', 'results'].forEach(k => PANELS[k] = OLD_PANELS[k]);
 
 /* ---------------- CELULAR ---------------- */
-Object.assign(PANELS, { pix: PANEL_PIX, tattoo: PANEL_TAT, turismo: PANEL_TUR });
+Object.assign(PANELS, { pix: PANEL_PIX, tattoo: PANEL_TAT, turismo: PANEL_TUR, fm: PANEL_RADIO });
 const phoneState = { screen: 'home', contact: null, callT: 0 };
 function togglePhone(force) {
   const el = $('phone'); const show = force != null ? force : el.hidden;
@@ -10073,6 +10119,8 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
+    case 'radio-play': radioPlay(+ds.i); break;
+    case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
     case 'tour-back': closePanel(); tourBack(); break;
@@ -10306,6 +10354,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'assalto' }, ({ payload }) => onRobbed(payload))
     .on('broadcast', { event: 'samu' }, ({ payload }) => onSamuCall(payload))
     .on('broadcast', { event: 'pix' }, ({ payload }) => onPix(payload))
+    .on('broadcast', { event: 'fm' }, ({ payload }) => onRadio(payload))
     .on('broadcast', { event: 'socorrido' }, ({ payload }) => onRescued(payload))
     .on('broadcast', { event: 'assalto_ok' }, ({ payload }) => onRobOk(payload))
     .on('broadcast', { event: 'marca' }, ({ payload }) => renderMark(payload))
@@ -10600,7 +10649,7 @@ async function afterLogin() {
 async function enterGame() {
   try { await Promise.race([Promise.all([document.fonts.load('40px Bungee'), document.fonts.load('700 40px "Barlow Condensed"')]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
   S.settings = S.settings || { quality: 'media', sound: true }; S.invite = S.invite || []; S.purchases = S.purchases || [];
-  migrate(S); wearMigrate(); checkWeek(); loadMocap();
+  migrate(S); wearMigrate(); checkWeek(); loadMocap(); loadRadio();
   if (NET.user) { await checkAdmin(); grantAdmin(); if (isAdm()) setTimeout(() => { toast(`Conta de administrador: tudo liberado. Chefe ${CHIEF} de todos os morros.`, 'pink'); if (city.player) setTag(city.player, myTagText(), '#ffd700'); }, 2000); }
   if (S.mission && S.mission.time != null) S.mission.time = Math.max(S.mission.time, 20);
   if (MODELS === null && !enterGame.tried) {

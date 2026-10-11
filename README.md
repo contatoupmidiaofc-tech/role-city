@@ -174,3 +174,10 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - Cor da pele e do cabelo de cada um, careca, penteados (black power, dreads, tranças, moicano, rabo, coque), bonés, chapéus, óculos, brincos, corrente, mochila, asas, relógio, coldre e tatuagens ajustados aos corpos novos.
 - Mulheres ganharam os movimentos gravados por atrizes: parada com variações, andar, trotar, correr, conversar gesticulando e 6 danças.
 - Moradores usam textura mais leve (melhor para o celular); o seu personagem fica em alta qualidade.
+
+## Rádio do Rolê (músicas de verdade)
+
+- 6 instrumentais originais feitos para o jogo (pasta `musicas/`): **Trap do Chefe**, **Coroa de Ouro** (trap), **Baile do Morro** (funk mandelão), **Tamborzão da Vila** (funk), **Rap de Quebrada** (rap) e **Madrugada na Favela** (trap lento).
+- Tocam nos paredões, nas caixas da favela, nos carros de som e na Hilux. Todo mundo ouve a mesma música no mesmo trecho (a programação segue o relógio).
+- Toque no aviso 🔊 da música para abrir a rádio. O chefe (ADM) pode escolher a música que toca para todos.
+- Para adicionar músicas próprias (com direito de uso): envie o MP3 para `musicas/` e acrescente uma linha em `musicas/lista.json` (`id` = nome do arquivo sem `.mp3`, `n` = nome, `g` = estilo, `dur` = duração em segundos).
