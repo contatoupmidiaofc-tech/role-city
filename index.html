@@ -540,6 +540,8 @@ canvas.swatch{background:#333}
     <button class="hud-btn" data-act="open-social"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lbl">Social</span></button>
     <button class="hud-btn" data-act="open-crew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4.5"/></svg><span class="lbl">Crew</span></button>
     <button class="hud-btn" id="hb-veh" data-act="veh-call" aria-label="Chamar veículo" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15l2-6h14l2 6v4H3z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="lbl">Carro</span></button>
+    <button class="hud-btn" id="hb-fam" data-act="familia" aria-label="Chamar as filhas" hidden><span style="font-size:17px">👧</span><span class="lbl">Filhas</span></button>
+    <button class="hud-btn" id="hb-seg" data-act="open-seg" aria-label="Seguranças" hidden><span style="font-size:17px">🕶️</span><span class="lbl">Seguranças</span></button>
     <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
     <button class="hud-btn" data-act="radio" aria-label="Rádio do grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8 15 3M9 13h6M9 17h3"/></svg><span class="lbl">Rádio</span></button>
     <button class="hud-btn" id="hb-mic" aria-label="Segure para mandar áudio (tecla B)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="lbl">Áudio</span></button>
@@ -637,7 +639,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-24';
+const BUILD = '2026.10.11-25';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -6028,7 +6030,7 @@ function exitShop() {
 let _tileT = null;
 function tileTex() { return _tileT || (_tileT = (() => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#d8d3c8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2; for (let k = 0; k <= w; k += 32) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })()); }
 function buildShopInterior(d) {
-  const k = d.kind, BT = k === 'biz' && d.biz ? (BIZ_TYPES[d.biz.tipo] || BIZ_TYPES.loja) : null, info = BT ? { color: BT.c, label: `${BT.i} ${d.biz.nome}`, css: '#' + BT.c.toString(16).padStart(6, '0') } : k.startsWith('mansao') ? { color: 0xffc83d, label: MANSAO_FLOORS[+k.slice(6) - 1], css: '#ffc83d' } : Object.values(SPECIAL).find(s => s.kind === k) || { color: 0xcccccc, label: d.label };
+  const k = d.kind, BT = k === 'biz' && d.biz ? (BIZ_TYPES[d.biz.tipo] || BIZ_TYPES.loja) : null, info = BT ? { color: BT.c, label: `${BT.i} ${d.biz.nome}`, css: '#' + BT.c.toString(16).padStart(6, '0') } : k.startsWith('mansao') ? { color: k === 'mansao4' ? 0xff8fc8 : 0xffc83d, label: MANSAO_FLOORS[+k.slice(6) - 1] || '👧 Quarto das meninas', css: k === 'mansao4' ? '#ff8fc8' : '#ffc83d' } : Object.values(SPECIAL).find(s => s.kind === k) || { color: 0xcccccc, label: d.label };
   const [W, D] = ROOM_SIZE[k] || [16, 12], H = k.startsWith('mansao') ? 4.2 : k === 'igreja' ? 7 : k === 'concessionaria' || k === 'bombeiros' ? 5 : 3.4;
   const g = new THREE.Group(), cx = SHOPIN.x, cz = SHOPIN.z; g.position.set(cx, 0, cz); city.scene.add(g);
   const it = { g, kind: k, door: d, W, D, spots: [], npcs: [] };
@@ -6553,7 +6555,7 @@ function dropJobVeh() { for (const o of city.policeLot || []) o.m.visible = true
    MANSÃO DO AJBZ: no alto do morro, no meio da favela; 3 andares de ouro (lazer e jogos, cofre e fortuna, cobertura)
    ========================================================= */
 const MANSAO_FLOORS = ['MANSÃO DO AJBZ · LAZER E JOGOS', 'MANSÃO DO AJBZ · COFRE', 'MANSÃO DO AJBZ · COBERTURA DO CHEFE'];
-Object.assign(ROOM_SIZE, { mansao1: [24, 18], mansao2: [24, 18], mansao3: [24, 18] });
+Object.assign(ROOM_SIZE, { mansao1: [24, 18], mansao2: [24, 18], mansao3: [24, 18], mansao4: [16, 14] });
 const goldM = () => new THREE.MeshStandardMaterial({ color: 0xf2b01e, metalness: 0.7, roughness: 0.25, emissive: 0x5a3a00, emissiveIntensity: 0.7 });
 function stateFlagTex(id) {
   return canvasTex(200, 140, (g, w, h) => {
@@ -6635,7 +6637,7 @@ function goFloor(n) {
     const d = Object.assign({}, it.door, { kind: 'mansao' + n }), nit = buildShopInterior(d); city.shopIn = nit;
     P.x = SHOPIN.x + nit.W / 2 - 2.4; P.z = SHOPIN.z + nit.D / 2 - 2.6; P.y = 0; P.h = Math.PI; city.camYaw = Math.PI; city.camSnap = true;
     try { tone('sine', 880, 880, 0.25, 0.06); tone('sine', 660, 660, 0.4, 0.06, 0.2); } catch (e) { }
-    toast(`🛗 ${['1º andar · Lazer e jogos', '2º andar · Cofre', '3º andar · Cobertura do chefe'][n - 1]}`, 'pink');
+    toast(`🛗 ${['1º andar · Lazer e jogos', '2º andar · Cofre', '3º andar · Cobertura do chefe', '4º andar · Quarto da Jasmim e da Helena'][n - 1]}`, 'pink');
   });
 }
 function marbleTex() { return canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#f2efe8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(150,140,120,.35)'; for (let i = 0; i < 14; i++) { g.lineWidth = 1 + Math.random() * 2; g.beginPath(); let x = Math.random() * w, y = 0; g.moveTo(x, y); while (y < h) { x += rand(-14, 14); y += rand(8, 22); g.lineTo(x, y); } g.stroke(); } g.strokeStyle = 'rgba(212,160,23,.5)'; g.lineWidth = 2; g.strokeRect(1, 1, w - 2, h - 2); }); }
@@ -6653,6 +6655,7 @@ function mansaoDecor(it, n, h) {
   const el = textSprite('🛗 ELEVADOR', { bg: '#15161a', fg: '#ffd700', size: 40, scale: [1.6, 0.36, 1] }); el.position.set(W / 2 - 2.4, 2.95, D / 2 - 0.2); it.g.add(el);
   spot('🛗 Elevador (escolher o andar)', W / 2 - 2.4, D / 2 - 1.2, () => openPanel('elevador'));
   if (n !== 1) it.spots = it.spots.filter(s => s.label !== 'Sair');
+  if (n === 4) { pinkRoomDecor(it, h); return; }
   const seg = (x, z, ry) => { const m = npc(lookOf({ shirt: 'shirt_black', pants: 'pants_black', shoes: 'shoes_basic', glasses: 'gl_dark' }, pick(SKINS), 0x15161a, 'm'), 'Segurança', x, z, ry); return m; };
   if (n === 1) {
     // duas mesas de sinuca
@@ -9286,6 +9289,7 @@ function pickLifeLots() {
   const take = (def) => { if (free.some(f => f[0] === def[0] && f[1] === def[1]) && !used.includes(def + '')) { used.push(def + ''); return def; } const f = free.filter(f => !used.includes(f + '')).sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]))[0]; if (f) { used.push(f + ''); return f; } return def; };
   const set = (arr, v) => { arr[0] = v[0]; arr[1] = v[1]; };
   set(BANK_POS, take(LIFE_DEF.bank)); set(ARENA_POS, take(LIFE_DEF.arena)); set(PRACA_POS, take(LIFE_DEF.praca)); set(QUADRA_POS, take(LIFE_DEF.quadra)); set(VILA_POS, take(LIFE_DEF.vila));
+  city.lifeFree = free.filter(f => !used.includes(f + '')).sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]));
 }
 function buildLife(sc) {
   city.domino = []; city.morad = []; city.walkers = [];
@@ -9296,6 +9300,7 @@ function buildLife(sc) {
   try { buildWalkers(sc); } catch (e) { console.warn('pedestres', e); }
   try { buildArena(sc); } catch (e) { console.warn('ringue', e); }
   try { buildQuadra(sc); } catch (e) { console.warn('quadra', e); }
+  buildFamilyCity(sc);
   setTimeout(loadCasas, 900);
 }
 /* sai do futebol/luta se a pessoa foi embora (carro, viagem, longe da quadra ou do ringue) */
@@ -9311,6 +9316,7 @@ function updateLife25(dt, t) {
   if (mode !== 'city') return;
   try { lockTick(); peerHpBars(); } catch (e) { console.warn('carro/vida', e); }
   try { heliSoundTick(); } catch (e) { }
+  updateFamily27(dt, t);
   if ((city.dailyT = (city.dailyT || 0) - dt) <= 0) { city.dailyT = 20; bankDaily(); casaDaily(); }
   try { updateDomino(dt, t); } catch (e) { console.warn('dominó', e); }
   try { updateMoradores(dt, t); } catch (e) { console.warn('moradores', e); }
@@ -9997,6 +10003,265 @@ function dogChaseTick(d, dt, t) {
   d.g.position.set(d.x, groundH(d.x, d.z), d.z); d.ph += 14 * dt;
   u.legs.forEach((L, i) => L.rotation.x = Math.sin(d.ph + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0)) * 0.7); u.tail.rotation.y = Math.sin(t * 20) * 0.6;
   return true;
+}
+/* =========================================================
+   FAMÍLIA E SEGURANÇA DO CHEFE
+   - Dois seguranças altos e fortes, de terno preto e óculos escuros, sempre ao lado do chefe.
+     Ninguém chega perto, só quem o chefe liberar, a esposa e as filhas.
+   - Jasmim (6 anos) e Helena (2 anos): ficam brincando em casa (mansão no morro). Só saem quando o
+     chefe vai lá buscar; aí ficam pertinho dele brincando. Quarto rosa cheio de brinquedos na mansão.
+   ========================================================= */
+ITEM.terno_preto = I('shirt', 'terno_preto', 'Terno Preto', 0x111214, null, null, 'comum', { pat: 'tm_trim_f4f4f4_f4f4f4' }); ITEMS.push(ITEM.terno_preto);
+const GIRLS = [{ id: 'jasmim', n: 'Jasmim', age: 6, sc: 0.66, spd: 3.4, eq: { shirt: 'shirt_pink', pants: 'sh_white', shoes: 'shoes_white' }, hs: 'tranca' }, { id: 'helena', n: 'Helena', age: 2, sc: 0.5, spd: 2.2, eq: { shirt: 'rg_branca', pants: 'sh_floral', shoes: 'shoes_white' }, hs: 'coque' }];
+const GIRL_LINES = { jasmim: ['Papai!', 'Pega eu, papai!', 'Olha, papai, sem as mãos!', 'Te amo, papai!', 'Helena, vem brincar!', 'Papai, compra pipoca?', 'Vamos no parquinho?'], helena: ['Papai!', 'Colo!', 'Mamá!', 'Jasmim, espera!', 'Hihihi!', 'Au au!', 'Nenê quer bola!'] };
+function guardLook() { return lookOf({ shirt: 'terno_preto', pants: 'pants_black', shoes: 'shoes_black', glasses: 'gl_dark', cap: 'cap_none' }, SKINS[4], HAIRS[0], 'm', null, { w: 'forte', h: 'alto', hs: 'careca' }); }
+function girlMesh(G, skin) { const g = makeSkater(lookOf(G.eq, skin ?? SKINS[2], HAIRS[0], 'f', null, { w: 'magro', h: 'baixinho', hs: G.hs }), G.n, '#ffb6e1'); g.scale.multiplyScalar(G.sc); city.scene.add(g); g.userData.lod = false; return g; }
+/* comitiva: seguranças (e filhas) que acompanham um chefe — eu ou um outro jogador ADM */
+const ENT = {};
+function entFor(key) {
+  let E = ENT[key]; if (E) return E;
+  E = ENT[key] = { key, guards: [], girls: null, ph: rand(0, 10) };
+  for (let i = 0; i < 2; i++) { const g = makeSkater(guardLook(), 'Segurança', '#cfd8dc'); city.scene.add(g); E.guards.push({ g, x: P.x, z: P.z, h: 0, v: 0, side: i ? 1 : -1, block: 0 }); }
+  return E;
+}
+function entRemove(key) { const E = ENT[key]; if (!E) return; for (const s of E.guards) city.scene.remove(s.g); if (E.girls) for (const k of E.girls) city.scene.remove(k.g); delete ENT[key]; }
+function entGirls(E, on, skin, x, z) {
+  if (on && !E.girls) E.girls = GIRLS.map((G, i) => ({ G, g: girlMesh(G, skin), x: x + (i ? 1 : -1), z: z + 1, h: 0, v: 0, a: i * Math.PI, t: rand(0, 5), act: 'segue', actT: 0, talkT: rand(3, 8), y: 0, vy: 0 }));
+  if (!on && E.girls) { for (const k of E.girls) city.scene.remove(k.g); E.girls = null; }
+}
+/* anda um personagem até (tx,tz) */
+function stepTo(o, tx, tz, sp, dt) { const dx = tx - o.x, dz = tz - o.z, d = Math.hypot(dx, dz); if (d > 0.15) { const v = Math.min(sp, d * 3); o.x += dx / d * v * dt; o.z += dz / d * v * dt; o.v = v; o.h = Math.atan2(dx, dz); } else o.v = 0; return d; }
+function updateEntourage(E, own, dt, t) {
+  // own = { x, z, h, hidden, me, drive, sp (nome da esposa), lib }
+  const vis = !own.hidden && !city.interior && !city.shopIn && !city.inCine && mode === 'city';
+  // ---- seguranças: um de cada lado, um passo atrás ----
+  for (const s of E.guards) {
+    s.g.visible = vis && own.seg; if (!s.g.visible) { s.x = own.x; s.z = own.z; continue; }
+    const fx = Math.sin(own.h), fz = Math.cos(own.h), rx = Math.cos(own.h), rz = -Math.sin(own.h);
+    let tx = own.x - fx * 0.7 + rx * 1.15 * s.side, tz = own.z - fz * 0.7 + rz * 1.15 * s.side;
+    if (s.block > 0) { s.block -= dt; tx = s.bx; tz = s.bz; }
+    if (Math.hypot(s.x - own.x, s.z - own.z) > 25) { s.x = tx; s.z = tz; }
+    stepTo(s, tx, tz, 7, dt); if (s.v < 0.1) s.h += Math.atan2(Math.sin((s.block > 0 ? s.fh : own.h) - s.h), Math.cos((s.block > 0 ? s.fh : own.h) - s.h)) * (1 - Math.exp(-6 * dt));
+    s.g.position.set(s.x, groundH(s.x, s.z), s.z); s.g.rotation.y = s.h;
+    animSkater(s.g, { walk: true, v: s.v, fallT: 0, armR: s.block > 0 ? { rArmFwd: 1.4, rElbow: 0.15, rArmDown: 1.2 } : null, fp: s.v < 0.1 && s.block <= 0 ? { lArmFwd: 0.35, rArmFwd: 0.35, lElbow: 0.9, rElbow: 0.9, lArmDown: 1.15, rArmDown: 1.15 } : null }, t + s.side); tickBubble(s.g, dt);
+  }
+  // ---- filhas brincando em volta ----
+  if (E.girls) for (const k of E.girls) {
+    k.g.visible = vis; if (!vis) { k.x = own.x; k.z = own.z; continue; }
+    k.t += dt; k.actT -= dt; k.talkT -= dt;
+    if (k.actT <= 0) { k.act = pick(k.G.age > 4 ? ['segue', 'corre', 'corre', 'pula', 'danca', 'segue'] : ['segue', 'segue', 'pula', 'danca']); k.actT = rand(2.5, 5); k.a = rand(0, TAU); }
+    const moving = own.v > 0.6, rad = k.G.age > 4 ? 1.9 : 1.2;
+    let tx, tz, sp = k.G.spd;
+    if (moving || k.act === 'segue') { const side = k.G.age > 4 ? -1 : 1, rx = Math.cos(own.h), rz = -Math.sin(own.h); tx = own.x - Math.sin(own.h) * 0.9 + rx * side * 0.9; tz = own.z - Math.cos(own.h) * 0.9 + rz * side * 0.9; sp = Math.max(sp, own.v * 1.15); }
+    else if (k.act === 'corre') { k.a += dt * (k.G.age > 4 ? 1.4 : 0.9); tx = own.x + Math.cos(k.a) * rad * 1.6; tz = own.z + Math.sin(k.a) * rad * 1.6; }
+    else { tx = k.x; tz = k.z; }
+    if (Math.hypot(k.x - own.x, k.z - own.z) > 20) { k.x = own.x + rand(-1, 1); k.z = own.z + rand(-1, 1); }
+    stepTo(k, tx, tz, sp, dt);
+    if (k.act === 'pula' && k.y <= 0 && Math.random() < dt * 2.5) k.vy = 2.6;
+    k.vy -= 12 * dt; k.y = Math.max(0, k.y + k.vy * dt); if (k.y === 0) k.vy = 0;
+    if (k.v < 0.1) k.h += Math.atan2(Math.sin(Math.atan2(own.x - k.x, own.z - k.z) - k.h), Math.cos(Math.atan2(own.x - k.x, own.z - k.z) - k.h)) * (1 - Math.exp(-4 * dt));
+    k.g.position.set(k.x, groundH(k.x, k.z) + k.y, k.z); k.g.rotation.y = k.h;
+    animSkater(k.g, { walk: true, v: k.v * 1.3, fallT: 0, air: k.y > 0.05, emote: k.act === 'danca' && k.v < 0.2 ? 'dance' : k.act === 'pula' && k.v < 0.2 && k.y < 0.05 ? 'cheer' : null }, t + k.G.age);
+    if (k.talkT <= 0) { k.talkT = rand(7, 14); if (Math.hypot(k.x - P.x, k.z - P.z) < 12) bubble(k.g, pick(GIRL_LINES[k.G.id]), 2.5); }
+    tickBubble(k.g, dt);
+  }
+}
+/* filhas em casa (no quintal da mansão) quando não estão com o pai */
+function girlsHomeSpot() { if (!city.morro) return null; const [x, z] = morroWorld(95.5, 2.5); return { x, z }; }
+function updateGirlsHome(dt, t) {
+  const H = city.girlsHome, want = isAdm() && !(S.filhas && S.filhas.comigo) && girlsHomeSpot();
+  if (!want) { if (H) { for (const k of H.list) city.scene.remove(k.g); city.girlsHome = null; } return; }
+  if (!H) { const sp = girlsHomeSpot(); city.girlsHome = { x: sp.x, z: sp.z, list: GIRLS.map((G, i) => ({ G, g: girlMesh(G, S.skin), x: sp.x + (i ? 1.2 : -1.2), z: sp.z, h: 0, v: 0, a: i * Math.PI, talkT: rand(3, 9) })) }; return; }
+  const near = Math.hypot(H.x - P.x, H.z - P.z) < 70 && !city.interior && !city.shopIn;
+  for (const k of H.list) {
+    k.g.visible = near; if (!near) continue;
+    k.a += dt * (k.G.age > 4 ? 0.9 : 0.6); const r = k.G.age > 4 ? 2.4 : 1.2, tx = H.x + Math.cos(k.a) * r, tz = H.z + Math.sin(k.a) * r;
+    stepTo(k, tx, tz, k.G.spd * 0.7, dt); k.g.position.set(k.x, groundH(k.x, k.z), k.z); k.g.rotation.y = k.h;
+    animSkater(k.g, { walk: true, v: k.v, fallT: 0 }, t + k.G.age);
+    if ((k.talkT -= dt) <= 0) { k.talkT = rand(6, 12); if (Math.hypot(k.x - P.x, k.z - P.z) < 10) bubble(k.g, pick(['Papai chegou!', 'Papai, leva a gente!', 'Oi, papai!', 'Brinca com a gente!']), 2.5); }
+    tickBubble(k.g, dt);
+  }
+}
+function familiaToggle() {
+  if (!isAdm()) return; S.filhas = S.filhas || {};
+  if (S.filhas.comigo) { S.filhas.comigo = false; persist(); entGirls(entFor('me'), false); toast('🏠 Os seguranças levaram a Jasmim e a Helena para casa (mansão).', 'pink'); netTrack && netTrack(); return; }
+  const H = city.girlsHome || girlsHomeSpot(), d = H ? Math.hypot(H.x - P.x, H.z - P.z) : 1e9;
+  if (d < 14 || (city.shopIn && city.shopIn.kind === 'mansao4')) { S.filhas.comigo = true; persist(); if (city.girlsHome) { for (const k of city.girlsHome.list) city.scene.remove(k.g); city.girlsHome = null; } entGirls(entFor('me'), true, S.skin, P.x, P.z); toast('👧 Jasmim e Helena estão com você!', 'good'); bubble(city.player, 'Vamos passear, meninas!', 2.5); netTrack && netTrack(); }
+  else { const sp = girlsHomeSpot(); if (sp) setGps(sp.x, sp.z, 'Mansão: buscar as meninas'); toast('👧 As meninas estão em casa, na mansão. Vá até lá buscar (GPS marcado).', 'pink'); }
+}
+/* quem pode chegar perto do chefe */
+function segAllowed(adm) { if (isAdm()) return true; if (adm.sp && adm.sp === S.name) return true; return !!(adm.lib && NET.user && adm.lib.includes(NET.user.id)); }
+function updateFamilia(dt, t) {
+  const hb = $('hb-fam'), hs = $('hb-seg'), show = isAdm(); if (hb) { if (hb.hidden === show) hb.hidden = !show; if (show) { const tx = S.filhas && S.filhas.comigo ? 'Filhas ✓' : 'Filhas', l = hb.querySelector('.lbl'); if (l.textContent !== tx) l.textContent = tx; } } if (hs && hs.hidden === show) hs.hidden = !show;
+  // eu sou o chefe
+  if (isAdm()) {
+    const E = entFor('me'), hidden = !!P.drive || !!P.ride || P.swim;
+    if (!!(S.filhas && S.filhas.comigo) !== !!E.girls) entGirls(E, !!(S.filhas && S.filhas.comigo), S.skin, P.x, P.z);
+    updateEntourage(E, { x: P.x, z: P.z, h: P.h, v: Math.abs(P.v), hidden, seg: !S.segOff }, dt, t);
+    // figurantes que chegam perto demais: o segurança entra na frente
+    if (!S.segOff && !hidden) for (const o of city.peds) { const d = Math.hypot(o.x - P.x, o.z - P.z); if (d < 1.6 && !(o.fallT > 0)) { o.stopT = 2.5; o.flee = 1.5; const s = E.guards[0]; if (s.block <= 0) { s.block = 1.2; s.bx = (o.x + P.x) / 2; s.bz = (o.z + P.z) / 2; s.fh = Math.atan2(o.x - P.x, o.z - P.z); bubble(s.g, pick(['Afasta do chefe!', 'Aqui não, amigo.', 'Circulando!']), 2); } } }
+  } else if (ENT.me) entRemove('me');
+  // outros jogadores que são o chefe
+  const seen = {};
+  for (const id in NET.peers) {
+    const p = NET.peers[id]; if (!p.adm || !p.t) continue; seen[id] = true;
+    const E = entFor(id), d = p.t; if (!!d.fk !== !!E.girls) entGirls(E, !!d.fk, p.skin ?? SKINS[2], p.x, p.z);
+    updateEntourage(E, { x: p.x, z: p.z, h: p.h, v: d.v || 0, hidden: !!d.vh || !!d.rd || (d.rm || '') !== roomKey(), seg: p.seg !== 0 }, dt, t);
+    // eu não posso chegar perto (a não ser liberado, esposa ou filha)
+    if (p.seg !== 0 && !segAllowed(p) && !P.drive && !d.vh) {
+      const dd = Math.hypot(P.x - p.x, P.z - p.z);
+      if (dd < 2.4) { const a = Math.atan2(P.x - p.x, P.z - p.z); P.x = p.x + Math.sin(a) * 2.5; P.z = p.z + Math.cos(a) * 2.5; P.v = 0; const s = E.guards[0]; s.block = 1.2; s.bx = p.x + Math.sin(a) * 1.3; s.bz = p.z + Math.cos(a) * 1.3; s.fh = a; if ((city.segMsgT || 0) < performance.now()) { city.segMsgT = performance.now() + 5000; bubble(s.g, pick(['Afasta do chefe!', 'Opa, opa. Pra trás.', 'Sem chegar perto.']), 2.2); toast(`🕶️ Os seguranças do ${CHIEF} não deixam ninguém chegar perto sem ser liberado.`, 'bad'); } }
+    }
+  }
+  for (const k in ENT) if (k !== 'me' && !seen[k]) entRemove(k);
+}
+const PANEL_SEGURANCA = function () {
+  const lib = S.segLib || [], near = Object.values(NET.peers).filter(p => p.t && Math.hypot(p.x - P.x, p.z - P.z) < 40);
+  let html = `<p>Dois seguranças de terno preto e óculos escuros andam sempre do seu lado. Ninguém chega perto de você, só quem você liberar, sua esposa${S.spouse ? ` (<b>${esc(S.spouse.name)}</b>)` : ''} e suas filhas.</p>`;
+  html += `<div class="row"><button class="btn ${S.segOff ? '' : 'ghost'}" data-act="seg-toggle">${S.segOff ? '🕶️ Chamar os seguranças' : '🕶️ Dispensar os seguranças'}</button><button class="btn" data-act="familia">👧 ${S.filhas && S.filhas.comigo ? 'Mandar as meninas para casa' : 'Buscar as meninas'}</button></div>`;
+  html += `<h4>Liberar pessoas para chegar perto</h4>`;
+  html += near.length ? near.map(p => `<div class="card"><h4>${esc(p.name)}</h4><div class="row"><button class="btn sm ${lib.includes(p.id) ? 'ghost' : ''}" data-act="seg-lib" data-id="${p.id}">${lib.includes(p.id) ? '✅ Liberado (tocar para bloquear)' : '⛔ Bloqueado (tocar para liberar)'}</button></div></div>`).join('') : '<p class="muted">Ninguém por perto agora.</p>';
+  return { title: '🕶️ Segurança e família', html };
+};
+function segLib(id) { S.segLib = S.segLib || []; const i = S.segLib.indexOf(id); if (i >= 0) S.segLib.splice(i, 1); else S.segLib.push(id); persist(); netTrack && netTrack(); renderPanel(); }
+/* quarto rosa das meninas (4º andar da mansão) */
+function pinkRoomDecor(it, h) {
+  const { box, add, spot, W, D } = h, pink = 0xff9ccf, hot = 0xff4fa3;
+  const rug = add(new THREE.CircleGeometry(4, 40), std(0xffc1e3, 0.95), 0, 0.03, 0); rug.rotation.x = -Math.PI / 2;
+  const fl = add(new THREE.PlaneGeometry(W, D), std(0xffd6ec, 0.9), 0, 0.025, 0); fl.rotation.x = -Math.PI / 2;
+  // duas caminhas com dossel, uma maior (Jasmim) e um berço (Helena)
+  box(2.2, 0.5, 1.3, 0xffffff, -W / 2 + 2, 0.25, -D / 2 + 1.5); box(2.1, 0.25, 1.2, pink, -W / 2 + 2, 0.6, -D / 2 + 1.5); box(0.5, 0.15, 0.9, 0xffffff, -W / 2 + 1.2, 0.78, -D / 2 + 1.5);
+  for (const [x, z] of [[-W / 2 + 0.95, -D / 2 + 0.9], [-W / 2 + 3.05, -D / 2 + 0.9], [-W / 2 + 0.95, -D / 2 + 2.1], [-W / 2 + 3.05, -D / 2 + 2.1]]) box(0.06, 2.2, 0.06, 0xffffff, x, 1.1, z);
+  const veil = add(new THREE.ConeGeometry(1.3, 1, 4, 1, true), new THREE.MeshStandardMaterial({ color: 0xffb6e1, transparent: true, opacity: 0.55, side: THREE.DoubleSide }), -W / 2 + 2, 2.6, -D / 2 + 1.5); veil.rotation.y = Math.PI / 4;
+  const crib = -W / 2 + 5.2; box(1.5, 0.08, 0.9, pink, crib, 0.55, -D / 2 + 1.2); for (let k = 0; k < 9; k++) { box(0.04, 0.9, 0.04, 0xffffff, crib - 0.72 + k * 0.18, 0.75, -D / 2 + 0.75); box(0.04, 0.9, 0.04, 0xffffff, crib - 0.72 + k * 0.18, 0.75, -D / 2 + 1.65); }
+  const mob = new THREE.Group(); mob.position.set(crib, 1.8, -D / 2 + 1.2); it.g.add(mob); for (let k = 0; k < 5; k++) { const s = new THREE.Mesh(SPH(0.08, 8, 6), new THREE.MeshBasicMaterial({ color: [0xffd76a, 0x9fd6ff, 0xff8fc8, 0xa6f0b0, 0xffffff][k] })); s.position.set(Math.cos(k / 5 * TAU) * 0.35, -0.2, Math.sin(k / 5 * TAU) * 0.35); mob.add(s); } it.mobile = mob;
+  // nomes na parede
+  const nm = textSprite('💖 JASMIM & HELENA 💖', { bg: '#ff4fa3', fg: '#fff', size: 46, scale: [5, 0.9, 1] }); nm.position.set(0, 3.2, -D / 2 + 0.2); it.g.add(nm);
+  // casinha de bonecas, ursos, bolas, cozinha de brinquedo, escorregador
+  const dh = W / 2 - 2.2; box(1.6, 1.2, 0.9, 0xfff0f6, dh, 0.6, -D / 2 + 1); const rf = add(new THREE.ConeGeometry(1.2, 0.8, 4), std(hot, 0.7), dh, 1.6, -D / 2 + 1); rf.rotation.y = Math.PI / 4; rf.scale.set(1, 1, 0.6); for (const x of [-0.4, 0.4]) box(0.3, 0.3, 0.02, 0x9fd6ff, dh + x, 0.75, -D / 2 + 1.46);
+  for (const [x, z, c] of [[-2, 2.5, 0xc68a5a], [2.6, -1, 0xf6f1e7], [-4, -0.5, 0xffb6e1], [4, 2.8, 0xc68a5a]]) { const b = new THREE.Group(); b.position.set(x, 0, z); it.g.add(b); const m = std(c, 0.95); const bd = new THREE.Mesh(SPH(0.28, 12, 10), m); bd.position.y = 0.28; bd.scale.y = 1.1; b.add(bd); const hd = new THREE.Mesh(SPH(0.2, 12, 10), m); hd.position.y = 0.68; b.add(hd); for (const s of [-1, 1]) { const e = new THREE.Mesh(SPH(0.08, 8, 6), m); e.position.set(s * 0.15, 0.84, 0); b.add(e); } }
+  for (const [x, z, c] of [[1, 1.5, 0xff4fa3], [-1.5, -2, 0x9fd6ff], [3.5, 0.5, 0xffd76a]]) { const bl = new THREE.Mesh(SPH(0.2, 14, 10), std(c, 0.4)); bl.position.set(x, 0.2, z); it.g.add(bl); }
+  box(1.4, 0.9, 0.5, 0xffffff, W / 2 - 1, 0.45, 2); box(1.2, 0.05, 0.4, 0xff9ccf, W / 2 - 1, 0.92, 2); for (const x of [-0.3, 0.3]) { const p = new THREE.Mesh(CYL(0.12, 0.12, 0.04, 14), std(0x9aa3ad, 0.4, 0.6)); p.position.set(W / 2 - 1 + x, 0.95, 2); it.g.add(p); }
+  const sl = add(new THREE.BoxGeometry(0.7, 0.06, 2.4), std(0xff4fa3, 0.4), -W / 2 + 1.5, 0.55, 3); sl.rotation.x = 0.45; box(0.7, 1.1, 0.6, 0xffd6ec, -W / 2 + 1.5, 0.55, 1.6);
+  for (let i = 0; i < 6; i++) { const st = add(new THREE.OctahedronGeometry(0.15), new THREE.MeshBasicMaterial({ color: [0xffd76a, 0xffffff, 0xff8fc8][i % 3] }), -W / 2 + 2 + i * 2, 3.5, -D / 2 + 0.2 + (i % 2) * 0.1); }
+  spot('👧 Levar Jasmim e Helena para passear', 0, 1, () => familiaToggle());
+  // as meninas brincando no quarto
+  it.girls = GIRLS.map((G, i) => { const g = girlMesh(G, S.skin); g.position.set(SHOPIN.x + (i ? 1.5 : -1.5), 0, SHOPIN.z + 0.5); return { G, g, a: i * Math.PI, x: SHOPIN.x, z: SHOPIN.z }; });
+  it.npcs = (it.npcs || []).concat(it.girls.map(k => k.g));
+}
+function updatePinkRoom(dt, t) {
+  const it = city.shopIn; if (!it || it.kind !== 'mansao4') return;
+  if (it.mobile) it.mobile.rotation.y += dt * 0.6;
+  for (const k of it.girls || []) { k.g.visible = true; k.a += dt * (k.G.age > 4 ? 0.8 : 0.5); const r = k.G.age > 4 ? 2.2 : 1.1, tx = SHOPIN.x + Math.cos(k.a) * r, tz = SHOPIN.z + 0.5 + Math.sin(k.a) * r; stepTo(k, tx, tz, k.G.spd * 0.6, dt); k.g.position.set(k.x, 0, k.z); k.g.rotation.y = k.h; animSkater(k.g, { walk: true, v: k.v, fallT: 0 }, t + k.G.age); if ((k.tT = (k.tT || rand(2, 5)) - dt) <= 0) { k.tT = rand(6, 11); bubble(k.g, pick(['Papai!', 'Olha minha boneca!', 'Brinca de casinha?', 'Hihihi!']), 2.5); } tickBubble(k.g, dt); }
+}
+
+/* =========================================================
+   CINEMA (em todas as cidades) e PARQUINHO para as crianças
+   ========================================================= */
+const CINE_POS = [0, 0], PARQ_POS = [0, 0];
+const FILMES = [{ id: 'espaco', n: 'Rolê no Espaço', d: 'Um skatista vai parar na Lua.', c: '#1b1f4a' }, { id: 'vila', n: 'O Bonde da Vila', d: 'Comédia na favela com muita música.', c: '#3a1b4a' }, { id: 'princesa', n: 'A Princesinha do Morro', d: 'Desenho para as crianças (Jasmim e Helena adoram).', c: '#4a1b36' }];
+function buildCinema(sc) {
+  const [x, z] = CINE_POS, g = new THREE.Group(); g.position.set(x, 0, z); sc.add(g);
+  const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  add(boxGeo(30, 0.08, 30), lam(0x2b2d33), 0, 0.04, 0);
+  add(boxGeo(18, 9, 14), std(0x1d1f26, 0.6), 3, 4.5, 0); add(boxGeo(18.4, 0.6, 14.4), std(0xc8102e, 0.5), 3, 9.1, 0);
+  const mq = canvasTex(512, 160, (c, w, h) => { c.fillStyle = '#15161a'; c.fillRect(0, 0, w, h); c.fillStyle = '#ffd76a'; for (let i = 0; i < 26; i++) { c.beginPath(); c.arc(10 + i * 19.4, 10, 5, 0, TAU); c.fill(); c.beginPath(); c.arc(10 + i * 19.4, h - 10, 5, 0, TAU); c.fill(); } c.fillStyle = '#ff4f7b'; c.font = '700 74px "Barlow Condensed", Arial'; c.textAlign = 'center'; c.fillText('CINE ROLÊ', w / 2, 100); c.fillStyle = '#fff'; c.font = '600 26px "Barlow Condensed", Arial'; c.fillText('HOJE: ' + FILMES.map(f => f.n).join(' · '), w / 2, 136); });
+  const mqm = new THREE.Mesh(new THREE.PlaneGeometry(12, 3.75), new THREE.MeshBasicMaterial({ map: mq })); mqm.position.set(-6.1, 6.6, 0); mqm.rotation.y = -Math.PI / 2; g.add(mqm);
+  for (const zz of [-4.5, 4.5]) { const po = canvasTex(128, 192, (c, w, h) => { const f = pick(FILMES); const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, f.c); gr.addColorStop(1, '#000'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.fillStyle = '#ffd76a'; c.font = '700 20px sans-serif'; c.textAlign = 'center'; c.fillText(f.n.split(' ').slice(0, 2).join(' '), w / 2, 160); c.fillText(f.n.split(' ').slice(2).join(' '), w / 2, 182); c.fillStyle = '#ff8fc8'; c.beginPath(); c.arc(w / 2, 80, 36, 0, TAU); c.fill(); }); const p = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshBasicMaterial({ map: po })); p.position.set(-6.02, 2.2, zz); p.rotation.y = -Math.PI / 2; g.add(p); }
+  add(boxGeo(0.2, 3, 4), new THREE.MeshStandardMaterial({ color: 0x9fd6ff, roughness: 0.05, metalness: 0.6, transparent: true, opacity: 0.6 }), -6, 1.5, 0);
+  add(boxGeo(1.6, 1.2, 1.6), std(0xc8102e, 0.5), -8, 0.6, 3.8); const bil = textSprite('🎟️ BILHETERIA', { bg: '#c8102e', fg: '#fff', size: 40, scale: [2.6, 0.5, 1] }); bil.position.set(-8, 1.8, 3.8); g.add(bil);
+  city.colliders.push({ x0: x - 6, x1: x + 12, z0: z - 7, z1: z + 7 }, { x0: x - 8.8, x1: x - 7.2, z0: z + 3, z1: z + 4.6 });
+  city.xspots.push({ cine: true, x: x - 8, z: z + 0.5, r: 2.6, label: '🎬 Cine Rolê: comprar ingresso e assistir um filme', fn: () => openPanel('cinema') });
+  const L = LANDMARKS[cityId()]; if (L && !L.some(l => l[2] === 'Cinema')) L.push([x, z, 'Cinema']);
+}
+/* sala do cinema (longe do mapa, como o hospital): telão com o filme passando, poltronas e plateia */
+const CINE_IN = { x: 700, z: -600 };
+function buildCineHall() {
+  if (city.cineG) return city.cineG; const g = new THREE.Group(), { x, z } = CINE_IN; g.position.set(x, 0, z); city.scene.add(g); city.cineG = g;
+  const add = (geo, m, px, py, pz, ry = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.rotation.y = ry; g.add(o); return o; };
+  add(boxGeo(18, 0.1, 22), std(0x2a0d14, 0.95), 0, 0, 0); for (const [px, pz, w, d] of [[0, -11, 18, 0.2], [0, 11, 18, 0.2], [-9, 0, 0.2, 22], [9, 0, 0.2, 22]]) add(boxGeo(w, 7, d), std(0x3a0f1c, 0.95), px, 3.5, pz);
+  add(boxGeo(18, 0.2, 22), std(0x15161a, 0.9), 0, 7, 0);
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256; const tx = new THREE.CanvasTexture(cv); tx.encoding = THREE.sRGBEncoding;
+  const scr = add(new THREE.PlaneGeometry(14, 7), new THREE.MeshBasicMaterial({ map: tx }), 0, 3.8, -10.8); city.cineRoom = { cv, tx, scr, t: 0, film: null };
+  for (let r = 0; r < 6; r++) for (let c = -5; c <= 5; c++) { if (c === 0) continue; const y = r * 0.35; add(boxGeo(0.7, 0.5, 0.6), std(0xb3122e, 0.7), c * 0.85, 0.25 + y, -2 + r * 1.4); add(boxGeo(0.7, 0.8, 0.12), std(0xb3122e, 0.7), c * 0.85, 0.6 + y, -1.65 + r * 1.4); add(boxGeo(10, y + 0.02, 1.4), std(0x2a0d14, 0.95), 0, y / 2, -2 + r * 1.4); }
+  // plateia
+  city.cineRoom.aud = [];
+  for (let i = 0; i < 14; i++) { const r = Math.floor(i / 5) + 1, c = (i % 5) * 2 - 4 + (r % 2); const look = lookOf({ shirt: pick(['shirt_basic', 'ct_cinza', 'shirt_pink', 'tm_bra', 'ct_vinho']), pants: 'pants_jeans', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), Math.random() < 0.5 ? 'f' : 'm'); const n = makeSkater(look, null); n.position.set(x + c * 0.85 + (c >= 0 ? 0.85 : 0), r * 0.35, z - 2 + r * 1.4 + 0.15); n.rotation.y = Math.PI; city.scene.add(n); city.cineRoom.aud.push(n); }
+  const lt = new THREE.PointLight(0x9fb8ff, 0.6, 30); lt.position.set(0, 4, -6); g.add(lt);
+  return g;
+}
+function drawFilm(C, dt) {
+  const g = C.cv.getContext('2d'), w = 512, h = 256, t = (C.t += dt), f = C.film || FILMES[0], sc = Math.floor(t / 8) % 4, k = (t % 8) / 8;
+  const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, f.c); gr.addColorStop(1, '#000'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  if (t < 3) { g.fillStyle = '#ffd76a'; g.font = '700 46px sans-serif'; g.textAlign = 'center'; g.fillText(f.n, w / 2, h / 2); g.font = '20px sans-serif'; g.fillStyle = '#fff'; g.fillText('Um filme Rolê Studios', w / 2, h / 2 + 34); }
+  else if (f.id === 'espaco') { g.fillStyle = '#fff'; for (let i = 0; i < 60; i++) g.fillRect((i * 97 + t * 20) % w, (i * 53) % h, 2, 2); g.fillStyle = '#dcdcdc'; g.beginPath(); g.arc(380, 90, 50, 0, TAU); g.fill(); const sx = (k * w * 1.2) % w, sy = 190 - Math.abs(Math.sin(t * 2)) * 70; g.fillStyle = '#ff4f7b'; g.fillRect(sx - 20, sy, 40, 6); g.fillStyle = '#ffd76a'; g.fillRect(sx - 6, sy - 34, 12, 30); g.beginPath(); g.arc(sx, sy - 42, 10, 0, TAU); g.fill(); }
+  else if (f.id === 'vila') { for (let i = 0; i < 9; i++) { g.fillStyle = ['#e8604c', '#f2c94c', '#5aa9e6', '#7bc67b', '#f28ca0'][i % 5]; g.fillRect(i * 58, 140 - (i % 3) * 25, 52, 120); } for (let i = 0; i < 5; i++) { const bx = 60 + i * 90, by = 200 - Math.abs(Math.sin(t * 6 + i)) * 20; g.fillStyle = '#3a2618'; g.beginPath(); g.arc(bx, by - 40, 10, 0, TAU); g.fill(); g.fillStyle = ['#ff4f7b', '#3ddc84', '#ffd76a', '#4fc3ff', '#fff'][i]; g.fillRect(bx - 8, by - 30, 16, 26); } g.fillStyle = '#fff'; g.font = '700 22px sans-serif'; g.textAlign = 'center'; g.fillText(['♪ Tum tum tá ♪', 'É o Bonde da Vila!', 'Aí sim!', '♪ Paredão ligado ♪'][sc], w / 2, 40); }
+  else { g.fillStyle = '#ffd6ec'; g.fillRect(0, 190, w, 66); for (let i = 0; i < 12; i++) { g.fillStyle = ['#ff8fc8', '#ffd76a', '#9fd6ff'][i % 3]; g.beginPath(); g.arc((i * 47 + t * 15) % w, 30 + (i % 4) * 30, 6, 0, TAU); g.fill(); } const px = 120 + Math.sin(t) * 120; g.fillStyle = '#ff4fa3'; g.beginPath(); g.moveTo(px - 26, 200); g.lineTo(px + 26, 200); g.lineTo(px, 120); g.fill(); g.fillStyle = '#c68a5a'; g.beginPath(); g.arc(px, 112, 16, 0, TAU); g.fill(); g.fillStyle = '#ffd76a'; g.beginPath(); g.moveTo(px - 12, 98); g.lineTo(px, 84); g.lineTo(px + 12, 98); g.fill(); g.fillStyle = '#fff'; g.font = '700 22px sans-serif'; g.textAlign = 'center'; g.fillText(['Era uma vez uma princesinha...', 'Ela morava no alto do morro', 'e tinha uma irmã pequenininha', 'Fim! 💖'][sc], w / 2, 40); }
+  C.tx.needsUpdate = true;
+}
+const PANEL_CINEMA = function () {
+  if (city.inCine) return { title: '🎬 Cine Rolê', html: `<p>Passando: <b>${esc(city.cineRoom.film.n)}</b></p><div class="row"><button class="btn" data-act="cine-pipoca">🍿 Pipoca ($ 10)</button><button class="btn ghost" data-act="cine-sair">Sair do cinema</button></div>` };
+  return { title: '🎬 Cine Rolê', html: '<p>Escolha o filme. Ingresso: <b>$ 15</b> (as filhas do chefe entram de graça).</p>' + FILMES.map(f => `<div class="card"><h4>🎞️ ${esc(f.n)}</h4><p class="muted">${esc(f.d)}</p><div class="row"><button class="btn sm" data-act="cine-ver" data-id="${f.id}">Assistir ($ 15)</button></div></div>`).join('') };
+};
+function cineVer(id) {
+  if (S.coins < 15) return toast('O ingresso custa $ 15.', 'bad'); S.coins -= 15; persist(); updateHUD(); closePanel();
+  const f = FILMES.find(x => x.id === id) || FILMES[0];
+  fadeTo(() => { buildCineHall(); city.cineRoom.film = f; city.cineRoom.t = 0; city.inCine = { back: [P.x, P.z] }; P.x = CINE_IN.x + 0.85 * 1; P.z = CINE_IN.z - 2 + 2 * 1.4 + 0.15; P.y = 0.7; P.h = Math.PI; P.v = 0; P.emote = { id: 'sit', t: 9999 }; city.camYaw = Math.PI; city.camSnap = true; city.zoom = 0.6; toast(`🎬 ${f.n} vai começar! Toque em Ação para sair.`, 'pink'); });
+}
+function cineSair() { const C = city.inCine; if (!C) return; closePanel(); fadeTo(() => { city.inCine = null; P.emote = null; P.x = C.back[0]; P.z = C.back[1]; P.y = 0; city.zoom = 1; city.camSnap = true; }); }
+function updateCinema(dt, t) {
+  if (!city.inCine) return; const C = city.cineRoom; drawFilm(C, dt); P.v = 0; P.y = 0.7;
+  for (const a of C.aud) animSkater(a, { walk: true, v: 0, fallT: 0, emote: 'sit' }, t);
+  if (tap('act')) cineSair();
+  if (C.t > 34 && !C.endShown) { C.endShown = true; toast('🎬 Fim do filme! Toque em Ação para sair.', 'pink'); }
+}
+/* parquinho: balanço, escorregador, gangorra, gira-gira, areia; crianças brincando e pais olhando */
+function buildParque(sc) {
+  const [x, z] = PARQ_POS, g = new THREE.Group(); g.position.set(x, 0, z); sc.add(g); const P2 = city.parq = { g, sw: [], kids: [], see: null, gira: null };
+  const add = (geo, m, px, py, pz, rx = 0, ry = 0, rz = 0, par = g) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.rotation.set(rx, ry, rz); o.castShadow = o.receiveShadow = true; par.add(o); return o; };
+  add(boxGeo(30, 0.06, 30), lam(0x6fbf4a), 0, 0.03, 0); add(new THREE.CylinderGeometry(4, 4, 0.12, 24), lam(0xe8d8a8), -7, 0.06, -7);
+  // balanços
+  for (const xx of [-10, -7.5]) add(boxGeo(0.12, 2.6, 0.12), std(0xff4f7b, 0.5), xx, 1.3, 4), add(boxGeo(0.12, 2.6, 0.12), std(0xff4f7b, 0.5), xx + 4.6, 1.3, 4);
+  add(boxGeo(4.8, 0.14, 0.14), std(0xff4f7b, 0.5), -7.7, 2.6, 4);
+  for (const xx of [-9, -6.4]) { const piv = new THREE.Group(); piv.position.set(xx, 2.6, 4); g.add(piv); add(boxGeo(0.02, 1.8, 0.02), lam(0x777777), -0.25, -0.9, 0, 0, 0, 0, piv); add(boxGeo(0.02, 1.8, 0.02), lam(0x777777), 0.25, -0.9, 0, 0, 0, 0, piv); add(boxGeo(0.6, 0.06, 0.3), std(0xffd76a, 0.6), 0, -1.8, 0, 0, 0, 0, piv); P2.sw.push(piv); }
+  // escorregador
+  add(boxGeo(1, 2, 1), std(0x4fc3ff, 0.5), 6, 1, -6); add(new THREE.BoxGeometry(0.8, 0.06, 3.6), std(0xffd76a, 0.4), 6, 1.05, -4, 0.55); for (let k = 0; k < 5; k++) add(boxGeo(0.8, 0.06, 0.2), lam(0x9aa3ad), 6, 0.4 * k + 0.2, -7 - k * 0.2);
+  // gangorra
+  add(boxGeo(0.3, 0.5, 0.3), lam(0x9aa3ad), 6, 0.25, 5); const see = new THREE.Group(); see.position.set(6, 0.5, 5); g.add(see); add(boxGeo(3.4, 0.1, 0.3), std(0x3ddc84, 0.5), 0, 0, 0, 0, 0, 0, see); P2.see = see;
+  // gira-gira
+  const gira = new THREE.Group(); gira.position.set(0, 0.25, -1); g.add(gira); add(new THREE.CylinderGeometry(1.6, 1.6, 0.12, 20), std(0xff9f43, 0.5), 0, 0, 0, 0, 0, 0, gira); for (let k = 0; k < 4; k++) add(boxGeo(0.06, 0.8, 0.06), lam(0xffffff), Math.cos(k / 4 * TAU) * 1.4, 0.4, Math.sin(k / 4 * TAU) * 1.4, 0, 0, 0, gira); P2.gira = gira;
+  // bancos
+  for (const [bx, bz] of [[-12, -2], [12, 0], [0, 12]]) add(boxGeo(2.4, 0.45, 0.6), lam(0x8a6a48), bx, 0.23, bz);
+  const sp = textSprite('🛝 PARQUINHO DA CRIANÇADA', { bg: '#ff9f43', fg: '#15161a', size: 44, scale: [6, 1.1, 1] }); sp.position.set(-13, 3.4, 0); g.add(sp);
+  // crianças brincando
+  const kidLook = f => lookOf({ shirt: pick(['shirt_pink', 'shirt_sky', 'ct_laranja', 'tm_bra', 'rg_basquete']), pants: pick(['sh_tactel', 'sh_white', 'sh_red', 'sh_floral']), shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), f ? 'f' : 'm');
+  const spots = [['balanco', -9, 4], ['balanco', -6.4, 4], ['gira', 0, -1], ['gira', 0, -1], ['escorrega', 6, -6], ['gangorra', 4.5, 5], ['gangorra', 7.5, 5], ['areia', -7, -7]];
+  spots.forEach(([k, px, pz], i) => { const n = makeSkater(kidLook(i % 2 === 0), null); n.scale.multiplyScalar(rand(0.55, 0.65)); sc.add(n); P2.kids.push({ g: n, k, px: x + px, pz: z + pz, i, t: rand(0, 6) }); });
+  for (const [bx, bz] of [[-12, -2], [12, 0]]) { const n = makeSkater(lookOf({ shirt: pick(['shirt_basic', 'ct_vinho', 'shirt_pink']), pants: 'pants_jeans', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), Math.random() < 0.6 ? 'f' : 'm'), null); n.position.set(x + bx, 0, z + bz); n.rotation.y = Math.atan2(-bx, -bz); sc.add(n); P2.kids.push({ g: n, k: 'mae', px: x + bx, pz: z + bz }); }
+  city.colliders.push({ x0: x + 5.5, x1: x + 6.5, z0: z - 6.5, z1: z - 5.5 });
+  const L = LANDMARKS[cityId()]; if (L && !L.some(l => l[2] === 'Parquinho')) L.push([x, z, 'Parquinho']);
+}
+function updateParque(dt, t) {
+  const Q = city.parq; if (!Q) return; const [x, z] = PARQ_POS, near = Math.hypot(x - P.x, z - P.z) < 75 && !city.interior && !city.shopIn && !city.inCine; Q.g.visible = true;
+  Q.sw.forEach((s, i) => s.rotation.x = Math.sin(t * 2.2 + i * 1.3) * 0.55); if (Q.see) Q.see.rotation.z = Math.sin(t * 1.5) * 0.28; if (Q.gira) Q.gira.rotation.y += dt * 1.4;
+  for (const c of Q.kids) {
+    c.g.visible = near; if (!near) continue; c.t = (c.t || 0) + dt; let px = c.px, pz = c.pz, py = 0, o = { walk: true, v: 0, fallT: 0 };
+    if (c.k === 'balanco') { const s = Q.sw[c.i === 0 ? 0 : 1], a = s.rotation.x; py = 2.6 - Math.cos(a) * 1.8 - 0.45; pz = c.pz + Math.sin(a) * 1.8; o.emote = 'sit'; c.g.rotation.y = 0; }
+    else if (c.k === 'gira') { const a = Q.gira.rotation.y + (c.i % 2) * Math.PI; px = c.px + Math.cos(a) * 1.1; pz = c.pz - Math.sin(a) * 1.1; py = 0.3; c.g.rotation.y = a; o.emote = c.i % 2 ? 'cheer' : null; }
+    else if (c.k === 'escorrega') { const k = (c.t % 4) / 4; if (k < 0.5) { pz = c.pz - 1 - k * 2; py = k * 2.2; o.v = 1; c.g.rotation.y = Math.PI; } else { const s = (k - 0.5) * 2; pz = c.pz + s * 3.4; py = 2.0 - s * 2.0; o.emote = 'sit'; c.g.rotation.y = 0; } }
+    else if (c.k === 'gangorra') { const sd = c.px > x + 6 ? 1 : -1; py = 0.55 + Math.sin(Q.see.rotation.z) * sd * 1.5; o.emote = 'sit'; c.g.rotation.y = sd > 0 ? -Math.PI / 2 : Math.PI / 2; }
+    else if (c.k === 'areia') { px = c.px + Math.cos(c.t * 0.5) * 1.5; pz = c.pz + Math.sin(c.t * 0.5) * 1.5; o.v = 0.9; c.g.rotation.y = c.t * 0.5 + Math.PI; }
+    c.g.position.set(px, py, pz); animSkater(c.g, o, t + (c.i || 0));
+    if (Math.random() < dt * 0.03 && Math.hypot(px - P.x, pz - P.z) < 15) bubble(c.g, c.k === 'mae' ? pick(['Cuidado, filho!', 'Desce devagar!', 'Hora do lanche!']) : pick(['Uhuuu!', 'Mais alto!', 'Minha vez!', 'Olha eu!']), 2);
+    tickBubble(c.g, dt);
+  }
+}
+function buildFamilyCity(sc) {
+  try { const free = (city.lifeFree || []).slice(); const cine = free.shift(), parq = free.shift(); if (cine) { CINE_POS[0] = cine[0]; CINE_POS[1] = cine[1]; buildCinema(sc); } if (parq) { PARQ_POS[0] = parq[0]; PARQ_POS[1] = parq[1]; buildParque(sc); } } catch (e) { console.warn('cinema/parque', e); }
+  city.girlsHome = null; city.cineG = null; city.inCine = null; for (const k in ENT) entRemove(k);
+}
+function updateFamily27(dt, t) {
+  try { updateFamilia(dt, t); updateGirlsHome(dt, t); updatePinkRoom(dt, t); updateCinema(dt, t); updateParque(dt, t); } catch (e) { console.warn('família', e); }
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
@@ -11376,7 +11641,7 @@ const PANELS = {
   },
   elevador() {
     const cur = city.shopIn ? +String(city.shopIn.kind).slice(6) : 1;
-    return { title: '🛗 Elevador', html: `<div class="quiz">${['1º andar · Lazer: sinuca, bar, fliperama e TV', '2º andar · Cofre: dinheiro e barras de ouro', '3º andar · Cobertura do chefe: suíte, hidro e trono'].reverse().map((l, i) => { const n = 3 - i; return `<button class="btn ${n === cur ? 'ghost' : ''}" data-act="floor" data-n="${n}" ${n === cur ? 'disabled' : ''}>${n === cur ? '● ' : ''}${l}</button>`; }).join('')}${isAdm() ? '<button class="btn" data-act="go-roof">🚁 Telhado · Heliponto (helicóptero do chefe)</button>' : ''}</div>` };
+    return { title: '🛗 Elevador', html: `<div class="quiz">${['1º andar · Lazer: sinuca, bar, fliperama e TV', '2º andar · Cofre: dinheiro e barras de ouro', '3º andar · Cobertura do chefe: suíte, hidro e trono', '4º andar · 👧 Quarto rosa da Jasmim e da Helena'].reverse().map((l, i) => { const n = 4 - i; return `<button class="btn ${n === cur ? 'ghost' : ''}" data-act="floor" data-n="${n}" ${n === cur ? 'disabled' : ''}>${n === cur ? '● ' : ''}${l}</button>`; }).join('')}${isAdm() ? '<button class="btn" data-act="go-roof">🚁 Telhado · Heliponto (helicóptero do chefe)</button>' : ''}</div>` };
   },
   cofre() {
     const v = S.vault || 0;
@@ -11513,7 +11778,7 @@ const PANELS = {
 ['tokens', 'crew', 'config', 'results'].forEach(k => PANELS[k] = OLD_PANELS[k]);
 
 /* ---------------- CELULAR ---------------- */
-Object.assign(PANELS, { pix: PANEL_PIX, tattoo: PANEL_TAT, turismo: PANEL_TUR, fm: PANEL_RADIO, banco: PANEL_BANCO, casa: PANEL_CASA, domino: PANEL_DOMINO, ringue: PANEL_RINGUE, lutaloja: PANEL_LUTALOJA, futsal: PANEL_FUTSAL, fsloja: PANEL_FSLOJA });
+Object.assign(PANELS, { pix: PANEL_PIX, tattoo: PANEL_TAT, turismo: PANEL_TUR, fm: PANEL_RADIO, seguranca: PANEL_SEGURANCA, cinema: PANEL_CINEMA, banco: PANEL_BANCO, casa: PANEL_CASA, domino: PANEL_DOMINO, ringue: PANEL_RINGUE, lutaloja: PANEL_LUTALOJA, futsal: PANEL_FUTSAL, fsloja: PANEL_FSLOJA });
 const phoneState = { screen: 'home', contact: null, callT: 0 };
 function togglePhone(force) {
   const el = $('phone'); const show = force != null ? force : el.hidden;
@@ -11634,7 +11899,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
@@ -11857,7 +12122,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && NET
 /* aparência compacta enviada para os outros jogadores */
 const myNetLook = () => { const L = myNetLook0(); if (S.beachWear) Object.assign(L.e, beachEquip()); return L; };
 const myNetLook0 = () => ({ bd: S.body || null, w: handNow(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print, wrist: S.equip.wrist, ear: S.equip.ear, tats: S.tats || null, tn: S.name, hol: holsterNow() }, b: S.board });
-const myPresence = () => ({ id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', sp: S.spouse ? S.spouse.name : '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
+const myPresence = () => ({ lib: isAdm() ? (S.segLib || []) : null, seg: isAdm() && S.segOff ? 0 : 1, id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', sp: S.spouse ? S.spouse.name : '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
 function netJoinPlaza() {
   if (!NET.user || NET.ch) return;
   const ch = NET.sb.channel('praca_' + cityId(), { config: { presence: { key: NET.user.id }, broadcast: { self: false } } });
@@ -11926,7 +12191,7 @@ function onPresence(state) {
       p = NET.peers[st.id] = { wp: L.w || null, id: st.id, name: st.name, g, lookKey, x: 0, y: 0, z: 0, h: 0, t: null, seen: false };
       pushChat('Praça', `${st.name} entrou na praça`);
     }
-    p.job = st.job || ''; p.gang = st.gang || null; p.sp = st.sp || '';
+    p.job = st.job || ''; p.gang = st.gang || null; p.sp = st.sp || ''; p.lib = st.lib || []; p.seg = st.seg === 0 ? 0 : 1; p.skin = (st.look || {}).sk;
     if (st.adm && !p.adm) { p.adm = 1; setTag(p.g, '👑 ' + st.name + ' · Chefe', '#ffd700'); toast(`👑 O chefe ${st.name} chegou na cidade! Respeito!`, 'pink'); }
   }
   for (const id in NET.peers) if (!seen[id]) { pushChat('Praça', `${NET.peers[id].name} saiu`); removePeer(id); }
@@ -12009,7 +12274,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), fk: isAdm() && S.filhas && S.filhas.comigo ? 1 : 0, em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
@@ -12205,7 +12470,7 @@ let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; const t = now / 1000;
   try {
-    if (mode === 'city') { updateCity(dt, t); renderer.render(city.scene, camera); }
+    if (mode === 'city') { updateCity(dt, t); if (city.inCine) { camera.position.set(CINE_IN.x + 0.85, 3.4, CINE_IN.z + 6.5); camera.lookAt(CINE_IN.x, 3.6, CINE_IN.z - 10.8); } renderer.render(city.scene, camera); }
     else if (mode === 'race' && R) { updateRace(dt, t); renderer.render(R.sc, camera); }
     else if (mode === 'trip' && TRIP) { updateTrip(dt, t); renderer.render(TRIP.sc || city.scene, camera); }
     else if (mode === 'replay' && RP) { updateReplay(dt, t); renderer.render(city.scene, camera); }

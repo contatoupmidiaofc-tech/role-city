@@ -224,3 +224,11 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - Os figurantes falam o que aparece no balão, com a voz do próprio celular em português (traficantes dando "Salve, Ajbz!", crianças, plateia, moradores...). Dá para desligar em Configurações → Vozes dos figurantes.
 - Gol no futsal: narrador gritando "Goooool!" e a torcida vibrando. Golpes no ringue fazem a plateia reagir.
 - Atropelou alguém (ou foi atropelado): grito. Cachorros latem e correm atrás de quem passa a pé. Helicóptero voando faz o barulho das pás.
+
+## Família e seguranças do chefe
+- Dois seguranças altos e fortes, de terno preto e óculos escuros, andam sempre ao lado do chefe. Ninguém chega perto: só quem o chefe liberar (botão 🕶️ Seguranças), a esposa e as filhas. Figurantes que encostam são barrados.
+- Jasmim (6 anos) e Helena (2 anos) ficam brincando no quintal da mansão (e no quarto rosa, 4º andar, cheio de brinquedos). O chefe vai lá e aperta 👧 Filhas para levar; elas ficam pertinho brincando, correndo, pulando e falando "Papai!". Apertando de novo, os seguranças levam para casa. Os outros jogadores também veem as meninas e os seguranças.
+
+## Cinema e parquinho (todas as cidades)
+- Cine Rolê: ingresso de $ 15, três filmes passando no telão com plateia, pipoca.
+- Parquinho com balanço, escorregador, gangorra, gira-gira e caixa de areia, cheio de crianças brincando e mães olhando.
