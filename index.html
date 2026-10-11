@@ -211,7 +211,8 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 .touch-hint{position:absolute;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);font-family:var(--cond);font-weight:600;color:rgba(255,255,255,.5);font-size:14px;pointer-events:none}
 
 /* controles dos esportes (luta e futsal) */
-#touch:not(.sport) .sb{display:none!important}
+#touch:not(.sport) .sb,#touch.driving .sb{display:none!important}
+#touch.driving.sport .vb{display:grid}
 #touch.sport .fb{display:none!important}
 .tbtn.sb{width:72px;height:72px;font-size:12px;line-height:1.05;text-align:center;padding:4px}
 #sb-sp1{right:24px;bottom:24px;width:96px;height:96px;font-size:14px;border-color:rgba(255,90,90,.95);background:radial-gradient(circle at 50% 35%,rgba(255,110,110,.9),rgba(190,30,40,.9))}
@@ -632,7 +633,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-19';
+const BUILD = '2026.10.11-20';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -9228,7 +9229,16 @@ function buildLife(sc) {
   try { buildQuadra(sc); } catch (e) { console.warn('quadra', e); }
   setTimeout(loadCasas, 900);
 }
+/* sai do futebol/luta se a pessoa foi embora (carro, viagem, longe da quadra ou do ringue) */
+function sportGuard() {
+  const away = mode !== 'city' || !!P.drive || !!city.interior || !!city.shopIn;
+  if (FS.m && FS.m.me && (away || Math.hypot(P.x - QUADRA_POS[0], P.z - QUADRA_POS[1]) > 45)) { toast('Você saiu do jogo de futsal.', 'pink'); fsQuit(); }
+  if (RING.mine && !RING.mine.done && (away || Math.hypot(P.x - ARENA_POS[0], P.z - ARENA_POS[1]) > 20)) fightGiveUp();
+  if (RING.mine && RING.mine.done && away) fightCleanup();
+  if (P.sport && !(FS.m && FS.m.me) && !RING.mine) { P.fp = null; P.fpc = 0; P.sprint = 1; P.sportV = null; setSport(null); setGloves(city.player, null); }
+}
 function updateLife25(dt, t) {
+  try { sportGuard(); } catch (e) { console.warn('esporte', e); }
   if (mode !== 'city') return;
   if ((city.dailyT = (city.dailyT || 0) - dt) <= 0) { city.dailyT = 20; bankDaily(); casaDaily(); }
   try { updateDomino(dt, t); } catch (e) { console.warn('dominó', e); }
@@ -11965,6 +11975,7 @@ function loop(now) {
     else if (mode === 'trip' && TRIP) { updateTrip(dt, t); renderer.render(TRIP.sc || city.scene, camera); }
     else if (mode === 'replay' && RP) { updateReplay(dt, t); renderer.render(city.scene, camera); }
   } catch (err) { console.error(err); }
+  if (mode !== 'city' && (P.sport || (FS.m && FS.m.me) || RING.mine)) try { sportGuard(); } catch (e) { }
   input.pressed = {};
   requestAnimationFrame(loop);
 }
