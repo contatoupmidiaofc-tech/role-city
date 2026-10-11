@@ -243,6 +243,7 @@ table.res tr.ally td:nth-child(2){color:var(--ok)}
 .big-num{font-family:var(--display);font-size:42px;color:var(--wax);line-height:1}
 .rg{background:linear-gradient(135deg,#cfe8c6,#a9d39e);color:#15161a;border-radius:12px;padding:10px 12px;font-family:system-ui,sans-serif;box-shadow:0 2px 0 #6f9a64}.rg-h{font-weight:800;font-size:12px;text-align:center;letter-spacing:.5px;border-bottom:1px solid rgba(0,0,0,.25);padding-bottom:6px}.rg-h small{font-weight:600;font-size:10px}.rg-b{display:flex;gap:12px;padding-top:8px;align-items:center}.rg-f{font-size:44px;background:#e9f3e5;border-radius:8px;padding:4px 8px}.rg-b small{display:block;font-size:9px;opacity:.7;margin-top:2px}.rg-b b{display:block;font-size:14px}.rg-x{margin-top:6px;font-weight:700;color:#b3262e}
 .item-card.has-thumb{grid-template-columns:72px 1fr auto}.swatch.thumb{width:72px;height:72px;padding:0;cursor:pointer;background:radial-gradient(circle at 50% 40%,#3a3f4a,#15161a);overflow:hidden;display:grid;place-items:center}.swatch.thumb img{width:100%;height:100%;object-fit:cover}.item-card.r-raro .swatch.thumb{border-color:#4fc3ff}.item-card.r-lendario .swatch.thumb{border-color:#ffb627}.thumb-big{width:min(100%,300px);aspect-ratio:1;margin:0 auto 10px;border-radius:16px;background:radial-gradient(circle at 50% 40%,#444a56,#15161a);border:3px solid #9aa3ad;overflow:hidden;display:grid;place-items:center}.thumb-big.r-raro{border-color:#4fc3ff}.thumb-big.r-lendario{border-color:#ffb627}.thumb-big img{width:100%;height:100%;object-fit:cover}.thumb-big.sw .swatch{transform:scale(3.2)}#beachbar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 118px);display:flex;gap:8px;z-index:30}#beachbar button{font:700 14px/1 var(--display,system-ui);padding:10px 14px;border-radius:999px;border:2px solid #ffcf3a;background:rgba(21,22,26,.88);color:#fff;cursor:pointer}
+#trip-hud{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translateX(-50%);width:min(92vw,560px);background:rgba(21,22,26,.88);border:2px solid #ffcf3a;border-radius:14px;padding:10px 14px;color:#fff;z-index:40;display:grid;gap:6px;font-family:var(--cond,system-ui)}#trip-hud[hidden]{display:none}#trip-hud .tr-t{font-weight:800;font-size:17px}#trip-hud .tr-s{font-size:14px;color:#cfd3d8}#trip-hud .tr-bar{height:8px;border-radius:6px;background:#2a2d34;overflow:hidden}#trip-hud .tr-bar i{display:block;height:100%;background:linear-gradient(90deg,#3ddc84,#ffcf3a)}#trip-hud .tr-fast{justify-self:start;padding:8px 12px;border-radius:999px;border:2px solid #3ddc84;background:#15161a;color:#fff;font-weight:700;touch-action:none}
 .note{font-size:13px;color:var(--muted);line-height:1.45;border-left:3px solid var(--sky);padding-left:10px}
 .seg{display:flex;gap:6px;flex-wrap:wrap}
 .seg button{min-height:38px;padding:0 12px;border-radius:8px;background:var(--panel-2);font-family:var(--cond);font-weight:700;text-transform:uppercase}
@@ -2573,7 +2574,7 @@ function cityExtras(sc) {
   buildMorro(sc);
   buildSkatepark(sc);
   { const [bx, bz] = parkWorld(50, -24), sh = new THREE.Shape(); sh.moveTo(-600, -600); sh.lineTo(600, -600); sh.lineTo(600, 600); sh.lineTo(-600, 600); const ho = new THREE.Path(); ho.absarc(bx, -bz, 7.6, 0, TAU, true); sh.holes.push(ho); city.far.geometry.dispose(); city.far.geometry = new THREE.ShapeGeometry(sh, 32); }
-  buildRoles(sc); mansionGuards(sc); buildTourExtras(sc); buildSea(sc);
+  buildRoles(sc); mansionGuards(sc); buildTourExtras(sc); buildSea(sc); buildAirport(sc);
   buildDayNight(sc);
   setTimeout(loadMarks, 600);
 }
@@ -2919,7 +2920,7 @@ function buildCityScape(sc) {
     const masp = textSprite('MASP · AV. PAULISTA', { bg: '#c0182b', fg: '#ffffff', size: 40, scale: [10, 1.6, 1] }); masp.position.set(0, 28, -165); sc.add(masp);
     // skyline
     const sk = [], col = new THREE.Color();
-    for (let i = 0; i < 90; i++) { const a = Math.random() * TAU, r = rand(150, 280), x = Math.cos(a) * r, z = Math.sin(a) * r; if (Math.abs(x) < 40 && z < -140) continue; if (z > 100 && Math.abs(x) < 90) continue; if (Math.abs(x) > 100 && Math.abs(z) < 70) continue; if (TOUR.sp.some(T => Math.hypot(x - T.lk[0], z - T.lk[1]) < 48 || Math.hypot(x - T.x, z - T.z) < 38) || Math.hypot(x - 190, z - 40) < 30 || Math.abs(x - 190) < 14) continue; sk.push([x, z, rand(30, 110), rand(14, 26)]); }
+    for (let i = 0; i < 90; i++) { const a = Math.random() * TAU, r = rand(150, 280), x = Math.cos(a) * r, z = Math.sin(a) * r; if (Math.abs(x) < 40 && z < -140) continue; if (z > 100 && Math.abs(x) < 90) continue; if (Math.abs(x) > 100 && Math.abs(z) < 70) continue; if (TOUR.sp.some(T => Math.hypot(x - T.lk[0], z - T.lk[1]) < 48 || Math.hypot(x - T.x, z - T.z) < 38) || Math.hypot(x - 190, z - 40) < 30 || Math.abs(x - 190) < 14 || (x < -230 && Math.abs(z) < 200)) continue; sk.push([x, z, rand(30, 110), rand(14, 26)]); }
     const sm = new THREE.InstancedMesh(boxGeo(1, 1, 1), new THREE.MeshLambertMaterial({ color: 0xffffff }), sk.length);
     sk.forEach((b, i) => { M4.compose(new THREE.Vector3(b[0], b[2] / 2, b[1]), new THREE.Quaternion(), new THREE.Vector3(b[3], b[2], b[3])); sm.setMatrixAt(i, M4); sm.setColorAt(i, col.setHex(pick([0x8c8f96, 0x9aa3ad, 0x6f7c8e, 0xb7b2a8, 0x5f6670]))); }); sc.add(sm);
     // ponte estaiada
@@ -2933,6 +2934,9 @@ function buildCityScape(sc) {
 function noFog(o, k = 1) { o.traverse(m => { if (m.isMesh && m.material) { m.material = m.material.clone(); m.material.fog = false; if (k < 1 && m.material.color) m.material.color.lerp(new THREE.Color(0xcfe0f0), 1 - k); } }); }
 /* viagem de uma cidade para outra (de carro, moto ou ônibus) */
 function travelTo(id, how) {
+  return startTrip(id, how === 'bus' ? 'bus' : 'veh'); // viagem com percurso (BR); o teletransporte antigo ficou só de reserva
+}
+function travelToOld(id, how) {
   if (id === cityId()) return;
   const C = CITY_DEFS[id];
   if (how === 'bus') { if (S.coins < 150) return toast('Passagem de ônibus custa $ 150.', 'bad'); S.coins -= 150; }
@@ -2950,7 +2954,7 @@ function travelTo(id, how) {
 }
 function resetCity() {
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
-  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
+  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -3017,7 +3021,7 @@ function carWheel(r, w, alloy) {
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.5, r * 0.5, 0.02, 16), vmat('alloy')); disc.rotation.z = Math.PI / 2; disc.position.x = -w * 0.1; wg.add(disc);
   return wg;
 }
-function makeVehicleMesh(V) { if (V.heli) return makeHeliMesh(V); const m = makeVehicleMesh0(V); if (V.deco) vehDeco(m, V); return m; }
+function makeVehicleMesh(V) { if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.deco) vehDeco(m, V); return m; }
 function makeVehicleMesh0(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
   const paint = vmat('paint', V.color), add = (geo, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, P = g) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.set(rx, ry, rz); k.castShadow = true; k.receiveShadow = true; P.add(k); return k; };
@@ -3704,7 +3708,7 @@ function updateCity(dt, t) {
   for (const d of city.doors) { const k = Math.hypot(d.x - P.x, d.z - P.z); if (k < 3 && k < nd) { nd = k; near = { type: 'door', d }; } }
   for (const o of city.bots) { if (o.off) continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 3.4 && k < nd) { nd = k; near = { type: 'bot', o }; } }
   if (city.myVeh && !P.drive) { const k = Math.hypot(city.myVeh.x - P.x, city.myVeh.z - P.z); if (k < 3.6 && k < nd + 0.5) { nd = k; near = { type: 'veh' }; } }
-  if (!P.drive && !P.ride) for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen) continue; const k = Math.hypot(p.x - P.x, p.z - P.z);
+  if (!P.drive && !P.ride) for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen || (p.t.rm || '') !== roomKey()) continue; const k = Math.hypot(p.x - P.x, p.z - P.z);
     if (p.t.vh && S.shift !== 'policial' && k < 3.8 && k < nd + 0.5) { nd = k; near = { type: 'carona', p }; }
     else if (S.shift === 'policial' && !city.abord && !p.adm && k < (p.t.vh ? 4 : 3) && k < nd + 0.5) { nd = k; near = { type: 'abordarP', p }; } }
   if (city.hospIn) { const k = Math.hypot(HOSP.x - P.x, HOSP.z + HOSP.D / 2 - 1 - P.z); if (k < 2.5) { nd = k; near = { type: 'hospexit' }; } }
@@ -6714,6 +6718,378 @@ function goRoof() {
     toast('🚁 Heliponto da mansão. Chegue perto do helicóptero e aperte Ação para pilotar.', 'pink');
   });
 }
+/* =========================================================
+   CADA UM NO SEU CÔMODO: lojas e prédios por dentro ficam no mesmo lugar do mapa,
+   então só aparece quem está no MESMO cômodo que você
+   ========================================================= */
+function roomKey() {
+  if (city.shopIn) { const it = city.shopIn, d = it.door || {}; return 's:' + it.kind + ':' + Math.round(d.x || 0) + ',' + Math.round(d.z || 0); }
+  if (city.interior) return 'h:' + (NET.user ? NET.user.id : 'eu');
+  if (city.hospIn) return 'hosp'; if (city.jail) return 'jail';
+  return '';
+}
+/* =========================================================
+   AVIAÇÃO: Hangar AJBZ (loja de aviões e helicópteros), aeroporto com pista e heliponto em cada cidade
+   ========================================================= */
+const AIRCRAFT = [
+  { id: 'h_r22', kind: 'heli', heli: true, name: 'Robinson R22 (2 lugares)', color: 0xd8312f, c: 60000, t: 600, top: 26, sc: 0.78, desc: 'O helicóptero mais barato: leve e ágil.' },
+  { id: 'h_r44', kind: 'heli', heli: true, name: 'Robinson R44 (4 lugares)', color: 0x2f6db5, c: 120000, t: 1000, top: 30, sc: 0.88, desc: 'Família e amigos no passeio.' },
+  { id: 'h_esquilo', kind: 'heli', heli: true, name: 'Esquilo AS350', color: 0xf2c12e, c: 250000, t: 1800, top: 34, sc: 1, desc: 'O mais usado no Brasil, forte e rápido.' },
+  { id: 'h_agusta', kind: 'heli', heli: true, name: 'Agusta Executivo', color: 0xf4f4f0, c: 500000, t: 3000, top: 40, sc: 1.15, desc: 'Luxo: couro, ar-condicionado e silêncio.' },
+  { id: 'a_paulistinha', kind: 'plane', plane: true, pm: 'mono', name: 'Paulistinha (monomotor)', color: 0xffcf3a, c: 40000, t: 400, top: 45, desc: 'O avião mais barato: asa alta e hélice na frente.' },
+  { id: 'a_cessna', kind: 'plane', plane: true, pm: 'cessna', name: 'Cessna 172', color: 0xf4f4f0, c: 90000, t: 800, top: 55, desc: 'O avião de escola mais famoso do mundo.' },
+  { id: 'a_kingair', kind: 'plane', plane: true, pm: 'bimotor', name: 'King Air (bimotor)', color: 0xf4f4f0, c: 300000, t: 2200, top: 75, desc: 'Dois motores turbo-hélice, 8 passageiros.' },
+  { id: 'a_jato', kind: 'plane', plane: true, pm: 'jato', name: 'Jato Executivo', color: 0xf4f4f0, c: 800000, t: 4500, top: 95, desc: 'Motores na cauda, voa alto e rápido.' },
+  { id: 'a_boeing', kind: 'plane', plane: true, pm: 'airliner', name: 'Jatão AJBZ (Boeing)', color: 0xf4f4f0, c: 2000000, t: 9000, top: 110, desc: 'O maior de todos: 180 lugares com a coroa do AJBZ.' },
+];
+AIRCRAFT.forEach(V => { V.r = V.c >= 500000 ? 'lendario' : V.c >= 120000 ? 'raro' : 'comum'; VEH[V.id] = V; });
+VEH.a_linha = { id: 'a_linha', kind: 'plane', plane: true, pm: 'airliner', name: 'Linhas Aéreas AJBZ', color: 0xf4f4f0, top: 110, linha: true };
+const AIRPORT = { sp: { x: -320, name: 'Aeroporto de Congonhas' }, rj: { x: 320, name: 'Aeroporto Santos Dumont' }, ssa: { x: -320, name: 'Aeroporto de Salvador' } };
+const ROUTES = { 'ssa-rj': [1650, 1210], 'ssa-sp': [1960, 1450], 'rj-sp': [430, 360] };
+const routeOf = (a, b) => ROUTES[a + '-' + b] || ROUTES[b + '-' + a] || [1000, 800]; // [km pela BR, km de voo]
+const BR_OF = { 'ssa-rj': 'BR-116 / BR-101', 'ssa-sp': 'BR-116', 'rj-sp': 'BR-116 (Via Dutra)' };
+const brOf = (a, b) => BR_OF[a + '-' + b] || BR_OF[b + '-' + a] || 'BR-116';
+const myAir = () => (S.aircraft || []).map(id => VEH[id]).filter(Boolean).concat(isAdm() ? AIRCRAFT.filter(V => !(S.aircraft || []).includes(V.id)) : []);
+const airFare = dest => 400 + Math.round(routeOf(cityId(), dest)[1] * 0.3);
+/* aeroporto: pista, pátio, terminal, torre, hangar AJBZ e heliponto */
+function buildAirport(sc) {
+  const A = AIRPORT[cityId()]; if (!A) return; const rx = A.x, sd = Math.sign(rx), g = new THREE.Group(); sc.add(g);
+  const add = (geo, m, x, y, z, ry = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.y = ry; o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  const L = (c, r = 0.8) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+  const rwT = canvasTex(64, 512, (gg, w, h) => { gg.fillStyle = '#3a3d44'; gg.fillRect(0, 0, w, h); gg.fillStyle = '#f4f4f0'; for (let y = 30; y < h - 30; y += 40) gg.fillRect(w / 2 - 1, y, 2, 20); gg.fillRect(2, 0, 2, h); gg.fillRect(w - 4, 0, 2, h); for (let k = 0; k < 6; k++) { gg.fillRect(8 + k * 8, 4, 4, 22); gg.fillRect(8 + k * 8, h - 26, 4, 22); } });
+  const rw = new THREE.Mesh(new THREE.PlaneGeometry(30, 270), new THREE.MeshLambertMaterial({ map: rwT })); rw.rotation.x = -Math.PI / 2; rw.position.set(rx, 0.05, 0); g.add(rw);
+  const apron = new THREE.Mesh(new THREE.PlaneGeometry(60, 120), new THREE.MeshLambertMaterial({ color: 0x8d9097 })); apron.rotation.x = -Math.PI / 2; apron.position.set(rx - sd * 48, 0.04, -20); g.add(apron);
+  const twy = new THREE.Mesh(new THREE.PlaneGeometry(18, 12), new THREE.MeshLambertMaterial({ color: 0x5a5d64 })); twy.rotation.x = -Math.PI / 2; twy.position.set(rx - sd * 22, 0.045, -20); g.add(twy);
+  for (let z = -130; z <= 130; z += 10) for (const s of [-1, 1]) { const l = new THREE.Mesh(SPH(0.25, 6, 4), new THREE.MeshBasicMaterial({ color: Math.abs(z) > 120 ? 0xd8202f : 0xffffff })); l.position.set(rx + s * 15.5, 0.2, z); g.add(l); }
+  // terminal, torre de controle e hangar
+  const tx = rx - sd * 82; add(boxGeo(16, 9, 70), L(0xe8e4dc), tx, 4.5, -20); add(boxGeo(0.4, 6, 66), new THREE.MeshStandardMaterial({ color: 0x9fd6ff, roughness: 0.05, metalness: 0.5 }), tx + sd * 8.05, 4.5, -20);
+  const ts = textSprite('✈ ' + A.name.toUpperCase(), { bg: '#15161a', fg: '#fff', size: 44, scale: [14, 1.3, 1] }); ts.position.set(tx, 11.5, -20); g.add(ts);
+  add(CYL(1.6, 2, 22, 12), L(0xe8e4dc), tx, 11, 22); add(CYL(3.6, 3, 4, 12), new THREE.MeshStandardMaterial({ color: 0x1b2a3a, roughness: 0.05, metalness: 0.6 }), tx, 24, 22); add(CYL(3.9, 3.9, 0.4, 12), L(0x15161a), tx, 26.2, 22);
+  const hx = rx - sd * 60, hz = -100; add(boxGeo(34, 14, 30), goldM(), hx, 7, hz); add(boxGeo(30, 12, 0.3), L(0x2a2d34), hx, 6, hz + 15.1);
+  const hs = textSprite('👑 HANGAR AJBZ · AVIÕES E HELICÓPTEROS', { bg: '#15161a', fg: '#ffd700', size: 44, scale: [16, 1.4, 1] }); hs.position.set(hx, 16, hz + 15); g.add(hs);
+  // helipontos
+  const padT = canvasTex(128, 128, (gg) => { gg.fillStyle = '#2a2d34'; gg.beginPath(); gg.arc(64, 64, 63, 0, TAU); gg.fill(); gg.strokeStyle = '#ffd700'; gg.lineWidth = 6; gg.beginPath(); gg.arc(64, 64, 52, 0, TAU); gg.stroke(); gg.fillStyle = '#fff'; gg.font = 'bold 72px sans-serif'; gg.textAlign = 'center'; gg.fillText('H', 64, 90); });
+  const pads = [[rx - sd * 40, 40], [rx - sd * 40, 58]]; for (const [x, z] of pads) { const p = new THREE.Mesh(new THREE.CircleGeometry(6, 32), new THREE.MeshLambertMaterial({ map: padT })); p.rotation.x = -Math.PI / 2; p.position.set(x, 0.06, z); g.add(p); }
+  // biruta e aviões parados no pátio
+  const wp = add(CYL(0.1, 0.1, 6, 6), L(0xdddddd), rx + sd * 22, 3, 100); const ws = add(new THREE.ConeGeometry(0.6, 2.6, 10, 1, true), new THREE.MeshLambertMaterial({ color: 0xff7a1a, side: THREE.DoubleSide }), rx + sd * 23.2, 5.7, 100); ws.rotation.z = Math.PI / 2;
+  [['a_cessna', -50], ['a_kingair', -28], ['a_linha', 8]].forEach(([id, z]) => { const m = makePlaneMesh(VEH[id]); m.position.set(rx - sd * 50, 0, z); m.rotation.y = sd > 0 ? -Math.PI / 2 : Math.PI / 2; g.add(m); });
+  noFog(g, 0.92);
+  city.airport = { rx, sd, tx, hx, hz, pads, area: { id: 'aero', n: A.name, x: rx - sd * 45, z: -10, y: 0.06, rect: [Math.min(rx - sd * 76, rx - sd * 14), Math.max(rx - sd * 76, rx - sd * 14), -84, 72], fee: 0, lk: [rx, 0], ly: 10, cd: 70 } };
+}
+/* malhas: aviões (monomotor, Cessna, bimotor, jato e jatão) */
+function makePlaneMesh(V) {
+  const g = new THREE.Group(), u = g.userData, pm = V.pm || 'cessna', S2 = { mono: 0.8, cessna: 0.9, bimotor: 1.3, jato: 1.7, airliner: 3.6 }[pm];
+  const paint = new THREE.MeshStandardMaterial({ color: V.color, roughness: 0.35, metalness: 0.3 }), dark = new THREE.MeshStandardMaterial({ color: 0x1b2a3a, roughness: 0.1, metalness: 0.6 });
+  const acc = new THREE.MeshStandardMaterial({ color: pm === 'airliner' || V.linha ? 0xd4a017 : pm === 'mono' ? 0xd8312f : 0x2f6db5, roughness: 0.4 });
+  const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0, p = g) => { const o = new THREE.Mesh(geo, m); o.position.set(x * S2, y * S2, z * S2); o.rotation.set(rx, ry, rz); o.castShadow = true; p.add(o); return o; };
+  const L = 4.2, r = pm === 'airliner' ? 0.5 : 0.55, yc = pm === 'airliner' || pm === 'jato' ? 1.1 : 1.15;
+  add(CYL(r * S2, r * 0.9 * S2, L * S2, 16), paint, 0, yc, 0, Math.PI / 2);
+  add(SPH(r * S2, 14, 10, 0, TAU, 0, Math.PI / 2), paint, 0, yc, L / 2, Math.PI / 2);
+  add(new THREE.ConeGeometry(r * 0.9 * S2, 2.2 * S2, 14), paint, 0, yc + 0.12, -L / 2 - 1.1, -Math.PI / 2);
+  add(boxGeo(0.04 * S2, 0.22 * S2, L * 0.85 * S2), dark, r + 0.01, yc + 0.18, 0.2).position.x = (r - 0.02) * S2; add(boxGeo(0.04 * S2, 0.22 * S2, L * 0.85 * S2), dark, -r, yc + 0.18, 0.2).position.x = -(r - 0.02) * S2;
+  add(boxGeo(0.9 * S2, 0.3 * S2, 0.5 * S2), dark, 0, yc + 0.32, L / 2 - 0.1);
+  add(boxGeo(2.1 * r * S2, 0.12 * S2, L * 1.02 * S2), acc, 0, yc - 0.1, -0.1);
+  const wy = pm === 'mono' || pm === 'cessna' ? yc + r : yc - r * 0.6, span = { mono: 7, cessna: 7.4, bimotor: 7.6, jato: 7, airliner: 9.6 }[pm];
+  const wing = add(boxGeo(span * S2, 0.12 * S2, 1.1 * S2), paint, 0, wy, 0.2); if (pm === 'airliner' || pm === 'jato') wing.rotation.y = 0;
+  add(boxGeo(2.6 * S2, 0.08 * S2, 0.6 * S2), paint, 0, yc + 0.2, -L / 2 - 1.6); add(boxGeo(0.08 * S2, 1.2 * S2, 0.9 * S2), acc, 0, yc + 0.8, -L / 2 - 1.7);
+  u.props = [];
+  const prop = (x, y, z) => { const pg = new THREE.Group(); pg.position.set(x * S2, y * S2, z * S2); g.add(pg); for (const a of [0, Math.PI / 2]) add(boxGeo(0.08, 1.5 * S2 * 0.6, 0.04), new THREE.MeshStandardMaterial({ color: 0x15161a }), 0, 0, 0, 0, 0, a, pg); u.props.push(pg); };
+  if (pm === 'mono' || pm === 'cessna') prop(0, yc, L / 2 + 0.6);
+  if (pm === 'bimotor') for (const s of [-1, 1]) { add(CYL(0.25 * S2, 0.25 * S2, 1.4 * S2, 10), paint, s * 1.9, wy, 0.6, Math.PI / 2); prop(s * 1.9, wy, 1.4); }
+  if (pm === 'jato') for (const s of [-1, 1]) add(CYL(0.3 * S2, 0.3 * S2, 1.3 * S2, 12), dark, s * 0.8, yc + 0.3, -L / 2 + 0.2, Math.PI / 2);
+  if (pm === 'airliner') for (const s of [-1, 1]) add(CYL(0.32 * S2, 0.28 * S2, 1.1 * S2, 14), new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.3, metalness: 0.5 }), s * 2.2, wy - 0.4, 0.6, Math.PI / 2);
+  for (const [x, z] of [[0, L / 2 - 0.6], [-1, -0.2], [1, -0.2]]) { add(CYL(0.03 * S2, 0.03 * S2, 0.7 * S2, 6), dark, x * (r + 0.3), 0.45, z); add(CYL(0.22 * S2, 0.22 * S2, 0.14 * S2, 12), new THREE.MeshStandardMaterial({ color: 0x15161a }), x * (r + 0.3), 0.22, z, 0, 0, Math.PI / 2); }
+  if (pm === 'airliner' || pm === 'jato') { const lg = textSprite(V.linha ? 'LINHAS AÉREAS AJBZ' : '👑 AJBZ', { bg: '#ffffff', fg: '#d4a017', size: 44, scale: [3.4 * S2 * 0.6, 0.5 * S2 * 0.6, 1] }); lg.position.set(0, (yc + r + 0.5) * S2, 0.4 * S2); g.add(lg); }
+  u.len = (L + 3) * S2; u.camD = 14 + S2 * 8; u.radius = span * S2 / 2;
+  return g;
+}
+/* o helicóptero do chefe e os da loja usam a mesma malha, com a cor de cada modelo */
+const _makeHeliChief = makeHeliMesh;
+function makeAnyHeli(V) { const m = _makeHeliChief(V); if (V.id !== 'v_heli') { m.traverse(o => { if (o.isMesh && o.material && o.material.color && o.material.color.getHex() === 0x15161a && o.material.metalness > 0.5) { o.material = o.material.clone(); o.material.color.setHex(V.color); } }); m.scale.setScalar(V.sc || 1); } return m; }
+function makeBusMesh() {
+  const g = new THREE.Group(), add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  add(boxGeo(2.5, 3.1, 12), new THREE.MeshStandardMaterial({ color: 0xf4f4f0, roughness: 0.4 }), 0, 2, 0); add(boxGeo(2.52, 0.9, 11.6), new THREE.MeshStandardMaterial({ color: 0x1b2a3a, roughness: 0.1, metalness: 0.5 }), 0, 2.6, 0.1);
+  add(boxGeo(2.54, 0.35, 12.02), new THREE.MeshStandardMaterial({ color: 0xd4a017 }), 0, 1.25, 0); add(boxGeo(2.3, 1.2, 0.1), new THREE.MeshStandardMaterial({ color: 0x1b2a3a, metalness: 0.5, roughness: 0.1 }), 0, 2.5, 6.02);
+  for (const z of [-4, 4.2]) for (const x of [-1.25, 1.25]) { const w = add(CYL(0.55, 0.55, 0.4, 14), new THREE.MeshStandardMaterial({ color: 0x15161a }), x, 0.55, z); w.rotation.z = Math.PI / 2; }
+  const s = textSprite('VIAÇÃO AJBZ · LEITO', { bg: '#d4a017', fg: '#15161a', size: 44, scale: [4, 0.6, 1] }); s.position.set(0, 4, 0); g.add(s);
+  g.userData.len = 12; return g;
+}
+/* =========================================================
+   VIAGEM DE VERDADE: pela BR (carro, moto ou ônibus) ou de avião/helicóptero passando por cima das cidades
+   ========================================================= */
+let TRIP = null;
+function startTrip(dest, how) {
+  if (dest === cityId() || TRIP) return;
+  const from = cityId(), [kmRoad, kmAir] = routeOf(from, dest), C = CITY_DEFS[dest];
+  let V = null, air = false;
+  if (how === 'bus') { if (S.coins < 150) return toast('Passagem de ônibus custa $ 150.', 'bad'); S.coins -= 150; }
+  else if (how === 'voo') { const f = airFare(dest); if (S.coins < f) return toast(`A passagem de avião custa $ ${fmt(f)}.`, 'bad'); S.coins -= f; V = VEH.a_linha; air = true; }
+  else if (how === 'veh') { V = VEH[S.veh]; if (!V) return; }
+  else { V = VEH[how]; if (!V || !myAir().includes(V)) return; air = true; }
+  persist(); updateHUD(); closePanel(); camera.far = 2600; camera.updateProjectionMatrix();
+  if (P.drive) exitVehicle(true); if (P.ride) endRide(true); if (P.aim) setAim(false); if (city.tour) { city.tour = null; city.tourSpots = null; }
+  netLeavePlaza();
+  TRIP = { from, dest, how, V, air, km: air ? kmAir : kmRoad, t: 0, prog: 0, fast: false };
+  $('hud').hidden = true; $('touch').hidden = true; $('beachbar') && ($('beachbar').hidden = true);
+  tripHud(true);
+  if (air) airDepart(); else fadeTo(() => { buildRoadTrip(); mode = 'trip'; });
+}
+function tripHud(on) {
+  let el = $('trip-hud');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'trip-hud'; document.body.appendChild(el);
+    el.innerHTML = '<div class="tr-t"></div><div class="tr-bar"><i></i></div><div class="tr-s"></div><button class="tr-fast">⏩ Segure para ir mais rápido</button>';
+    const b = el.querySelector('.tr-fast'), set = v => e => { if (TRIP) TRIP.fast = v; e.preventDefault(); };
+    b.addEventListener('pointerdown', set(true)); b.addEventListener('pointerup', set(false)); b.addEventListener('pointerleave', set(false));
+  }
+  el.hidden = !on;
+}
+function tripHudTick() {
+  const T = TRIP, el = $('trip-hud'); if (!T || !el) return;
+  const ic = T.air ? (T.V.heli ? '🚁' : '✈️') : T.how === 'bus' ? '🚌' : T.V && T.V.kind === 'moto' ? '🏍️' : '🚗';
+  const left = Math.max(0, Math.round(T.km * (1 - T.prog))), sp = T.air ? (T.V.heli ? 230 : T.V.linha || T.V.pm === 'airliner' ? 850 : T.V.pm === 'jato' ? 780 : 320) : T.how === 'bus' ? 90 : 100, hrs = left / sp;
+  el.querySelector('.tr-t').textContent = T.scenic ? `${ic} Passeio aéreo sobre ${CITY_DEFS[T.from].name}` : `${ic} ${CITY_DEFS[T.from].name} → ${CITY_DEFS[T.dest].name}${T.air ? '' : ' · ' + brOf(T.from, T.dest)}`;
+  el.querySelector('.tr-bar i').style.width = (T.prog * 100).toFixed(1) + '%';
+  el.querySelector('.tr-s').textContent = T.scenic ? (T.label || '') : `${T.label || ''}${T.label ? ' · ' : ''}faltam ${fmt(left)} km · chegada em ~${hrs >= 1 ? Math.floor(hrs) + 'h' : ''}${String(Math.round((hrs % 1) * 60)).padStart(2, '0')}min`;
+  el.querySelector('.tr-fast').hidden = !!T.noFast;
+}
+function updateTrip(dt, t) {
+  const T = TRIP; if (!T) return; T.t += dt;
+  if (T.phase === 'road') roadTick(dt, t);
+  else if (T.phase === 'path') pathTick(dt, t);
+  else if (T.phase === 'cruise') cruiseTick(dt, t);
+  if ((T.hudT = (T.hudT || 0) - dt) <= 0) { T.hudT = 0.25; tripHudTick(); }
+}
+function endTrip() {
+  const T = TRIP; TRIP = null; mode = 'city'; tripHud(false); camera.far = 700; camera.updateProjectionMatrix(); $('hud').hidden = false; if (IS_TOUCH) $('touch').hidden = false;
+  city.player.visible = true; if (NET.user) netJoinPlaza(); updateHUD(); sfx('level');
+  toast(T.scenic ? '🛬 Fim do passeio aéreo!' : `Bem-vindo a ${CITY_DEFS[T.dest].name}!`, 'pink');
+}
+/* troca a cidade (por baixo do fade) */
+function loadDestCity(dest) { S.cityId = dest; persist(); resetCity(); buildCity(); setTimeout(loadBiz, 700); applyQuality(); rebuildMissionObjs(); renderMissionBox(); }
+/* ---------- PELA BR ---------- */
+const TRIP_L = 3200, CHUNK = 160;
+const roadX = z => 22 * Math.sin(z / 380) + 9 * Math.sin(z / 141 + 1.3);
+function buildRoadTrip() {
+  const T = TRIP, sc = new THREE.Scene(); T.sc = sc; T.phase = 'road'; T.z = -20; T.v = 0; T.lane = 3.2; T.chunks = {}; T.traffic = []; T.tolls = [0.28, 0.68].map(p => ({ z: p * TRIP_L, paid: false })); T.stopT = 0;
+  sc.background = new THREE.Color(0xbfdcf2); sc.fog = new THREE.Fog(0xbfdcf2, 120, 700);
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x6a7a55, 0.85)); const sun = new THREE.DirectionalLight(0xfff2d8, 1.1); sun.position.set(80, 140, 40); sc.add(sun); T.sun = sun; sc.add(sun.target);
+  const gT = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#5f8a45'; g.fillRect(0, 0, w, h); for (let i = 0; i < 500; i++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? '40,70,30' : '120,150,70'},.35)`; g.fillRect(Math.random() * w, Math.random() * h, 3, 3); } }); gT.wrapS = gT.wrapT = THREE.RepeatWrapping; gT.repeat.set(60, 60);
+  T.ground = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), new THREE.MeshLambertMaterial({ map: gT })); T.ground.rotation.x = -Math.PI / 2; sc.add(T.ground);
+  T.roadT = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#3c3f46'; g.fillRect(0, 0, w, h); g.fillStyle = '#f4f4f0'; g.fillRect(3, 0, 3, h); g.fillRect(w - 6, 0, 3, h); g.fillStyle = '#ffcf3a'; g.fillRect(w / 2 - 3, 0, 2, h); g.fillRect(w / 2 + 1, 0, 2, h); g.fillStyle = '#f4f4f0'; for (let y = 0; y < h; y += 32) { g.fillRect(w * 0.25 - 1, y, 2, 16); g.fillRect(w * 0.75 - 1, y, 2, 16); } }); T.roadT.wrapT = THREE.RepeatWrapping;
+  T.veh = T.how === 'bus' ? makeBusMesh() : makeVehicleMesh(T.V); sc.add(T.veh);
+  if (T.V && T.V.kind === 'moto') { T.rider = makeSkater(myLook(), null); sc.add(T.rider); }
+  // cidade de origem atrás e placa de saída
+  skylineAt(sc, T.from, -260, 1); gantry(sc, 70, `VOCÊ ESTÁ SAINDO DE ${CITY_DEFS[T.from].name.toUpperCase()} · BOA VIAGEM!`, '#2e7a35');
+  skylineAt(sc, T.dest, TRIP_L + 260, -1); gantry(sc, TRIP_L - 120, `BEM-VINDO A ${CITY_DEFS[T.dest].name.toUpperCase()}`, '#2f6db5');
+  camera.position.set(0, 6, -36); city.camSnap = true;
+  T.label = 'Saindo da cidade';
+}
+function gantry(sc, z, txt, bg) { const x = roadX(z), g = new THREE.Group(); for (const s of [-12, 12]) { const p = new THREE.Mesh(CYL(0.3, 0.3, 8, 8), lam(0x9aa3ad)); p.position.set(s, 4, 0); g.add(p); } const bm = new THREE.Mesh(boxGeo(25, 0.6, 0.6), lam(0x9aa3ad)); bm.position.y = 8; g.add(bm); const s = textSprite(txt, { bg, fg: '#fff', size: 40, scale: [Math.min(24, txt.length * 0.42), 1.6, 1] }); s.position.set(0, 9.6, 0); g.add(s); g.position.set(x, 0, z); sc.add(g); }
+function skylineAt(sc, cid, z0, dir) {
+  const rng = mulberry32(cid.length * 31 + 7), M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), n = cid === 'sp' ? 70 : 45, pal = CITY_DEFS[cid].pal;
+  const m = new THREE.InstancedMesh(boxGeo(1, 1, 1), new THREE.MeshLambertMaterial({ color: 0xffffff }), n), c = new THREE.Color();
+  for (let i = 0; i < n; i++) { const x = (rng() - 0.5) * 360, z = z0 + dir * rng() * 140, h = (cid === 'sp' ? 30 : cid === 'rj' ? 18 : 10) + rng() * (cid === 'sp' ? 70 : 30), w = 10 + rng() * 12; if (Math.abs(x - roadX(z)) < 20) continue; m.setMatrixAt(i, M4.compose(new THREE.Vector3(x, h / 2, z), Q, new THREE.Vector3(w, h, w))); m.setColorAt(i, c.setHex(pal[i % pal.length])); }
+  sc.add(m);
+  const z = z0 + dir * 170;
+  if (cid === 'rj') { const hill = new THREE.Mesh(new THREE.ConeGeometry(70, 120, 9), new THREE.MeshLambertMaterial({ color: 0x3f7a35, flatShading: true })); hill.position.set(-90, 60, z); sc.add(hill); const cr = new THREE.Group(), st = lam(0xe8e4d8); const b = new THREE.Mesh(boxGeo(4, 22, 3), st); b.position.y = 11; cr.add(b); const a = new THREE.Mesh(boxGeo(24, 3, 2.5), st); a.position.y = 19; cr.add(a); cr.position.set(-90, 120, z); sc.add(cr); }
+  else if (cid === 'ssa') { const tw = new THREE.Mesh(boxGeo(8, 60, 10), lam(0xe8e2d6)); tw.position.set(70, 30, z); sc.add(tw); const lh = new THREE.Mesh(CYL(2, 3, 22, 10), lam(0xffffff)); lh.position.set(-80, 11, z); sc.add(lh); }
+  else { const mast = new THREE.Mesh(boxGeo(4, 90, 4), lam(0xe8e8e8)); mast.position.set(80, 45, z); sc.add(mast); const red = new THREE.Mesh(boxGeo(50, 18, 14), lam(0xc0182b)); red.position.set(-60, 16, z); sc.add(red); }
+}
+function roadChunk(i) {
+  const T = TRIP, sc = T.sc, g = new THREE.Group(), z0 = i * CHUNK, rng = mulberry32(i * 977 + 13), prog = z0 / TRIP_L;
+  // pista (duas faixas em cada sentido) seguindo as curvas
+  const seg = 16, pos = [], uv = [], idx = [];
+  for (let k = 0; k <= seg; k++) { const z = z0 + k * CHUNK / seg, x = roadX(z); pos.push(x - 9, 0.05, z, x + 9, 0.05, z); uv.push(0, z / 18, 1, z / 18); if (k) { const a = (k - 1) * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } }
+  const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); rg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); rg.setIndex(idx); rg.computeVertexNormals();
+  const road = new THREE.Mesh(rg, new THREE.MeshLambertMaterial({ map: T.roadT, side: THREE.DoubleSide })); road.receiveShadow = true; g.add(road);
+  const palms = (T.from === 'ssa' && prog < 0.4) || (T.dest === 'ssa' && prog > 0.6) || (T.dest === 'rj' && prog > 0.75), serra = prog > 0.45 && prog < 0.62;
+  for (let k = 0; k < 14; k++) {
+    const z = z0 + rng() * CHUNK, sd = rng() < 0.5 ? -1 : 1, x = roadX(z) + sd * (14 + rng() * 60);
+    if (palms && rng() < 0.6) { const t = new THREE.Mesh(CYL(0.2, 0.3, 7, 6), lam(0x8a6a45)); t.position.set(x, 3.5, z); g.add(t); const cr = new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.2, 7), new THREE.MeshLambertMaterial({ color: 0x2f8a3a, flatShading: true })); cr.position.set(x, 7.2, z); g.add(cr); }
+    else { const t = new THREE.Mesh(CYL(0.25, 0.35, 3, 6), lam(0x6b4a2f)); t.position.set(x, 1.5, z); g.add(t); const cr = new THREE.Mesh(new THREE.IcosahedronGeometry(2.2 + rng() * 1.2, 0), new THREE.MeshLambertMaterial({ color: pick([0x2e7a35, 0x3f8a3a, 0x4f9a45]), flatShading: true })); cr.position.set(x, 4.2, z); g.add(cr); }
+  }
+  for (let k = 0; k < (serra ? 6 : 2); k++) { const sd = rng() < 0.5 ? -1 : 1, z = z0 + rng() * CHUNK, h = serra ? 60 + rng() * 90 : 20 + rng() * 40, m = new THREE.Mesh(new THREE.ConeGeometry(h * 0.9, h, 7), new THREE.MeshLambertMaterial({ color: serra ? 0x3a6a35 : 0x6b8a4a, flatShading: true })); m.position.set(roadX(z) + sd * (90 + rng() * 160), h / 2 - 2, z); g.add(m); }
+  if (!palms && !serra && rng() < 0.5) { const fx = roadX(z0) + (rng() < 0.5 ? -1 : 1) * (30 + rng() * 30); for (let k = 0; k < 5; k++) { const c = new THREE.Group(), bd = new THREE.Mesh(boxGeo(0.9, 0.9, 1.8), lam(pick([0xf4f4f0, 0x6b4a2f, 0x15161a]))); bd.position.y = 0.9; c.add(bd); const hd = new THREE.Mesh(boxGeo(0.5, 0.5, 0.6), lam(0xf4f4f0)); hd.position.set(0, 1.3, 1.1); c.add(hd); for (const [lx, lz] of [[-0.3, -0.6], [0.3, -0.6], [-0.3, 0.6], [0.3, 0.6]]) { const l = new THREE.Mesh(boxGeo(0.15, 0.6, 0.15), lam(0x6b4a2f)); l.position.set(lx, 0.3, lz); c.add(l); } c.position.set(fx + rng() * 12, 0, z0 + rng() * CHUNK); c.rotation.y = rng() * TAU; g.add(c); } }
+  // placa de km e placa verde da BR
+  for (let z = Math.ceil(z0 / 100) * 100; z < z0 + CHUNK; z += 100) { const km = Math.round(z / TRIP_L * T.km), s = textSprite(`KM ${km}`, { bg: '#f4f4f0', fg: '#15161a', size: 46, scale: [1.6, 0.8, 1] }); s.position.set(roadX(z) + 10.5, 1.4, z); g.add(s); }
+  if (i % 3 === 1 && prog < 0.95) { const z = z0 + 80, left = Math.round((1 - z / TRIP_L) * T.km), s = textSprite(`${brOf(T.from, T.dest)} · ${CITY_DEFS[T.dest].name} ${fmt(left)} km`, { bg: '#2e7a35', fg: '#fff', size: 40, scale: [11, 1.4, 1] }); s.position.set(roadX(z) + 12, 6, z); g.add(s); const p = new THREE.Mesh(CYL(0.2, 0.2, 6, 6), lam(0x9aa3ad)); p.position.set(roadX(z) + 12, 3, z); g.add(p); }
+  // posto de gasolina, pedágio e ponte
+  if (Math.floor(0.48 * TRIP_L / CHUNK) === i) { const x = roadX(z0 + 80) + 22, st = new THREE.Group(); const roof = new THREE.Mesh(boxGeo(16, 0.8, 10), lam(0x2e7a35)); roof.position.y = 5.5; st.add(roof); for (const [px, pz] of [[-6, -3], [6, -3], [-6, 3], [6, 3]]) { const p = new THREE.Mesh(boxGeo(0.4, 5.5, 0.4), lam(0xf4f4f0)); p.position.set(px, 2.75, pz); st.add(p); } const sh = new THREE.Mesh(boxGeo(10, 4, 6), lam(0xf4f4f0)); sh.position.set(0, 2, -9); st.add(sh); const sg = textSprite('POSTO AJBZ 24h · LANCHONETE', { bg: '#ffcf3a', fg: '#15161a', size: 40, scale: [8, 1, 1] }); sg.position.set(0, 7.4, 0); st.add(sg); st.position.set(x, 0, z0 + 80); g.add(st); }
+  for (const tl of T.tolls) if (tl.z >= z0 && tl.z < z0 + CHUNK) { const x = roadX(tl.z), pl = new THREE.Group(); const roof = new THREE.Mesh(boxGeo(26, 0.8, 8), lam(0xffcf3a)); roof.position.y = 6; pl.add(roof); for (let k = -2; k <= 2; k++) { const b = new THREE.Mesh(boxGeo(1.4, 2.6, 3), lam(0xf4f4f0)); b.position.set(k * 4.2 + 2.1, 1.3, 0); pl.add(b); } const s = textSprite('PEDÁGIO · PAGUE AQUI', { bg: '#15161a', fg: '#ffcf3a', size: 42, scale: [9, 1.1, 1] }); s.position.y = 7.6; pl.add(s); const arm = new THREE.Mesh(boxGeo(4, 0.15, 0.15), lam(0xd8202f)); arm.position.set(T.lane + 0, 1.2, 1.6); pl.add(arm); tl.arm = arm; pl.position.set(x, 0, tl.z); g.add(pl); }
+  if (i % 7 === 4) { const z = z0 + 60, x = roadX(z), river = new THREE.Mesh(new THREE.PlaneGeometry(400, 18), new THREE.MeshLambertMaterial({ color: 0x3f8fb8 })); river.rotation.x = -Math.PI / 2; river.position.set(x, 0.07, z); g.add(river); const br = new THREE.Mesh(boxGeo(20, 0.6, 22), lam(0x9aa3ad)); br.position.set(x, 0.2, z); g.add(br); for (const s of [-10, 10]) { const r = new THREE.Mesh(boxGeo(0.3, 1, 22), lam(0xd9d2c3)); r.position.set(x + s, 0.8, z); g.add(r); } const rs = textSprite(`RIO ${pick(['SÃO FRANCISCO', 'PARAGUAÇU', 'JEQUITINHONHA', 'DOCE', 'PARAÍBA DO SUL', 'PARDO'])}`, { bg: '#2f6db5', fg: '#fff', size: 40, scale: [6, 0.9, 1] }); rs.position.set(x + 12, 3, z - 12); g.add(rs); }
+  sc.add(g); return g;
+}
+function spawnTraffic(T) {
+  const opp = Math.random() < 0.55, z = T.z + (opp ? 500 : 260) + rand(0, 200);
+  if (z > TRIP_L - 150) return;
+  let m; if (!opp && Math.random() < 0.7) { m = new THREE.Group(); const cab = new THREE.Mesh(boxGeo(2.4, 2.6, 2.4), lam(pick([0xd8312f, 0x2f6db5, 0xf4f4f0, 0xf2c12e]))); cab.position.set(0, 1.6, 5); m.add(cab); const tr = new THREE.Mesh(boxGeo(2.5, 3.2, 10), lam(pick([0xf4f4f0, 0x9aa3ad, 0x2e7a35]))); tr.position.set(0, 2, -1.5); m.add(tr); for (const wz of [5, 0, -4]) for (const wx of [-1.2, 1.2]) { const w = new THREE.Mesh(CYL(0.5, 0.5, 0.4, 10), lam(0x15161a)); w.rotation.z = Math.PI / 2; w.position.set(wx, 0.5, wz); m.add(w); } const s = textSprite(pick(['TRANSPORTES BAHIA', 'FRIGORÍFICO SUL', 'MUDANÇAS RIO', 'CARGAS SP', 'BONDE LOG']), { bg: '#15161a', fg: '#fff', size: 40, scale: [4, 0.6, 1] }); s.position.set(0, 3.9, -1.5); m.add(s); }
+  else m = makeVehicleMesh(pick(VEHICLES.filter(v => v.kind === 'car')));
+  T.sc.add(m); T.traffic.push({ m, z, lane: opp ? -3.2 : (Math.random() < 0.7 ? 3.2 : 6.2) * 1, v: opp ? -rand(22, 32) : rand(14, 22) });
+}
+function roadTick(dt, t) {
+  const T = TRIP;
+  const want = (T.fast || input.held.KeyW || input.held.ArrowUp || input.hold.gas) ? 70 : 38;
+  // pedágio: para, paga e a cancela abre
+  let toll = T.tolls.find(tl => !tl.paid && tl.z - T.z < 80 && tl.z > T.z - 2), target = want;
+  if (toll) { const d = toll.z - 3 - T.z; target = Math.min(want, Math.max(0, d * 0.9)); T.label = 'Pedágio'; if (d < 0.6) { T.stopT += dt; if (T.stopT > 1.2) { toll.paid = true; T.stopT = 0; const fee = T.how === 'bus' ? 0 : 12; if (fee) { S.coins = Math.max(0, S.coins - fee); persist(); } toast(fee ? `Pedágio pago: $ ${fee}` : 'Pedágio incluso na passagem.', 'pink'); sfx('coin'); } } }
+  T.v = lerp(T.v, target, 1 - Math.exp(-(target < T.v ? 3 : 0.8) * dt)); T.z += T.v * dt;
+  for (const tl of T.tolls) if (tl.arm) tl.arm.rotation.z = lerp(tl.arm.rotation.z, tl.paid ? Math.PI / 2.2 : 0, 1 - Math.exp(-4 * dt));
+  // ultrapassagem: muda de faixa quando tem caminhão na frente
+  const ahead = T.traffic.find(c => c.v > 0 && c.lane > 0 && c.z > T.z && c.z - T.z < 45 && Math.abs(c.lane - 3.2) < 1);
+  T.lane = lerp(T.lane, ahead ? 0.8 + 0 : 3.2, 1 - Math.exp(-1.5 * dt)); if (!ahead && T.lane < 3) T.lane = lerp(T.lane, 3.2, dt);
+  T.prog = clamp(T.z / TRIP_L, 0, 1);
+  if (!toll) T.label = T.prog < 0.05 ? 'Saindo da cidade' : T.prog > 0.94 ? 'Chegando' : Math.abs(T.prog - 0.48) < 0.03 ? 'Posto de gasolina' : T.prog > 0.45 && T.prog < 0.62 ? 'Serra' : 'Na estrada';
+  // pedaços da estrada à frente (e apaga os de trás)
+  const ci = Math.floor(T.z / CHUNK); for (let i = ci - 1; i <= ci + 5; i++) if (i >= -2 && !T.chunks[i]) T.chunks[i] = roadChunk(i);
+  for (const k in T.chunks) if (+k < ci - 2) { T.sc.remove(T.chunks[k]); delete T.chunks[k]; }
+  // trânsito
+  if ((T.spawnT = (T.spawnT || 0) - dt) <= 0) { T.spawnT = rand(1.2, 2.6); spawnTraffic(T); }
+  for (const c of T.traffic) { c.z += c.v * dt; const x = roadX(c.z) + c.lane, x2 = roadX(c.z + 1) + c.lane; c.m.position.set(x, 0, c.z); c.m.rotation.y = c.v > 0 ? Math.atan2(x2 - x, 1) : Math.atan2(x2 - x, 1) + Math.PI; }
+  T.traffic = T.traffic.filter(c => { const keep = c.z > T.z - 60 && c.z < T.z + 900; if (!keep) T.sc.remove(c.m); return keep; });
+  // meu veículo
+  const x = roadX(T.z) + T.lane, x2 = roadX(T.z + 2) + T.lane, h = Math.atan2(x2 - x, 2), m = T.veh;
+  m.position.set(x, 0, T.z); m.rotation.y = h; const u = m.userData; if (u.wheels) { u.spin = (u.spin || 0) + T.v * dt / 0.35; for (const w of u.wheels) { w.children[0].rotation.x = u.spin; if (w.children[1]) w.children[1].rotation.x = u.spin; } }
+  if (T.rider) { T.rider.position.set(x, (u.seatY || 0.95) - 1.07, T.z); T.rider.rotation.y = h; animSkater(T.rider, { ride: true, walk: true, v: 0, fallT: 0 }, t); }
+  T.ground.position.set(x, 0, T.z); T.ground.material.map.offset.set(x / 40, -T.z / 40);
+  T.sun.position.set(x + 80, 140, T.z + 40); T.sun.target.position.set(x, 0, T.z);
+  // câmera de perseguição (de vez em quando passa para o lado)
+  const side = Math.sin(T.t * 0.11) > 0.75, cd = (u.len || 4) * 1.1 + 6, want3 = side ? new THREE.Vector3(x + 12, 3, T.z + 6) : new THREE.Vector3(x - Math.sin(h) * cd, 3.4 + cd * 0.15, T.z - Math.cos(h) * cd);
+  camera.position.lerp(want3, city.camSnap ? 1 : 1 - Math.exp(-2.5 * dt)); city.camSnap = false; camera.lookAt(x, 1.4, T.z + (side ? 0 : 8));
+  if (T.z >= TRIP_L) roadArrive();
+}
+function roadArrive() {
+  const T = TRIP; if (T.arriving) return; T.arriving = true;
+  fadeTo(() => {
+    loadDestCity(T.dest);
+    const d = city.doors.find(d => d.kind === 'viagem'); P.x = d.x; P.z = d.z + 4; P.h = 0; P.v = 0; P.y = 0; city.camYaw = 0; city.camSnap = true;
+    if (T.how === 'veh' && S.veh) spawnMyVehicle();
+    endTrip();
+  });
+}
+/* ---------- DE AVIÃO / HELICÓPTERO ---------- */
+function airPath(kind, takeoff) {
+  const A = city.airport, rx = A.rx, sd = A.sd, V3 = (x, y, z) => new THREE.Vector3(x, y, z), heli = TRIP.V.heli;
+  if (heli) { const [px, pz] = A.pads[0]; return takeoff ? [V3(px, 0.1, pz), V3(px, 25, pz), V3(rx * 0.5, 70, 20), V3(0, 85, 0), V3(-rx * 0.6, 100, -120), V3(-rx * 1.3, 120, -260)] : [V3(-rx * 1.3, 120, 260), V3(-rx * 0.6, 100, 120), V3(0, 85, 0), V3(rx * 0.5, 60, 30), V3(px, 22, pz), V3(px, 0.1, pz)]; }
+  return takeoff ? [V3(rx, 0.1, 118), V3(rx, 0.1, 30), V3(rx, 0.1, -40), V3(rx, 18, -120), V3(rx * 0.6, 60, -180), V3(0, 95, -70), V3(0, 100, 60), V3(-rx * 0.8, 130, 220), V3(-rx * 1.6, 160, 380)]
+    : [V3(-rx * 1.6, 170, -380), V3(-rx * 0.8, 130, -200), V3(0, 100, -50), V3(0, 95, 70), V3(rx * 0.55, 65, 210), V3(rx, 32, 250), V3(rx, 0.1, 118), V3(rx, 0.1, 40), V3(rx, 0.1, -10)];
+}
+function airDepart() {
+  const T = TRIP; fadeTo(() => {
+    if (!city.airport) buildAirport(city.scene);
+    T.m = T.V.heli ? makeAnyHeli(T.V) : makePlaneMesh(T.V); city.scene.add(T.m); city.player.visible = false;
+    startPath(true); mode = 'trip'; T.label = T.V.heli ? 'Decolando do heliponto' : 'Decolando'; toast(T.V.linha ? '✈️ Senhores passageiros, apertem os cintos. Decolagem autorizada!' : '🛫 Decolagem autorizada!', 'pink');
+  });
+}
+function startPath(takeoff) {
+  const T = TRIP, pts = airPath(T.V.pm, takeoff); T.curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.3); T.len = T.curve.getLength(); T.u = 0; T.takeoff = takeoff; T.phase = 'path'; T.sc = city.scene; T.spd = takeoff ? 2 : (T.V.heli ? 40 : 55); T.noFast = false;
+  T.m.position.copy(pts[0]); city.camSnap = true;
+}
+function pathTick(dt, t) {
+  const T = TRIP, heli = T.V.heli, cruise = heli ? 38 : T.V.linha || T.V.pm === 'airliner' ? 62 : T.V.pm === 'jato' ? 58 : 48;
+  let want = cruise;
+  if (T.takeoff && !heli && T.u < 0.25) want = cruise * 0.95; // corrida na pista
+  if (!T.takeoff) { if (T.u > 0.8) want = heli ? 10 : 28; if (T.u > 0.9) want = heli ? 5 : 8; if (T.u > 0.975) want = 2; }
+  if (T.fast) want *= 1.8;
+  T.spd = lerp(T.spd, want, 1 - Math.exp(-(T.takeoff && T.u < 0.2 ? 0.6 : 1) * dt));
+  T.u = Math.min(1, T.u + T.spd * dt / T.len);
+  const p = T.curve.getPointAt(T.u), q = T.curve.getPointAt(Math.min(1, T.u + 0.004)), m = T.m;
+  const gy = Math.max(0, p.y); m.position.set(p.x, gy, p.z);
+  const yaw = Math.atan2(q.x - p.x, q.z - p.z), pitch = -Math.atan2(q.y - p.y, Math.hypot(q.x - p.x, q.z - p.z));
+  if (Math.hypot(q.x - p.x, q.z - p.z) > 0.01) { const dy = Math.atan2(Math.sin(yaw - (T.yaw ?? yaw)), Math.cos(yaw - (T.yaw ?? yaw))); T.roll = lerp(T.roll || 0, clamp(-dy * 25, -0.6, 0.6), 1 - Math.exp(-3 * dt)); T.yaw = yaw; }
+  m.rotation.order = 'YXZ'; m.rotation.set(heli ? pitch * 0.3 + 0.12 * (T.spd / 40) : pitch * 0.7, T.yaw ?? yaw, T.roll || 0);
+  const u = m.userData; if (u.rotor) { u.rotor.rotation.y += dt * 28; u.trotor.rotation.x += dt * 40; } for (const pr of u.props || []) pr.rotation.z += dt * 40;
+  // câmera: atrás do avião, abrindo para ver a cidade lá embaixo
+  const cd = (u.camD || 14) + (p.y > 40 ? 18 : 0), want3 = new THREE.Vector3(p.x - Math.sin(T.yaw ?? yaw) * cd, p.y + 4 + cd * 0.28, p.z - Math.cos(T.yaw ?? yaw) * cd);
+  camera.position.lerp(want3, city.camSnap ? 1 : 1 - Math.exp(-2 * dt)); city.camSnap = false; camera.lookAt(p.x, p.y + 1, p.z);
+  updateDayNight(dt); updateWeather(dt, t);
+  T.prog = T.takeoff ? T.u * 0.12 : 0.88 + T.u * 0.12;
+  T.label = T.takeoff ? (T.u < 0.3 ? 'Decolando' : `Sobrevoando ${CITY_DEFS[T.from].name}`) : (T.u < 0.45 ? `Sobrevoando ${CITY_DEFS[T.dest].name}` : T.u < 0.92 ? 'Pousando' : 'Taxiando');
+  if (T.u >= 1) { if (T.takeoff && T.scenic) { if (!T.fading) { T.fading = true; fadeTo(() => { startPath(false); T.fading = false; }); } } else if (T.takeoff) { if (!T.fading) { T.fading = true; fadeTo(() => { city.scene.remove(T.m); buildCruise(); T.fading = false; }); } } else airArrive(); }
+}
+function buildCruise() {
+  const T = TRIP, sc = new THREE.Scene(); T.sc = sc; T.phase = 'cruise'; T.ct = 0; T.cdur = T.V.heli ? 34 : 38;
+  sc.background = new THREE.Color(0x8fc4ee); sc.fog = new THREE.Fog(0xb5d8f2, 300, 1800);
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 0.9)); const sun = new THREE.DirectionalLight(0xfff2d8, 1.1); sun.position.set(100, 200, 50); sc.add(sun);
+  const alt = T.V.heli ? 140 : 320;
+  const gT = canvasTex(256, 256, (g, w, h) => { for (let i = 0; i < 70; i++) { g.fillStyle = pick(['#5f8a45', '#7a9a50', '#8a7a55', '#4f7a3a', '#a89a6a']); g.fillRect(Math.random() * w, Math.random() * h, 20 + Math.random() * 60, 20 + Math.random() * 60); } g.strokeStyle = '#3f8fb8'; g.lineWidth = 4; g.beginPath(); g.moveTo(0, h * 0.3); g.bezierCurveTo(w * 0.3, h * 0.5, w * 0.6, h * 0.1, w, h * 0.6); g.stroke(); g.strokeStyle = '#9a8a6a'; g.lineWidth = 2; g.beginPath(); g.moveTo(w * 0.5, 0); g.lineTo(w * 0.55, h); g.stroke(); });
+  gT.wrapS = gT.wrapT = THREE.RepeatWrapping; gT.repeat.set(8, 8);
+  T.ground = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshLambertMaterial({ map: gT })); T.ground.rotation.x = -Math.PI / 2; T.ground.position.y = -alt; sc.add(T.ground);
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshLambertMaterial({ color: 0x2a7fb8 })); sea.rotation.x = -Math.PI / 2; sea.position.set(3200, -alt + 0.5, 0); sc.add(sea); T.sea = sea;
+  T.clouds = []; const cm = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, emissive: 0x556070 }), cg = new THREE.IcosahedronGeometry(1, 0);
+  for (let i = 0; i < 40; i++) { const c = new THREE.Group(); for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(cg, cm); const s = rand(12, 26); m.scale.set(s * 1.5, s * 0.6, s); m.position.set(k * 18 - 30, rand(-4, 4), rand(-8, 8)); c.add(m); } c.position.set(rand(-600, 600), rand(-alt * 0.6, 40), rand(-200, 1600)); sc.add(c); T.clouds.push(c); }
+  T.m = T.V.heli ? makeAnyHeli(T.V) : makePlaneMesh(T.V); sc.add(T.m); T.m.position.set(0, 0, 0);
+  T.other = null; city.camSnap = true; T.label = 'Em voo';
+}
+function cruiseTick(dt, t) {
+  const T = TRIP, sp = (T.fast ? 1.9 : 1); T.ct += dt * sp; const k = clamp(T.ct / T.cdur, 0, 1); T.prog = 0.12 + k * 0.76;
+  const vz = (T.V.heli ? 60 : 140) * sp, m = T.m, u = m.userData;
+  m.rotation.order = 'YXZ'; m.rotation.set(Math.sin(t * 0.6) * 0.02, 0, Math.sin(t * 0.4) * 0.06); m.position.y = Math.sin(t * 0.5) * 0.8;
+  if (u.rotor) { u.rotor.rotation.y += dt * 28; u.trotor.rotation.x += dt * 40; } for (const pr of u.props || []) pr.rotation.z += dt * 40;
+  for (const c of T.clouds) { c.position.z -= vz * dt; if (c.position.z < -300) { c.position.z += 1900; c.position.x = rand(-600, 600); } }
+  T.ground.material.map.offset.y += vz * dt / 750; T.sea.position.x = 3200 - Math.sin(k * Math.PI) * 2600 * (T.from === 'sp' && T.dest === 'rj' ? 0.4 : 1);
+  if (!T.other && Math.random() < dt * 0.06) { const o = makePlaneMesh(VEH.a_linha); o.position.set(rand(-120, 120), rand(-30, 30), 1500); o.rotation.y = Math.PI; T.sc.add(o); T.other = o; }
+  if (T.other) { T.other.position.z -= (vz + 160) * dt; if (T.other.position.z < -400) { T.sc.remove(T.other); T.other = null; } }
+  const a = T.t * 0.07, cd = (u.camD || 14) + 6; camera.position.lerp(new THREE.Vector3(Math.sin(a) * cd * 0.8, 4 + Math.sin(a * 0.7) * 3, -Math.cos(a) * cd), city.camSnap ? 1 : 1 - Math.exp(-1.5 * dt)); city.camSnap = false; camera.lookAt(0, 0.5, 0);
+  T.label = k < 0.15 ? 'Subindo acima das nuvens' : k > 0.85 ? 'Iniciando a descida' : 'Em voo de cruzeiro';
+  if (k >= 1 && !T.fading) { T.fading = true; fadeTo(() => { loadDestCity(T.dest); city.player.visible = false; T.m = T.V.heli ? makeAnyHeli(T.V) : makePlaneMesh(T.V); city.scene.add(T.m); startPath(false); T.fading = false; }); }
+}
+function airArrive() {
+  const T = TRIP; if (T.arriving) return; T.arriving = true;
+  setTimeout(() => fadeTo(() => {
+    const A = city.airport; city.scene.remove(T.m);
+    city.tour = Object.assign({}, A.area); city.tourBack = [0, 10, 0];
+    P.x = A.rx - A.sd * 30; P.z = -10; P.y = 0.06; P.h = A.sd > 0 ? Math.PI / 2 : -Math.PI / 2; P.v = 0; city.camYaw = P.h; city.camSnap = true;
+    airportSpots();
+    if (T.V.heli && !T.V.linha) { spawnMyVehicle(T.V); const mv = city.myVeh, [px, pz] = A.pads[0]; mv.x = px; mv.z = pz; mv.m.position.set(px, 0.06, pz); }
+    else if (!T.V.linha) { const pm = makePlaneMesh(T.V); pm.position.set(A.rx - A.sd * 50, 0, 40); pm.rotation.y = A.sd > 0 ? -Math.PI / 2 : Math.PI / 2; city.scene.add(pm); }
+    endTrip(); toast(`🛬 Pouso em ${CITY_DEFS[T.dest].name}. Use "Voltar para a cidade" quando quiser.`, 'pink');
+  }), 600);
+}
+/* ---------- aeroporto: ir até lá, hangar e voos ---------- */
+function goAirport() {
+  const A = city.airport; if (!A) return; closePanel();
+  if (P.drive) exitVehicle(true);
+  fadeTo(() => {
+    city.tourBack = city.tour ? city.tourBack : [P.x, P.z, P.h]; city.tour = Object.assign({}, A.area);
+    P.x = A.rx - A.sd * 30; P.z = -10; P.y = 0.06; P.v = 0; P.onBoard = false; P.h = A.sd > 0 ? Math.PI / 2 : -Math.PI / 2; city.camYaw = P.h; city.camSnap = true; city.zoom = 1.2;
+    airportSpots(); tourCine(city.tour, 4);
+    toast(`✈️ ${AIRPORT[cityId()].name}. Hangar AJBZ, voos e heliponto aqui.`, 'pink');
+  });
+}
+function airportSpots() {
+  const A = city.airport, x0 = A.rx - A.sd * 30, sx = -A.sd;
+  city.tourSpots = [
+    { label: '👑 Hangar AJBZ (comprar aviões e helicópteros)', x: x0 + sx * 8, z: -16, fn: () => openPanel('hangar') },
+    { label: '🛫 Embarque: viajar para outra cidade', x: x0 + sx * 8, z: -4, fn: () => openPanel('embarque') },
+    { label: '🚁 Heliponto: voar com meu helicóptero', x: A.pads[0][0] + sx * -7, z: A.pads[0][1] - 8, fn: () => openPanel('embarque', 'heli') },
+    { label: '↩ Voltar para a cidade', x: x0 - sx * 4, z: -10, fn: tourBack },
+  ];
+}
+function buyAircraft(id, cur) {
+  const V = VEH[id]; if (!V || !AIRCRAFT.includes(V)) return; S.aircraft = S.aircraft || [];
+  if (S.aircraft.includes(id)) return;
+  if (isAdm()) { S.aircraft.push(id); persist(); toast(`👑 ${V.name} é seu, chefe. O hangar é seu!`, 'good'); sfx('level'); renderPanel(); return; }
+  const price = cur === 't' ? V.t : V.c; if (cur === 't' ? S.tokens < price : S.coins < price) return toast(cur === 't' ? 'Tokens insuficientes.' : 'Grana insuficiente.', 'bad');
+  if (cur === 't') S.tokens -= price; else S.coins -= price;
+  S.aircraft.push(id); persist(); updateHUD(); sfx('level'); toast(`🛩️ Você comprou ${V.name}! Fica no aeroporto.`, 'good'); postFeed(`Comprei um ${V.name} no Hangar AJBZ!`);
+  if (NET.ch && NET.online && cur !== 't') NET.ch.send({ type: 'broadcast', event: 'taxa', payload: { amt: Math.round(price * 0.1), name: S.name, spot: 'Hangar AJBZ: ' + V.name } });
+  renderPanel();
+}
+function flyHeliHere(id) {
+  const V = VEH[id], A = city.airport; if (!V || !V.heli || !A) return; closePanel();
+  if (!city.tour || city.tour.id !== 'aero') return goAirport();
+  if (P.drive) exitVehicle(true); spawnMyVehicle(V); const mv = city.myVeh, [px, pz] = A.pads[0]; mv.x = px; mv.z = pz; mv.h = 0; mv.m.position.set(px, 0.06, pz); mv.m.rotation.set(0, 0, 0);
+  P.x = px + 3; P.z = pz + 3; P.y = 0.06;
+  toast(`🚁 ${V.name} no heliponto. Chegue perto e aperte Ação para pilotar.`, 'pink');
+}
+function sightseeing(id) {
+  const V = VEH[id]; if (!V) return; closePanel();
+  if (P.drive) exitVehicle(true); netLeavePlaza();
+  TRIP = { from: cityId(), dest: cityId(), how: id, V, air: true, km: 0, t: 0, prog: 0, scenic: true };
+  $('hud').hidden = true; $('touch').hidden = true; tripHud(true); camera.far = 2600; camera.updateProjectionMatrix();
+  fadeTo(() => { TRIP.m = V.heli ? makeAnyHeli(V) : makePlaneMesh(V); city.scene.add(TRIP.m); city.player.visible = false; startPath(true); mode = 'trip'; TRIP.scenicLoop = true; });
+}
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },
@@ -8012,6 +8388,7 @@ const PANELS = {
     html += Object.entries(CITY_DEFS).map(([id, C]) => `<div class="card ${id === cur ? 'locked' : ''}"><h4>${esc(C.name)}</h4><p>${{ sp: 'Avenida Paulista, MASP, prédios altos e a Ponte Estaiada.', rj: 'Praia, calçadão de ondas, Cristo Redentor, Pão de Açúcar e o morro.', ssa: 'Casarões coloridos do Pelourinho, Elevador Lacerda e o Farol da Barra.' }[id]}</p>
       <div class="row">${id === cur ? '<span class="pill on">Você está aqui</span>' : `${hasV ? `<button class="btn" data-act="travel" data-id="${id}" data-how="veh">Ir de ${VEH[S.veh].kind === 'car' ? 'carro' : 'moto'}</button>` : ''}<button class="btn ghost" data-act="travel" data-id="${id}" data-how="bus" ${S.coins < 150 ? 'disabled' : ''}>Ônibus ($ 150)</button>`}</div></div>`).join('');
     if (!hasV) html += `<p class="muted">Compre um carro ou moto na Concessionária para viajar de graça.</p>`;
+    html += `<div class="card"><h4>✈️ Aeroporto e Hangar AJBZ</h4><p>Voos para ${Object.keys(CITY_DEFS).filter(k => k !== cur).map(k => CITY_DEFS[k].name).join(' e ')} passando por cima das cidades. No Hangar AJBZ tem avião e helicóptero à venda.</p><div class="row"><button class="btn" data-act="go-airport">Ir ao aeroporto</button>${Object.keys(CITY_DEFS).filter(k => k !== cur).map(k => `<button class="btn ghost" data-act="trip" data-id="${k}" data-how="voo" ${S.coins < airFare(k) ? 'disabled' : ''}>✈️ ${CITY_DEFS[k].name} $ ${fmt(airFare(k))}</button>`).join('')}</div></div>`;
     html += `<div class="card"><h4>🗺️ Pontos turísticos</h4><p>${{ sp: 'MASP, Ponte Estaiada, Ibirapuera, Catedral da Sé e Theatro Municipal.', rj: 'Cristo Redentor, Pão de Açúcar, Maracanã, Selarón e Arcos da Lapa.', ssa: 'Pelourinho, Elevador Lacerda, Farol da Barra, Mercado Modelo, Bonfim e Dique do Tororó.' }[cur]} Taxa do Bonde do AJBZ.</p><div class="row"><button class="btn" data-act="open-turismo">Ver pontos turísticos</button></div></div>`;
     return { title: 'Rodoviária', html };
   },
@@ -8131,6 +8508,28 @@ const PANELS = {
     html += L.map(T => `<div class="card"><h4>${st[T.id] ? '✅' : '📍'} ${esc(T.n)}</h4><p>${esc(T.d)}</p><div class="row"><button class="btn" data-act="tour-go" data-id="${T.id}" ${!isAdm() && S.coins < T.fee ? 'disabled' : ''}>Visitar · taxa $ ${isAdm() ? 0 : T.fee}</button></div></div>`).join('');
     return { title: '🗺️ Pontos turísticos', html };
   },
+  hangar() {
+    const own = S.aircraft || [], adm = isAdm();
+    const card = V => { const has = own.includes(V.id) || adm, ic = V.heli ? '🚁' : V.pm === 'airliner' || V.pm === 'jato' ? '✈️' : '🛩️';
+      const act = has ? `<span class="pill on">${adm && !own.includes(V.id) ? 'Do dono' : 'Seu'}</span>` : `<button class="btn sm" data-act="air-buy" data-id="${V.id}" data-cur="c" ${S.coins < V.c ? 'disabled' : ''}>$ ${fmt(V.c)}</button><button class="btn tok sm" data-act="air-buy" data-id="${V.id}" data-cur="t" ${S.tokens < V.t ? 'disabled' : ''}>${fmt(V.t)} T</button>`;
+      return `<div class="item-card r-${V.r}"><div class="swatch ico" style="--sw:${hex(V.color)}">${ic}</div><div class="item-info"><b>${esc(V.name)}</b>${rarBadge(V)}<small>${esc(V.desc)} · até ${Math.round(V.top * 3.6 * (V.heli ? 1 : 3))} km/h</small></div><div class="item-actions">${act}</div></div>`; };
+    const html = `<p class="muted">👑 <b>Hangar AJBZ</b> · dono: <b>${CHIEF}</b>. Do mais barato ao mais caro. Saldo: <b class="coin">$ ${fmt(S.coins)}</b> · <b class="tokc">${fmt(S.tokens)} T</b></p>
+      <h3>🚁 Helicópteros</h3><div class="grid-items">${AIRCRAFT.filter(V => V.heli).map(card).join('')}</div>
+      <h3>✈️ Aviões</h3><div class="grid-items">${AIRCRAFT.filter(V => V.plane).map(card).join('')}</div>
+      <div class="note">Com aeronave própria você viaja de graça entre Salvador, Rio e São Paulo (no Embarque), faz passeio aéreo sobre a cidade e, de helicóptero, pilota livre pelo céu.</div>`;
+    return { title: '👑 Hangar AJBZ', html };
+  },
+  embarque(arg) {
+    const cur = cityId(), mine = myAir(), dests = Object.keys(CITY_DEFS).filter(id => id !== cur);
+    let html = '';
+    if (arg !== 'heli') {
+      html += `<p class="muted">${esc(AIRPORT[cur].name)} · voos para as outras cidades passando por cima das cidades e das nuvens.</p>`;
+      html += dests.map(id => `<div class="card"><h4>✈️ ${esc(CITY_DEFS[id].name)}</h4><p class="muted">${fmt(routeOf(cur, id)[1])} km de voo</p><div class="row"><button class="btn" data-act="trip" data-id="${id}" data-how="voo" ${S.coins < airFare(id) ? 'disabled' : ''}>Voo comercial $ ${fmt(airFare(id))}</button>${mine.map(V => `<button class="btn ghost" data-act="trip" data-id="${id}" data-how="${V.id}">${V.heli ? '🚁' : '🛩️'} Ir no meu ${esc(V.name.split(' (')[0])}</button>`).join('')}</div></div>`).join('');
+    }
+    if (mine.length) html += `<h3>Minhas aeronaves</h3>` + mine.map(V => `<div class="card"><h4>${V.heli ? '🚁' : '🛩️'} ${esc(V.name)}</h4><div class="row">${V.heli ? `<button class="btn" data-act="air-fly" data-id="${V.id}">Pilotar livre</button>` : ''}<button class="btn ghost" data-act="air-tour" data-id="${V.id}">Passeio aéreo sobre a cidade</button></div></div>`).join('');
+    else html += `<div class="note">Você ainda não tem avião nem helicóptero. Compre no Hangar AJBZ.</div><button class="btn" data-act="open-hangar">Abrir o Hangar AJBZ</button>`;
+    return { title: arg === 'heli' ? '🚁 Heliponto' : '🛫 Embarque', html };
+  },
   hospital() {
     let html = `<p class="muted">Hospital Municipal e base do SAMU (192). Atendimento pelo SUS, de graça. Quando a vida chega a 0% o SAMU busca você e você acorda aqui.</p>`;
     html += `<div class="card"><h4>❤ Sua vida: ${Math.round(P.hp)}%</h4>${P.hp < 100 ? `<button class="btn" data-act="consulta" ${(S.consultaT || 0) > Date.now() ? 'disabled' : ''}>Consulta no SUS (volta a 100%)</button>${(S.consultaT || 0) > Date.now() ? `<p class="muted">Próxima consulta em ${Math.ceil((S.consultaT - Date.now()) / 60000)} min.</p>` : ''}` : '<span class="pill on">Saúde em dia</span>'}</div>`;
@@ -8174,7 +8573,7 @@ const PANELS = {
     }
     setTimeout(() => { const cv = $('bigmap'); if (!cv) return; drawCityMapOn(cv, 0, 0, 165); cv.onclick = bigmapClick; }, 0);
     const places = city.doors.filter(d => !d.inside).map(d => `<button class="chip" data-act="gps-door" data-x="${d.x}" data-z="${d.z}" data-l="${esc(d.label)}">${esc(d.label)}</button>`).join('');
-    return { title: 'Mapa · ' + CITY().name, html: `${ctabs}<p class="muted">Toque no mapa para marcar o destino: aparece uma linha azul no chão e no mapa mostrando o caminho pelas ruas.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa completo da cidade, toque para marcar destino"></canvas><div class="chips">${places}<button class="chip" data-act="open-turismo">🗺️ Pontos turísticos</button>${S.gps ? '<button class="chip" data-act="gps-clear">✕ Limpar GPS</button>' : ''}</div><div class="legend">${Object.entries({ roupas: 'Drip Store (roupas)', skate: 'Shape & Truck (skates)', celular: 'CelZap', arena: 'Terminal Mundial', tokens: 'Casa de Tokens', crew: 'Garagem da Crew', missoes: 'Quadro de Missões', agencia: 'Agência de Empregos', imobiliaria: 'Imobiliária', casa: 'Sua casa' }).map(([k, n]) => `<span><i style="background:${DOOR_COL[k]}"></i>${n}</span>`).join('')}<span><i style="background:#ffe9a3"></i>Amigos</span><span><i style="background:#3ddc84"></i>Crew</span></div>` };
+    return { title: 'Mapa · ' + CITY().name, html: `${ctabs}<p class="muted">Toque no mapa para marcar o destino: aparece uma linha azul no chão e no mapa mostrando o caminho pelas ruas.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa completo da cidade, toque para marcar destino"></canvas><div class="chips">${places}<button class="chip" data-act="open-turismo">🗺️ Pontos turísticos</button><button class="chip" data-act="go-airport">✈️ Aeroporto</button>${S.gps ? '<button class="chip" data-act="gps-clear">✕ Limpar GPS</button>' : ''}</div><div class="legend">${Object.entries({ roupas: 'Drip Store (roupas)', skate: 'Shape & Truck (skates)', celular: 'CelZap', arena: 'Terminal Mundial', tokens: 'Casa de Tokens', crew: 'Garagem da Crew', missoes: 'Quadro de Missões', agencia: 'Agência de Empregos', imobiliaria: 'Imobiliária', casa: 'Sua casa' }).map(([k, n]) => `<span><i style="background:${DOOR_COL[k]}"></i>${n}</span>`).join('')}<span><i style="background:#ffe9a3"></i>Amigos</span><span><i style="background:#3ddc84"></i>Crew</span></div>` };
   },
 };
 ['tokens', 'crew', 'config', 'results'].forEach(k => PANELS[k] = OLD_PANELS[k]);
@@ -8296,6 +8695,12 @@ function act(a, ds, el) {
     case 'tour-go': tourGo(ds.id); break;
     case 'tour-back': closePanel(); tourBack(); break;
     case 'gps-beach': setGps(P.x, 140, 'Praia'); closePanel(); toast('GPS marcado até a praia.'); break;
+    case 'trip': startTrip(ds.id, ds.how); break;
+    case 'air-buy': buyAircraft(ds.id, ds.cur); break;
+    case 'air-fly': flyHeliHere(ds.id); break;
+    case 'air-tour': sightseeing(ds.id); break;
+    case 'open-hangar': openPanel('hangar'); break;
+    case 'go-airport': goAirport(); break;
     case 'open-prefeitura': openPanel('prefeitura'); break;
     case 'biz-tipo': city.bizTipo = ds.id; renderPanel(); break;
     case 'biz-slot': city.bizSlot = +ds.id; renderPanel(); break;
@@ -8633,7 +9038,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, em: P.emote ? P.emote.id : 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
@@ -8641,6 +9046,8 @@ function netTick(dt, t) {
     p.x = lerp(p.x, d.x, k); p.y = lerp(p.y, d.y, k); p.z = lerp(p.z, d.z, k);
     p.h += Math.atan2(Math.sin(d.h - p.h), Math.cos(d.h - p.h)) * k;
     p.g.position.set(p.x, p.y, p.z); p.g.rotation.y = p.h;
+    // em outro cômodo (outra loja, outro prédio): não aparece aqui
+    if ((d.rm || '') !== roomKey()) { p.g.visible = false; if (p.veh) p.veh.visible = false; continue; } else if (p.veh) p.veh.visible = true;
     p.g.userData.lod = Math.hypot(p.x - camera.position.x, p.z - camera.position.z) > 38;
     if ((d.wd || 0) !== (p.wdShown || 0)) { p.wdShown = d.wd || 0; setTag(p.g, (p.gang ? p.gang.e + ' ' : '') + p.name + (p.wdShown ? ' ' + '★'.repeat(p.wdShown) : ''), p.wdShown ? '#ff6b6b' : '#7fe3ff'); }
     if (d.rd) { // de carona: no carro fica escondido; na moto vai na garupa
@@ -8826,6 +9233,7 @@ function loop(now) {
   try {
     if (mode === 'city') { updateCity(dt, t); renderer.render(city.scene, camera); }
     else if (mode === 'race' && R) { updateRace(dt, t); renderer.render(R.sc, camera); }
+    else if (mode === 'trip' && TRIP) { updateTrip(dt, t); renderer.render(TRIP.sc || city.scene, camera); }
     else if (mode === 'replay' && RP) { updateReplay(dt, t); renderer.render(city.scene, camera); }
   } catch (err) { console.error(err); }
   input.pressed = {};
