@@ -472,7 +472,10 @@ canvas.swatch{background:#333}
       <div class="field"><label for="in-name">Apelido</label><input id="in-name" maxlength="14" autocomplete="off" placeholder="Ex.: Biel Flip" required></div>
       <div class="field"><label>Sexo</label><div class="seg" id="genders" role="group" aria-label="Sexo"><button type="button" data-act="gender" data-g="m" aria-pressed="true">Masculino</button><button type="button" data-act="gender" data-g="f" aria-pressed="false">Feminino</button></div></div>
       <div class="field"><label>Tom de pele</label><div class="skins" id="skins"></div></div>
-      <div class="field"><label>Cabelo</label><div class="skins" id="hairs"></div></div>
+      <div class="field"><label>Cor do cabelo</label><div class="skins" id="hairs"></div></div>
+      <div class="field"><label>Estilo do cabelo</label><div class="seg wrap" id="b-hs"></div></div>
+      <div class="field"><label>Corpo</label><div class="seg" id="b-w"></div></div>
+      <div class="field"><label>Altura</label><div class="seg" id="b-h"></div></div>
       <p class="muted" style="margin:0">Você começa a pé, com roupa básica, o celular tijolão e zero grana. Ganhe seu primeiro skate completando uma missão ou comprando na Skate Shop.</p>
       <button class="btn" type="submit">Começar o rolê</button>
     </form>
@@ -769,9 +772,19 @@ function patColor(pat, u, v, c, skin) {
     case 'bolt': { const z = Math.abs(((v * 10 + Math.abs(((u * 10) % 2) - 1)) % 1) - 0.5); return z < 0.07 ? [255, 210, 63] : c; }
     case 'sandal': { const f = (v * 6) % 1; return f < 0.22 ? c : (skin || [200, 150, 110]); }
     default:
+      if (pat === 'ajbz') return ajbzColor(u, v);
       if (pat.startsWith('tm_')) return teamColor(pat, u, v, c);
       return c;
   }
+}
+/* estampa exclusiva do chefe: coroas douradas e AJBZ sobre preto */
+let _ajbzT = null;
+function ajbzColor(u, v) {
+  if (!_ajbzT) { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); g.fillStyle = '#0e0e10'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#d4a017';
+    const crown = (x, y, s) => { g.beginPath(); g.moveTo(x - s, y + s * 0.6); g.lineTo(x - s, y - s * 0.3); g.lineTo(x - s * 0.5, y + s * 0.1); g.lineTo(x, y - s * 0.6); g.lineTo(x + s * 0.5, y + s * 0.1); g.lineTo(x + s, y - s * 0.3); g.lineTo(x + s, y + s * 0.6); g.closePath(); g.fill(); };
+    crown(32, 30, 18); crown(96, 94, 18); g.font = 'bold 26px Impact, sans-serif'; g.textAlign = 'center'; g.fillText('AJBZ', 96, 40); g.fillText('AJBZ', 32, 104); g.fillRect(0, 62, 128, 4);
+    _ajbzT = g.getImageData(0, 0, 128, 128).data; }
+  const x = Math.floor((((u * 3) % 1) + 1) % 1 * 128), y = Math.floor((((v * 3) % 1) + 1) % 1 * 128), i = (y * 128 + x) * 4; return [_ajbzT[i], _ajbzT[i + 1], _ajbzT[i + 2]];
 }
 /* camisas de time: listras verticais/horizontais, três cores, faixa diagonal, faixa no peito, ou lisa com detalhes */
 const _tmCache = {};
@@ -899,7 +912,7 @@ function newSave(name, skin, gender, hair) {
 }
 /* completa saves antigos com os campos novos */
 function migrate(s) {
-  s.gender = s.gender || 'm'; s.hair = s.hair ?? HAIRS[0];
+  s.gender = s.gender || 'm'; s.hair = s.hair ?? HAIRS[0]; s.body = s.body || { w: 'normal', h: 'medio', hs: 'padrao' };
   s.owned = (s.owned || []).filter(id => ITEM[id]);
   for (const id of ['pr_none', 'gl_none', 'ac_none', 'wp_none', 'shirt_basic', 'pants_basic', 'cap_none', 'shoes_basic', 'ph_basic']) if (!s.owned.includes(id)) s.owned.push(id);
   const DEF = { shirt: 'shirt_basic', pants: 'pants_basic', cap: 'cap_none', shoes: 'shoes_basic', glasses: 'gl_none', acc: 'ac_none', weapon: 'wp_none', phone: 'ph_basic' };
@@ -931,14 +944,14 @@ function addXP(n) {
 function addCoins(n) { S.coins += n; updateHUD(); }
 /* ganhos (missões, corridas, manobras) passam pelos multiplicadores de evento */
 function earn(n) { n = Math.round(n * evMult('coinMult')); addCoins(n); return n; }
-function lookOf(equip, skin, hair, gender, board) {
+function lookOf(equip, skin, hair, gender, board, body) {
   const sk = ITEM[equip.skate] || ITEM.sk_basic, wh = ITEM[equip.wheels] || ITEM.wh_basic;
-  return { skin, gender: gender || 'm', hair: hair ?? HAIRS[0], shirt: ITEM[equip.shirt] || ITEM.shirt_basic, pants: ITEM[equip.pants] || ITEM.pants_basic, cap: ITEM[equip.cap] || ITEM.cap_none, shoes: ITEM[equip.shoes] || ITEM.shoes_basic, glasses: ITEM[equip.glasses] || ITEM.gl_none, acc: ITEM[equip.acc] || ITEM.ac_none, bag: !!(equip.bag),
+  return { body: body || null, skin, gender: gender || 'm', hair: hair ?? HAIRS[0], shirt: ITEM[equip.shirt] || ITEM.shirt_basic, pants: ITEM[equip.pants] || ITEM.pants_basic, cap: ITEM[equip.cap] || ITEM.cap_none, shoes: ITEM[equip.shoes] || ITEM.shoes_basic, glasses: ITEM[equip.glasses] || ITEM.gl_none, acc: ITEM[equip.acc] || ITEM.ac_none, bag: !!(equip.bag),
     board: { deck: (board && board.color) ?? sk.color, pat: (ITEM[equip.print] || ITEM.pr_none).pat, wheel: wh.color, glow: !!wh.glow, grip: (board && board.grip) ?? 0x18181b, truck: (board && board.truck) ?? 0xb7bcc4 } };
 }
 const botLook = b => lookOf(b.equip, b.skin, b.hair, b.gender);
 const hasSkate = () => !!(S.equip.skate && S.owned.includes(S.equip.skate));
-const myLook = () => lookOf(Object.assign({ bag: S.shift === 'entregador' || S.shift === 'motoboy' }, S.equip, (typeof UNIFORM !== 'undefined' && UNIFORM[S.shift]) || {}), S.skin, S.hair, S.gender, S.board);
+const myLook = () => lookOf(Object.assign({ bag: S.shift === 'entregador' || S.shift === 'motoboy' }, S.equip, (typeof UNIFORM !== 'undefined' && UNIFORM[S.shift]) || {}), S.skin, S.hair, S.gender, S.board, S.body);
 const phoneTier = () => ITEM[S.equip.phone].tier;
 function boardStats(equip, attr) {
   const k = ITEM[equip.skate] || ITEM.sk_basic, w = ITEM[equip.wheels] || ITEM.wh_basic, a = attr || { vel: 0, pop: 0, tec: 0, equ: 0 };
@@ -1264,6 +1277,38 @@ function buildHair(u) {
   u.hairShell = m; u.hairM.side = THREE.DoubleSide;
 }
 const HAIR = { front: 0.2, back: 0.5, side: 0, off: 0.035 };
+/* corpo: peso, altura e estilo de cabelo */
+const BODY_W = { magro: 0.86, normal: 1, forte: 1.13, gordo: 1.32 }, BODY_H = { baixinho: 0.9, medio: 1, alto: 1.09 };
+const HAIR_STYLES = { padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano', dread: 'Dreads', tranca: 'Tranças', rabo: 'Rabo de cavalo', coque: 'Coque' };
+const _v1 = new THREE.Vector3();
+function applyBody(u, look) {
+  const b = look.body || {}, w = BODY_W[b.w] || 1, h = BODY_H[b.h] || 1;
+  if (u.stance) u.stance.scale.setScalar(h); else if (u.root) u.root.scale.setScalar(h);
+  const B = u.R && u.R.B; if (!B) return;
+  if (!u.restS) { u.restS = {}; for (const n of ['Spine', 'Neck', 'LeftShoulder', 'RightShoulder', 'LeftUpLeg', 'RightUpLeg', 'LeftFoot', 'RightFoot']) if (B[n]) u.restS[n] = B[n].scale.clone(); }
+  const set = (n, x, y, z) => { if (B[n] && u.restS[n]) B[n].scale.copy(u.restS[n]).multiply(_v1.set(x, y, z)); };
+  const lw = 1 + (w - 1) * 0.75;
+  set('Spine', w, 1, 1 + (w - 1) * 1.1); set('Neck', 1 / w, 1, 1 / (1 + (w - 1) * 1.1)); set('LeftShoulder', 1 / w, 1, 1 / (1 + (w - 1) * 1.1)); set('RightShoulder', 1 / w, 1, 1 / (1 + (w - 1) * 1.1));
+  set('LeftUpLeg', lw, 1, lw); set('RightUpLeg', lw, 1, lw); set('LeftFoot', 1 / lw, 1, 1 / lw); set('RightFoot', 1 / lw, 1, 1 / lw);
+  buildHairStyle(u, b.hs || 'padrao', look);
+}
+function buildHairStyle(u, hs, look) {
+  const hatOn = u.hairG && !u.hairG.visible;
+  if (u.hairShell && ['careca', 'moicano'].includes(hs)) u.hairShell.visible = false;
+  if (hs === 'careca' && u.hairG) u.hairG.visible = false;
+  if (u.hsKey === hs && u.hsG) { u.hsG.visible = !hatOn; return; }
+  u.hsKey = hs; if (u.hsG) { u.hsG.parent.remove(u.hsG); u.hsG = null; }
+  if (!u.hairG || !u.hairM) return;
+  const g = new THREE.Group(); g.scale.copy(u.hairG.scale); g.position.copy(u.hairG.position); u.hairG.parent.add(g); u.hsG = g; const M = u.hairM;
+  const mk = (geo, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => { const m = new THREE.Mesh(geo, M); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.scale.set(sx, sy, sz); m.castShadow = true; g.add(m); return m; };
+  const f = u.k === 'f', y0 = f ? 0.1 : 0.15;
+  if (hs === 'black') mk(SPH(0.17, 18, 14), 0, y0 + 0.02, -0.02, 0, 0, 0, 1.12, 0.92, 1.1);
+  else if (hs === 'moicano') { mk(boxGeo(0.045, 0.07, 0.24), 0, y0 + 0.06, -0.02); }
+  else if (hs === 'dread' || hs === 'tranca') { const n = hs === 'dread' ? 14 : 2; for (let i = 0; i < n; i++) { const a = hs === 'dread' ? Math.PI * 0.35 + i / (n - 1) * Math.PI * 1.3 : Math.PI * (0.8 + i * 0.4); const x = Math.sin(a) * 0.1, z = Math.cos(a) * 0.1 - 0.02; mk(CAPG(hs === 'dread' ? 0.014 : 0.022, hs === 'dread' ? 0.2 : 0.3), x, y0 - (hs === 'dread' ? 0.06 : 0.12), z, Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25); } }
+  else if (hs === 'rabo') mk(CAPG(0.035, 0.18), 0, y0 - 0.06, -0.14, 0.5);
+  else if (hs === 'coque') mk(SPH(0.065, 12, 10), 0, y0 + 0.05, -0.09);
+  g.visible = !hatOn;
+}
 /* ---- chapéus, óculos, acessórios e mochila de entrega (coordenadas no espaço da cabeça / do peito) ---- */
 function clearG(G) { while (G.children.length) G.remove(G.children[0]); }
 function buildCap(u, cap) {
@@ -1521,6 +1566,8 @@ function grantAdmin() {
   S.vehicles = VEHICLES.map(v => v.id); if (!S.veh) S.veh = 'v_sport';
   if (!S.equip.skate) { S.equip.skate = 'sk_basic'; S.equip.wheels = 'wh_basic'; }
   if (!S.equip.gun || S.equip.gun === 'gun_none') S.equip.gun = 'gun_fuzil';
+  for (const it of EXCL_ITEMS) if (!S.owned.includes(it.id)) S.owned.push(it.id);
+  if (!S.ajbzSet) { S.ajbzSet = true; S.equip.shirt = 'shirt_ajbz'; S.equip.cap = 'cap_ajbz'; S.equip.pants = 'pants_ajbz'; if (city.player) applyLook(city.player, myLook()); }
   S.coins = Math.max(S.coins, 1000000); S.tokens = Math.max(S.tokens, 100000);
   S.crates.rara = Math.max(S.crates.rara, 10); S.crates.lendaria = Math.max(S.crates.lendaria, 10);
   persist();
@@ -1780,6 +1827,7 @@ function applyRealLook(g, look) {
   u.hairM.color.setHex(look.hair);
   u.hairG.visible = !look.cap || ['none', 'crown', 'visor', undefined].includes(look.cap.hat) && !look.cap.beanie;
   if (u.hairShell) u.hairShell.visible = u.hairG.visible || ['cap', 'flat', 'bandana'].includes(look.cap && look.cap.hat);
+  applyBody(u, look);
   const B = look.board;
   u.deckM.map = deckTex(B.deck, B.pat); u.deckM.needsUpdate = true;
   u.wheelM.color.setHex(B.wheel); u.wheelM.emissive.setHex(B.glow ? B.wheel : 0); u.wheelM.emissiveIntensity = B.glow ? 0.8 : 0;
@@ -4365,6 +4413,9 @@ const UNI_ITEMS = [
   I('shirt', 'uni_moto', 'Jaqueta de Motoboy', 0x15161a, 0, null, 'comum', { pat: 'tm_trim_ffcf3a_ffcf3a' }),
 ];
 UNI_ITEMS.forEach(i => ITEM[i.id] = i);
+// roupa exclusiva do Ajbz (só a conta do chefe recebe)
+const EXCL_ITEMS = [I('shirt', 'shirt_ajbz', 'Jaqueta do Chefe AJBZ', 0x0e0e10, null, null, 'lendario', { pat: 'ajbz', src: 'Exclusiva do Ajbz' }), I('cap', 'cap_ajbz', 'Coroa do Chefe', 0xd4a017, null, null, 'lendario', { hat: 'crown', src: 'Exclusiva do Ajbz' }), I('pants', 'pants_ajbz', 'Calça do Chefe', 0x0e0e10, null, null, 'lendario', { pat: 'ajbz', src: 'Exclusiva do Ajbz' })];
+EXCL_ITEMS.forEach(i => ITEM[i.id] = i);
 const UNIFORM = { policial: { shirt: 'uni_pm', pants: 'uni_pm_p', cap: 'uni_pm_c' }, bombeiro: { shirt: 'uni_bomb', pants: 'uni_bomb_p', cap: 'uni_bomb_c' }, catador: { shirt: 'uni_gari', pants: 'uni_gari_p' }, motoboy: { shirt: 'uni_moto' } };
 Object.assign(JOBS, {
   motoboy: { name: 'Motoboy', desc: 'Corre de entrega de moto: retire os pedidos e entregue pilotando a sua moto. Paga mais que a pé.', base: 85, need: 2, veh: 'moto', icon: '🏍️' },
@@ -4409,6 +4460,11 @@ function useRound(G) {
   const n = gunMag(G); if (n <= 0) { reloadGun(G); return false; }
   P.ammo[G.id] = n - 1; if (n - 1 <= 0) setTimeout(() => reloadGun(G), 250); return true;
 }
+function bodyButtons(cur) {
+  const seg = (k, list) => Object.entries(list).map(([v, n]) => `<button type="button" data-act="body-sel" data-k="${k}" data-v="${v}" aria-pressed="${cur[k] === v}">${n}</button>`).join('');
+  return { hs: seg('hs', HAIR_STYLES), w: seg('w', { magro: 'Magro', normal: 'Normal', forte: 'Forte', gordo: 'Gordo' }), h: seg('h', { baixinho: 'Baixinho', medio: 'Médio', alto: 'Alto' }) };
+}
+function renderBodySel() { const b = bodyButtons(selBody); if ($('b-hs')) { $('b-hs').innerHTML = b.hs; $('b-w').innerHTML = b.w; $('b-h').innerHTML = b.h; } }
 function nextGun() {
   const L = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)); if (!L.length) return toast('Você não tem armas de fogo. Compre no Arsenal com tokens.', 'bad');
   const i = L.findIndex(g => g.id === S.equip.gun), n = L[(i + 1) % L.length]; S.equip.gun = n.id; persist(); netTrack(); toast(`Arma: ${n.name}`); sfx('ui');
@@ -5826,7 +5882,7 @@ function startRace(cid, opts = {}) {
   racers.push(me); me.g.userData.tag.visible = false;
   if (online) online.players.forEach((p, i) => {
     if (p.id === NET.user.id) return;
-    const L = p.look || {}, look = lookOf(L.e || {}, L.sk ?? SKINS[1], L.h ?? HAIRS[0], L.g || 'm', L.b);
+    const L = p.look || {}, look = lookOf(L.e || {}, L.sk ?? SKINS[1], L.h ?? HAIRS[0], L.g || 'm', L.b, L.bd);
     racers.push(mk(look, p.name, '#7fe3ff', Object.assign({ remote: true, netId: p.id, ally: false, stats: { spd: 1, acc: 1, ctl: 1 }, skill: 1 }, slot(i))));
   });
   else lineup.forEach((l, i) => { const r = mk(botLook(l.b), l.b.name, l.ally ? '#3ddc84' : '#ffffff', Object.assign({ bot: l.b, wp: (ITEM[l.b.equip.weapon] || ITEM.wp_none).wp, ally: l.ally, stats: boardStats(l.b.equip), skill: l.b.skill + c.lvl * 0.012 + (division().mult - 1) * 0.02, aggro: l.b.aggro }, slot(grid[i]))); r.targetD = r.d; r.g.userData.tag.scale.multiplyScalar(0.75); racers.push(r); });
@@ -6736,7 +6792,7 @@ const PANELS = {
   perfil(tab) {
     tab = tab || 'resumo';
     const st = S.stats, dv = division();
-    let html = tabs(tab, [['resumo', 'Resumo'], ['evolucao', `Evolução${S.attrPts ? ' (' + S.attrPts + ')' : ''}`], ['manobras', 'Manobras'], ['inventario', 'Inventário']], 'perfil-tab');
+    let html = tabs(tab, [['resumo', 'Resumo'], ['evolucao', `Evolução${S.attrPts ? ' (' + S.attrPts + ')' : ''}`], ['manobras', 'Manobras'], ['aparencia', 'Aparência'], ['inventario', 'Inventário']], 'perfil-tab');
     if (tab === 'resumo') {
       const medal = p => p === 1 ? ['#ffd700', '1º'] : p === 2 ? ['#c0c0c0', '2º'] : p === 3 ? ['#cd7f32', '3º'] : p ? ['#555', p + 'º'] : ['#2a2d34', '–'];
       html += `<div class="row"><span class="pill on">Nível ${S.level}</span><span class="pill">${S.xp}/${needXP(S.level)} XP</span><span class="pill">Divisão ${esc(dv.name)}</span>${S.crew ? `<span class="pill">Crew [${esc(S.crew.name)}]</span>` : ''}</div>
@@ -6745,6 +6801,9 @@ const PANELS = {
     } else if (tab === 'evolucao') {
       const A = [['vel', 'Velocidade', 'Mais velocidade máxima e aceleração'], ['pop', 'Impulsão', 'Pulos mais altos para combos maiores'], ['tec', 'Técnica', 'Manobras giram mais rápido'], ['equ', 'Equilíbrio', 'Pousa manobras incompletas e cai menos']];
       html += `<p>Cada nível dá <b>2 pontos</b> de evolução. Você tem <b>${S.attrPts}</b> para distribuir.</p>` + A.map(([k, n, d]) => `<div class="attr"><div><b>${n}</b><small class="muted">${d}</small></div><div class="bar"><i style="width:${S.attr[k] * 10}%"></i></div><span class="pill">${S.attr[k]}/10</span><button class="btn sm" data-act="attr" data-k="${k}" ${!S.attrPts || S.attr[k] >= 10 ? 'disabled' : ''} aria-label="Aumentar ${n}">+</button></div>`).join('');
+    } else if (tab === 'aparencia') {
+      const b = bodyButtons(S.body);
+      html += `<p class="muted">Mude o corpo, a altura e o estilo do cabelo quando quiser. Os outros jogadores veem na hora.</p><h3>Estilo do cabelo</h3><div class="seg wrap">${b.hs}</div><h3>Corpo</h3><div class="seg">${b.w}</div><h3>Altura</h3><div class="seg">${b.h}</div>`;
     } else if (tab === 'manobras') {
       html += `<p class="muted">Pule e, no ar, aperte Pular de novo. A direção escolhe a manobra. O botão Truque (tecla Q) faz a manobra especial escolhida aqui. Manobras novas liberam com missões concluídas (${S.stats.missions} até agora).</p>`;
       html += TRICKS.map(t => { const ok = trickUnlocked(t.id); return `<div class="item-card ${ok ? '' : 'locked'}"><div class="swatch trick">${ok ? (S.stats.trickCount[t.id] || 0) : '🔒'}</div><div class="item-info"><b>${esc(t.name)}</b><small>${DIR_LABEL[t.key]} · ${t.pts} pts${ok ? '' : ` · libera com ${t.need} missões`}</small></div><div class="item-actions">${t.key === 's' && ok ? (S.special === t.id ? '<span class="pill on">Truque</span>' : `<button class="btn ghost sm" data-act="special" data-id="${t.id}">Usar como Truque</button>`) : ''}</div></div>`; }).join('');
@@ -6753,7 +6812,7 @@ const PANELS = {
       html += `<h3>Caixas</h3><div class="crates">${[['rara', 'Caixa Rara', 'peça comum ou $ 600'], ['lendaria', 'Caixa Lendária', 'peça comum ou $ 2.500 + 25 tokens']].map(([k, n, d]) => `<div class="crate c-${k}"><b>${n}</b><small>${d}</small><span class="big-num">${S.crates[k]}</span><button class="btn sm" data-act="crate" data-k="${k}" ${S.crates[k] ? '' : 'disabled'}>Abrir</button></div>`).join('')}</div>
       <p class="muted">Caixas não são vendidas: você ganha vencendo campeonatos de manobras e no ranking semanal.</p>
       ${cr ? `<div class="reveal" style="--rc:${RAR[cr.item ? cr.item.r : cr.rar].c}">${cr.item ? `<span>${RAR[cr.item.r].n}</span><b>${esc(cr.item.name)}</b><small>${SLOT_NAMES[cr.item.slot]}</small>` : `<span>Você já tem tudo dessa raridade</span><b>+$ ${fmt(cr.coins)}</b>`}</div>` : ''}
-      <h3>Seus itens (${S.owned.length})</h3>${['skate', 'wheels', 'print', 'shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'weapon', 'gun'].map(sl => { const its = ITEMS.filter(i => i.slot === sl && S.owned.includes(i.id)); return its.length ? `<h3>${SLOT_NAMES[sl]}</h3><div class="grid-items">${its.map(itemCard).join('')}</div>` : ''; }).join('')}`;
+      <h3>Seus itens (${S.owned.length})</h3>${['skate', 'wheels', 'print', 'shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'weapon', 'gun'].map(sl => { const its = [...ITEMS, ...EXCL_ITEMS].filter(i => i.slot === sl && S.owned.includes(i.id)); return its.length ? `<h3>${SLOT_NAMES[sl]}</h3><div class="grid-items">${its.map(itemCard).join('')}</div>` : ''; }).join('')}`;
       paintPrintSwatches();
     }
     return { title: S.name, html };
@@ -6999,6 +7058,7 @@ function act(a, ds, el) {
     case 'menu-new-show': $('menu-new-warn').hidden = false; break;
     case 'menu-new-cancel': $('menu-new-warn').hidden = true; break;
     case 'menu-new-confirm': wipeSave(); S = null; $('menu-continue').hidden = true; $('in-name').focus(); break;
+    case 'body-sel': { const tgt = S && mode !== 'menu' ? S.body : selBody; tgt[ds.k] = ds.v; renderBodySel(); if (S && mode !== 'menu') { persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); } break; }
     case 'skin': selSkin = +ds.i; document.querySelectorAll('#skins .skin').forEach((b, i) => b.setAttribute('aria-pressed', i === selSkin)); break;
     case 'hair': selHair = +ds.i; document.querySelectorAll('#hairs .skin').forEach((b, i) => b.setAttribute('aria-pressed', i === selHair)); break;
   }
@@ -7011,7 +7071,7 @@ document.addEventListener('submit', e => {
     if (!needLogin()) return;
     (async () => {
       if (NET.user && !(await apelidoLivre(name))) { $('acc-msg').textContent = `O apelido "${name}" já é de outro jogador. Escolha outro.`; $('in-name').focus(); return; }
-      S = newSave(name, SKINS[selSkin], selGender, HAIRS[selHair]); persist(); enterGame();
+      S = newSave(name, SKINS[selSkin], selGender, HAIRS[selHair]); S.body = Object.assign({}, selBody); persist(); enterGame();
     })();
   } else if (e.target.id === 'crew-form') {
     const n = $('in-crew').value.trim().toUpperCase().slice(0, 10); if (!n || S.coins < 150) return;
@@ -7098,7 +7158,7 @@ setInterval(() => { if (NET.dirty) cloudSave(); }, 10000);
 document.addEventListener('visibilitychange', () => { if (document.hidden && NET.dirty) cloudSave(); });
 
 /* aparência compacta enviada para os outros jogadores */
-const myNetLook = () => ({ w: myHandKind(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print }, b: S.board });
+const myNetLook = () => ({ bd: S.body || null, w: myHandKind(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print }, b: S.board });
 const myPresence = () => ({ id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
 function netJoinPlaza() {
   if (!NET.user || NET.ch) return;
@@ -7140,7 +7200,7 @@ function onPresence(state) {
     const lookKey = JSON.stringify([st.look, st.gang]);
     if (p && p.lookKey !== lookKey) { removePeer(st.id); p = null; }
     if (!p) {
-      const L = st.look || {}, look = lookOf(L.e || {}, L.sk ?? SKINS[1], L.h ?? HAIRS[0], L.g || 'm', L.b);
+      const L = st.look || {}, look = lookOf(L.e || {}, L.sk ?? SKINS[1], L.h ?? HAIRS[0], L.g || 'm', L.b, L.bd);
       const g = makeSkater(look, (st.crew ? `[${st.crew}] ` : '') + (st.gang ? st.gang.e + ' ' : '') + st.name, '#7fe3ff'); g.visible = false; city.scene.add(g);
       p = NET.peers[st.id] = { wp: L.w || null, id: st.id, name: st.name, g, lookKey, x: 0, y: 0, z: 0, h: 0, t: null, seen: false };
       pushChat('Praça', `${st.name} entrou na praça`);
@@ -7350,7 +7410,7 @@ function raceNetTick(dt) {
 }
 
 /* ---------------- INÍCIO ---------------- */
-let mode = 'menu', selSkin = 1, selHair = 0, selGender = 'm';
+let mode = 'menu', selSkin = 1, selHair = 0, selGender = 'm', selBody = { w: 'normal', h: 'medio', hs: 'padrao' };
 $('hairs').innerHTML = HAIRS.map((c, i) => `<button type="button" class="skin" style="--c:${hex(c)}" data-act="hair" data-i="${i}" aria-pressed="${i === selHair}" aria-label="Cor de cabelo ${i + 1}"></button>`).join('');
 $('skins').innerHTML = SKINS.map((c, i) => `<button type="button" class="skin" style="--c:${hex(c)}" data-act="skin" data-i="${i}" aria-pressed="${i === selSkin}" aria-label="Tom de pele ${i + 1}"></button>`).join('');
 /* todo mundo joga logado no mesmo mundo; sem servidor (fora do ar) libera o modo offline */
@@ -7379,6 +7439,7 @@ async function afterLogin() {
   showContinue();
 }
 (async function initMenu() {
+  renderBodySel();
   const s = loadSave();
   if (s && s.v === 1) { S = migrate(s); showContinue(); }
   if (!netInit()) { $('acc-out').hidden = true; $('acc-msg').textContent = 'Modo offline: sem conexão com o servidor. O progresso fica salvo neste aparelho.'; return; }
