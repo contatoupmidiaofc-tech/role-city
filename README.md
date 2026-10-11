@@ -167,3 +167,10 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - A transição entre parado, andando e correndo é suave. A cabeça continua virando para quem chega perto.
 - Braços com arma apontada, spray, soco, celular, cigarro, aceno e comemoração continuam com o movimento do jogo por cima; skate, carro, moto, natação, algemas e quedas também continuam como antes.
 - Homem: biblioteca de animações da Ready Player Me (o modelo masculino é Ready Player Me). Mulher: animações do Mixamo adaptadas ao esqueleto dela. Arquivos `modelos/anim_m.bin` e `modelos/anim_f.bin`.
+
+### Corpos novos e mais realistas (etapa 2)
+- Homens e mulheres agora usam corpos completos da Ready Player Me (`modelos/rpm_m.glb` e `modelos/rpm_f.glb`), com rosto realista, pele com luz e relevo (normal map) e camiseta, calça e tênis de verdade.
+- Todas as roupas da loja continuam: a textura de cada personagem é pintada por região (camiseta, calça, tênis, pele, cabelo) com a cor e a estampa de cada peça; logomarca original apagada. Short, bermudão, regata, biquíni e **sem camisa** (com peitoral, abdômen e costas desenhados) usam máscaras no próprio corpo.
+- Cor da pele e do cabelo de cada um, careca, penteados (black power, dreads, tranças, moicano, rabo, coque), bonés, chapéus, óculos, brincos, corrente, mochila, asas, relógio, coldre e tatuagens ajustados aos corpos novos.
+- Mulheres ganharam os movimentos gravados por atrizes: parada com variações, andar, trotar, correr, conversar gesticulando e 6 danças.
+- Moradores usam textura mais leve (melhor para o celular); o seu personagem fica em alta qualidade.

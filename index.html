@@ -599,7 +599,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-15';
+const BUILD = '2026.10.11-16';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -1320,10 +1320,11 @@ function buildHairStyle(u, hs, look) {
   if (!u.hairG || !u.hairM) return;
   const g = new THREE.Group(); g.scale.copy(u.hairG.scale); g.position.copy(u.hairG.position); u.hairG.parent.add(g); u.hsG = g; const M = u.hairM;
   const mk = (geo, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => { const m = new THREE.Mesh(geo, M); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.scale.set(sx, sy, sz); m.castShadow = true; g.add(m); return m; };
-  const f = u.k === 'f', y0 = f ? 0.1 : 0.15;
-  if (hs === 'black') mk(SPH(0.17, 18, 14), 0, y0 + 0.02, -0.02, 0, 0, 0, 1.12, 0.92, 1.1);
-  else if (hs === 'moicano') { mk(boxGeo(0.045, 0.07, 0.24), 0, y0 + 0.06, -0.02); }
-  else if (hs === 'dread' || hs === 'tranca') { const n = hs === 'dread' ? 14 : 2; for (let i = 0; i < n; i++) { const a = hs === 'dread' ? Math.PI * 0.35 + i / (n - 1) * Math.PI * 1.3 : Math.PI * (0.8 + i * 0.4); const x = Math.sin(a) * 0.1, z = Math.cos(a) * 0.1 - 0.02; mk(CAPG(hs === 'dread' ? 0.014 : 0.022, hs === 'dread' ? 0.2 : 0.3), x, y0 - (hs === 'dread' ? 0.06 : 0.12), z, Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25); } }
+  const f = u.k === 'f' && !(MODELS[u.k] && MODELS[u.k].rpm), y0 = f ? 0.1 : 0.15;
+  const RP = !!(MODELS[u.k] && MODELS[u.k].rpm);
+  if (hs === 'black') { if (RP) mk(SPH(0.122, 18, 14), 0, y0 - 0.03, -0.04, 0, 0, 0, 1.0, 0.92, 1.05); else mk(SPH(0.17, 18, 14), 0, y0 + 0.02, -0.02, 0, 0, 0, 1.12, 0.92, 1.1); }
+  else if (hs === 'moicano') { mk(boxGeo(0.04, 0.05, 0.2), 0, y0 + (RP ? 0.0 : 0.06), -0.02); }
+  else if (hs === 'dread' || hs === 'tranca') { const n = hs === 'dread' ? 14 : 2; for (let i = 0; i < n; i++) { const a = hs === 'dread' ? Math.PI * 0.35 + i / (n - 1) * Math.PI * 1.3 : Math.PI * (0.8 + i * 0.4); const rr = RP ? 0.085 : 0.1, x = Math.sin(a) * rr, z = Math.cos(a) * rr - (RP ? 0.03 : 0.02); mk(CAPG(hs === 'dread' ? (RP ? 0.008 : 0.014) : (RP ? 0.014 : 0.022), hs === 'dread' ? 0.2 : 0.3), x, y0 - (hs === 'dread' ? (RP ? 0.1 : 0.06) : (RP ? 0.15 : 0.12)), z, Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25); } }
   else if (hs === 'rabo') mk(CAPG(0.035, 0.18), 0, y0 - 0.06, -0.14, 0.5);
   else if (hs === 'coque') mk(SPH(0.065, 12, 10), 0, y0 + 0.05, -0.09);
   g.visible = !hatOn;
@@ -1625,7 +1626,7 @@ function trickPop(names, pts, extra) {
 
 /* ---------------- PERSONAGENS REALISTAS (modelos 3D com esqueleto) ---------------- */
 let MODELS = null;
-const MODEL_FILES = { f: 'modelos/Michelle.glb', m: 'modelos/readyplayer.me.glb' };
+const MODEL_FILES = { f: 'modelos/rpm_f.glb', m: 'modelos/rpm_m.glb' };
 function loadModels(onProgress) {
   if (!THREE.GLTFLoader || !THREE.SkeletonUtils) return Promise.resolve(null);
   const loader = new THREE.GLTFLoader(), prog = { f: 0, m: 0 };
@@ -1638,10 +1639,10 @@ function loadModels(onProgress) {
       loader.parse(buf.buffer, '', g => res([k, g]), rej);
     }))));
   return Promise.race([Promise.all([one('f'), one('m')]).catch(fromPack), new Promise((_, rej) => setTimeout(() => rej(new Error('tempo esgotado')), 60000))])
-    .then(list => { const M = {}; for (const [k, g] of list) M[k] = prepModel(k, g); return M; })
+    .then(async list => { const M = {}; for (const [k, g] of list) { let nt = null; try { nt = await g.parser.getDependency('texture', 0); nt.flipY = false; } catch (e) { } M[k] = prepModel(k, g, nt); } return M; })
     .catch(e => { console.warn('Modelos 3D indisponíveis, usando personagens simples:', e); return null; });
 }
-function prepModel(k, gltf) {
+function prepModel(k, gltf, normalTex) {
   const scene = gltf.scene, info = { k, scene, mats: {} };
   scene.traverse(o => {
     if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; info.mats[o.material.name] = o.material; }
@@ -1650,6 +1651,7 @@ function prepModel(k, gltf) {
   let top = null; scene.traverse(o => { if (o.isBone && /HeadTop_End$/.test(o.name)) top = o; });
   const h = top ? top.getWorldPosition(new THREE.Vector3()).y : 1.75;
   info.scale = (k === 'f' ? 1.68 : 1.78) / h;
+  if (prepRPM(info, scene, k, normalTex)) { try { prepWearInfo(info, scene, k); } catch (e) { console.warn('roupa', e); } return info; }
   if (k === 'f') info.atlas = prepAtlas(info.mats.Ch03_Body.map.image);
   else for (const n of ['Wolf3D_Outfit_Top', 'Wolf3D_Outfit_Bottom', 'Wolf3D_Outfit_Footwear']) { const m = info.mats[n]; if (m && m.map) info[n] = grayTex(m.map); }
   // máscara da canela (abaixo do short): triângulos da calça abaixo do joelho, pintados no espaço da textura
@@ -1814,6 +1816,7 @@ function makeRealSkater(look, tagText, tagColor) {
     o.castShadow = true; o.frustumCulled = false;
     const n = o.material.name;
     if (k === 'm' && (n === 'Wolf3D_Headwear' || /Beard/.test(o.name))) { o.visible = false; return; }
+    if (M.rpm && n === M.avatarMat) { const mat = rpmBodyMat(M); u.mats[n] = mat; if (M.hairGroup) { u.hairMat2 = mat.clone(); o.material = [mat, u.hairMat2]; } else o.material = mat; return; }
     o.material = o.material.clone(); u.mats[n] = o.material;
     if (o.morphTargetDictionary && o.morphTargetInfluences) u.morphs.push(o);
     if (k === 'm' && M[n]) o.material.map = M[n];
@@ -1821,19 +1824,20 @@ function makeRealSkater(look, tagText, tagColor) {
   root.updateMatrixWorld(true);
   u.R = rigSetup(body);
   // boné/cabelo presos ao osso da cabeça
-  const head = u.R.B.Head, ws = head.getWorldScale(new THREE.Vector3()).x;
-  u.capG = new THREE.Group(); u.capG.scale.setScalar(1 / ws * (k === 'f' ? 1.12 : 1.05)); u.capG.position.set(0, (k === 'f' ? 0.0 : -0.065) / ws, (k === 'f' ? 0 : 0.008) / ws); head.add(u.capG);
+  const head = u.R.B.Head, ws = head.getWorldScale(new THREE.Vector3()).x, kf = k === 'f' && !M.rpm, kg = kf ? 'f' : 'm';
+  u.capG = new THREE.Group(); u.capG.scale.setScalar(1 / ws * (kf ? 1.12 : M.rpm && k === 'f' ? 1.0 : 1.05)); u.capG.position.set(0, (kf ? 0.0 : -0.065) / ws, (kf ? 0 : 0.008) / ws); head.add(u.capG);
   u.hairG = new THREE.Group(); u.hairG.scale.copy(u.capG.scale); u.hairG.position.copy(u.capG.position); head.add(u.hairG);
-  if (k === 'm') u.capG.position.y = -0.028 / ws;
-  u.glG = new THREE.Group(); u.glG.scale.copy(u.capG.scale).multiplyScalar(GL_OFF[k][2]); u.glG.position.copy(u.capG.position).add(new THREE.Vector3(0, GL_OFF[k][0] / ws, GL_OFF[k][1] / ws)); head.add(u.glG);
+  if (!kf) u.capG.position.y = -0.028 / ws;
+  u.glG = new THREE.Group(); u.glG.scale.copy(u.capG.scale).multiplyScalar(GL_OFF[kg][2]); u.glG.position.copy(u.capG.position).add(new THREE.Vector3(0, GL_OFF[kg][0] / ws, GL_OFF[kg][1] / ws)); head.add(u.glG);
+  if (M.rpm) { u.capG.position.y -= 0.01 / ws; u.capG.scale.multiplyScalar(0.94); u.glG.position.z -= 0.016 / ws; u.glG.position.y -= 0.004 / ws; u.glG.scale.multiplyScalar(0.97); if (k === 'f') { u.capG.position.y += 0.026 / ws; u.capG.scale.multiplyScalar(0.94); } }
   // acessórios no peito: âncora no osso Spine2 alinhada aos eixos do personagem
   const sp = u.R.B.Spine2, ss = sp.getWorldScale(new THREE.Vector3()).x;
-  u.accG = new THREE.Group(); u.accG.scale.setScalar(1 / ss); u.accG.position.set(0, (k === 'f' ? ACC_OFF.f[0] : ACC_OFF.m[0]) / ss, (k === 'f' ? ACC_OFF.f[1] : ACC_OFF.m[1]) / ss);
+  u.accG = new THREE.Group(); u.accG.scale.setScalar(1 / ss); u.accG.position.set(0, (kf ? ACC_OFF.f[0] : ACC_OFF.m[0]) / ss, (kf ? ACC_OFF.f[1] : M.rpm ? (k === 'f' ? -0.005 : 0.025) : ACC_OFF.m[1]) / ss);
   sp.add(u.accG); sp.updateMatrixWorld(true);
   u.accG.quaternion.copy(sp.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(root.getWorldQuaternion(new THREE.Quaternion())));
   u.accG.position.applyQuaternion(u.accG.quaternion);
   u.hairM = new THREE.MeshStandardMaterial({ color: look.hair, roughness: 0.62, map: hairTex(), bumpMap: hairTex(), bumpScale: 0.002 });
-  if (k === 'm') buildHair(u);
+  if (k === 'm' && !M.rpm) buildHair(u);
   applyRealLook(root, look);
   if (tagText) { u.tag = nameTag(tagText, tagColor); u.tag.position.y = 2.1; root.add(u.tag); }
   u.walking = false;
@@ -1841,7 +1845,8 @@ function makeRealSkater(look, tagText, tagColor) {
 }
 function applyRealLook(g, look) {
   const u = g.userData, M = MODELS[u.k];
-  if (u.k === 'f') {
+  if (M.rpm) applyRpmLook(u, look);
+  else if (u.k === 'f') {
     const m = u.mats.Ch03_Body; m.map = atlasTex(M.atlas, look.shirt, look.pants, look.skin, look.pants.trunk && M.trunkMask ? M.trunkMask : look.pants.long && !look.pants.baggy && M.longMask ? M.longMask : (look.pants.short || look.pants.baggy) ? M.legMask : null, (look.shirt.bra || look.shirt.nude) ? M.braMask : look.shirt.tank && M.tankMask ? M.tankMask : null); m.needsUpdate = true;
   } else {
     const set = (n, c) => { if (u.mats[n]) u.mats[n].color.setHex(c); };
@@ -7708,7 +7713,7 @@ function tatMat(id, name, wrap) { return new THREE.MeshStandardMaterial({ map: t
 const LIMB = { m: { thigh: [0.095, 0.075], arm: [0.052, 0.045], fore: [0.043, 0.036], neck: [0.058, 0.055], calf: [0.052, 0.04] }, f: { thigh: [0.088, 0.066], arm: [0.045, 0.038], fore: [0.036, 0.03], neck: [0.05, 0.048], calf: [0.048, 0.036] } };
 const SHELL = { thigh: [0.0, 1.06], arm: [0.08, 0.75], fore: [0.22, 0.86], neck: [0.05, 0.95], calf: [0.15, 0.6] };
 function buildWearExtras(g, look) {
-  const u = g.userData; if (!u.R || !u.R.B) return; const B = u.R.B, k = u.k || 'm', Lm = Object.assign({}, LIMB[k] || LIMB.m), ML = (k === 'm' && MODELS && MODELS[k] && MODELS[k].limb) || {};
+  const u = g.userData; if (!u.R || !u.R.B) return; const B = u.R.B, k = u.k || 'm', Lm = Object.assign({}, LIMB[k] || LIMB.m), ML = ((k === 'm' || (MODELS && MODELS[k] && MODELS[k].rpm)) && MODELS && MODELS[k] && MODELS[k].limb) || {};
   for (const [n, key] of [['fore', 'fore'], ['arm', 'arm'], ['neck', 'neck'], ['calf', 'calf'], ['thigh', 'thigh']]) if (ML[key]) Lm[n] = [ML[key] + 0.004, ML[key] * 0.92 + 0.004];
   if (ML.wrist) Lm.wrist = ML.wrist + 0.004;
   if (u.xg) for (const o of u.xg) if (o && o.parent) o.parent.remove(o); u.xg = [];
@@ -7716,7 +7721,7 @@ function buildWearExtras(g, look) {
   const bareM = k === 'm' && u.bareTop && bareUpper(u, g, look, add); if (bareM) { const D = LIMB.m; Lm.fore = [D.fore[0] + 0.004, D.fore[1] + 0.004]; Lm.arm = [D.arm[0] + 0.004, D.arm[1] + 0.004]; Lm.neck = [0.062, 0.06]; Lm.wrist = D.fore[1] * 0.9 + 0.006; }
   // bermuda larga: cone folgado do quadril até passar o joelho
   if (look.pants && look.pants.baggy) {
-    const it = look.pants, mat = new THREE.MeshStandardMaterial({ color: it.color, roughness: 0.85, side: THREE.DoubleSide, map: it.pat && it.pat !== 'plain' ? baggyTex(it) : null });
+    const it = look.pants, pt = it.pat && it.pat !== 'plain', mat = new THREE.MeshStandardMaterial({ color: pt ? 0xffffff : it.color, roughness: 0.85, side: THREE.DoubleSide, map: pt ? baggyTex(it) : null });
     const TH = LIMB[k] && LIMB[k].thigh || [0.09, 0.07]; for (const s of ['Left', 'Right']) { add(boneShell(B[s + 'UpLeg'], B[s + 'Leg'], -0.04, 1.12, TH[0] * 1.12, TH[1] * 1.38, mat, true, 16)); }
   }
   // tatuagens (braço e perna sempre; ombro só sem manga; peito e costas só sem camisa)
@@ -8110,6 +8115,7 @@ function buildTattooShop(sc) {
   LANDMARKS[cityId()] && !LANDMARKS[cityId()].some(l => l[2] === 'Tattoo') && LANDMARKS[cityId()].push([x, z, 'Tattoo']);
 }
 function updateRP20(dt, t) {
+  if (city.player && city.player.userData.real && !city.player.userData.hiRes) { city.player.userData.hiRes = true; applyLook(city.player, myLook()); }
   P.drawnT = (P.drawnT || 0) - dt; if (P.drawnT <= 0 && P.wasDrawn) { P.wasDrawn = false; netTrack && netTrack(); } if (P.drawnT > 0) P.wasDrawn = true;
   const hol = holsterNow(); if (hol !== city.holK) { city.holK = hol; if (city.player) applyLook(city.player, myLook()); }
   if (city.tatNpc) { const tn = city.tatNpc, d = Math.hypot(P.x - tn.position.x, P.z - tn.position.z); if (d < 30) { tn.rotation.y = Math.atan2(P.x - tn.position.x, P.z - tn.position.z); animSkater(tn, { walk: true, v: 0, fallT: 0 }, t); tickBubble(tn, dt); } }
@@ -8301,6 +8307,137 @@ function mocapFingers(u) {
     const ov = name.startsWith('Right') ? S.oR : S.oL, k = k0 * (1 - ov); if (k <= 0.01) continue;
     const j = b * 4; _mQ.set(S.acc[j], S.acc[j + 1], S.acc[j + 2], S.acc[j + 3]); bone.quaternion.slerp(_mQ, k);
   }
+}
+/* =========================================================
+   CORPOS NOVOS (Ready Player Me, homem e mulher): corpo inteiro, camiseta, calça e tênis numa textura só.
+   Cada pedaço da textura vira roupa, pele ou cabelo e é pintado com a cor/estampa de cada personagem.
+   ========================================================= */
+const RPM_BLOCKS = {
+  f: { head: [0, 0, 0.5, 0.5], pants: [0.5, 0, 1, 0.5], shirt: [0, 0.5, 0.5, 1], shoes: [0.75, 0.5, 1, 0.75], skin: [0.75, 0.75, 0.875, 0.875], hair: [0.75, 0.875, 0.875, 1] },
+  m: { head: [0, 0, 0.5, 0.5], pants: [0.5, 0, 0.75, 0.25], shirt: [0, 0.5, 0.5, 1], shoes: [0.5, 0.25, 1, 0.75], skin: [0.75, 0.75, 0.875, 0.875], hair: [0.75, 0.875, 0.875, 1] },
+};
+const RPM_SIZE = 512;
+const inBlk = (b, u, v) => u >= b[0] && u < b[2] && v >= b[1] && v < b[3];
+function prepAtlasRPM(img, k) {
+  const W = RPM_SIZE, H = RPM_SIZE, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'); g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H), p = d.data, BL = RPM_BLOCKS[k];
+  const n = W * H, cls = new Uint8Array(n), lum = new Float32Array(n);
+  for (let j = 0, i = 0; j < n; j++, i += 4) lum[j] = (0.3 * p[i] + 0.59 * p[i + 1] + 0.11 * p[i + 2]) / 255;
+  // referências de cor da pele e do cabelo (amostras quadradas da própria textura)
+  const avg = blk => { let r = 0, gg = 0, b = 0, m = 0; for (let y = Math.floor(blk[1] * H) + 4; y < blk[3] * H - 4; y++) for (let x = Math.floor(blk[0] * W) + 4; x < blk[2] * W - 4; x++) { const i = (y * W + x) * 4; r += p[i]; gg += p[i + 1]; b += p[i + 2]; m++; } return [r / m, gg / m, b / m]; };
+  const skinRef = avg(BL.skin), hairRef = avg(BL.hair);
+  const dist = (i, q) => (p[i] - q[0]) ** 2 + (p[i + 1] - q[1]) ** 2 + (p[i + 2] - q[2]) ** 2;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const j = y * W + x, i = j * 4, u = (x + 0.5) / W, v = (y + 0.5) / H; let kc = 0;
+    if (inBlk(BL.pants, u, v)) kc = 1; else if (inBlk(BL.shirt, u, v)) kc = 2; else if (inBlk(BL.shoes, u, v)) kc = 4;
+    else if (inBlk(BL.skin, u, v)) kc = 3; else if (inBlk(BL.hair, u, v)) kc = 5;
+    else if (inBlk(BL.head, u, v)) kc = dist(i, hairRef) < dist(i, skinRef) * 0.8 ? 5 : 3;
+    cls[j] = kc;
+  }
+  // luminância "limpa" das roupas: some com a logomarca e mantém as dobras
+  const R = 5, clean = new Float32Array(n), tmp = new Float32Array(n);
+  for (let y = 0; y < H; y++) { let s = 0; for (let x = -R; x <= R; x++) s += lum[y * W + clamp(x, 0, W - 1)]; for (let x = 0; x < W; x++) { tmp[y * W + x] = s / (2 * R + 1); s += lum[y * W + clamp(x + R + 1, 0, W - 1)] - lum[y * W + clamp(x - R, 0, W - 1)]; } }
+  for (let x = 0; x < W; x++) { let s = 0; for (let y = -R; y <= R; y++) s += tmp[clamp(y, 0, H - 1) * W + x]; for (let y = 0; y < H; y++) { const bl = s / (2 * R + 1), j = y * W + x; clean[j] = clamp(lum[j], bl * 0.88, bl * 1.12); s += tmp[clamp(y + R + 1, 0, H - 1) * W + x] - tmp[clamp(y - R, 0, H - 1) * W + x]; } }
+  const ref = [0, 0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0, 0]; for (let j = 0; j < n; j++) { const kc = cls[j]; ref[kc] += kc === 1 || kc === 2 || kc === 4 ? clean[j] : lum[j]; cnt[kc]++; }
+  for (let kk = 0; kk < 6; kk++) ref[kk] /= Math.max(1, cnt[kk]);
+  return { rpm: true, c, d, cls, lum: clean, rawLum: lum, ref, skinRef, hairRef, w: W, h: H, cache: {} };
+}
+function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi) {
+  const sh = look.shirt, pa = look.pants, so = look.shoes, sp = plainPat(sh) ? 'plain' : sh.pat, pp = plainPat(pa) ? 'plain' : pa.pat;
+  const bare = so && (so.id === 'shoes_none' || so.barefoot);
+  const key = [sh.color, sp, pa.color, pp, so ? so.color : 0, bare ? 1 : 0, look.skin, look.hair, bald ? 1 : 0, pantsMask ? pantsMask.nm : '', topMask ? topMask.nm : '', hi ? 'hi' : 'lo'].join('_');
+  if (A.cache[key]) return A.cache[key];
+  const W = A.w, H = A.h, src = A.d.data, out = new ImageData(new Uint8ClampedArray(src), W, H), p = out.data;
+  const rgbA = x => [(x >> 16 & 255), (x >> 8 & 255), (x & 255)];
+  const skin = rgbA(look.skin), hair = rgbA(look.hair), cP = rgbA(pa.color), cS = rgbA(sh.color), cF = rgbA(so ? so.color : 0xeeeeee);
+  const sr = A.skinRef, kr = [skin[0] / sr[0], skin[1] / sr[1], skin[2] / sr[2]], ref = A.ref;
+  const put = (i, c, f) => { p[i] = Math.min(255, c[0] * f); p[i + 1] = Math.min(255, c[1] * f); p[i + 2] = Math.min(255, c[2] * f); };
+  for (let j = 0, i = 0; j < W * H; j++, i += 4) {
+    const kc = A.cls[j]; if (!kc) continue;
+    const u = (j % W) / W, v = Math.floor(j / W) / H;
+    if (kc === 5 && bald) { put(i, skin, 0.92); continue; }
+    if (kc === 3) { p[i] = Math.min(255, src[i] * kr[0]); p[i + 1] = Math.min(255, src[i + 1] * kr[1]); p[i + 2] = Math.min(255, src[i + 2] * kr[2]); continue; }
+    if (kc === 5) { put(i, hair, clamp(A.rawLum[j] / ref[5], 0.45, 1.8)); continue; }
+    const f = clamp(A.lum[j] / ref[kc], 0.55, 1.3);
+    if (kc === 1) { if (pantsMask && pantsMask[j]) put(i, skin, clamp(f, 0.75, 1.1) * 0.95); else put(i, pp === 'plain' ? cP : patColor(pp, u * 1.6, v * 1.6, cP, skin), f); }
+    else if (kc === 2) { if (topMask && topMask[j]) { if (topMask.nm === 'nude' && A.torso) { const sf = A.torso[j]; p[i] = Math.min(255, skin[0] * sf * 0.93); p[i + 1] = Math.min(255, skin[1] * sf * 0.93); p[i + 2] = Math.min(255, skin[2] * sf * 0.93); } else put(i, skin, clamp(f, 0.8, 1.08) * 0.95); } else put(i, sp === 'plain' ? cS : patColor(sp, u * 1.6, v * 1.6, cS, skin), f); }
+    else if (kc === 4) put(i, bare ? skin : cF, f);
+  }
+  let c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').putImageData(out, 0, 0);
+  if (!hi) { const c2 = document.createElement('canvas'); c2.width = W / 2; c2.height = H / 2; const g2 = c2.getContext('2d'); g2.imageSmoothingQuality = 'high'; g2.drawImage(c, 0, 0, W / 2, H / 2); c = c2; }
+  const t = new THREE.CanvasTexture(c); t.flipY = false; t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+  const keys = Object.keys(A.cache); if (keys.length > 120) { A.cache[keys[0]].dispose(); delete A.cache[keys[0]]; }
+  return (A.cache[key] = t);
+}
+/* prepara o corpo novo: material com luz e relevo, textura de roupas, cabelo separado e máscaras (short, regata, biquíni...) */
+function prepRPM(info, scene, k, normalTex) {
+  let mesh = null; scene.traverse(o => { if (o.isMesh && /Wolf3D_Avatar/.test(o.material.name)) mesh = o; }); if (!mesh) return false;
+  info.rpm = true; info.avatarMat = mesh.material.name; info.normal = normalTex || null;
+  const map = mesh.material.map; info.atlas = prepAtlasRPM(map.image, k);
+  // cabelo (coque) separado num grupo próprio para poder esconder (careca) e trocar de penteado
+  const geo = mesh.geometry, uv = geo.attributes.uv, idx = geo.index, BL = RPM_BLOCKS[k], body = [], hairT = [];
+  for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2), u = (uv.getX(a) + uv.getX(b) + uv.getX(c)) / 3, v = (uv.getY(a) + uv.getY(b) + uv.getY(c)) / 3; (inBlk(BL.hair, u, v) ? hairT : body).push(a, b, c); }
+  if (hairT.length) { geo.setIndex([...body, ...hairT]); geo.clearGroups(); geo.addGroup(0, body.length, 0); geo.addGroup(body.length, hairT.length, 1); info.hairGroup = true; }
+  // máscaras no espaço da textura
+  const W = info.atlas.w, H = info.atlas.h, wp = n => { let b = null; scene.traverse(o => { if (o.isBone && new RegExp(n + '$').test(o.name)) b = o; }); return b ? b.getWorldPosition(new THREE.Vector3()) : null; };
+  const knee = wp('LeftLeg'), hip = wp('LeftUpLeg'), foot = wp('LeftFoot'), arm = wp('LeftArm'), neck = wp('Neck');
+  if (knee && hip && foot) {
+    const ky = knee.y, hy = hip.y, fy = foot.y + 0.1;
+    info.legMask = legMask(mesh, W, H, ky + (hy - ky) * 0.25, false); info.legMask.nm = 'short';
+    info.trunkMask = legMask(mesh, W, H, 0, false, y => y < hy - 0.055 && y > fy); info.trunkMask.nm = 'trunk';
+    info.longMask = legMask(mesh, W, H, 0, false, y => y < ky - (ky - fy) * 0.4); info.longMask.nm = 'long';
+  }
+  if (arm) { const ax = Math.abs(arm.x) * 1.05, ny = neck ? neck.y : 99, hy2 = hip ? hip.y : 0.9; info.tankMask = legMask(mesh, W, H, 0, false, (y, x) => (Math.abs(x) > ax && y > hy2 + (ny - hy2) * 0.45) || y > ny); info.tankMask.nm = 'tank'; }
+  if (arm) { const sy = arm.y; info.braMask = legMask(mesh, W, H, 0, false, (y, x) => y < sy - (k === 'f' ? 0.24 : 0.2) || y > sy - 0.06 || Math.abs(x) > Math.abs(arm.x) * 0.95); info.braMask.nm = 'bra'; }
+  info.nudeMask = new Uint8Array(W * H).fill(1); info.nudeMask.nm = 'nude';
+  info.k = k; try { rpmTorsoDetail(info, mesh, scene); } catch (e) { console.warn('tronco', e); }
+  return true;
+}
+function rpmBodyMat(M) { const m = new THREE.MeshStandardMaterial({ map: M.atlas.base || (M.atlas.base = (() => { const t = new THREE.CanvasTexture(M.atlas.c); t.flipY = false; t.encoding = THREE.sRGBEncoding; return t; })()), normalMap: M.normal, roughness: 0.78, metalness: 0 }); m.name = M.avatarMat; if (M.normal) m.normalScale.set(0.8, 0.8); return m; }
+function applyRpmLook(u, look) {
+  const M = MODELS[u.k], m = u.mats[M.avatarMat]; if (!m) return;
+  const bald = (look.body && look.body.hs) === 'careca';
+  const pm = look.pants.trunk && M.trunkMask ? M.trunkMask : look.pants.long && !look.pants.baggy && M.longMask ? M.longMask : (look.pants.short || look.pants.baggy) ? M.legMask : null;
+  const tm = look.shirt.nude ? (u.k === 'f' ? M.braMask : M.nudeMask) : look.shirt.bra ? M.braMask : look.shirt.tank ? M.tankMask : null;
+  const tex = rpmAtlasTex(M.atlas, look, pm, tm, bald, !!u.hiRes);
+  m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; }
+  if (M.normal) { const nn = look.shirt.nude ? 0.25 : 0.8; m.normalScale.set(nn, nn); }
+  if (u.hairMat2) { const hs = (look.body && look.body.hs) || 'padrao'; u.hairMat2.visible = !['careca', 'moicano', 'black'].includes(hs); }
+}
+/* posição 3D de cada pixel da camiseta (para desenhar peito, abdômen e costas quando está sem camisa) */
+function rpmTorsoDetail(info, mesh, scene) {
+  const A = info.atlas, W = A.w, H = A.h, geo = mesh.geometry, pos = geo.attributes.position, uv = geo.attributes.uv, idx = geo.index, BL = RPM_BLOCKS[info.k];
+  const wpY = n => { let b = null; scene.traverse(o => { if (o.isBone && new RegExp(n + '$').test(o.name)) b = o; }); return b ? b.getWorldPosition(new THREE.Vector3()) : null; };
+  const hip = wpY('Hips'), neck = wpY('Neck'); if (!hip || !neck) return;
+  const det = new Float32Array(W * H).fill(1), y0 = hip.y, y1 = neck.y, P = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+  const shade = (x, y, z) => {
+    const t = (y - y0) / (y1 - y0), ax = Math.abs(x), front = z > 0.0; let d = 0;
+    const g = (v, c, s) => Math.exp(-(((v - c) / s) ** 2));
+    if (front) {
+      d += g(t, 0.66, 0.035) * (ax > 0.015 && ax < 0.135 ? 1 : 0) * 0.9;           // borda de baixo do peitoral
+      d += g(ax, 0, 0.006) * (t > 0.2 && t < 0.86 ? 0.55 : 0);                     // linha do meio
+      for (const tt of [0.31, 0.42, 0.53]) d += g(t, tt, 0.012) * (ax < 0.055 ? 0.35 : 0); // gomos do abdômen
+      d += g(ax, 0.062, 0.01) * (t > 0.22 && t < 0.6 ? 0.35 : 0);                   // lateral do abdômen
+      d += g(t, 0.17, 0.012) * g(ax, 0, 0.008) * 1.4;                                // umbigo
+    } else {
+      d += g(ax, 0, 0.008) * (t > 0.15 && t < 0.9 ? 0.6 : 0);                       // coluna
+      d += g(Math.hypot(ax - 0.075, (t - 0.74) * 0.5), 0, 0.03) * 0.35;               // escápulas
+    }
+    return 1 - Math.min(0.35, d * 0.2);
+  };
+  for (let t = 0; t < idx.count; t += 3) {
+    const ia = [idx.getX(t), idx.getX(t + 1), idx.getX(t + 2)], U = ia.map(i => uv.getX(i) * W), V = ia.map(i => uv.getY(i) * H);
+    const cu = (U[0] + U[1] + U[2]) / 3 / W, cv = (V[0] + V[1] + V[2]) / 3 / H; if (!inBlk(BL.shirt, cu, cv)) continue;
+    ia.forEach((i, k) => P[k].fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld));
+    const x0 = Math.max(0, Math.floor(Math.min(...U))), x1 = Math.min(W - 1, Math.ceil(Math.max(...U))), yA = Math.max(0, Math.floor(Math.min(...V))), yB = Math.min(H - 1, Math.ceil(Math.max(...V)));
+    const den = (V[1] - V[2]) * (U[0] - U[2]) + (U[2] - U[1]) * (V[0] - V[2]); if (Math.abs(den) < 1e-9) continue;
+    for (let py = yA; py <= yB; py++) for (let px = x0; px <= x1; px++) {
+      const qx = px + 0.5, qy = py + 0.5, a = ((V[1] - V[2]) * (qx - U[2]) + (U[2] - U[1]) * (qy - V[2])) / den, b = ((V[2] - V[0]) * (qx - U[2]) + (U[0] - U[2]) * (qy - V[2])) / den, c = 1 - a - b;
+      if (a < -0.02 || b < -0.02 || c < -0.02) continue;
+      det[py * W + px] = shade(P[0].x * a + P[1].x * b + P[2].x * c, P[0].y * a + P[1].y * b + P[2].y * c, P[0].z * a + P[1].z * b + P[2].z * c);
+    }
+  }
+  A.torso = det;
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
