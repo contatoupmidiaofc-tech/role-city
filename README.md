@@ -99,3 +99,7 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Assaltos**: com arma de fogo você pode assaltar pedestres e outros jogadores (fica procurado). Assaltantes de mentira roubam pela cidade; a PM persegue e prende.
 - **Delegacia e cadeia**: quem é preso fica na cela de 50 a 100 segundos (pelas estrelas) ou paga fiança. Policiais prendem bandidos (assaltantes e traficantes derrubados), que aparecem presos nas celas.
 - **Conta ADM**: todas as armas (das pistolas ao fuzil) e botão Trocar (tecla Y) para mudar de arma.
+- **Mira**: botão Mirar (ou segurar o botão direito do mouse / tecla N). A câmera vai para o ombro, aparece a mira no centro (fica vermelha em cima do alvo) e o tiro vai exatamente onde ela aponta; paredes e o chão seguram a bala. Arrastar o dedo mira mais devagar para ter precisão.
+- **Rádio** (botão Rádio): canal do seu grupo (facção), da PM (policial em serviço) ou do chefe. Mensagens e áudios com o rádio aberto vão só para o grupo.
+- **Chamado**: manda sua localização para o grupo (os membros recebem o GPS marcado) e chama a tropa (4 homens; 6 para o chefe Ajbz) que vem te proteger. Policial em serviço chama reforço da PM.
+- **Ordens pelo rádio**: escreva e a tropa entende — "segue eu", "fica aí", "protege", "ataca", "ataca a polícia", "pega o ladrão", "espalha", "atira pro alto", "quantos tem aí?", "vai embora".

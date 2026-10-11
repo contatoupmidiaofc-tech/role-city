@@ -165,6 +165,16 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #mic-rec i{width:12px;height:12px;border-radius:50%;background:#ff5a5a;animation:blink .8s steps(1) infinite}
 .hud-btn.rec{border-color:#ff5a5a;background:rgba(200,30,40,.9)}
 .install-btn{width:100%;margin:6px 0 10px}
+#crosshair{position:fixed;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;color:#fff;filter:drop-shadow(0 0 2px #000);pointer-events:none;z-index:14}
+#crosshair.hit{color:#ff4040}
+#tb-aim{right:110px;bottom:180px;width:56px;height:56px;border-color:rgba(255,90,90,.85)}
+#tb-aim.on{background:radial-gradient(circle at 50% 35%,rgba(255,90,90,.95),rgba(200,30,40,.9))}
+#radio{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 180px);width:min(420px,calc(100vw - 24px));background:rgba(16,22,18,.95);border:2px solid #3ddc84;border-radius:14px;padding:8px;display:grid;gap:6px;pointer-events:auto;z-index:21}
+#radio .rhead{display:flex;justify-content:space-between;align-items:center;color:#3ddc84;font-family:var(--cond);text-transform:uppercase}
+#radio-log{max-height:150px;overflow:auto;font-size:14px;display:grid;gap:3px}
+#radio-log .me b{color:var(--wax)} #radio-log b{color:#3ddc84}
+#radio .chip.call{background:#c0392b;color:#fff;border-color:#ff8a8a}
+#radio .qrow{display:flex;gap:6px} #radio input{flex:1;min-height:40px;border-radius:10px;border:2px solid var(--line);background:var(--panel-2);color:var(--fg);padding:0 10px;font:inherit}
 #h-wanted{color:#ff5a5a;font-weight:700;margin-left:6px;letter-spacing:1px;text-shadow:0 0 6px rgba(255,90,90,.6)}
 .emoji-grid{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
 .emoji-grid .chip{font-size:20px;min-width:40px;min-height:40px}
@@ -481,6 +491,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" data-act="open-crew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4.5"/></svg><span class="lbl">Crew</span></button>
     <button class="hud-btn" id="hb-veh" data-act="veh-call" aria-label="Chamar veículo" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15l2-6h14l2 6v4H3z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="lbl">Carro</span></button>
     <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
+    <button class="hud-btn" data-act="radio" aria-label="Rádio do grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8 15 3M9 13h6M9 17h3"/></svg><span class="lbl">Rádio</span></button>
     <button class="hud-btn" id="hb-mic" aria-label="Segure para mandar áudio (tecla B)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="lbl">Áudio</span></button>
     <button class="hud-btn" data-act="face-cam" aria-label="Câmera de rosto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="lbl">Rosto</span></button>
     <button class="hud-btn" data-act="open-config" aria-label="Configurações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
@@ -513,6 +524,10 @@ canvas.swatch{background:#333}
 <div id="banner" hidden></div>
 <div id="splat" hidden></div>
 <div id="fade" hidden></div>
+<div id="crosshair" hidden><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 4v9M20 27v9M4 20h9M27 20h9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="1.6" fill="currentColor"/></svg></div>
+<form id="radio" hidden><div class="rhead"><b id="radio-title">📻 Rádio</b><button class="btn ghost sm" type="button" data-act="radio">✕</button></div><div id="radio-log"></div>
+  <div class="chips"><button type="button" class="chip call" data-act="radio-call">🚨 Chamado (mandar localização)</button><button type="button" class="chip" data-act="radio-say" data-t="Segue eu">Segue eu</button><button type="button" class="chip" data-act="radio-say" data-t="Fica aí">Fica aí</button><button type="button" class="chip" data-act="radio-say" data-t="Protege eu">Protege</button><button type="button" class="chip" data-act="radio-say" data-t="Ataca">Ataca</button><button type="button" class="chip" data-act="radio-say" data-t="Atira pro alto">Pro alto</button><button type="button" class="chip" data-act="radio-say" data-t="Vai embora">Vai embora</button></div>
+  <div class="qrow"><input id="radio-in" maxlength="120" placeholder="Escreva a ordem (ex.: ataca a polícia, fica aí, segue eu)" autocomplete="off"><button class="btn sm" type="submit">Enviar</button></div></form>
 <div id="mic-rec" hidden><i></i><span id="mic-rec-t">Gravando… solte para enviar</span></div>
 <div id="btnedit" hidden><b>Arraste os botões e o joystick para onde preferir</b><button class="btn ghost sm" data-act="be-size" data-d="-0.1">Menor</button><button class="btn ghost sm" data-act="be-size" data-d="0.1">Maior</button><button class="btn ghost sm" data-act="be-mode">Ver botões do carro</button><button class="btn ghost sm" data-act="be-reset">Padrão</button><button class="btn ghost sm" data-act="be-cancel">Cancelar</button><button class="btn sm" data-act="be-save">Salvar</button></div>
 <div id="smokeov" hidden></div>
@@ -530,6 +545,7 @@ canvas.swatch{background:#333}
     <button class="tbtn jump fb" data-btn="jump" id="tb-jump" aria-label="Pular"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span>Pular</span></button>
     <button class="tbtn wp fb" data-btn="weapon" id="tb-wp" hidden aria-label="Usar arma"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span>Arma</span><b class="badge" id="tb-wp-n">2</b></button>
     <button class="tbtn mic" id="tb-mic" aria-label="Segure para mandar áudio"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Áudio</span></button>
+    <button class="tbtn fb" data-btn="aim" id="tb-aim" hidden aria-label="Mirar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg><span>Mirar</span></button>
     <button class="tbtn fb" data-btn="gunsw" id="tb-gsw" hidden aria-label="Trocar arma"><svg viewBox="0 0 24 24"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg><span>Trocar</span></button>
     <button class="tbtn vb" data-btn="horn" id="tb-horn" aria-label="Buzinar"><svg viewBox="0 0 24 24"><path d="M3 10v4h4l6 4V6L7 10z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6M19 6c3 3 3 9 0 12"/></svg><span>Buzina</span></button>
     <button class="tbtn vb" data-btn="lights" id="tb-lights" aria-label="Farol"><svg viewBox="0 0 24 24"><path d="M10 6c-4 0-6 3-6 6s2 6 6 6c1 0 2-3 2-6s-1-6-2-6z"/><path d="M15 8h6M15 12h6M15 16h6"/></svg><span>Farol</span></button>
@@ -2007,7 +2023,7 @@ function animReal(u, o, t) {
 /* ---------------- INPUT ---------------- */
 const input = { held: {}, pressed: {}, hold: {}, joy: { x: 0, y: 0 }, tbtn: {} };
 addEventListener('mouseup', () => { input.hold = {}; });
-const KEYMAP = { KeyY: 'gunsw', KeyH: 'horn', KeyL: 'lights', KeyZ: 'blinkL', KeyX: 'blinkR', KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
+const KEYMAP = { KeyN: 'aim', KeyY: 'gunsw', KeyH: 'horn', KeyL: 'lights', KeyZ: 'blinkL', KeyX: 'blinkR', KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
 addEventListener('keydown', e => {
   if (e.target.matches && e.target.matches('input,textarea')) { if (e.code === 'Escape') e.target.blur(); return; }
   input.held[e.code] = true;
@@ -2022,11 +2038,12 @@ function camDrag(dx, dy) {
   if (mode === 'race') { input.dragSteer = clamp((input.dragSteer || 0) + dx * 0.012, -1, 1); return; }
   if (mode !== 'city' || uiBlocking()) return;
   if (city.faceCam) { city.faceOrbit += dx * 0.008; city.faceH = clamp(city.faceH - dy * 0.003, -0.5, 0.8); return; }
-  city.camYaw -= dx * 0.0075; city.camPitch = clamp(city.camPitch + dy * 0.004, -0.6, 0.9); city.dragT = performance.now();
+  const ak = P.aim ? 0.45 : 1; city.camYaw -= dx * 0.0075 * ak; city.camPitch = clamp(city.camPitch + dy * 0.004 * ak, P.aim ? -0.85 : -0.6, 0.9); city.dragT = performance.now();
 }
 $('gl').addEventListener('wheel', e => { camZoom(e.deltaY * 0.0012); e.preventDefault(); }, { passive: false });
 (() => {
-  let drag = null; $('gl').addEventListener('mousedown', e => { drag = [e.clientX, e.clientY]; });
+  let drag = null; $('gl').addEventListener('mousedown', e => { drag = [e.clientX, e.clientY]; if (mode === 'city') { if (e.button === 2) setAim(true); else if (e.button === 0 && P.aim) input.pressed.weapon = true; } });
+  $('gl').addEventListener('contextmenu', e => e.preventDefault()); addEventListener('mouseup', e => { if (e.button === 2 && P.aim && !IS_TOUCH) setAim(false); });
   addEventListener('mousemove', e => { if (!drag) return; camDrag(e.clientX - drag[0], e.clientY - drag[1]); drag = [e.clientX, e.clientY]; });
   addEventListener('mouseup', () => { drag = null; });
   let pinch = null, one = null;
@@ -2098,9 +2115,9 @@ async function installApp() {
   if (box && !$('menu').hidden) { box.innerHTML = html; box.hidden = false; } else { closePanel(); toast(isIOS() ? 'No Safari: Compartilhar ⬆ → Adicionar à Tela de Início.' : 'No Chrome: menu ⋮ → Instalar app.', 'pink'); }
 }
 /* ---------------- POSIÇÃO DOS BOTÕES (editável nas Configurações) ---------------- */
-const BTN_IDS = ['tb-gsw', 'tb-left', 'tb-right', 'tb-gas', 'tb-rev', 'tb-mic', 'tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
+const BTN_IDS = ['tb-aim', 'tb-gsw', 'tb-left', 'tb-right', 'tb-gas', 'tb-rev', 'tb-mic', 'tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
 // celular em pé: tela estreita, os botões ficam num bloco compacto à direita para não encostar no joystick
-const BTN_PORTRAIT = { 'tb-gsw': [88, 170], 'tb-mic': [24, 290], 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [20, 126], 'tb-lights': [104, 100], 'tb-blL': [160, 172], 'tb-blR': [104, 172], 'tb-gas': [14, 20], 'tb-rev': [118, 14], 'tb-vexit': [20, 204] };
+const BTN_PORTRAIT = { 'tb-aim': [150, 236], 'tb-gsw': [88, 170], 'tb-mic': [24, 290], 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [20, 126], 'tb-lights': [104, 100], 'tb-blL': [160, 172], 'tb-blR': [104, 172], 'tb-gas': [14, 20], 'tb-rev': [118, 14], 'tb-vexit': [20, 204] };
 const btnOrient = () => innerWidth < innerHeight ? 'port' : 'land';
 const btnEditing = () => $('touch').classList.contains('editing');
 function btnCfg() { const st = S.settings; st.btnPos = st.btnPos || { port: {}, land: {} }; st.joyPos = st.joyPos || {}; return st; }
@@ -2861,7 +2878,7 @@ function travelTo(id, how) {
 }
 function resetCity() {
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
-  city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
+  city.squad = []; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -3426,6 +3443,9 @@ function updateCity(dt, t) {
   P.wpShowT = (P.wpShowT || 0) - dt; P.wpCd = (P.wpCd || 0) - dt;
   if (!blocked && tap('weapon')) cityWeapon();
   if (!blocked && tap('gunsw')) nextGun();
+  if (!blocked && tap('aim')) setAim(!P.aim);
+  if (IS_TOUCH) $('tb-aim').hidden = !myGun() || !!P.drive;
+  updateAim(dt); updateSquad(dt, t); if ((city.radT = (city.radT || 0) - dt) <= 0) { city.radT = 3; radioSync(); }
   if (IS_TOUCH) $('tb-gsw').hidden = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)).length < 2;
   if (IS_TOUCH) { const wk = myHandKind(); $('tb-wp').hidden = !wk; if (wk) { $('tb-wp').classList.toggle('off', P.wpCd > 0); $('tb-wp-n').textContent = '∞'; } }
   updateCityFx(dt);
@@ -3540,6 +3560,7 @@ function updateCity(dt, t) {
     const a = P.h + 0.35 + Math.sin(camYaw) * 0.55;
     camera.position.lerp(new THREE.Vector3(P.x + Math.sin(a) * 2.6, 1.6, P.z + Math.cos(a) * 2.6), 1 - Math.exp(-4 * dt));
     camera.lookAt(P.x, 1.05, P.z);
+  } else if (aimOn()) { aimCamera(dt, head);
   } else {
     // a câmera volta sozinha para trás do personagem quando ele anda e você não está girando
     const sinceDrag = (performance.now() - city.dragT) / 1000, dh = Math.atan2(Math.sin(P.h - city.camYaw), Math.cos(P.h - city.camYaw));
@@ -4447,7 +4468,8 @@ function gunFx(x0, y0, z0, x1, y1, z1, kind) {
   city.fx.push({ m: ln, vx: 0, vy: 0, vz: 0, life: 0.08, max: 0.08, line: true }, { m: fl, vx: 0, vy: 0, vz: 0, life: 0.07, max: 0.07 });
 }
 function shootGun(G) {
-  if ((P.wpCd || 0) > 0 || P.drive || P.ride || P.jailT > 0) return; P.wpCd = G.cd; P.wpShowT = 0.8; P.emote = null;
+  if ((P.wpCd || 0) > 0 || P.drive || P.ride || P.jailT > 0) return;
+  if (aimOn()) return shootAimed(G); P.wpCd = G.cd; P.wpShowT = 0.8; P.emote = null;
   const fx = Math.sin(P.h), fz = Math.cos(P.h), cone = G.cone || 0.9;
   let best = null, bd = G.rng, kind = null;
   const consider = (o, k) => { if (!o || o.off || o.fallT > 0) return; const dx = o.x - P.x, dz = o.z - P.z, d = Math.hypot(dx, dz); if (d < bd && d > 0.4 && (dx * fx + dz * fz) / d > cone) { bd = d; best = o; kind = k; } };
@@ -4735,6 +4757,7 @@ function cullChars() {
   for (const o of city.thugs || []) o.g.visible = vis(o.x, o.z, !o.off && !(o.arrestedT > 0));
   if (city.roles) for (const o of city.roles.bombeiro) o.g.visible = vis(o.x, o.z, !o.off);
   for (const r of city.robbers || []) r.g.visible = vis(r.x, r.z, r.st !== 'gone');
+  for (const q of city.squad || []) q.g.visible = vis(q.x, q.z, true);
 }
 /* =========================================================
    PISTAS DE SKATE DE VERDADE: rampas, quarter pipes, half-pipe, bowl e corrimãos com física
@@ -5044,6 +5067,212 @@ function addPrisoner(name, secs) { city.prisoners = city.prisoners || []; city.p
 function showPrisoners() {
   if (!city.jailG) return; for (const m of city.prisonerMs || []) city.scene.remove(m); city.prisonerMs = [];
   (city.prisoners || []).slice(0, 4).forEach((p, i) => { const [x, z] = cellPos(1 + (i % 2)), g = makeSkater(roleLook('traficante', i), p.name, '#ff6b6b'); g.position.set(x + (i > 1 ? 1 : -1), 0, z - 0.5); g.rotation.y = 0; city.scene.add(g); city.prisonerMs.push(g); });
+}
+
+/* =========================================================
+   MIRA: câmera no ombro, mira no centro da tela e tiro exatamente onde ela aponta
+   ========================================================= */
+const _ray = { o: new THREE.Vector3(), d: new THREE.Vector3() };
+function aimOn() { return !!P.aim && !P.drive && !P.ride && !(P.jailT > 0) && mode === 'city'; }
+function setAim(v) {
+  if (v && !myGun()) { if (P.aim) P.aim = false; return toast('Equipe uma arma de fogo para mirar.', 'bad'); }
+  P.aim = !!v; if (P.aim) { P.onBoard = false; P.emote = null; city.aimPitch = 0; city.camSnap = true; } $('crosshair').hidden = !P.aim; const b = $('tb-aim'); if (b) b.classList.toggle('on', P.aim);
+}
+/* alvos possíveis: figurantes, polícia, contenção, assaltantes, tropa e jogadores */
+function aimTargets() {
+  const L = [];
+  for (const o of city.bots) if (!o.off) L.push([o, 'bot']); for (const o of city.peds) if (!o.off) L.push([o, 'ped']);
+  for (const o of city.cops || []) if (!o.off) L.push([o, 'cop']); for (const o of city.thugs || []) if (!o.off && !(o.arrestedT > 0)) L.push([o, 'thug']);
+  for (const r of city.robbers || []) if (r.st !== 'preso' && r.st !== 'gone') L.push([r, 'robber']);
+  for (const s of city.squad || []) L.push([s, 'squad']);
+  for (const id in NET.peers) { const p = NET.peers[id]; if (p.seen && !(p.t && p.t.vh)) L.push([{ x: p.x, z: p.z, y: p.y, p, fallT: 0 }, 'peer']); }
+  return L;
+}
+/* raio da câmera: primeiro alvo atingido (cápsula do corpo) antes de parede ou chão */
+function aimRay(range) {
+  camera.getWorldDirection(_ray.d); _ray.o.copy(camera.position);
+  const o = _ray.o, d = _ray.d, hd = Math.hypot(d.x, d.z) || 1e-6;
+  let best = null, bt = range, kind = null;
+  for (const [t, k] of aimTargets()) {
+    if (t.fallT > 0) continue; const tt = ((t.x - o.x) * d.x + (t.z - o.z) * d.z) / (hd * hd); if (tt < 0.5 || tt > bt) continue;
+    const px = o.x + d.x * tt, pz = o.z + d.z * tt, py = o.y + d.y * tt, y0 = t.y != null ? t.y : groundH(t.x, t.z);
+    if (Math.hypot(px - t.x, pz - t.z) < 0.42 && py > y0 && py < y0 + 1.85) { bt = tt; best = t; kind = k; }
+  }
+  // parede ou chão no caminho
+  let wall = null;
+  for (let s = 1; s < bt; s += 0.4) { const x = o.x + d.x * s, y = o.y + d.y * s, z = o.z + d.z * s; if (y < groundH(x, z) || (y < 9 && collideHard(x, z))) { wall = s; break; } }
+  if (wall != null) { best = null; kind = null; bt = wall; }
+  return { best, kind, t: bt, x: o.x + d.x * bt, y: o.y + d.y * bt, z: o.z + d.z * bt };
+}
+function collideHard(x, z) { for (const c of city.colliders) if (x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && (c.x1 - c.x0) * (c.z1 - c.z0) > 1) return true; return false; }
+function updateAim(dt) {
+  const on = aimOn(); if (!on && P.aim) setAim(false); if (!on) { if (camera.fov !== 62) { camera.fov = 62; camera.updateProjectionMatrix(); } return; }
+  P.h = city.camYaw; P.v = 0; P.wpShowT = 0.2;
+  const want = 40; if (Math.abs(camera.fov - want) > 0.3) { camera.fov = lerp(camera.fov, want, 1 - Math.exp(-10 * dt)); camera.updateProjectionMatrix(); }
+  if ((city.aimT = (city.aimT || 0) - dt) <= 0) { city.aimT = 0.1; const G = myGun(), r = aimRay(G ? G.rng * 1.4 : 30); $('crosshair').classList.toggle('hit', !!r.best); }
+}
+/* câmera de mira (chamada no lugar da câmera normal) */
+function aimCamera(dt, head) {
+  const yaw = city.camYaw, e = clamp(-city.camPitch * 0.9, -0.7, 0.8), fx = Math.sin(yaw), fz = Math.cos(yaw), rx = -fz, rz = fx;
+  const pos = new THREE.Vector3(P.x - fx * 1.9 + rx * 0.62, P.y + 1.72, P.z - fz * 1.9 + rz * 0.62);
+  camera.position.lerp(pos, city.camSnap ? 1 : 1 - Math.exp(-14 * dt)); city.camSnap = false;
+  camera.lookAt(camera.position.x + fx * Math.cos(e) * 10, camera.position.y + Math.sin(e) * 10, camera.position.z + fz * Math.cos(e) * 10);
+}
+function shootAimed(G) {
+  if ((P.wpCd || 0) > 0) return; P.wpCd = G.cd; P.wpShowT = 0.8;
+  const r = aimRay(G.rng * 1.4), fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
+  gunFx(P.x + fx * 0.6 + rx * 0.25, P.y + 1.42, P.z + fz * 0.6 + rz * 0.25, r.x, r.y, r.z, G.gun); sfx(G.gun === 'taser' ? 'spray' : 'tiro');
+  const sp = new THREE.Mesh(SPH(0.1, 6, 4), new THREE.MeshBasicMaterial({ color: r.best ? 0xff5a5a : 0xd8c8a8, transparent: true })); sp.position.set(r.x, r.y, r.z); city.scene.add(sp); city.fx.push({ m: sp, vx: 0, vy: 0.5, vz: 0, life: 0.35, max: 0.35 });
+  for (const o of city.thugs || []) if (Math.hypot(o.x - P.x, o.z - P.z) < 30 && !isAdm()) o.hostT = Math.max(o.hostT, 18);
+  if (!r.best) { if (G.gun !== 'taser') addWanted(1, 'disparo em via pública'); return; }
+  applyShot(r.best, r.kind, G);
+}
+/* o que acontece com quem leva o tiro (usado pela mira e pelo tiro automático) */
+function applyShot(best, kind, G) {
+  if (kind === 'peer') {
+    NET.ch && NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: best.p.id, by: S.name, k: G.knock } });
+    if (!(S.shift === 'policial' && best.p.t && best.p.t.wd > 0)) addWanted(1, 'atirou em alguém'); toast(`Acertou ${best.p.name}!`); return;
+  }
+  if (kind === 'squad') { best.fallT = 3; bubble(best.g, 'Ô! Sou do seu lado, chefe!', 2); return; }
+  best.fallT = G.knock + (kind === 'thug' ? 2 : kind === 'robber' ? 3 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2);
+  if (kind === 'robber') return;
+  if (kind === 'cop') addWanted(2, 'atacou um policial');
+  else if (kind === 'thug') { if (S.shift !== 'policial') addWanted(1, 'tiroteio no morro'); }
+  else if (S.shift !== 'policial') addWanted(1, 'atacou um pedestre');
+}
+
+/* =========================================================
+   RÁDIO: canal do grupo (facção), da polícia ou do chefe; chamado e ordens para a tropa
+   ========================================================= */
+const radioChan = () => S.gang ? 'radio_g_' + S.gang.id : S.shift === 'policial' ? 'radio_pm' : isAdm() ? 'radio_chefe' : null;
+const radioName = () => S.gang ? `${S.gang.e} ${S.gang.n}` : S.shift === 'policial' ? 'Rádio da PM' : isAdm() ? 'Rádio do Chefe' : 'Rádio';
+const RADIO = { log: [], open: false, key: null };
+function radioSync() {
+  const k = NET.user && NET.online ? radioChan() : null; if (k === RADIO.key) return;
+  if (NET.radio) { try { NET.sb.removeChannel(NET.radio); } catch (e) { } NET.radio = null; }
+  RADIO.key = k; if (!k) return;
+  const ch = NET.sb.channel(k, { config: { broadcast: { self: false } } });
+  ch.on('broadcast', { event: 'msg' }, ({ payload }) => radioIn(payload)).on('broadcast', { event: 'chamado' }, ({ payload }) => onCall(payload)).on('broadcast', { event: 'voz' }, ({ payload }) => onPeerVoice(payload)).subscribe(); NET.radio = ch;
+}
+function radioCrackle() { if (!audioCtx()) return; noiseHit(0.18, 'bandpass', 1800, 0.06, 2); tone('square', 1200, 1100, 0.05, 0.02, 0.18); }
+function radioPush(who, msg, me) { RADIO.log.push({ who, msg, me }); if (RADIO.log.length > 40) RADIO.log.shift(); renderRadio(); }
+function radioIn(d) { radioPush(d.name, d.msg); radioCrackle(); if (!RADIO.open) toast(`📻 ${d.name}: ${d.msg}`, 'pink'); }
+function radioSend(msg) {
+  msg = (msg || '').trim().slice(0, 120); if (!msg) return;
+  radioPush(S.name, msg, true); radioCrackle();
+  if (NET.radio) NET.radio.send({ type: 'broadcast', event: 'msg', payload: { name: S.name, msg } });
+  const o = radioOrder(msg); if (o && city.squad && city.squad.length) squadOrder(o);
+}
+function renderRadio() {
+  const box = $('radio-log'); if (!box) return; $('radio-title').textContent = '📻 ' + radioName();
+  box.innerHTML = RADIO.log.slice(-14).map(m => `<div class="${m.me ? 'me' : ''}"><b>${esc(m.who)}</b> ${esc(m.msg)}</div>`).join('') || '<div class="muted">Canal em silêncio. Mande o chamado ou escreva uma ordem.</div>';
+  box.scrollTop = box.scrollHeight;
+}
+function toggleRadio(v) {
+  RADIO.open = v != null ? v : !RADIO.open; $('radio').hidden = !RADIO.open; if (RADIO.open) { radioSync(); renderRadio(); }
+}
+/* chamado: manda a localização para o grupo e a tropa vem proteger */
+function makeCall() {
+  if (!S.gang && !isAdm() && S.shift !== 'policial') return toast('O chamado é para quem é de facção (QG no morro) ou policial em serviço.', 'bad');
+  if ((city.callCd || 0) > 0) return toast(`Aguarde ${Math.ceil(city.callCd)} s para outro chamado.`, 'bad');
+  city.callCd = 45; const where = nearPlaceName(P.x, P.z);
+  radioPush(S.name, `🚨 CHAMADO! Preciso de reforço em ${where}.`, true); radioCrackle(); sfx('level');
+  if (NET.radio) NET.radio.send({ type: 'broadcast', event: 'chamado', payload: { id: NET.user.id, name: S.name, x: Math.round(P.x), z: Math.round(P.z), city: cityId(), where } });
+  spawnSquad();
+}
+function onCall(d) {
+  radioPush(d.name, `🚨 CHAMADO! Reforço em ${d.where}.`); radioCrackle(); sfx('level');
+  if (d.city === cityId()) { setGps(d.x, d.z, `Chamado de ${d.name}`); toast(`📻 Chamado de ${d.name}! O local foi marcado no GPS.`, 'pink'); }
+  else toast(`📻 Chamado de ${d.name} em ${CITY_DEFS[d.city] ? CITY_DEFS[d.city].name : 'outra cidade'}.`, 'pink');
+}
+function nearPlaceName(x, z) { if (city.morro && inMorro(x, z)) return MORRO_NAME[cityId()]; if (inPark(x, z)) return 'Skatepark'; let best = null, bd = 1e9; for (const d of city.doors) { if (d.inside) continue; const k = Math.hypot(d.x - x, d.z - z); if (k < bd) { bd = k; best = d; } } return best ? `perto de ${best.label}` : 'na cidade'; }
+/* entende a ordem escrita (sem acento, minúsculas) */
+function radioOrder(msg) {
+  const m = msg.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const has = (...w) => w.some(x => m.includes(x));
+  if (has('vai embora', 'dispensa', 'pode ir', 'libera', 'volta pro morro', 'volta para o morro', 'vaza', 'some daqui')) return 'leave';
+  if (has('pro alto', 'para o alto', 'comemora', 'salva de tiro', 'rajada')) return 'up';
+  if (has('ataca', 'atira', 'derruba', 'pega ele', 'pega eles', 'manda bala', 'fogo', 'mata')) return has('policia', 'pm', 'viatura', 'gambe', 'cana') ? 'attack_cop' : has('assaltante', 'ladrao') ? 'attack_rob' : 'attack';
+  if (has('parado', 'para ai', 'para tudo', 'fica', 'espera', 'aguarda', 'segura')) return 'hold';
+  if (has('protege', 'cobre', 'cobertura', 'seguranca', 'me guarda')) return 'protect';
+  if (has('espalha', 'cerca', 'cerquem', 'em volta')) return 'spread';
+  if (has('segue', 'siga', 'vem comigo', 'me acompanha', 'cola', 'vem aqui', 'aqui', 'chega')) return 'follow';
+  if (has('quantos', 'status', 'situacao', 'relatorio', 'na escuta', 'copia')) return 'report';
+  return null;
+}
+
+/* =========================================================
+   TROPA: homens da facção (ou PMs de reforço) que vêm te proteger e obedecem ao rádio
+   ========================================================= */
+function squadSide() { return S.shift === 'policial' && !S.gang ? 'pm' : 'faccao'; }
+function spawnSquad() {
+  if (city.interior || city.jail) return;
+  const side = squadSide(), n = isAdm() ? 6 : 4; city.squad = city.squad || [];
+  if (city.squad.length >= 8) { radioPush(side === 'pm' ? 'Central' : 'Tropa', 'A tropa já está com você, chefe!'); return; }
+  let from = null; if (side === 'faccao' && city.morro) { const [x, z] = morroWorld(2, 0); if (Math.hypot(x - P.x, z - P.z) < 170) from = [x, z]; }
+  const tag = side === 'pm' ? 'Reforço PM' : S.gang ? `${S.gang.e} ${S.gang.n}` : 'Bonde do Ajbz';
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, TAU), x = from ? from[0] + rand(-3, 3) : P.x + Math.cos(a) * 38, z = from ? from[1] + rand(-3, 3) : P.z + Math.sin(a) * 38;
+    const look = side === 'pm' ? roleLook('policial', i) : roleLook('traficante', i), g = makeSkater(look, tag, side === 'pm' ? '#7fb2ff' : '#ffcf3a'); g.userData.ped = true; city.scene.add(g);
+    city.squad.push({ g, x, z, h: 0, k: city.squad.length, side, st: 'follow', gun: side === 'pm' ? 'pistola' : i % 2 ? 'pistola' : 'fuzil', shotT: rand(0.5, 1.5), fallT: 0, ph0: rand(0, 40), hx: x, hz: z });
+  }
+  setTimeout(() => radioPush(side === 'pm' ? 'Central' : 'Tropa', side === 'pm' ? `Viaturas a caminho, ${n} policiais!` : isAdm() ? `Copiado, chefe ${CHIEF}! ${n} homens indo aí.` : `Copiado! ${n} parceiros indo aí.`), 900);
+}
+function squadOrder(o) {
+  const L = city.squad, who = L[0] && L[0].side === 'pm' ? 'Central' : 'Tropa';
+  const say = t => setTimeout(() => { radioPush(who, t); radioCrackle(); }, 700);
+  if (o === 'report') return say(`${L.length} na escuta, ${L.filter(s => s.st !== 'leave').length} em posição. Tudo sob controle.`);
+  for (const s of L) {
+    if (o === 'leave') { s.st = 'leave'; s.t = 0; }
+    else if (o === 'hold') { s.st = 'hold'; s.hx = s.x; s.hz = s.z; }
+    else if (o === 'up') { s.upT = 1.6; s.upShots = 3; }
+    else if (o.startsWith('attack')) { s.st = 'attack'; s.want = o === 'attack_cop' ? 'cop' : o === 'attack_rob' ? 'robber' : null; }
+    else if (o === 'spread') { s.st = 'follow'; s.spread = true; }
+    else { s.st = 'follow'; s.spread = false; }
+  }
+  say({ leave: 'Copiado, estamos voltando.', hold: 'Copiado, segurando a posição.', up: 'É nóis! Pro alto!', attack: 'Copiado! Partindo pra cima.', attack_cop: 'Copiado! Pra cima da PM.', attack_rob: 'Copiado! Atrás do ladrão.', spread: 'Espalhando e cercando a área.', follow: 'Copiado, colando em você.', protect: 'Copiado, na sua segurança.' }[o] || 'Copiado.');
+}
+/* ameaças para a tropa: quem persegue, assalta ou atira no chefe */
+function squadThreats(s, want) {
+  const L = [];
+  if (s.side === 'faccao') { if (want !== 'robber') for (const c of city.cops || []) if (!c.off && !(c.fallT > 0) && (want === 'cop' || c.chase)) L.push(c); if (want !== 'cop') for (const r of city.robbers || []) if (r.st !== 'preso' && r.st !== 'gone' && !(r.fallT > 0) && (want === 'robber' || r.tgt === 'player' || s.st === 'attack')) L.push(r); if (!want) for (const o of city.thugs || []) if (o.hostT > 0 && !(o.fallT > 0) && !isAdm()) L.push(o); }
+  else { for (const r of city.robbers || []) if (r.st !== 'preso' && r.st !== 'gone' && !(r.fallT > 0)) L.push(r); for (const o of city.thugs || []) if (o.hostT > 0 && !(o.fallT > 0)) L.push(o); }
+  return L;
+}
+function updateSquad(dt, t) {
+  city.callCd = (city.callCd || 0) - dt; const L = city.squad; if (!L || !L.length) return;
+  for (const s of L) {
+    const g = s.g; g.userData.lod = Math.hypot(s.x - camera.position.x, s.z - camera.position.z) > 32;
+    if (s.fallT > 0) { s.fallT -= dt; g.position.set(s.x, groundH(s.x, s.z), s.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t + s.ph0); continue; }
+    let goal = null, sp = 0, aim = false;
+    const dP = Math.hypot(s.x - P.x, s.z - P.z);
+    if (s.st === 'leave') { s.t = (s.t || 0) + dt; const a = Math.atan2(s.x - P.x, s.z - P.z); goal = { x: s.x + Math.sin(a) * 10, z: s.z + Math.cos(a) * 10 }; sp = 5; if (s.t > 10 && dP > 35) { s.gone = true; city.scene.remove(g); continue; } }
+    else {
+      // posição na formação em volta do chefe
+      if (dP > 70) { const a = rand(0, TAU); s.x = P.x + Math.cos(a) * 22; s.z = P.z + Math.sin(a) * 22; }
+      const ring = s.spread ? 7 : 2.6 + (s.k % 3) * 0.9, ang = P.h + Math.PI + (s.k - (L.length - 1) / 2) * (s.spread ? 0.9 : 0.55);
+      const slot = { x: P.x + Math.sin(ang) * ring, z: P.z + Math.cos(ang) * ring };
+      const threats = squadThreats(s, s.want); let tg = null, td = s.st === 'attack' ? 60 : 26;
+      for (const o of threats) { const d = Math.hypot(o.x - s.x, o.z - s.z); if (d < td) { td = d; tg = o; } }
+      if (s.st === 'hold') goal = { x: s.hx, z: s.hz };
+      else if (tg && s.st === 'attack' && td > 14) goal = tg;
+      else if (!tg || s.st !== 'attack') goal = slot;
+      const gd = goal ? Math.hypot(goal.x - s.x, goal.z - s.z) : 0; sp = gd > 1.2 ? Math.min(P.drive ? 9 : 6.5, 2 + gd * 0.6) : 0;
+      if (tg) {
+        aim = true; s.h = Math.atan2(tg.x - s.x, tg.z - s.z);
+        if ((s.shotT -= dt) <= 0 && td < 30) {
+          s.shotT = rand(0.9, 1.8); const y = groundH(s.x, s.z); gunFx(s.x + Math.sin(s.h) * 0.5, y + 1.4, s.z + Math.cos(s.h) * 0.5, tg.x, groundH(tg.x, tg.z) + 1.1, tg.z, s.gun); if (dP < 60) sfx('tiro');
+          if (Math.random() < 0.45) { tg.fallT = 6; if (tg.g) bubble(tg.g, pick(['Ai!', 'Recua!', 'Tô baleado!']), 2); if (tg.chase) tg.chase = false; if (tg.st === 'rob' || tg.st === 'go') { tg.st = 'flee'; tg.t = 0; } }
+        }
+      }
+      if (s.upT > 0) { s.upT -= dt; if (s.upShots > 0 && s.upT < 1.2 - (3 - s.upShots) * 0.25) { s.upShots--; const y = groundH(s.x, s.z); gunFx(s.x, y + 2.1, s.z, s.x + rand(-2, 2), y + 40, s.z + rand(-2, 2), s.gun); sfx('tiro'); } }
+    }
+    if (goal && sp) { const a = Math.atan2(goal.x - s.x, goal.z - s.z), nx = s.x + Math.sin(a) * sp * dt, nz = s.z + Math.cos(a) * sp * dt; if (!collide(nx, nz, 0.3) || inMorro(nx, nz) || inPark(nx, nz)) { s.x = nx; s.z = nz; } else { s.x += Math.cos(a) * sp * dt; s.z -= Math.sin(a) * sp * dt; } if (!aim) s.h = a; }
+    else if (!aim) s.h += Math.atan2(Math.sin(P.h - s.h), Math.cos(P.h - s.h)) * (1 - Math.exp(-3 * dt));
+    g.position.set(s.x, groundH(s.x, s.z), s.z); g.rotation.y = s.h;
+    animSkater(g, { walk: true, v: sp, fallT: 0, wpHold: s.gun, wpProp: aim ? s.gun : null, shootUp: s.upT > 0 }, t + s.ph0); tickBubble(g, dt);
+  }
+  city.squad = L.filter(s => !s.gone);
 }
 
 /* ---------------- MORADIA (Imobiliária) ---------------- */
@@ -6474,6 +6703,9 @@ function act(a, ds, el) {
     case 'crew-disband': S.crew = null; persist(); refreshBotTags(); updateHUD(); renderPanel(); break;
     case 'edit-btns': btnEditStart(); break;
     case 'quiz-start': startQuiz(); break;
+    case 'radio': toggleRadio(); break;
+    case 'radio-call': makeCall(); break;
+    case 'radio-say': radioSend(ds.t); break;
     case 'fianca': { const c = bailCost(); if (S.coins < c || !(P.jailT > 0)) break; S.coins -= c; persist(); updateHUD(); releaseJail(true); break; }
     case 'morador': { if (S.coins < 500) break; S.coins -= 500; S.morador = S.morador || {}; S.morador[cityId()] = true; persist(); updateHUD(); toast(`Agora você é morador do ${MORRO_NAME[cityId()]}. Pode subir o morro!`, 'good'); sfx('level'); renderPanel(); break; }
     case 'gun-next': nextGun(); break;
@@ -6581,6 +6813,8 @@ document.addEventListener('submit', e => {
   } else if (e.target.id === 'square-form') {
     const txt = $('square-in').value.trim(); if (!txt) return;
     sayChat(txt); $('square-in').value = '';
+  } else if (e.target.id === 'radio') {
+    const txt = $('radio-in').value.trim(); if (!txt) return; radioSend(txt); $('radio-in').value = '';
   } else if (e.target.id === 'qchat') {
     const txt = $('qchat-in').value.trim(); if (!txt) return;
     sayChat(txt); $('qchat-in').value = ''; $('qchat').hidden = true; $('qchat-in').blur();
@@ -6744,7 +6978,8 @@ function voiceStop() {
   for (let i = 0; i < n; i++) { const a = Math.floor(i * ratio), b = Math.min(len, Math.floor((i + 1) * ratio)); let sum = 0; for (let k = a; k < b; k++) sum += all[k]; out[i] = muEnc(sum / Math.max(1, b - a) * gain); }
   let bin = ''; for (let i = 0; i < out.length; i += 4096) bin += String.fromCharCode.apply(null, out.subarray(i, i + 4096));
   const b64 = btoa(bin), id = Math.random().toString(36).slice(2, 9), PART = 24000, parts = Math.ceil(b64.length / PART), secs = (n / VOICE_SR).toFixed(1);
-  for (let i = 0; i < parts; i++) NET.ch.send({ type: 'broadcast', event: 'voz', payload: { id: NET.user.id, name: S.name, k: id, i, n: parts, d: b64.slice(i * PART, (i + 1) * PART) } });
+  const vch = RADIO.open && NET.radio ? NET.radio : NET.ch; if (vch !== NET.ch) radioPush(S.name, `🎤 áudio no rádio (${secs}s)`, true);
+  for (let i = 0; i < parts; i++) vch.send({ type: 'broadcast', event: 'voz', payload: { id: NET.user.id, name: S.name, k: id, i, n: parts, d: b64.slice(i * PART, (i + 1) * PART) } });
   bubble(city.player, `🎤 áudio ${secs}s`, 3); pushChat(S.name, `🎤 Áudio (${secs}s)`, true); sfx('ui');
 }
 function onPeerVoice(d) {
