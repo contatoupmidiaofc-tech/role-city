@@ -93,3 +93,9 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - `jogadores`: progresso de cada conta.
 - `grupos`: facções (nome único, emoji, cor, dono). Todos leem; só o dono altera/apaga.
 - `marcas`: pinturas e bandeiras por cidade. Todos leem; cada um cria/apaga só as suas.
+- **Skatepark grande** ao lado de cada cidade: half-pipe, bowl, quarter pipe gigante, funbox, kickers, corrimãos e ledge, tudo pintado com desenhos. Física de verdade: a gravidade puxa na subida e na descida, a beirada da rampa lança no ar, no quarter pipe/half-pipe/bowl dá aéreo e volta de frente, perde velocidade e volta de ré (fakie), e cai em cima do corrimão para dar grind (50-50, boardslide). A praça central também tem rampas e quarter pipes de verdade.
+- **Morro só para moradores**: para subir é preciso ser morador (R$ 500 no QG, na entrada), estar numa facção ou ser policial em serviço. O **Ajbz (ADM) é o chefe de todos os morros**: a contenção, os pedestres e a PM cumprimentam, ninguém assalta nem prende o chefe, e os outros jogadores recebem aviso quando ele chega.
+- **Contenção do morro** fuma e de vez em quando dá rajada para o alto.
+- **Assaltos**: com arma de fogo você pode assaltar pedestres e outros jogadores (fica procurado). Assaltantes de mentira roubam pela cidade; a PM persegue e prende.
+- **Delegacia e cadeia**: quem é preso fica na cela de 50 a 100 segundos (pelas estrelas) ou paga fiança. Policiais prendem bandidos (assaltantes e traficantes derrubados), que aparecem presos nas celas.
+- **Conta ADM**: todas as armas (das pistolas ao fuzil) e botão Trocar (tecla Y) para mudar de arma.

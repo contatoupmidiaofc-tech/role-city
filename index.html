@@ -4320,7 +4320,7 @@ function nextGun() {
   const L = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)); if (!L.length) return toast('Você não tem armas de fogo. Compre no Arsenal com tokens.', 'bad');
   const i = L.findIndex(g => g.id === S.equip.gun), n = L[(i + 1) % L.length]; S.equip.gun = n.id; persist(); netTrack(); toast(`Arma: ${n.name}`); sfx('ui');
 }
-const myHandKind = () => { const g = myGun(); return g ? g.gun : myWpKind(); };
+const myHandKind = () => { if (P.jailT > 0) return null; const g = myGun(); return g ? g.gun : myWpKind(); };
 // prédios novos de cada cidade
 Object.assign(SPECIAL, {
   '84,0': { kind: 'delegacia', label: 'Delegacia', sub: 'POLÍCIA', color: 0x22344f, css: '#5b7db1' },
