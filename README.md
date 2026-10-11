@@ -103,3 +103,15 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Rádio** (botão Rádio): canal do seu grupo (facção), da PM (policial em serviço) ou do chefe. Mensagens e áudios com o rádio aberto vão só para o grupo.
 - **Chamado**: manda sua localização para o grupo (os membros recebem o GPS marcado) e chama a tropa (4 homens; 6 para o chefe Ajbz) que vem te proteger. Policial em serviço chama reforço da PM.
 - **Ordens pelo rádio**: escreva e a tropa entende — "segue eu", "fica aí", "protege", "ataca", "ataca a polícia", "pega o ladrão", "espalha", "atira pro alto", "quantos tem aí?", "vai embora".
+- **Munição real**: cada arma tem o seu carregador (Taser 1, Revólver .38 6, Pistola 9mm 17, Escopeta 8, Fuzil 30 automático) e recarga (botão Recarregar / tecla I).
+- **Vida (0 a 100%)**: tiro, atropelamento, tombo feio e queda na corrida tiram vida. Em 0% você cai, o **SAMU** chega de ambulância com os socorristas e leva você para o **Hospital**, onde você acorda. Profissões novas: **Socorrista do SAMU** e **Médico**.
+- **Bicicletas**: BMX, Mountain bike e Speed na Concessionária, com pedal e raios girando.
+- **Corpo e cabelo**: magro, normal, forte ou gordo; baixinho, médio ou alto; vários estilos de cabelo (careca, moicano, black, dread, coque, tranças...).
+- **Roupa exclusiva do Ajbz**: camisa e calça com o símbolo do grupo e o boné-coroa, só para a conta do chefe.
+- **Lojas e prédios por dentro**: entre nas lojas, Concessionária, Delegacia, Bombeiros, Hospital, Prefeitura, Igreja etc.; cada uma tem decoração própria, atendentes e balcão.
+- **Teste para todas as profissões**: 5 perguntas sobre a profissão (precisa de 4 acertos). Quem reprova espera 2 minutos para tentar de novo.
+- **Prefeitura e comércios**: passe no teste de Comerciante, tire o alvará ($ 5.000) e abra lanchonete, farmácia, barbearia, bar, loja de roupas ou oficina num dos 12 pontos comerciais da cidade. A placa e a vitrine mudam para todos; quem compra no seu comércio paga 60% para você na hora, e o balcão fatura $ 300 por dia do jogo.
+- **Casamento na Igreja**: compre a aliança ($ 500) e peça em casamento um jogador online ou um amigo da cidade. Sinos, confete e fogos; a cidade toda recebe o aviso e o nome fica com 💍.
+
+### Tabela `comercios` (Supabase)
+- Um comércio por ponto de cada cidade (`unique(cidade, slot)`). Todos leem; só o dono cria e fecha o seu.

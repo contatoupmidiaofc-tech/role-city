@@ -190,7 +190,7 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 .emoji-grid .chip{font-size:20px;min-width:40px;min-height:40px}
 .emoji-grid .chip.on{outline:3px solid var(--wax)}
 .quiz{display:grid;gap:8px;margin-top:8px}
-#gang-name{width:100%;min-height:44px;border-radius:10px;border:2px solid var(--line);background:var(--panel-2);color:var(--fg);padding:0 12px;font:inherit}
+#biz-name,#gang-name{width:100%;min-height:44px;border-radius:10px;border:2px solid var(--line);background:var(--panel-2);color:var(--fg);padding:0 12px;font:inherit}
 /* direção do carro: ◀ ▶ na esquerda, acelerar e ré na direita */
 #tb-left{left:22px;bottom:28px;width:84px;height:84px}
 #tb-right{left:120px;bottom:28px;width:84px;height:84px}
@@ -2415,6 +2415,7 @@ function buildCity() {
     const key = cx + ',' + cz;
     if (cx === 0 && cz === 0) continue;
     if (SHOPS[key]) { buildShop(sc, cx, cz, SHOPS[key], addBuilding); continue; }
+    if (isComBlock(key)) { comBlock(sc, cx, cz, addBuilding); continue; }
     if (cx === HOME_LOT[0] && cz === HOME_LOT[1]) continue;
     if (isFavela(cityId(), key)) { favelaBlock(cx, cz); continue; }
     if (rng() < CD.tall) addBuilding(cx, cz, 24, 24, HB(1), PAL[Math.floor(rng() * PAL.length)], false, cx, cz);
@@ -2931,7 +2932,7 @@ function travelTo(id, how) {
   setTimeout(() => {
     if (P.drive) exitVehicle(true);
     netLeavePlaza();
-    S.cityId = id; persist(); resetCity(); buildCity(); applyQuality(); rebuildMissionObjs(); renderMissionBox();
+    S.cityId = id; persist(); resetCity(); buildCity(); setTimeout(loadBiz, 700); applyQuality(); rebuildMissionObjs(); renderMissionBox();
     const d = city.doors.find(d => d.kind === 'viagem'); P.x = d.x; P.z = d.z + 4; P.h = 0; P.v = 0; P.y = 0; city.camYaw = 0; city.camSnap = true;
     if (how !== 'bus' && S.veh) { spawnMyVehicle(); }
     if (NET.user) netJoinPlaza();
@@ -2941,7 +2942,7 @@ function travelTo(id, how) {
 }
 function resetCity() {
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
-  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
+  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -3639,7 +3640,7 @@ function updateCity(dt, t) {
 
   // câmera
   const shop = panelKind && (panelKind.startsWith('shop') || panelKind === 'oficina' || panelKind === 'perfil');
-  if (g.userData.tag) g.userData.tag.visible = !shop;
+  if (g.userData.tag) g.userData.tag.visible = !shop && !city.shopIn && !city.interior && !city.hospIn && !city.jail; // em lugar fechado a câmera fica perto e a etiqueta tapava a visão
   const hb = g.userData.R && g.userData.R.B.Head, head = hb ? hb.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(P.x, P.y + 1.6, P.z);
   if (city.faceCam && (Math.abs(ax.y) > 0.3 || P.onBoard && Math.abs(P.v) > 2)) { city.faceCam = false; }
   if (city.faceCam) {
@@ -3995,6 +3996,7 @@ function drawCityPreview(cv, id) {
 function interact(n) {
   if (n.type === 'door') {
     const k = n.d.kind;
+    if (k === 'biz' && !n.d.inside) { enterBiz(n.d); return; }
     if (INSIDE_KINDS.includes(k) && !n.d.inside) { enterShop(n.d); return; }
     if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
     else if (k === 'arena') openPanel('arena');
@@ -5443,7 +5445,7 @@ Object.assign(SPECIAL, {
 });
 Object.assign(CITY_SHOPS.rj, { hospital: '42,84', prefeitura: '84,-42', igreja: '-42,84' });
 Object.assign(CITY_SHOPS.ssa, { hospital: '84,0', prefeitura: '0,-84', igreja: '-42,-84' });
-Object.assign(DOOR_COL, { hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6' });
+Object.assign(DOOR_COL, { hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6', biz: '#ffcf3a' });
 UNI_ITEMS.push(I('shirt', 'uni_samu', 'Macacão do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('pants', 'uni_samu_p', 'Calça do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('shirt', 'uni_med', 'Jaleco de Médico', 0xf4f6f8, 0, null, 'comum', { pat: 'plain' }), I('pants', 'uni_med_p', 'Calça Hospitalar', 0x3fa7a0, 0, null, 'comum', { pat: 'plain' }));
 UNI_ITEMS.forEach(i => ITEM[i.id] = i);
 Object.assign(UNIFORM, { socorrista: { shirt: 'uni_samu', pants: 'uni_samu_p' }, medico: { shirt: 'uni_med', pants: 'uni_med_p' } });
@@ -5576,7 +5578,7 @@ function exitShop() {
 let _tileT = null;
 function tileTex() { return _tileT || (_tileT = (() => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#d8d3c8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2; for (let k = 0; k <= w; k += 32) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })()); }
 function buildShopInterior(d) {
-  const k = d.kind, info = Object.values(SPECIAL).find(s => s.kind === k) || { color: 0xcccccc, label: d.label };
+  const k = d.kind, BT = k === 'biz' && d.biz ? (BIZ_TYPES[d.biz.tipo] || BIZ_TYPES.loja) : null, info = BT ? { color: BT.c, label: `${BT.i} ${d.biz.nome}`, css: '#' + BT.c.toString(16).padStart(6, '0') } : Object.values(SPECIAL).find(s => s.kind === k) || { color: 0xcccccc, label: d.label };
   const [W, D] = ROOM_SIZE[k] || [16, 12], H = k === 'igreja' ? 7 : k === 'concessionaria' || k === 'bombeiros' ? 5 : 3.4;
   const g = new THREE.Group(), cx = SHOPIN.x, cz = SHOPIN.z; g.position.set(cx, 0, cz); city.scene.add(g);
   const it = { g, kind: k, door: d, W, D, spots: [], npcs: [] };
@@ -5671,6 +5673,7 @@ function buildShopInterior(d) {
     npc(lookOf({ shirt: 'shirt_black', pants: 'pants_black', shoes: 'shoes_basic' }, pick(SKINS), 0x9a9a9a, 'm'), 'Padre', 0, -D / 2 + 1.3, 0);
     spot('Falar com o padre (casamentos)', 0, -D / 2 + 3.6, () => doorPanel('igreja'));
   }
+  if (k === 'biz' && d.biz) bizDecor(it, d.biz, { box, solid, add, npc, spot, W, D });
   if (!it.spots.some(s => s.label !== 'Sair')) counter();
   for (const n of it.npcs) n.userData.lod = false;
   return it;
@@ -5715,6 +5718,169 @@ function answerJob(k) {
   renderPanel();
 }
 
+/* =========================================================
+   PREFEITURA E COMÉRCIOS: alvará para abrir o seu negócio num ponto comercial da cidade
+   ========================================================= */
+const COM_BLOCKS = { sp: ['-84,-84', '42,-84', '84,-42'], rj: ['84,-84', '42,-84', '-84,84'], ssa: ['84,42', '42,84', '-84,84'] };
+const COM_Q = [[-6.5, -6.5], [6.5, -6.5], [-6.5, 6.5], [6.5, 6.5]];
+const BIZ_TYPES = {
+  lanchonete: { n: 'Lanchonete', i: '🍔', c: 0xff7a1a, menu: [['Coxinha', 8, 10], ['Pastel', 12, 15], ['Açaí', 18, 20], ['X-Burger', 25, 30]] },
+  farmacia: { n: 'Farmácia', i: '💊', c: 0x2e9e5b, menu: [['Analgésico', 40, 50], ['Kit de primeiros socorros', 90, 100]] },
+  barbearia: { n: 'Barbearia / Salão', i: '💈', c: 0x2f6db5, menu: [['Corte e estilo (muda o visual)', 30, 0, 'visual']] },
+  bar: { n: 'Bar e Petiscaria', i: '🥤', c: 0xb3262e, menu: [['Água de coco', 7, 10], ['Caldo de cana', 8, 8], ['Porção de mandioca', 20, 15]] },
+  loja: { n: 'Loja de Roupas', i: '👕', c: 0xff4f7b, menu: [['Ver as roupas', 0, 0, 'roupas']] },
+  oficina: { n: 'Oficina e Lava-rápido', i: '🔧', c: 0x6d717a, menu: [['Lavagem completa', 40, 0, 'lavar'], ['Revisão do veículo', 80, 0, 'lavar']] },
+};
+const isComBlock = key => (COM_BLOCKS[cityId()] || []).includes(key);
+const slotPos = (cid, sl) => { const [bx, bz] = COM_BLOCKS[cid][Math.floor(sl / 4)].split(',').map(Number), [ox, oz] = COM_Q[sl % 4]; return [bx + ox, bz + oz, Math.sign(ox)]; };
+/* quarteirão comercial: 4 lojinhas com porta para a rua */
+function comBlock(sc, cx, cz, addBuilding) {
+  const cid = cityId(), b0 = COM_BLOCKS[cid].indexOf(cx + ',' + cz) * 4; city.comSlots = city.comSlots || {};
+  COM_Q.forEach(([ox, oz], q) => {
+    const sl = b0 + q, x = cx + ox, z = cz + oz, dir = Math.sign(ox);
+    addBuilding(x, z, 11, 11, 7, 0xd9d2c3, true);
+    const dx = x + dir * 5.6, aw = new THREE.Mesh(boxGeo(1.6, 0.25, 6), lam(0xffffff)); aw.position.set(x + dir * 6.1, 4, z); sc.add(aw);
+    const glass = new THREE.Mesh(boxGeo(0.15, 3, 6), new THREE.MeshLambertMaterial({ color: 0x9fd6ff, emissive: 0x1d3a4a })); glass.position.set(x + dir * 5.55, 1.6, z); sc.add(glass);
+    const sign = textSprite('ALUGA-SE · PREFEITURA', { bg: '#15161a', fg: '#ffcf3a', size: 40, scale: [6, 1, 1] }); sign.position.set(x + dir * 5.8, 5.6, z); sc.add(sign);
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffcf3a, transparent: true, opacity: 0.6, side: THREE.DoubleSide })); ring.position.set(dx + dir * 0.9, 0.13, z); sc.add(ring);
+    const door = { kind: 'biz', slot: sl, label: `Ponto comercial ${sl + 1} (aluga-se)`, x: dx + dir * 0.9, z, ring };
+    city.doors.push(door); city.comSlots[sl] = { x, z, dir, sign, door, glass };
+  });
+}
+async function loadBiz() {
+  city.biz = {}; if (!NET.sb || !NET.user) return; const cid = cityId();
+  try { const { data, error } = await NET.sb.from('comercios').select('id,dono,dono_nome,nome,tipo,slot').eq('cidade', cid); if (error || !data || cityId() !== cid) return; for (const r of data) setBiz(r); } catch (e) { }
+}
+function setBiz(r) {
+  city.biz = city.biz || {}; city.biz[r.slot] = r; const S2 = city.comSlots && city.comSlots[r.slot]; if (!S2) return; const T = BIZ_TYPES[r.tipo] || BIZ_TYPES.loja;
+  S2.door.label = `${T.i} ${r.nome}`; city.scene.remove(S2.sign);
+  S2.sign = textSprite(`${T.i} ${r.nome.toUpperCase()}`, { bg: '#' + T.c.toString(16).padStart(6, '0'), fg: '#fff', size: 44, scale: [6, 1, 1], stroke: '#15161a' }); S2.sign.position.set(S2.x + S2.dir * 5.8, 5.6, S2.z); city.scene.add(S2.sign);
+  S2.glass.material = new THREE.MeshLambertMaterial({ color: T.c, emissive: T.c, emissiveIntensity: 0.25 });
+}
+function enterBiz(d) {
+  const r = city.biz && city.biz[d.slot];
+  if (!r) { toast('Ponto comercial livre. Tire o alvará na Prefeitura para abrir o seu negócio aqui!', 'pink'); const pf = city.doors.find(x => x.kind === 'prefeitura'); if (pf) setGps(pf.x, pf.z, 'Prefeitura'); return; }
+  enterShop(Object.assign({}, d, { kind: 'biz', biz: r, label: r.nome }));
+}
+/* decoração do comércio por tipo (chamada dentro do buildShopInterior) */
+function bizDecor(it, r, helpers) {
+  const { box, solid, add, npc, spot, W, D } = helpers, T = BIZ_TYPES[r.tipo] || BIZ_TYPES.loja;
+  solid(4, 1.05, 0.9, T.c, 0, 0.52, -D / 2 + 2.2); box(4.1, 0.06, 1, 0x2a2d34, 0, 1.07, -D / 2 + 2.2);
+  npc(lookOf({ shirt: 'shirt_basic', pants: 'pants_black', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), Math.random() < 0.5 ? 'f' : 'm'), 'Atendente', 0, -D / 2 + 1.2, 0);
+  spot(`${T.i} Comprar no ${T.n}`, 0, -D / 2 + 3.6, () => openPanel('biz', r.slot));
+  if (r.tipo === 'lanchonete' || r.tipo === 'bar') for (const [x, z] of [[-3.5, 1], [3.5, 1], [-3.5, 3.5], [3.5, 3.5]]) { solid(1, 0.75, 1, 0xf4f2ec, x, 0.38, z); for (const s of [-0.8, 0.8]) box(0.4, 0.45, 0.4, T.c, x + s, 0.23, z); }
+  if (r.tipo === 'farmacia') for (const x of [-W / 2 + 0.4, W / 2 - 0.4]) { solid(0.6, 2.2, 6, 0xf4f6f8, x, 1.1, 0); for (let i = 0; i < 12; i++) box(0.2, 0.2, 0.3, [0x2e9e5b, 0xff4f7b, 0x4fc3ff, 0xffcf3a][i & 3], x + (x < 0 ? 0.35 : -0.35), 0.5 + (i % 4) * 0.45, -2.4 + Math.floor(i / 4) * 2); }
+  if (r.tipo === 'barbearia') for (const x of [-3, 0, 3]) { solid(0.8, 1, 0.8, 0x15161a, x, 0.5, 2); add(new THREE.PlaneGeometry(1, 1.4), new THREE.MeshStandardMaterial({ color: 0xc8e0f0, roughness: 0.05, metalness: 0.9 }), x, 1.6, D / 2 - 0.06, Math.PI); }
+  if (r.tipo === 'loja') for (const x of [-W / 2 + 2, W / 2 - 2]) { box(0.05, 1.6, 4, 0x9aa3ad, x, 0.8, 1, 0, 0.3, 0.8); for (let i = 0; i < 10; i++) box(0.5, 0.65, 0.04, [0xff4f7b, 0x4fc3ff, 0xffcf3a, 0x3ddc84, 0xf4f2ec][i % 5], x, 1.2, -0.8 + i * 0.4, Math.PI / 2); }
+  if (r.tipo === 'oficina') { const car = makeVehicleMesh(VEH.v_fusca); car.position.set(-3, 0, 1.5); it.g.add(car); for (let i = 0; i < 6; i++) box(0.08, 0.5, 0.05, 0x9aa3ad, W / 2 - 0.1, 1.3 + (i % 2) * 0.6, -2 + Math.floor(i / 2) * 0.5, 0, 0.3, 0.8); }
+  const owner = textSprite(`Dono: ${r.dono_nome}`, { bg: '#15161a', fg: '#ffcf3a', size: 36, scale: [3, 0.5, 1] }); owner.position.set(-W / 2 + 2.4, 1.9, -D / 2 + 0.15); it.g.add(owner);
+}
+function buyBiz(slot, idx) {
+  const r = city.biz && city.biz[slot]; if (!r) return; const T = BIZ_TYPES[r.tipo], [name, price, hp, special] = T.menu[+idx];
+  if (special === 'roupas') { openPanel('shop:roupas'); return; }
+  if (S.coins < price) return toast(`Custa $ ${price}.`, 'bad');
+  S.coins -= price; persist(); updateHUD(); sfx('coin');
+  if (hp) { P.hp = Math.min(100, P.hp + hp); renderHp(); }
+  toast(`${name}${hp ? ` · vida +${hp}%` : ''}`, 'good');
+  if (special === 'visual') openPanel('perfil', 'aparencia');
+  if (special === 'lavar' && city.myVeh) toast('Veículo limpinho e revisado!', 'pink');
+  if (NET.ch && NET.online && NET.user && r.dono !== NET.user.id) NET.ch.send({ type: 'broadcast', event: 'venda', payload: { owner: r.dono, amt: Math.round(price * 0.6), item: name, buyer: S.name, loja: r.nome } });
+}
+function onSale(d) { if (!NET.user || d.owner !== NET.user.id) return; S.coins += d.amt; persist(); updateHUD(); toast(`💰 ${d.buyer} comprou ${d.item} no ${d.loja}: +$ ${d.amt}`, 'good'); sfx('coin'); }
+async function openBiz() {
+  const name = (($('biz-name') || {}).value || '').trim().slice(0, 30), tipo = city.bizTipo || 'lanchonete', slot = city.bizSlot;
+  if (!certOk('comerciante')) return startJobTest('comerciante');
+  if (name.length < 2) return toast('Dê um nome ao seu comércio.', 'bad');
+  if (slot == null || (city.biz || {})[slot]) return toast('Escolha um ponto comercial livre.', 'bad');
+  if (S.coins < 5000) return toast('O alvará custa $ 5.000.', 'bad');
+  if (!NET.user) return toast('Entre com sua conta para abrir um comércio.', 'bad');
+  try {
+    const { data, error } = await NET.sb.from('comercios').insert({ dono_nome: S.name, nome: name, tipo, cidade: cityId(), slot }).select().single();
+    if (error) return toast(/duplicate|unique/i.test(error.message) ? 'Esse ponto acabou de ser alugado. Escolha outro.' : 'Não deu para abrir agora.', 'bad');
+    S.coins -= 5000; S.bizCol = S.bizCol || {}; S.bizCol[data.id] = Date.now(); persist(); updateHUD(); setBiz(data);
+    if (NET.ch) NET.ch.send({ type: 'broadcast', event: 'novo_comercio', payload: data });
+    toast(`${BIZ_TYPES[tipo].i} ${name} está aberto! Alvará emitido.`, 'good'); sfx('level'); postFeed(`Abri meu comércio: ${name}!`); renderPanel();
+  } catch (e) { toast('Sem conexão com o servidor.', 'bad'); }
+}
+function collectBiz(id) {
+  S.bizCol = S.bizCol || {}; const last = S.bizCol[id] || Date.now() - DAYLEN, days = Math.min(5, (Date.now() - last) / DAYLEN), amt = Math.floor(days * 300);
+  if (amt < 10) return toast('Ainda não tem faturamento para receber. Volte mais tarde.');
+  S.bizCol[id] = Date.now(); earn(amt); persist(); updateHUD(); toast(`Faturamento recebido: +$ ${fmt(amt)}`, 'good'); sfx('coin'); renderPanel();
+}
+async function closeBiz(id) { try { await NET.sb.from('comercios').delete().eq('id', id); } catch (e) { } for (const k in city.biz || {}) if (city.biz[k].id === id) delete city.biz[k]; toast('Comércio fechado.'); resetCityBizSigns(); renderPanel(); }
+function resetCityBizSigns() { for (const sl in city.comSlots || {}) { const S2 = city.comSlots[sl]; if (city.biz && city.biz[sl]) continue; S2.door.label = `Ponto comercial ${+sl + 1} (aluga-se)`; } }
+/* =========================================================
+   CASAMENTO NA IGREJA: aliança, pedido, cerimônia com sinos, confete e fogos
+   ========================================================= */
+const RING_PRICE = 500;
+function sinos() { if (!audioCtx()) return; [[660, 0], [523, 0.55], [587, 1.1], [392, 1.65], [392, 2.6], [587, 3.15], [660, 3.7], [523, 4.25]].forEach(([f, t]) => { try { tone('sine', f, f * 0.995, 1.8, 0.13, t); tone('sine', f * 2.01, f * 2, 0.9, 0.04, t); tone('triangle', f * 3.02, f * 3, 0.4, 0.02, t); } catch (e) { } }); }
+function confete(x, y, z, n = 70) { for (let i = 0; i < n; i++) { const m = new THREE.Mesh(boxGeo(0.12, 0.12, 0.02), new THREE.MeshBasicMaterial({ color: pick([0xff4f7b, 0xffcf3a, 0x4fc3ff, 0x3ddc84, 0xffffff, 0xa66bff]), transparent: true })); m.position.set(x + rand(-0.5, 0.5), y, z + rand(-0.5, 0.5)); city.scene.add(m); const a = Math.random() * TAU, s = rand(1, 3.5); city.fx.push({ m, vx: Math.cos(a) * s, vy: rand(3, 6), vz: Math.sin(a) * s, life: 2.4, max: 2.4, conf: true }); } }
+function fogos(x, z, n = 4) { for (let i = 0; i < n; i++) setTimeout(() => { if (!city.scene) return; sfx('rocket'); const m = rocketMesh(); m.rotation.x = -Math.PI / 2; m.position.set(x + rand(-5, 5), 1.5, z + rand(-5, 5)); city.scene.add(m); city.fx.push({ m, vx: rand(-1, 1), vy: 22, vz: rand(-1, 1), life: 0.9, max: 0.9, rocket: true }); }, i * 500); }
+function churchDoor() { return city.doors.find(d => d.kind === 'igreja'); }
+function celebrate() {
+  sinos(); confete(P.x, 2.2, P.z); setTimeout(() => confete(P.x, 2.2, P.z, 50), 900);
+  const cd = churchDoor(); if (cd && !city.shopIn) fogos(cd.x, cd.z); else if (cd) setTimeout(() => { if (!city.shopIn) fogos(P.x, P.z, 3); }, 6000);
+}
+function marry(sp) {
+  S.spouse = Object.assign({ at: Date.now() }, sp); persist(); updateHUD(); celebrate();
+  toast(`💍 Vocês estão casados! ${S.name} ❤ ${sp.name}`, 'pink'); sfx('level'); postFeed(`Casei com ${sp.name} na igreja! 💍`);
+  if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'casamento', payload: { a: S.name, b: sp.name, city: cityId() } });
+  if (NET.ch && NET.online && NET.user) try { NET.ch.track(myPresence()); } catch (e) { }
+  renderPanel();
+}
+function proposeBot(id) {
+  const b = BOT[id]; if (!b || S.spouse) return;
+  if (S.coins < RING_PRICE) return toast(`A aliança custa $ ${RING_PRICE}.`, 'bad');
+  S.coins -= RING_PRICE; persist(); updateHUD(); sfx('coin');
+  const chance = S.crew && S.crew.members.includes(id) ? 0.92 : 0.72;
+  city.wedding = { name: b.name, wait: true }; renderPanel();
+  setTimeout(() => {
+    city.wedding = null;
+    if (Math.random() < chance) { toast(`Padre: "${b.name}, aceita ${S.name}?" · ${b.name}: "Sim! 💍"`, 'pink'); marry({ name: b.name, bot: id }); }
+    else { S.coins += Math.round(RING_PRICE / 2); persist(); updateHUD(); toast(`${b.name}: "Ainda é cedo... vamos nos conhecer mais." Você vendeu a aliança pela metade.`, 'bad'); sfx('hit'); renderPanel(); }
+  }, 2200);
+}
+function proposePeer(id) {
+  const p = NET.peers[id]; if (!p || S.spouse || !NET.ch) return;
+  if (S.coins < RING_PRICE) return toast(`A aliança custa $ ${RING_PRICE}.`, 'bad');
+  city.pedidoOut = { to: id, name: p.name, t: Date.now() };
+  NET.ch.send({ type: 'broadcast', event: 'pedido', payload: { to: id, from: NET.user.id, name: S.name } });
+  toast(`💍 Pedido enviado para ${p.name}. Aguardando a resposta...`, 'pink'); renderPanel();
+}
+function onProposal(d) {
+  if (!NET.user || d.to !== NET.user.id) return;
+  if (S.spouse) { NET.ch.send({ type: 'broadcast', event: 'pedido_resp', payload: { to: d.from, from: NET.user.id, name: S.name, ok: false, why: 'casado' } }); return; }
+  city.pedidoIn = d; sfx('level'); toast(`💍 ${d.name} pediu você em casamento! Responda no painel.`, 'pink');
+  if ($('panel').hidden || panelKind === 'igreja') openPanel('igreja');
+}
+function answerProposal(ok) {
+  const d = city.pedidoIn; if (!d) return; city.pedidoIn = null;
+  if (NET.ch) NET.ch.send({ type: 'broadcast', event: 'pedido_resp', payload: { to: d.from, from: NET.user.id, name: S.name, ok } });
+  if (ok) marry({ name: d.name, peer: d.from }); else { toast('Você recusou o pedido.'); renderPanel(); }
+}
+function onProposalResp(d) {
+  if (!NET.user || d.to !== NET.user.id || !city.pedidoOut || city.pedidoOut.to !== d.from) return; city.pedidoOut = null;
+  if (!d.ok) { toast(d.why === 'casado' ? `${d.name} já é casado(a).` : `${d.name} recusou o pedido. 💔`, 'bad'); sfx('hit'); renderPanel(); return; }
+  if (S.coins >= RING_PRICE) { S.coins -= RING_PRICE; persist(); updateHUD(); }
+  toast(`${d.name} disse SIM! 💍`, 'pink'); marry({ name: d.name, peer: d.from });
+}
+function onWedding(d) {
+  if (d.a === S.name || d.b === S.name) return;
+  pushChat('Praça', `💒 ${d.a} e ${d.b} se casaram!`); toast(`💒 ${d.a} e ${d.b} acabaram de se casar!`, 'pink');
+  if (d.city === cityId() && !city.shopIn && !city.interior) { const cd = churchDoor(); if (cd) { fogos(cd.x, cd.z, 3); if (Math.hypot(cd.x - P.x, cd.z - P.z) < 80) sinos(); } }
+}
+function divorce() {
+  const sp = S.spouse; if (!sp) return; S.spouse = null; persist(); updateHUD();
+  if (sp.peer && NET.ch) NET.ch.send({ type: 'broadcast', event: 'divorcio', payload: { to: sp.peer, name: S.name } });
+  if (NET.ch && NET.online && NET.user) try { NET.ch.track(myPresence()); } catch (e) { }
+  toast(`Você e ${sp.name} se separaram. 💔`); renderPanel();
+}
+function onDivorce(d) { if (!NET.user || d.to !== NET.user.id || !S.spouse || S.spouse.peer == null) return; toast(`💔 ${d.name} pediu o divórcio.`, 'bad'); S.spouse = null; persist(); updateHUD(); if (NET.ch && NET.online) try { NET.ch.track(myPresence()); } catch (e) { } }
+function spouseGps() {
+  const sp = S.spouse; if (!sp) return;
+  if (sp.peer) { const p = NET.peers[sp.peer]; if (p && p.seen) return setGps(p.x, p.z, sp.name); return toast(`${sp.name} não está online nesta cidade agora.`); }
+  const o = city.bots.find(o => o.b.id === sp.bot); if (o) return setGps(o.x, o.z, sp.name); toast(`${sp.name} não está pela cidade agora.`);
+}
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },
@@ -7017,8 +7183,50 @@ const PANELS = {
     const d = city.jdone && city.jdone.id === id ? city.jdone : null;
     return { title: `Teste: ${J.name}`, html: d ? `<div class="card"><h4>${d.pass ? '✅ Aprovado!' : '❌ Reprovado'}</h4><p>Você acertou ${d.ok} de 5.</p>${d.pass ? (JOBS[id] ? `<button class="btn" data-act="shift-start" data-id="${id}">Começar turno</button>` : '<button class="btn" data-act="open-prefeitura">Voltar à Prefeitura</button>') : '<p class="muted">Estude e tente de novo em 2 minutos.</p>'}</div>` : `<p class="muted">Responda 5 perguntas sobre a profissão.</p><button class="btn" data-act="job-test" data-id="${id}">Começar o teste</button>` };
   },
-  prefeitura() { return { title: 'Prefeitura', html: '<p class="muted">Em breve.</p>' }; },
-  igreja() { return { title: 'Igreja', html: '<p class="muted">Em breve.</p>' }; },
+  prefeitura() {
+    const cid = cityId(), B = city.biz || {}, total = COM_BLOCKS[cid].length * 4, used = Object.keys(B).length, mine = Object.values(B).filter(r => NET.user && r.dono === NET.user.id);
+    let html = `<p class="muted">Prefeitura de ${esc(CITY().name)}. Aqui sai o <b>alvará de funcionamento</b> para abrir o seu comércio num ponto comercial da cidade (placas amarelas "ALUGA-SE"). Pontos ocupados: <b>${used}/${total}</b>.</p>`;
+    if (!NET.user) html += `<div class="note">Entre com a sua conta para abrir um comércio.</div>`;
+    else if (!certOk('comerciante')) html += `<div class="card"><h4>📝 Teste de Comerciante</h4><p>Para receber o alvará, passe no teste: 5 perguntas sobre comércio, precisa de 4 acertos.</p><button class="btn" data-act="job-test" data-id="comerciante">Fazer o teste</button></div>`;
+    else {
+      const tipo = city.bizTipo || 'lanchonete', free = [...Array(total).keys()].filter(i => !B[i]); if (city.bizSlot != null && !free.includes(city.bizSlot)) city.bizSlot = null;
+      html += `<div class="card"><h4>🏪 Abrir comércio · alvará $ 5.000 <span class="pill on">Aprovado no teste</span></h4>
+        <input id="biz-name" maxlength="30" placeholder="Nome do comércio (ex.: Lanchonete do Zé)" autocomplete="off" value="${esc(city.bizNm || '')}" oninput="city.bizNm=this.value">
+        <p class="muted">Tipo de negócio:</p><div class="chips">${Object.entries(BIZ_TYPES).map(([id, T]) => `<button class="chip ${id === tipo ? 'on' : ''}" data-act="biz-tipo" data-id="${id}">${T.i} ${esc(T.n)}</button>`).join('')}</div>
+        <p class="muted">Ponto comercial livre:</p><div class="chips">${free.length ? free.map(i => `<button class="chip ${i === city.bizSlot ? 'on' : ''}" data-act="biz-slot" data-id="${i}">Ponto ${i + 1}</button>`).join('') : '<span class="muted">Todos os pontos estão ocupados.</span>'}</div>
+        <div class="row"><button class="btn" data-act="biz-open" ${S.coins < 5000 ? 'disabled' : ''}>Tirar o alvará e abrir</button>${city.bizSlot != null ? `<button class="btn ghost sm" data-act="biz-gps" data-id="${city.bizSlot}">GPS até o ponto</button>` : ''}</div>
+        <p class="muted">Cada cliente que compra no seu comércio paga 60% do valor para você na hora, mesmo com você longe. O balcão também fatura $ 300 por dia do jogo (acumula até 5 dias).</p></div>`;
+    }
+    if (mine.length) html += `<h3>Meus comércios</h3>` + mine.map(r => { const T = BIZ_TYPES[r.tipo] || BIZ_TYPES.loja, last = (S.bizCol || {})[r.id] || Date.now() - DAYLEN, amt = Math.floor(Math.min(5, (Date.now() - last) / DAYLEN) * 300);
+      return `<div class="card"><h4>${T.i} ${esc(r.nome)}</h4><p class="muted">${esc(T.n)} · Ponto ${r.slot + 1} · a receber: $ ${fmt(amt)}</p><div class="row"><button class="btn" data-act="biz-col" data-id="${r.id}" ${amt < 10 ? 'disabled' : ''}>Receber faturamento</button><button class="btn ghost sm" data-act="biz-gps" data-id="${r.slot}">GPS</button><button class="btn ghost sm" data-act="biz-close" data-id="${r.id}">Fechar o comércio</button></div></div>`; }).join('');
+    const others = Object.values(B).filter(r => !mine.includes(r));
+    if (others.length) html += `<h3>Comércios da cidade</h3><div class="chips">${others.map(r => `<button class="chip" data-act="biz-gps" data-id="${r.slot}">${(BIZ_TYPES[r.tipo] || BIZ_TYPES.loja).i} ${esc(r.nome)} · ${esc(r.dono_nome)}</button>`).join('')}</div>`;
+    return { title: 'Prefeitura', html };
+  },
+  biz(slot) {
+    const r = (city.biz || {})[slot]; if (!r) return { title: 'Comércio', html: '<p class="muted">Este comércio fechou.</p>' };
+    const T = BIZ_TYPES[r.tipo] || BIZ_TYPES.loja, me = NET.user && r.dono === NET.user.id;
+    let html = `<p class="muted">${T.i} ${esc(T.n)} de <b>${esc(r.dono_nome)}</b> · Alvará da Prefeitura em dia ✅ · Sua vida: ${Math.round(P.hp)}%</p><div class="grid-items">${T.menu.map(([n, p, hp, sp], i) => `<div class="item-card"><div class="swatch ico" style="--sw:#${T.c.toString(16).padStart(6, '0')}">${T.i}</div><div class="item-info"><b>${esc(n)}</b><small>${hp ? `Recupera ${hp}% de vida` : sp === 'visual' ? 'Muda cabelo, corpo e estilo' : sp === 'roupas' ? 'Abre a vitrine de roupas' : 'Serviço'}</small></div><div class="item-actions"><button class="btn sm" data-act="biz-buy" data-slot="${slot}" data-i="${i}" ${S.coins < p ? 'disabled' : ''}>${p ? '$ ' + p : 'Ver'}</button></div></div>`).join('')}</div>`;
+    if (me) html += `<div class="card"><h4>Este comércio é seu</h4><button class="btn" data-act="biz-col" data-id="${r.id}">Receber faturamento</button></div>`;
+    return { title: `${T.i} ${r.nome}`, html };
+  },
+  igreja() {
+    let html = `<p class="muted">Igreja Matriz. O padre celebra casamentos todos os dias. A aliança custa $ ${RING_PRICE}.</p>`;
+    const pi = city.pedidoIn;
+    if (pi) html += `<div class="card"><h4>💍 ${esc(pi.name)} pediu você em casamento!</h4><div class="row"><button class="btn" data-act="pedido-sim">Sim, aceito!</button><button class="btn ghost" data-act="pedido-nao">Não</button></div></div>`;
+    if (S.spouse) {
+      const sp = S.spouse, d = new Date(sp.at || Date.now());
+      html += `<div class="card"><h4>💍 Casado(a) com ${esc(sp.name)}</h4><p class="muted">Desde ${d.toLocaleDateString('pt-BR')}. O seu nome aparece com 💍 para todos na praça.</p><div class="row"><button class="btn" data-act="amor-gps">Onde está meu amor?</button><button class="btn ghost" data-act="festa" ${S.coins < 100 ? 'disabled' : ''}>Festa com fogos ($ 100)</button><button class="btn ghost sm" data-act="divorcio">Divórcio</button></div></div>`;
+      return { title: 'Igreja', html };
+    }
+    if (city.wedding) return { title: 'Igreja', html: html + `<div class="card"><h4>🔔 O padre está perguntando...</h4><p>"${esc(city.wedding.name)}, você aceita ${esc(S.name)} como seu(sua) companheiro(a)?"</p></div>` };
+    if (city.pedidoOut) html += `<div class="note">💍 Aguardando a resposta de ${esc(city.pedidoOut.name)}...</div>`;
+    const peers = Object.values(NET.peers || {});
+    html += `<h3>Pedir em casamento</h3>`;
+    html += peers.length ? `<p class="muted">Jogadores online na cidade:</p><div class="chips">${peers.map(p => `<button class="chip" data-act="casar-peer" data-id="${p.id}" ${S.coins < RING_PRICE ? 'disabled' : ''}>💍 ${esc(p.name)}</button>`).join('')}</div>` : '<p class="muted">Nenhum jogador real online agora. Quando alguém entrar, você pode pedir aqui.</p>';
+    html += S.contacts.length ? `<p class="muted">Amigos da cidade (quem é da sua crew aceita mais fácil):</p><div class="chips">${S.contacts.map(id => `<button class="chip" data-act="casar-bot" data-id="${id}" ${S.coins < RING_PRICE ? 'disabled' : ''}>💍 ${esc(BOT[id].name)}</button>`).join('')}</div>` : '<p class="muted">Você ainda não tem amigos na cidade. Converse com o pessoal na rua para conhecer alguém.</p>';
+    return { title: 'Igreja', html };
+  },
   hospital() {
     let html = `<p class="muted">Hospital Municipal e base do SAMU (192). Atendimento pelo SUS, de graça. Quando a vida chega a 0% o SAMU busca você e você acorda aqui.</p>`;
     html += `<div class="card"><h4>❤ Sua vida: ${Math.round(P.hp)}%</h4>${P.hp < 100 ? `<button class="btn" data-act="consulta" ${(S.consultaT || 0) > Date.now() ? 'disabled' : ''}>Consulta no SUS (volta a 100%)</button>${(S.consultaT || 0) > Date.now() ? `<p class="muted">Próxima consulta em ${Math.ceil((S.consultaT - Date.now()) / 60000)} min.</p>` : ''}` : '<span class="pill on">Saúde em dia</span>'}</div>`;
@@ -7163,6 +7371,20 @@ function act(a, ds, el) {
     case 'job-test': startJobTest(ds.id); break;
     case 'job-ans': answerJob(ds.k); break;
     case 'open-prefeitura': openPanel('prefeitura'); break;
+    case 'biz-tipo': city.bizTipo = ds.id; renderPanel(); break;
+    case 'biz-slot': city.bizSlot = +ds.id; renderPanel(); break;
+    case 'biz-open': openBiz(); break;
+    case 'biz-col': collectBiz(ds.id); break;
+    case 'biz-close': closeBiz(ds.id); break;
+    case 'biz-buy': buyBiz(+ds.slot, ds.i); renderPanel(); break;
+    case 'biz-gps': { const c = (city.comSlots || {})[+ds.id]; if (c) { setGps(c.door.x, c.door.z, c.door.label); toast('GPS marcado até o ponto comercial.'); } break; }
+    case 'casar-bot': proposeBot(ds.id); break;
+    case 'casar-peer': proposePeer(ds.id); break;
+    case 'pedido-sim': answerProposal(true); break;
+    case 'pedido-nao': answerProposal(false); break;
+    case 'divorcio': divorce(); break;
+    case 'amor-gps': spouseGps(); break;
+    case 'festa': if (S.coins >= 100) { S.coins -= 100; persist(); updateHUD(); celebrate(); toast('🎆 Festa!', 'pink'); renderPanel(); } break;
     case 'consulta': { P.hp = 100; renderHp(); S.consultaT = Date.now() + 3 * 60000; persist(); toast('Consulta feita! Vida 100%.', 'good'); sfx('level'); renderPanel(); break; }
     case 'open-agencia': openPanel('agencia'); break;
     case 'radio': toggleRadio(); break;
@@ -7346,7 +7568,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && NET
 
 /* aparência compacta enviada para os outros jogadores */
 const myNetLook = () => ({ bd: S.body || null, w: myHandKind(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print }, b: S.board });
-const myPresence = () => ({ id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
+const myPresence = () => ({ id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', sp: S.spouse ? S.spouse.name : '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
 function netJoinPlaza() {
   if (!NET.user || NET.ch) return;
   const ch = NET.sb.channel('praca_' + cityId(), { config: { presence: { key: NET.user.id }, broadcast: { self: false } } });
@@ -7360,6 +7582,12 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'socorrido' }, ({ payload }) => onRescued(payload))
     .on('broadcast', { event: 'assalto_ok' }, ({ payload }) => onRobOk(payload))
     .on('broadcast', { event: 'marca' }, ({ payload }) => renderMark(payload))
+    .on('broadcast', { event: 'venda' }, ({ payload }) => onSale(payload))
+    .on('broadcast', { event: 'novo_comercio' }, ({ payload }) => { if (payload.cidade === cityId()) setBiz(payload); })
+    .on('broadcast', { event: 'pedido' }, ({ payload }) => onProposal(payload))
+    .on('broadcast', { event: 'pedido_resp' }, ({ payload }) => onProposalResp(payload))
+    .on('broadcast', { event: 'casamento' }, ({ payload }) => onWedding(payload))
+    .on('broadcast', { event: 'divorcio' }, ({ payload }) => onDivorce(payload))
     .on('broadcast', { event: 'prisao' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id && P.wanted > 0) getArrested(payload.by); })
     .on('broadcast', { event: 'carona' }, ({ payload }) => onRideMsg('carona', payload))
     .on('broadcast', { event: 'carona_ok' }, ({ payload }) => onRideMsg('carona_ok', payload))
@@ -7384,11 +7612,11 @@ function onPresence(state) {
     const st = state[key][0]; if (!st || st.id === (NET.user && NET.user.id)) continue;
     seen[st.id] = true;
     let p = NET.peers[st.id];
-    const lookKey = JSON.stringify([st.look, st.gang]);
+    const lookKey = JSON.stringify([st.look, st.gang, st.sp]);
     if (p && p.lookKey !== lookKey) { removePeer(st.id); p = null; }
     if (!p) {
       const L = st.look || {}, look = lookOf(L.e || {}, L.sk ?? SKINS[1], L.h ?? HAIRS[0], L.g || 'm', L.b, L.bd);
-      const g = makeSkater(look, (st.crew ? `[${st.crew}] ` : '') + (st.gang ? st.gang.e + ' ' : '') + st.name, '#7fe3ff'); g.visible = false; city.scene.add(g);
+      const g = makeSkater(look, (st.crew ? `[${st.crew}] ` : '') + (st.gang ? st.gang.e + ' ' : '') + (st.sp ? '💍 ' : '') + st.name, '#7fe3ff'); g.visible = false; city.scene.add(g);
       p = NET.peers[st.id] = { wp: L.w || null, id: st.id, name: st.name, g, lookKey, x: 0, y: 0, z: 0, h: 0, t: null, seen: false };
       pushChat('Praça', `${st.name} entrou na praça`);
     }
@@ -7647,7 +7875,7 @@ async function enterGame() {
   $('menu').hidden = true; $('hud').hidden = false; mode = 'city';
   if (IS_TOUCH) { $('touch').hidden = false; $('tb-item-l').textContent = 'Truque'; }
   applyDriveCtl();
-  buildCity(); applyQuality(); updateHUD(); rebuildMissionObjs(); renderMissionBox();
+  buildCity(); setTimeout(loadBiz, 700); applyQuality(); updateHUD(); rebuildMissionObjs(); renderMissionBox();
   const hd = homeDoor(); if (hd) { P.x = hd.x - 2.5; P.z = hd.z; P.h = -Math.PI / 2; setTimeout(() => toast('Você acordou em casa. Bom rolê!', 'pink'), 1200); }
   city.camYaw = P.h; camera.position.set(P.x - Math.sin(P.h) * 6, 4, P.z - Math.cos(P.h) * 6);
   P.onBoard = hasSkate();
