@@ -599,7 +599,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-13';
+const BUILD = '2026.10.11-14';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -965,12 +965,12 @@ function addCoins(n) { S.coins += n; updateHUD(); }
 function earn(n) { n = Math.round(n * evMult('coinMult')); addCoins(n); return n; }
 function lookOf(equip, skin, hair, gender, board, body) {
   const sk = ITEM[equip.skate] || ITEM.sk_basic, wh = ITEM[equip.wheels] || ITEM.wh_basic;
-  return { body: body || null, skin, gender: gender || 'm', hair: hair ?? HAIRS[0], shirt: ITEM[equip.shirt] || ITEM.shirt_basic, pants: ITEM[equip.pants] || ITEM.pants_basic, cap: ITEM[equip.cap] || ITEM.cap_none, shoes: ITEM[equip.shoes] || ITEM.shoes_basic, glasses: ITEM[equip.glasses] || ITEM.gl_none, acc: ITEM[equip.acc] || ITEM.ac_none, bag: !!(equip.bag),
+  return { body: body || null, skin, gender: gender || 'm', hair: hair ?? HAIRS[0], shirt: ITEM[equip.shirt] || ITEM.shirt_basic, pants: ITEM[equip.pants] || ITEM.pants_basic, cap: ITEM[equip.cap] || ITEM.cap_none, shoes: ITEM[equip.shoes] || ITEM.shoes_basic, glasses: ITEM[equip.glasses] || ITEM.gl_none, acc: ITEM[equip.acc] || ITEM.ac_none, wrist: ITEM[equip.wrist] || null, ear: ITEM[equip.ear] || null, tats: equip.tats || null, tatName: equip.tn || null, hol: equip.hol || null, bag: !!(equip.bag),
     board: { deck: (board && board.color) ?? sk.color, pat: (ITEM[equip.print] || ITEM.pr_none).pat, wheel: wh.color, glow: !!wh.glow, grip: (board && board.grip) ?? 0x18181b, truck: (board && board.truck) ?? 0xb7bcc4 } };
 }
 const botLook = b => lookOf(b.equip, b.skin, b.hair, b.gender);
 const hasSkate = () => !!(S.equip.skate && S.owned.includes(S.equip.skate));
-const myLook = () => lookOf(Object.assign({ bag: S.shift === 'entregador' || S.shift === 'motoboy' }, S.equip, (typeof UNIFORM !== 'undefined' && UNIFORM[S.shift]) || {}, S.beachWear && typeof beachEquip === 'function' ? beachEquip() : {}), S.skin, S.hair, S.gender, S.board, S.body);
+const myLook = () => lookOf(Object.assign({ bag: S.shift === 'entregador' || S.shift === 'motoboy' }, S.equip, (typeof UNIFORM !== 'undefined' && UNIFORM[S.shift]) || {}, S.beachWear && typeof beachEquip === 'function' ? beachEquip() : {}, { tats: S.tats || null, tn: S.name, hol: typeof holsterNow === 'function' ? holsterNow() : null }), S.skin, S.hair, S.gender, S.board, S.body);
 const phoneTier = () => ITEM[S.equip.phone].tier;
 function boardStats(equip, attr) {
   const k = ITEM[equip.skate] || ITEM.sk_basic, w = ITEM[equip.wheels] || ITEM.wh_basic, a = attr || { vel: 0, pop: 0, tec: 0, equ: 0 };
@@ -1663,19 +1663,23 @@ function prepModel(k, gltf) {
       let c2 = cut, raw = false; if (k === 'f') { mesh.geometry.computeBoundingBox(); c2 = cut * mesh.geometry.boundingBox.max.y / h; raw = true; }
       info.legMask = legMask(mesh, W, H, c2, raw); info.legMask.nm = 'short';
       const sc2 = k === 'f' ? mesh.geometry.boundingBox.max.y / h : 1; let ft = null; scene.traverse(o => { if (o.isBone && /LeftFoot$/.test(o.name)) ft = o; }); const fy = (ft ? ft.getWorldPosition(new THREE.Vector3()).y : 0.1) + 0.1; info.trunkMask = legMask(mesh, W, H, 0, raw, y => y < (hy - 0.055) * sc2 && y > fy * sc2); info.trunkMask.nm = 'trunk';
+      info.longMask = legMask(mesh, W, H, 0, raw, y => y < (ky - (ky - fy + 0.1) * 0.4) * sc2); info.longMask.nm = 'long';
+      { const tn = k === 'f' ? 'Ch03_Body' : 'Wolf3D_Outfit_Top'; let tm = null, la = null, nk = null; scene.traverse(o => { if (o.isMesh && o.material.name === tn) tm = o; if (o.isBone && /LeftArm$/.test(o.name)) la = o; if (o.isBone && /Neck$/.test(o.name)) nk = o; });
+        if (tm && la) { const ax = Math.abs(la.getWorldPosition(new THREE.Vector3()).x) * sc2 * (k === 'f' ? 0.95 : 1.1), ny = nk ? nk.getWorldPosition(new THREE.Vector3()).y * sc2 : 99; info.tankMask = legMask(tm, k === 'f' ? W : 512, k === 'f' ? H : 512, 0, raw, (y, x) => Math.abs(x) > ax || y > ny); info.tankMask.nm = 'tank'; } }
       if (k === 'f') { let sh = null; scene.traverse(o => { if (o.isBone && /LeftArm$/.test(o.name)) sh = o; }); const sy = sh ? sh.getWorldPosition(new THREE.Vector3()).y : h * 0.82; info.braMask = bandMask(mesh, W, H, (sy - 0.26) * sc2, (sy - 0.07) * sc2, raw); info.braMask.nm = 'bra'; }
     }
   } catch (e) { console.warn('máscara do short', e); }
+  try { prepWearInfo(info, scene, k); } catch (e) { console.warn('roupa', e); }
   return info;
 }
 function bandMask(mesh, W, H, lo, hi, raw) { return legMask(mesh, W, H, 0, raw, y => y < lo || y > hi); }
 function legMask(mesh, W, H, cut, raw, test) {
   const geo = mesh.geometry, pos = geo.attributes.position, uv = geo.attributes.uv, idx = geo.index, v = new THREE.Vector3(), ys = new Float32Array(pos.count);
-  for (let i = 0; i < pos.count; i++) ys[i] = raw ? pos.getY(i) : v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld).y;
+  const xs = new Float32Array(pos.count); for (let i = 0; i < pos.count; i++) { if (raw) { ys[i] = pos.getY(i); xs[i] = pos.getX(i); } else { v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld); ys[i] = v.y; xs[i] = v.x; } }
   const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); g.fillStyle = g.strokeStyle = '#fff'; g.lineWidth = 2; g.lineJoin = 'round';
   const n = idx ? idx.count : pos.count, at = k => idx ? idx.getX(k) : k;
   for (let t = 0; t < n; t += 3) {
-    const a = at(t), b = at(t + 1), d = at(t + 2); const ym = (ys[a] + ys[b] + ys[d]) / 3; if (test ? !test(ym) : ym > cut) continue;
+    const a = at(t), b = at(t + 1), d = at(t + 2); const ym = (ys[a] + ys[b] + ys[d]) / 3, xm = (xs[a] + xs[b] + xs[d]) / 3; if (test ? !test(ym, xm) : ym > cut) continue;
     g.beginPath(); g.moveTo(uv.getX(a) * W, uv.getY(a) * H); g.lineTo(uv.getX(b) * W, uv.getY(b) * H); g.lineTo(uv.getX(d) * W, uv.getY(d) * H); g.closePath(); g.fill(); g.stroke();
   }
   const p = g.getImageData(0, 0, W, H).data, m = new Uint8Array(W * H); for (let i = 0; i < m.length; i++) m[i] = p[i * 4] > 100 ? 1 : 0;
@@ -1712,7 +1716,7 @@ function prepAtlas(img) {
 }
 function atlasTex(A, shirtIt, pantsIt, skin, mask, topMask) {
   const sp = plainPat(shirtIt) ? 'plain' : shirtIt.pat, pp = plainPat(pantsIt) ? 'plain' : pantsIt.pat;
-  const key = [shirtIt.color, sp, pantsIt.color, pp, skin, mask ? (mask.nm || 'short') : '', topMask ? 'bra' : ''].join('_'); if (A.cache[key]) return A.cache[key];
+  const key = [shirtIt.color, sp, pantsIt.color, pp, skin, mask ? (mask.nm || 'short') : '', topMask ? (topMask.nm || 'bra') : ''].join('_'); if (A.cache[key]) return A.cache[key];
   const out = new ImageData(new Uint8ClampedArray(A.d.data), A.w, A.h), p = out.data;
   const col = [null, pantsIt.color, shirtIt.color, skin].map(x => x == null ? null : [(x >> 16 & 255), (x >> 8 & 255), (x & 255)]);
   const pats = [null, pp, sp, 'plain'];
@@ -1838,12 +1842,12 @@ function makeRealSkater(look, tagText, tagColor) {
 function applyRealLook(g, look) {
   const u = g.userData, M = MODELS[u.k];
   if (u.k === 'f') {
-    const m = u.mats.Ch03_Body; m.map = atlasTex(M.atlas, look.shirt, look.pants, look.skin, look.pants.trunk && M.trunkMask ? M.trunkMask : look.pants.short ? M.legMask : null, (look.shirt.bra || look.shirt.nude) ? M.braMask : null); m.needsUpdate = true;
+    const m = u.mats.Ch03_Body; m.map = atlasTex(M.atlas, look.shirt, look.pants, look.skin, look.pants.trunk && M.trunkMask ? M.trunkMask : look.pants.long && !look.pants.baggy && M.longMask ? M.longMask : (look.pants.short || look.pants.baggy) ? M.legMask : null, (look.shirt.bra || look.shirt.nude) ? M.braMask : look.shirt.tank && M.tankMask ? M.tankMask : null); m.needsUpdate = true;
   } else {
     const set = (n, c) => { if (u.mats[n]) u.mats[n].color.setHex(c); };
     M.patCache = M.patCache || {};
-    const part = (n, it) => { const m = u.mats[n]; if (!m || !M[n]) return; if ((it.short || it.trunk) && M.legMask && n === 'Wolf3D_Outfit_Bottom') { m.map = patTex(M[n], it.pat || 'plain', it.color, look.skin, n, M.patCache, 512, it.trunk && M.trunkMask ? M.trunkMask : M.legMask); m.color.setHex(0xffffff); m.needsUpdate = true; return; } if (plainPat(it)) { m.map = M[n]; m.color.setHex(it.color); } else { m.map = patTex(M[n], it.pat, it.color, look.skin, n, M.patCache); m.color.setHex(0xffffff); } m.needsUpdate = true; };
-    if (look.shirt.bra || look.shirt.nude) { const m = u.mats.Wolf3D_Outfit_Top; if (m && M.Wolf3D_Outfit_Top) { m.map = M.Wolf3D_Outfit_Top; m.color.setHex(look.skin); m.needsUpdate = true; } } else part('Wolf3D_Outfit_Top', look.shirt); part('Wolf3D_Outfit_Bottom', look.pants); part('Wolf3D_Outfit_Footwear', look.shoes);
+    const part = (n, it) => { const m = u.mats[n]; if (!m || !M[n]) return; if (it.tank && M.tankMask && n === 'Wolf3D_Outfit_Top') { m.map = patTex(M[n], it.pat || 'plain', it.color, look.skin, n, M.patCache, 512, M.tankMask); m.color.setHex(0xffffff); m.needsUpdate = true; return; } if ((it.short || it.trunk || it.long) && M.legMask && n === 'Wolf3D_Outfit_Bottom') { m.map = patTex(M[n], it.pat || 'plain', it.color, look.skin, n, M.patCache, 512, it.trunk && M.trunkMask ? M.trunkMask : it.long && !it.baggy && M.longMask ? M.longMask : M.legMask); m.color.setHex(0xffffff); m.needsUpdate = true; return; } if (plainPat(it)) { m.map = M[n]; m.color.setHex(it.color); } else { m.map = patTex(M[n], it.pat, it.color, look.skin, n, M.patCache); m.color.setHex(0xffffff); } m.needsUpdate = true; };
+    if (look.shirt.bra || look.shirt.nude) { const m = u.mats.Wolf3D_Outfit_Top; if (m && M.Wolf3D_Outfit_Top) { m.map = M.Wolf3D_Outfit_Top; m.color.setHex(look.skin); m.needsUpdate = true; } } else part('Wolf3D_Outfit_Top', look.shirt); part('Wolf3D_Outfit_Bottom', look.pants); part('Wolf3D_Outfit_Footwear', look.shoes); fixTopMat(u, look);
     const sf = skinFactor(look.skin); set('Wolf3D_Skin', sf); set('Wolf3D_Body', sf);
   }
   u.hairM.color.setHex(look.hair);
@@ -1855,6 +1859,7 @@ function applyRealLook(g, look) {
   u.wheelM.color.setHex(B.wheel); u.wheelM.emissive.setHex(B.glow ? B.wheel : 0); u.wheelM.emissiveIntensity = B.glow ? 0.8 : 0;
   u.truckM.color.setHex(B.truck); u.gripM.color.setHex(B.grip);
   buildCap(u, look.cap); buildGlasses(u, look.glasses); buildAcc(u, look.acc, look.bag);
+  try { buildWearExtras(g, look); } catch (e) { console.warn('extras', e); }
   return true;
 }
 /* animação dos modelos realistas: passada por fase (sem escorregar), pose suavizada entre estados */
@@ -2591,8 +2596,9 @@ function cityExtras(sc) {
   buildSkatepark(sc);
   { const [bx, bz] = parkWorld(50, -24), sh = new THREE.Shape(); sh.moveTo(-600, -600); sh.lineTo(600, -600); sh.lineTo(600, 600); sh.lineTo(-600, 600); const ho = new THREE.Path(); ho.absarc(bx, -bz, 7.6, 0, TAU, true); sh.holes.push(ho); city.far.geometry.dispose(); city.far.geometry = new THREE.ShapeGeometry(sh, 32); }
   buildRoles(sc); mansionGuards(sc); buildTourExtras(sc); buildSea(sc); buildAirport(sc);
-  buildRegFavelas(sc); buildPoliceLot(sc); buildKids(sc); soundCars(); for (const o of city.cops || []) attachBaton(o.g);
+  buildRegFavelas(sc); buildPoliceLot(sc); buildKids(sc); soundCars(); buildTattooShop(sc); for (const o of city.cops || []) attachBaton(o.g);
   { const [bx, bz] = morroWorld(17.6, 10), [sx, sz] = morroWorld(17.6, 15); partyAt(sc, bx, bz, 7, 4); speakerStack(sc, sx, sz, morroHd(17.6), 0, 2); const [ax, az] = morroWorld(-2, 3); usersFor(sc, [ax, az, city.boca[0], city.boca[1]], 2); }
+  try { buildOuterCity(sc); } catch (e) { console.warn('cidade grande', e); city.outer = null; }
   buildDayNight(sc);
   setTimeout(loadMarks, 600);
 }
@@ -2972,7 +2978,7 @@ function travelToOld(id, how) {
 }
 function resetCity() {
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
-  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.homePad = null; city.morros = {}; city.regFav = []; city.party = []; city.users = []; city.kids = []; city.kidBall = null; city.leds = []; city.soundSrc = []; city.policeLot = []; city.war = null; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null;
+  city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.homePad = null; city.morros = {}; city.regFav = []; city.party = []; city.users = []; city.kids = []; city.kidBall = null; city.leds = []; city.soundSrc = []; city.policeLot = []; city.war = null; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null; city.outer = null; city.ocol = null; city.xspots = []; city.fire = null; city.raid = null; city.tatNpc = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -3343,12 +3349,12 @@ function updateGps(dt) {
 }
 /* toque no mapa grande: converte para coordenada do mundo e marca o destino */
 function bigmapClick(e) {
-  const cv = $('bigmap'), r = cv.getBoundingClientRect(), Rad = 165;
+  const cv = $('bigmap'), r = cv.getBoundingClientRect(), Rad = city.mapRad || 300;
   const px = (e.clientX - r.left) / r.width * cv.width, pz = (e.clientY - r.top) / r.height * cv.height, s = cv.width / (2 * Rad);
   const x = (px - cv.width / 2) / s, z = (pz - cv.height / 2) / s;
   let label = 'Ponto no mapa';
   const d = city.doors.reduce((b, d) => { const k = Math.hypot(d.x - x, d.z - z); return k < b[0] ? [k, d] : b; }, [12, null])[1];
-  if (d) { setGps(d.x, d.z, d.label); } else if (inMorro(x, z, 2)) setGps(x, z, MORRO_NAME[cityId()]); else setGps(clamp(x, -115, 115), clamp(z, -115, cityBoundZ() - 2), label);
+  if (d) { setGps(d.x, d.z, d.label); } else if (inMorro(x, z, 2)) setGps(x, z, MORRO_NAME[cityId()]); else setGps(clamp(x, -OUT_N + 5, OUT_N - 5), clamp(z, -OUT_N + 5, outZMax() - 2), label);
   drawCityMapOn(cv, 0, 0, Rad);
 }
 
@@ -3557,7 +3563,7 @@ function nextWaypoint(o) {
   if (o.iz > 0) opts.push([o.ix, o.iz - 1]); if (o.iz < 5) opts.push([o.ix, o.iz + 1]);
   [o.ix, o.iz] = pick(opts); o.tx = ROADS[o.ix]; o.tz = ROADS[o.iz];
 }
-function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if ((city.tour || city.helipad || city.homePad) && walkAreaY(x, z, r) != null) return false; if ((city.interior || city.jail || city.hospIn || city.shopIn) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return Math.abs(x) > 116 || z < -116 || z > cityBoundZ(); }
+function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if ((city.tour || city.helipad || city.homePad) && walkAreaY(x, z, r) != null) return false; if ((city.interior || city.jail || city.hospIn || city.shopIn) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return outerBlocked(x, z, r); }
 function inRamp(x, z) { return city.ramps.some(c => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1); }
 
 let camYaw = 0;
@@ -3664,7 +3670,7 @@ function updateCity(dt, t) {
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
-  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: hasSkate(), v: P.v, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: myHandKind(), wpProp: P.wpShowT > 0 ? myHandKind() : null, emote: P.emote && P.emote.id }, t);
+  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: hasSkate(), v: P.v, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow(), wpProp: P.wpShowT > 0 ? handNow() : null, emote: P.emote && P.emote.id }, t);
   if (!driving && !P.ride) beachPose(g); else g.rotation.x = 0;
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
@@ -3674,7 +3680,7 @@ function updateCity(dt, t) {
   // céu e sol acompanham
   city.sky.position.copy(camera.position);
   for (const c of city.clouds.children) { c.position.x += c.userData.v * dt; if (c.position.x > 340) c.position.x = -340; }
-  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); updateShopIn(dt, t); updatePolice(dt, t); updateBeach(dt, t); updateWeather(dt, t); updateLife(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
+  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); updateShopIn(dt, t); updatePolice(dt, t); updateBeach(dt, t); updateWeather(dt, t); updateLife(dt, t); updateRP20(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
   const sd = city.dn ? city.dn.sunDir : [40, 80, 30]; city.sun.position.set(P.x + sd[0], sd[1], P.z + sd[2]); city.sun.target.position.set(P.x, 0, P.z);
   for (const d of city.doors) if (d.ring) d.ring.rotation.y += dt;
   updateHomeDoor(dt); if (city.seaTex) { city.seaTex.offset.x += dt * 0.01; city.seaTex.offset.y += dt * 0.02; city.foam.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.3; }
@@ -3748,6 +3754,7 @@ function updateCity(dt, t) {
   }
   if (!near && S.gang && !P.drive && !P.ride && (city.paintCd = (city.paintCd || 0) - dt) <= 0) { const w = nearWall(); if (w) near = { type: 'paint', w }; }
   if (S.shift === 'policial' && !P.drive && !P.ride) (city.policeLot || []).forEach((L, i) => { if (!L.m.visible) return; const k = Math.hypot(L.x - P.x, L.z - P.z); if (k < 3.2 && k < nd) { nd = k; near = { type: 'lotveh', i }; } });
+  { const xn = extraNear(near, nd); if (xn) { near = xn; nd = xn.nd; } }
   if (P.drive) near = { type: 'exitveh' };
   if (P.ride) near = { type: 'rideexit' };
   const pr = $('prompt');
@@ -3761,6 +3768,7 @@ function updateCity(dt, t) {
     else if (near.type === 'abordarP') { pr.textContent = `${key} · 🚨 Abordar ${near.p.name}`; pr.hidden = false; if (tap('act')) abordarPeer(near.p); }
     else if (near.type === 'abordPanel') { pr.textContent = `${key} · 🚨 Abordagem (documento, revista, algemas)`; pr.hidden = false; if (tap('act')) openPanel('abordagem'); }
     else if (near.type === 'prenderNpc') { pr.textContent = `${key} · Prender o bandido`; pr.hidden = false; if (tap('act')) { const o = near.o; if (o.st) { o.st = 'preso'; o.t2 = 0; bubble(o.g, 'Tá bom, perdi…', 2); } else { o.arrestedT = 150; o.hostT = 0; o.fallT = 0; o.g.visible = false; } addPrisoner(o.st ? 'Assaltante' : 'Traficante', 120); const g = earn(jobPay('policial', 180)); addXP(30); toast(`Bandido preso e levado para a Delegacia! +$${fmt(g)}`, 'good'); sfx('coin'); } }
+    else if (near.type === 'xtra') { pr.textContent = `${key} · ${near.label}`; pr.hidden = false; if (tap('act')) near.fn(); }
     else if (near.type === 'shopspot') { pr.textContent = `${key} · ${near.s.label}`; pr.hidden = false; if (tap('act')) near.s.fn(); }
     else if (near.type === 'hospexit') { pr.textContent = `${key} · Sair do hospital`; pr.hidden = false; if (tap('act')) leaveHospital(); }
     else if (near.type === 'socorrer') { pr.textContent = `${key} · Socorrer ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'socorrido', payload: { to: near.p.id, by: S.name } }); const g = earn(jobPay('socorrista', 260)); addXP(45); toast(`Você salvou ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('level'); } }
@@ -3968,6 +3976,7 @@ function drawCityMapOn(cv, cx, cz, Rad, mini) {
   const W = cv.width, g = cv.getContext('2d'), s = W / (2 * Rad), X = x => (x - cx) * s + W / 2, Z = z => (z - cz) * s + W / 2;
   g.fillStyle = '#4e7a3c'; g.fillRect(0, 0, W, W);
   if (CITY().beach) { g.fillStyle = '#e8d3a0'; g.fillRect(X(-400), Z(116), 800 * s, 47 * s); g.fillStyle = '#2a7fb8'; g.fillRect(X(-400), Z(163), 800 * s, 400 * s); g.fillStyle = '#f2f0ea'; g.fillRect(X(-400), Z(115), 800 * s, 6 * s); }
+  drawOuterMap(g, X, Z, s, mini);
   g.fillStyle = cityId() === 'ssa' ? '#6f6658' : '#34363c'; g.fillRect(X(-111), Z(-111), 222 * s, 222 * s);
   if (city.morro) drawMorroMap(g, X, Z, s, cityId(), city.mHouses);
   if (city.park) drawParkMap(g, X, Z, s, cityId());
@@ -3987,7 +3996,7 @@ function drawCityMapOn(cv, cx, cz, Rad, mini) {
   if (!mini) drawLandmarks(g, cityId(), X, Z, W);
   if (mini) { g.fillStyle = 'rgba(21,22,26,.75)'; g.fillRect(0, W - 40, W, 40); g.fillStyle = '#fff'; g.font = '700 26px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(IS_TOUCH ? 'TOQUE PARA ABRIR' : 'M · MAPA', W / 2, W - 12); g.textAlign = 'start'; }
 }
-function drawCityMap() { drawCityMapOn($('citymap'), 0, 0, 118); }
+function drawCityMap() { drawCityMapOn($('citymap'), 0, 0, 240); }
 /* morro no mapa: terreno, escadaria e casinhas */
 function drawMorroMap(g, X, Z, s, id, houses) {
   const P4 = [[-2, -MORRO_W], [MORRO_D, -MORRO_W], [MORRO_D, MORRO_W], [-2, MORRO_W]].map(([d, t]) => morroWorld(d, t, id));
@@ -4620,13 +4629,13 @@ function updateRoles(dt, t) {
     if (o.fallT > 0) { o.fallT -= dt; g.position.set(o.x, groundH(o.x, o.z), o.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t + o.ph0); if (o.fallT <= 0 && o.cuffed) { o.cuffed = false; } continue; }
     if (o.role === 'traficante') { if (isAdm()) o.hostT = 0; thugLife(o, dt, t); const ch = chiefNear(o.x, o.z, 14); if (ch && (o.chiefT = (o.chiefT || 0) - dt) <= 0) { o.chiefT = 20; bubble(g, pick(CHIEF_LINES), 3); o.waveT = 2; } }
     if (o.waveT > 0) o.waveT -= dt;
-    const hostile = o.role === 'traficante' && o.hostT > 0; if (hostile) o.hostT -= dt;
-    const look = dP < (hostile ? 40 : 10) ? Math.atan2(P.x - o.x, P.z - o.z) : o.h; o.h += Math.atan2(Math.sin(look - o.h), Math.cos(look - o.h)) * (1 - Math.exp(-4 * dt));
+    const hostile = o.role === 'traficante' && (o.hostT > 0 || o.raidA != null); if (o.hostT > 0) o.hostT -= dt;
+    const look = o.raidA != null ? o.raidA : dP < (hostile ? 40 : 10) ? Math.atan2(P.x - o.x, P.z - o.z) : o.h; o.h += Math.atan2(Math.sin(look - o.h), Math.cos(look - o.h)) * (1 - Math.exp(-4 * dt));
     g.position.set(o.x, groundH(o.x, o.z), o.z); g.rotation.y = o.h;
     animSkater(g, { walk: true, v: 0, fallT: 0, wpHold: o.gun || null, wpProp: hostile ? o.gun : null, smoke: o.smoking > 0 && !hostile, shootUp: o.upT > 0 && !hostile, emote: o.waveT > 0 && !hostile ? 'wave' : null }, t + o.ph0);
     if (o.role === 'traficante') {
       if (S.shift === 'policial' && !isAdm() && dP < 22 && !o.hostT) { o.hostT = 15; bubble(g, 'Sujou! Polícia!', 2); }
-      if (hostile && dP < 38 && !P.drive && !city.interior && P.fallT <= 0 && (o.shotT -= dt) <= 0) {
+      if (hostile && o.hostT > 0 && dP < 38 && !P.drive && !city.interior && P.fallT <= 0 && (o.shotT -= dt) <= 0) {
         o.shotT = rand(1.2, 2.4); gunFx(o.x, groundH(o.x, o.z) + 1.4, o.z, P.x, P.y + 1.2, P.z, o.gun); sfx('tiro');
         if (Math.random() < 0.33) { hurt(22, 'tiro no morro'); P.fallT = Math.max(P.fallT, 1); P.v = 0; if (!P.down) toast(`Você foi atingido! Vida ${Math.round(P.hp)}%. Saia da linha de tiro.`, 'bad'); playerFell('tiro'); if (S.mission && S.mission.type === 'job_corre') failMission('derrubaram você e levaram a encomenda.'); }
       }
@@ -4664,6 +4673,7 @@ function gunFx(x0, y0, z0, x1, y1, z1, kind) {
 }
 function shootGun(G) {
   if ((P.wpCd || 0) > 0 || P.drive || P.ride || P.jailT > 0 || P.down) return;
+  if (!aimOn() && drawGun()) return;
   if (!useRound(G)) return;
   if (aimOn()) return shootAimed(G); P.wpCd = G.cd; P.wpShowT = 0.8; P.emote = null;
   const fx = Math.sin(P.h), fz = Math.cos(P.h), cone = G.cone || 0.9;
@@ -5295,7 +5305,7 @@ const _ray = { o: new THREE.Vector3(), d: new THREE.Vector3() };
 function aimOn() { return !!P.aim && !P.drive && !P.ride && !(P.jailT > 0) && mode === 'city'; }
 function setAim(v) {
   if (v && !myGun()) { if (P.aim) P.aim = false; return toast('Equipe uma arma de fogo para mirar.', 'bad'); }
-  P.aim = !!v; if (P.aim) { P.onBoard = false; P.emote = null; city.aimPitch = 0; city.camSnap = true; } $('crosshair').hidden = !P.aim; const b = $('tb-aim'); if (b) b.classList.toggle('on', P.aim);
+  P.aim = !!v; if (P.aim) { P.drawnT = 20; P.onBoard = false; P.emote = null; city.aimPitch = 0; city.camSnap = true; } $('crosshair').hidden = !P.aim; const b = $('tb-aim'); if (b) b.classList.toggle('on', P.aim);
 }
 /* alvos possíveis: figurantes, polícia, contenção, assaltantes, tropa e jogadores */
 function aimTargets() {
@@ -6501,7 +6511,7 @@ function buildTourExtras(sc) {
   }
 }
 function tourGo(id) {
-  const T = tourSpot(id); if (!T) return; const fee = isAdm() ? 0 : T.fee;
+  const T = tourSpot(id); if (!T) return; const fee = isAdm() || city.tourFree ? 0 : T.fee; city.tourFree = false;
   if (S.coins < fee) return toast(`A taxa do Bonde do AJBZ para visitar é $ ${fee}.`, 'bad');
   if (P.drive) exitVehicle(true); if (P.ride) endRide(true);
   if (fee) { S.coins -= fee; persist(); updateHUD(); sfx('coin'); if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'taxa', payload: { amt: fee, name: S.name, spot: T.n } }); toast(`💰 Taxa de $ ${fee} paga ao Bonde do AJBZ. Boa visita!`, 'pink'); }
@@ -6916,7 +6926,7 @@ function buildRoadTrip() {
   skylineAt(sc, T.from, -260, 1); gantry(sc, 70, `VOCÊ ESTÁ SAINDO DE ${CITY_DEFS[T.from].name.toUpperCase()} · BOA VIAGEM!`, '#2e7a35');
   skylineAt(sc, T.dest, TRIP_L + 260, -1); gantry(sc, TRIP_L - 120, `BEM-VINDO A ${CITY_DEFS[T.dest].name.toUpperCase()}`, '#2f6db5');
   camera.position.set(0, 6, -36); city.camSnap = true;
-  T.label = 'Saindo da cidade';
+  T.label = 'Saindo da cidade'; selfDriveSetup(T);
 }
 function gantry(sc, z, txt, bg) { const x = roadX(z), g = new THREE.Group(); for (const s of [-12, 12]) { const p = new THREE.Mesh(CYL(0.3, 0.3, 8, 8), lam(0x9aa3ad)); p.position.set(s, 4, 0); g.add(p); } const bm = new THREE.Mesh(boxGeo(25, 0.6, 0.6), lam(0x9aa3ad)); bm.position.y = 8; g.add(bm); const s = textSprite(txt, { bg, fg: '#fff', size: 40, scale: [Math.min(24, txt.length * 0.42), 1.6, 1] }); s.position.set(0, 9.6, 0); g.add(s); g.position.set(x, 0, z); sc.add(g); }
 function skylineAt(sc, cid, z0, dir) {
@@ -6966,13 +6976,13 @@ function roadTick(dt, t) {
   // pedágio: para, paga e a cancela abre
   let toll = T.tolls.find(tl => !tl.paid && tl.z - T.z < 80 && tl.z > T.z - 2), target = want;
   if (toll) { const d = toll.z - 3 - T.z; target = Math.min(want, Math.max(0, d * 0.9)); T.label = 'Pedágio'; if (d < 0.6) { T.stopT += dt; if (T.stopT > 1.2) { toll.paid = true; T.stopT = 0; const fee = T.how === 'bus' ? 0 : 12; if (fee) { S.coins = Math.max(0, S.coins - fee); persist(); } toast(fee ? `Pedágio pago: $ ${fee}` : 'Pedágio incluso na passagem.', 'pink'); sfx('coin'); } } }
-  T.v = lerp(T.v, target, 1 - Math.exp(-(target < T.v ? 3 : 0.8) * dt)); T.z += T.v * dt;
+  if (T.self) selfDrive(T, dt, toll); else T.v = lerp(T.v, target, 1 - Math.exp(-(target < T.v ? 3 : 0.8) * dt)); T.z += T.v * dt;
   for (const tl of T.tolls) if (tl.arm) tl.arm.rotation.z = lerp(tl.arm.rotation.z, tl.paid ? Math.PI / 2.2 : 0, 1 - Math.exp(-4 * dt));
   // ultrapassagem: muda de faixa quando tem caminhão na frente
-  const ahead = T.traffic.find(c => c.v > 0 && c.lane > 0 && c.z > T.z && c.z - T.z < 45 && Math.abs(c.lane - 3.2) < 1);
-  T.lane = lerp(T.lane, ahead ? 0.8 + 0 : 3.2, 1 - Math.exp(-1.5 * dt)); if (!ahead && T.lane < 3) T.lane = lerp(T.lane, 3.2, dt);
+  if (!T.self) { const ahead = T.traffic.find(c => c.v > 0 && c.lane > 0 && c.z > T.z && c.z - T.z < 45 && Math.abs(c.lane - 3.2) < 1);
+  T.lane = lerp(T.lane, ahead ? 0.8 + 0 : 3.2, 1 - Math.exp(-1.5 * dt)); if (!ahead && T.lane < 3) T.lane = lerp(T.lane, 3.2, dt); }
   T.prog = clamp(T.z / TRIP_L, 0, 1);
-  if (!toll) T.label = T.prog < 0.05 ? 'Saindo da cidade' : T.prog > 0.94 ? 'Chegando' : Math.abs(T.prog - 0.48) < 0.03 ? 'Posto de gasolina' : T.prog > 0.45 && T.prog < 0.62 ? 'Serra' : 'Na estrada';
+  if (!toll) T.label = T.prog < 0.05 ? 'Saindo da cidade' : T.prog > 0.94 ? 'Chegando' : Math.abs(T.prog - 0.48) < 0.03 ? 'Posto de gasolina' : T.prog > 0.45 && T.prog < 0.62 ? 'Serra' : 'Na estrada'; if (T.self) T.label = `${T.kmh || 0} km/h · ${toll ? 'Pare no pedágio' : T.label}`;
   // pedaços da estrada à frente (e apaga os de trás)
   const ci = Math.floor(T.z / CHUNK); for (let i = ci - 1; i <= ci + 5; i++) if (i >= -2 && !T.chunks[i]) T.chunks[i] = roadChunk(i);
   for (const k in T.chunks) if (+k < ci - 2) { T.sc.remove(T.chunks[k]); delete T.chunks[k]; }
@@ -6982,12 +6992,12 @@ function roadTick(dt, t) {
   T.traffic = T.traffic.filter(c => { const keep = c.z > T.z - 60 && c.z < T.z + 900; if (!keep) T.sc.remove(c.m); return keep; });
   // meu veículo
   const x = roadX(T.z) + T.lane, x2 = roadX(T.z + 2) + T.lane, h = Math.atan2(x2 - x, 2), m = T.veh;
-  m.position.set(x, 0, T.z); m.rotation.y = h; const u = m.userData; if (u.wheels) { u.spin = (u.spin || 0) + T.v * dt / 0.35; for (const w of u.wheels) { w.children[0].rotation.x = u.spin; if (w.children[1]) w.children[1].rotation.x = u.spin; } }
+  m.position.set(x, 0, T.z); m.rotation.y = h - (T.self ? (T.steerV || 0) * 0.3 * Math.sign(T.v || 1) : 0); const u = m.userData; if (u.wheels) { u.spin = (u.spin || 0) + T.v * dt / 0.35; for (const w of u.wheels) { w.children[0].rotation.x = u.spin; if (w.children[1]) w.children[1].rotation.x = u.spin; } }
   if (T.rider) { T.rider.position.set(x, (u.seatY || 0.95) - 1.07, T.z); T.rider.rotation.y = h; animSkater(T.rider, { ride: true, walk: true, v: 0, fallT: 0 }, t); }
   T.ground.position.set(x, 0, T.z); T.ground.material.map.offset.set(x / 40, -T.z / 40);
   T.sun.position.set(x + 80, 140, T.z + 40); T.sun.target.position.set(x, 0, T.z);
   // câmera de perseguição (de vez em quando passa para o lado)
-  const side = Math.sin(T.t * 0.11) > 0.75, cd = (u.len || 4) * 1.1 + 6, want3 = side ? new THREE.Vector3(x + 12, 3, T.z + 6) : new THREE.Vector3(x - Math.sin(h) * cd, 3.4 + cd * 0.15, T.z - Math.cos(h) * cd);
+  const side = !T.self && Math.sin(T.t * 0.11) > 0.75, cd = (u.len || 4) * 1.1 + 6, want3 = side ? new THREE.Vector3(x + 12, 3, T.z + 6) : new THREE.Vector3(x - Math.sin(h) * cd, 3.4 + cd * 0.15, T.z - Math.cos(h) * cd);
   camera.position.lerp(want3, city.camSnap ? 1 : 1 - Math.exp(-2.5 * dt)); city.camSnap = false; camera.lookAt(x, 1.4, T.z + (side ? 0 : 8));
   if (T.z >= TRIP_L) roadArrive();
 }
@@ -7515,6 +7525,673 @@ function soundCars() {
     for (const x of [-0.35, 0.35]) { const l = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 6, 16), new THREE.MeshBasicMaterial({ color: 0x4fc3ff })); l.position.set(x, b.position.y, -L / 2 - 0.32); m.add(l); (city.leds = city.leds || []).push(l); }
     (city.soundSrc = city.soundSrc || []).push({ m, r: 32, k: 0.85 });
   }
+}
+/* =========================================================
+   VIAGEM DIRIGINDO: com o próprio carro ou moto, quem dirige na BR é você (acelera, freia, desvia e para no pedágio)
+   ========================================================= */
+function tripAxis() {
+  const h = input.held, H = input.hold;
+  const x = (h.KeyD || h.ArrowRight || H.right ? 1 : 0) - (h.KeyA || h.ArrowLeft || H.left ? 1 : 0) + input.joy.x;
+  const y = (h.KeyW || h.ArrowUp || H.gas ? 1 : 0) - (h.KeyS || h.ArrowDown || H.rev ? 1 : 0) + input.joy.y;
+  return { x: clamp(x, -1, 1), y: clamp(y, -1, 1) };
+}
+function selfDriveSetup(T) {
+  if (T.how !== 'veh' || !T.V || T.air) return;
+  T.self = true; T.noFast = true; T.v = 0; T.lane = 3.2; T.steerV = 0; T.crashT = 0;
+  if (IS_TOUCH) { const el = $('touch'); el.hidden = false; el.classList.toggle('driving', true); applyBtnLayout(); }
+  toast(`${T.V.kind === 'moto' ? '🏍️' : '🚗'} Você está dirigindo na ${brOf(T.from, T.dest)}! Acelere, desvie dos carros e pare no pedágio.`, 'pink');
+}
+function selfDrive(T, dt, toll) {
+  const V = T.V, ax = tripAxis(), top = (V.top || 30) * 1.3, acc = (V.acc || 9) * 1.1, thr = ax.y;
+  if (thr > 0.1) T.v += acc * thr * dt * (1 - Math.max(0, T.v) / top);
+  else if (thr < -0.1) T.v -= (T.v > 0.5 ? 24 : acc * 0.4) * -thr * dt;
+  T.v -= T.v * (thr > 0.1 ? 0.03 : 0.25) * dt;
+  const off = Math.abs(T.lane) > 8.6; if (off) { T.v -= T.v * 1.4 * dt; if (Math.random() < dt * 4) T.label = 'Fora da pista!'; }
+  T.v = clamp(T.v, -5, top);
+  T.steerV = lerp(T.steerV, ax.x, 1 - Math.exp(-8 * dt));
+  T.lane = clamp(T.lane - T.steerV * Math.min(1, Math.abs(T.v) / 6) * 7.5 * dt * Math.sign(T.v || 1), -16, 16);
+  T.crashT -= dt;
+  for (const c of T.traffic) {
+    if (Math.abs(c.z - T.z) < 4.6 && Math.abs(c.lane - T.lane) < 2.3) {
+      const back = c.z > T.z ? -1 : 1; T.v = c.v > 0 ? Math.min(T.v, c.v * 0.7) * (back < 0 ? 1 : 1) : -3; T.z += back * 0.6; T.lane += (T.lane > c.lane ? 1 : -1) * 0.8;
+      if (T.crashT <= 0) { T.crashT = 1.2; sfx('hit'); toast('💥 Bateu! Cuidado na estrada.', 'bad'); }
+    }
+  }
+  if (toll && !toll.paid && T.z > toll.z - 3.2) { T.z = toll.z - 3.2; T.v = Math.min(T.v, 0); }
+  const k = Math.round(Math.abs(T.v) * 3.6); T.kmh = k;
+}
+/* =========================================================
+   INTERAÇÕES EXTRAS (perto de alguém/algo): dar dinheiro, segurança do ponto turístico, tatuador, apagar incêndio
+   ========================================================= */
+function extraNear(near, nd) {
+  if (P.drive || P.ride || P.jailT > 0) return null;
+  let best = null, bd = 1e9;
+  const take = (k, label, fn) => { if (k < bd) { bd = k; best = { type: 'xtra', label, fn, nd: k }; } };
+  if (!city.interior && !city.shopIn) for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen || p.t.vh || (p.t.rm || '') !== roomKey()) continue; const k = Math.hypot(p.x - P.x, p.z - P.z); if (k < 2.6 && !(near && near.type === 'assaltoP' && P.aim)) take(k + 0.05, `💸 Dar dinheiro para ${p.name}`, () => openPanel('pix', p.id)); }
+  for (const x of city.xspots || []) { if (x.ok && !x.ok()) continue; const k = Math.hypot(x.x - P.x, x.z - P.z); if (k < (x.r || 2.2)) take(k, typeof x.label === 'function' ? x.label() : x.label, x.fn); }
+  if (!best) return null;
+  if (near && near.type !== 'assaltoP' && near.type !== 'carona' && nd < best.nd) return null;
+  return best;
+}
+/* =========================================================
+   DAR DINHEIRO PARA OUTRO JOGADOR
+   ========================================================= */
+const PANEL_PIX = function (pid) {
+  const p = NET.peers[pid]; if (!p) return { title: '💸 Dar dinheiro', html: '<p class="muted">Essa pessoa saiu de perto.</p>' };
+  const q = [50, 100, 500, 1000, 5000].filter(v => v <= Math.max(S.coins, 50));
+  return { title: `💸 Dar dinheiro para ${esc(p.name)}`, html: `<p class="muted">Seu saldo: <b class="coin">$ ${fmt(S.coins)}</b>. Digite o valor e toque em Dar. O dinheiro sai da sua conta e vai na hora para ${esc(p.name)}.</p>
+    <div class="row"><input id="pix-val" type="number" inputmode="numeric" min="1" step="1" placeholder="Valor em $" style="flex:1;min-width:120px;padding:10px;border-radius:10px;border:2px solid var(--fg);font:inherit"></div>
+    <div class="chips">${q.map(v => `<button class="chip" data-act="pix-quick" data-v="${v}">$ ${fmt(v)}</button>`).join('')}</div>
+    <div class="row"><button class="btn" data-act="pix-send" data-id="${esc(pid)}">💸 Dar</button></div>` };
+};
+function pixSend(pid) {
+  const p = NET.peers[pid], el = $('pix-val'), v = Math.floor(+(el && el.value) || 0);
+  if (!p || !NET.ch || !NET.online) return toast('Essa pessoa não está mais online por perto.', 'bad');
+  if (v < 1) return toast('Digite um valor.', 'bad');
+  if (v > S.coins) return toast('Você não tem esse dinheiro todo.', 'bad');
+  S.coins -= v; persist(); updateHUD(); sfx('coin');
+  NET.ch.send({ type: 'broadcast', event: 'pix', payload: { to: pid, from: NET.user.id, by: S.name, amt: v } });
+  toast(`💸 Você deu $ ${fmt(v)} para ${p.name}.`, 'good'); closePanel();
+  if (p.g) bubble(p.g, `Valeu pelos $ ${fmt(v)}!`, 3);
+}
+function onPix(d) {
+  if (!NET.user || d.to !== NET.user.id) return; const v = Math.max(0, Math.floor(+d.amt || 0)); if (!v) return;
+  S.coins += v; persist(); updateHUD(); sfx('coin'); toast(`💸 ${d.by} te deu $ ${fmt(v)}!`, 'good'); feed(`${d.by} te deu $ ${fmt(v)}`);
+}
+/* =========================================================
+   ROUPAS NOVAS: bermudas compridas e largas, regatas, camisetas de manga curta, sem camisa;
+   relógio, brinco e revólver na cintura (coldre)
+   ========================================================= */
+const NEW_WEAR = [
+  // bermudas compridas e largas (passam do joelho)
+  I('pants', 'bm_tactel', 'Bermudão Tactel Preto', 0x15161a, 260, null, 'comum', { pat: 'plain', long: true, baggy: true }),
+  I('pants', 'bm_tactel_az', 'Bermudão Tactel Azul', 0x1f4fbf, 260, null, 'comum', { pat: 'sidestripe', long: true, baggy: true }),
+  I('pants', 'bm_branco', 'Bermudão Branco', 0xf4f2ec, 280, null, 'comum', { pat: 'sidestripe', long: true, baggy: true }),
+  I('pants', 'bm_vermelho', 'Bermudão Vermelho', 0xc8102e, 280, null, 'comum', { pat: 'sidestripe', long: true, baggy: true }),
+  I('pants', 'bm_cinza', 'Bermudão Moletom Cinza', 0x8c8f96, 300, null, 'comum', { pat: 'plain', long: true, baggy: true }),
+  I('pants', 'bm_jeans', 'Bermudão Jeans Largo', 0x3b5a8f, 340, null, 'comum', { pat: 'denim', long: true, baggy: true }),
+  I('pants', 'bm_cargo', 'Bermuda Cargo Larga', 0x7a6a4a, 380, null, 'comum', { pat: 'plain', long: true, baggy: true }),
+  I('pants', 'bm_camo', 'Bermudão Camuflado', 0x5d6a3a, 420, 30, 'raro', { pat: 'camo', long: true, baggy: true }),
+  I('pants', 'bm_xadrez', 'Bermudão Xadrez', 0xb3262e, 420, 30, 'raro', { pat: 'check', long: true, baggy: true }),
+  I('pants', 'bm_floral', 'Bermudão Floral', 0x169aa8, 420, 30, 'raro', { pat: 'floral', long: true, baggy: true }),
+  // regatas (sem manga)
+  I('shirt', 'rg_branca', 'Regata Branca', 0xf4f2ec, 140, null, 'comum', { pat: 'plain', tank: true }),
+  I('shirt', 'rg_preta', 'Regata Preta', 0x15161a, 140, null, 'comum', { pat: 'plain', tank: true }),
+  I('shirt', 'rg_basquete', 'Regata de Basquete', 0xd8312f, 260, null, 'comum', { pat: 'tm_trim_ffffff_ffffff', tank: true, team: true }),
+  I('shirt', 'rg_bra', 'Regata da Seleção', 0xf7d117, 300, null, 'comum', { pat: 'tm_trim_1a8a3a_1f4fbf', tank: true, team: true }),
+  I('shirt', 'rg_fla', 'Regata Rubro-Negra', 0xc8102e, 300, null, 'comum', { pat: 'tm_h_15161a_c8102e', tank: true, team: true }),
+  I('shirt', 'rg_camo', 'Regata Camuflada', 0x5d6a3a, 320, null, 'comum', { pat: 'camo', tank: true }),
+  // camisetas de manga curta
+  I('shirt', 'ct_cinza', 'Camiseta Cinza Mescla', 0x9aa3ad, 120, null, 'comum', { pat: 'plain' }),
+  I('shirt', 'ct_vinho', 'Camiseta Vinho', 0x7a1630, 140, null, 'comum', { pat: 'plain' }),
+  I('shirt', 'ct_verde', 'Camiseta Verde Musgo', 0x4f6b3a, 140, null, 'comum', { pat: 'plain' }),
+  I('shirt', 'ct_laranja', 'Camiseta Laranja', 0xff7a1a, 140, null, 'comum', { pat: 'plain' }),
+  I('shirt', 'ct_listra_pb', 'Camiseta Listrada P&B', 0x15161a, 200, null, 'comum', { pat: 'tm_h_ffffff_15161a', team: true }),
+  I('shirt', 'ct_listra_az', 'Camiseta Listrada Azul', 0x1f4fbf, 200, null, 'comum', { pat: 'tm_h_ffffff_1f4fbf', team: true }),
+  I('shirt', 'ct_faixa', 'Camiseta Faixa no Peito', 0xf4f2ec, 220, null, 'comum', { pat: 'tm_band_c8102e_15161a', team: true }),
+  I('shirt', 'ct_faixa2', 'Camiseta Faixa Dourada', 0x15161a, 260, null, 'comum', { pat: 'tm_band_ffcf3a_15161a', team: true }),
+  I('shirt', 'ct_tiedye', 'Camiseta Tie-dye', 0x2fb6e8, 320, 25, 'raro', { pat: 'tiedye' }),
+  I('shirt', 'ct_estrelas', 'Camiseta Estrelada', 0x22252b, 320, 25, 'raro', { pat: 'stars' }),
+  I('shirt', 'ct_chamas', 'Camiseta Chamas', 0x15161a, 360, 28, 'raro', { pat: 'flames' }),
+  I('shirt', 'ct_grafite', 'Camiseta Grafite', 0xf4f2ec, 360, 28, 'raro', { pat: 'graffiti' }),
+  // sem camisa
+  I('shirt', 'shirt_none', 'Sem camisa', 0x15161a, 0, null, 'comum', { pat: 'plain', nude: true, desc: 'Fica sem camisa, mostrando o corpo e as tatuagens.' }),
+  // relógios
+  I('wrist', 'wr_none', 'Sem relógio', 0x555555, 0, null, 'comum', { wk: 'none' }),
+  I('wrist', 'wr_preto', 'Relógio Esportivo Preto', 0x15161a, 180, null, 'comum', { wk: 'sport' }),
+  I('wrist', 'wr_prata', 'Relógio de Aço', 0xcfd3d8, 420, null, 'comum', { wk: 'metal' }),
+  I('wrist', 'wr_ouro', 'Relógio de Ouro', 0xd4a017, 1800, 60, 'raro', { wk: 'metal' }),
+  I('wrist', 'wr_cravejado', 'Relógio Cravejado', 0xd4a017, null, 120, 'lendario', { wk: 'ice' }),
+  // brincos
+  I('ear', 'ea_none', 'Sem brinco', 0x555555, 0, null, 'comum', { ek: 'none' }),
+  I('ear', 'ea_prata', 'Brinco de Prata', 0xcfd3d8, 150, null, 'comum', { ek: 'stud' }),
+  I('ear', 'ea_ouro', 'Brinco de Ouro', 0xd4a017, 400, null, 'comum', { ek: 'stud' }),
+  I('ear', 'ea_argola', 'Argola Dourada', 0xd4a017, 520, null, 'comum', { ek: 'hoop' }),
+  I('ear', 'ea_diamante', 'Brinco de Diamante', 0xbfe8ff, null, 80, 'lendario', { ek: 'ice' }),
+];
+NEW_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
+SLOT_NAMES.wrist = 'Relógios'; SLOT_NAMES.ear = 'Brincos';
+const WEAR_FREE = ['shirt_none', 'wr_none', 'ea_none'];
+function wearMigrate() { if (!S) return; for (const id of WEAR_FREE) if (!S.owned.includes(id)) S.owned.push(id); S.equip.wrist = S.equip.wrist || 'wr_none'; S.equip.ear = S.equip.ear || 'ea_none'; S.tats = S.tats || {}; }
+/* arma de fogo: fica no coldre na cintura; o botão da arma tira da cintura (e depois atira) */
+const handNow = () => { const k = myHandKind(); if (!k) return null; return myGun() && !(P.drawnT > 0) && !P.aim ? null : k; };
+const holsterNow = () => { const g = myGun(); return g && !(P.drawnT > 0) && !P.aim && !(P.jailT > 0) && ['pistola', 'revolver', 'taser'].includes(g.gun) ? g.gun : g && !(P.drawnT > 0) && !P.aim ? 'longa_' + g.gun : null; };
+function drawGun() { if (P.drawnT > 0) { P.drawnT = 20; return false; } P.drawnT = 20; P.wpCd = 0.3; tone('square', 300, 200, 0.05, 0.04); tone('square', 900, 1200, 0.03, 0.03, 0.08); feed('🔫 Arma na mão'); netTrack && netTrack(); return true; }
+/* ---------- peças presas aos ossos (bermuda larga, tatuagem, relógio, brinco, coldre) ---------- */
+function boneShell(bone, child, from, to, r0, r1, mat, open = true, seg = 14) {
+  if (!bone || !child) return null;
+  const v = child.position.clone(), L = v.length(); if (L < 1e-6) return null;
+  const ws = bone.getWorldScale(new THREE.Vector3()).x || 1, len = L * (to - from);
+  const geo = new THREE.CylinderGeometry(r1 / ws, r0 / ws, len, seg, 1, open);
+  const m = new THREE.Mesh(geo, mat); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.clone().normalize());
+  m.position.copy(v).multiplyScalar((from + to) / 2); m.castShadow = true; m.frustumCulled = false; bone.add(m); return m;
+}
+/* grupo alinhado com os eixos do personagem, preso a um osso (como os acessórios do peito) */
+function boneFrame(u, bone, root) {
+  const ws = bone.getWorldScale(new THREE.Vector3()).x || 1, g = new THREE.Group(); g.scale.setScalar(1 / ws); bone.add(g); bone.updateMatrixWorld(true);
+  g.quaternion.copy(bone.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(root.getWorldQuaternion(new THREE.Quaternion()))); return g;
+}
+const TAT_CACHE = {};
+const TATTOOS = [
+  { id: 'tribal', n: 'Tribal', c: 450 }, { id: 'rosa', n: 'Rosa', c: 500 }, { id: 'coroa', n: 'Coroa', c: 600 }, { id: 'estrelas', n: 'Estrelas', c: 400 },
+  { id: 'terco', n: 'Terço', c: 550 }, { id: 'nome', n: 'Seu nome', c: 500 }, { id: 'fe', n: '"Fé"', c: 350 }, { id: 'n157', n: '"157"', c: 350 },
+  { id: 'familia', n: '"Família"', c: 450 }, { id: 'carpa', n: 'Carpa (peixe)', c: 700 }, { id: 'leao', n: 'Leão', c: 900 }, { id: 'asas', n: 'Asas', c: 1200 },
+];
+const TAT_SPOTS = [
+  { id: 'antebracoE', n: 'Antebraço esquerdo' }, { id: 'antebracoD', n: 'Antebraço direito' }, { id: 'bracoE', n: 'Braço esquerdo (ombro)' }, { id: 'bracoD', n: 'Braço direito (ombro)' },
+  { id: 'peito', n: 'Peito' }, { id: 'costas', n: 'Costas' }, { id: 'pescoco', n: 'Pescoço' }, { id: 'perna', n: 'Panturrilha' },
+];
+function tatTex(id, name, wrap) {
+  const key = id + '|' + (id === 'nome' ? name : '') + '|' + wrap; if (TAT_CACHE[key]) return TAT_CACHE[key];
+  const W = wrap ? 512 : 256, H = 256, t = canvasTex(W, H, (g, w, h) => {
+    g.clearRect(0, 0, w, h); const ink = 'rgba(18,20,34,0.88)', red = 'rgba(170,20,30,0.85)'; g.fillStyle = ink; g.strokeStyle = ink; g.lineWidth = 7; g.lineCap = 'round'; g.lineJoin = 'round';
+    const cx = wrap ? w * 0.25 : w / 2, cy = h / 2, txt = (s, sz) => { g.font = `900 ${sz}px Georgia, serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(s, cx, cy); };
+    if (id === 'tribal') { g.beginPath(); for (let x = 0; x <= w; x += 32) { g.moveTo(x, h * 0.5); g.quadraticCurveTo(x + 16, h * 0.15, x + 32, h * 0.5); g.quadraticCurveTo(x + 16, h * 0.85, x, h * 0.5); } g.fill(); g.fillRect(0, h * 0.46, w, h * 0.08); }
+    else if (id === 'rosa') { g.fillStyle = red; for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; g.beginPath(); g.arc(cx + Math.cos(a) * 24, cy - 20 + Math.sin(a) * 24, 26, 0, TAU); g.fill(); } g.fillStyle = 'rgba(120,10,20,.9)'; g.beginPath(); g.arc(cx, cy - 20, 18, 0, TAU); g.fill(); g.strokeStyle = 'rgba(20,90,40,.9)'; g.beginPath(); g.moveTo(cx, cy + 4); g.lineTo(cx, cy + 100); g.stroke(); g.fillStyle = 'rgba(20,90,40,.9)'; g.beginPath(); g.ellipse(cx + 22, cy + 50, 22, 9, -0.5, 0, TAU); g.fill(); }
+    else if (id === 'coroa') { g.beginPath(); g.moveTo(cx - 80, cy + 50); g.lineTo(cx - 80, cy - 30); g.lineTo(cx - 40, cy + 10); g.lineTo(cx, cy - 60); g.lineTo(cx + 40, cy + 10); g.lineTo(cx + 80, cy - 30); g.lineTo(cx + 80, cy + 50); g.closePath(); g.stroke(); g.fillRect(cx - 80, cy + 50, 160, 14); for (const x of [-80, 0, 80]) { g.beginPath(); g.arc(cx + x, cy + (x ? -38 : -68), 9, 0, TAU); g.fill(); } }
+    else if (id === 'estrelas') { const star = (x, y, r) => { g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); }; star(cx - 50, cy - 40, 34); star(cx + 30, cy + 10, 26); star(cx - 10, cy + 70, 18); star(cx + 70, cy - 70, 14); }
+    else if (id === 'terco') { for (let i = 0; i < 14; i++) { const a = Math.PI * 0.15 + i / 13 * Math.PI * 0.7; g.beginPath(); g.arc(cx + Math.cos(a) * 90, cy - 70 + Math.sin(a) * 120, 7, 0, TAU); g.fill(); } g.fillRect(cx - 5, cy + 50, 10, 70); g.fillRect(cx - 25, cy + 70, 50, 10); }
+    else if (id === 'nome') txt((name || 'AJBZ').slice(0, 10), Math.min(90, 520 / Math.max(3, (name || 'AJBZ').length)));
+    else if (id === 'fe') txt('Fé', 130);
+    else if (id === 'n157') txt('157', 120);
+    else if (id === 'familia') txt('Família', 74);
+    else if (id === 'carpa') { g.fillStyle = 'rgba(220,90,20,.85)'; g.beginPath(); g.ellipse(cx, cy, 80, 36, -0.3, 0, TAU); g.fill(); g.fillStyle = ink; g.beginPath(); g.moveTo(cx + 70, cy - 25); g.lineTo(cx + 120, cy - 60); g.lineTo(cx + 110, cy + 10); g.closePath(); g.fill(); g.beginPath(); g.arc(cx - 55, cy - 8, 6, 0, TAU); g.fill(); g.lineWidth = 4; for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(cx - 20 + i * 22, cy, 18, -1, 1); g.stroke(); } }
+    else if (id === 'leao') { g.beginPath(); for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a) * 95, cy + Math.sin(a) * 95); } g.lineWidth = 12; g.stroke(); g.fillStyle = 'rgba(200,150,60,.95)'; g.beginPath(); g.arc(cx, cy, 58, 0, TAU); g.fill(); g.fillStyle = ink; for (const x of [-20, 20]) { g.beginPath(); g.arc(cx + x, cy - 12, 7, 0, TAU); g.fill(); } g.beginPath(); g.moveTo(cx - 12, cy + 14); g.lineTo(cx + 12, cy + 14); g.lineTo(cx, cy + 26); g.closePath(); g.fill(); }
+    else if (id === 'asas') { for (const s of [-1, 1]) for (let k = 0; k < 5; k++) { g.beginPath(); g.ellipse(cx + s * (40 + k * 18), cy - 20 + k * 22, 70 - k * 8, 14, s * (0.5 + k * 0.12), 0, TAU); g.fill(); } }
+    if (wrap) { const im = g.getImageData(0, 0, w / 2, h); g.putImageData(im, w / 2, 0); }
+  });
+  t.encoding = THREE.sRGBEncoding; return (TAT_CACHE[key] = t);
+}
+function tatMat(id, name, wrap) { return new THREE.MeshStandardMaterial({ map: tatTex(id, name, wrap), transparent: true, depthWrite: false, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -2 }); }
+/* tamanho dos membros (metros) para a pele "por cima" da malha: homem e mulher */
+const LIMB = { m: { thigh: [0.095, 0.075], arm: [0.052, 0.045], fore: [0.043, 0.036], neck: [0.058, 0.055], calf: [0.052, 0.04] }, f: { thigh: [0.088, 0.066], arm: [0.045, 0.038], fore: [0.036, 0.03], neck: [0.05, 0.048], calf: [0.048, 0.036] } };
+const SHELL = { thigh: [0.0, 1.06], arm: [0.08, 0.75], fore: [0.22, 0.86], neck: [0.05, 0.95], calf: [0.15, 0.6] };
+function buildWearExtras(g, look) {
+  const u = g.userData; if (!u.R || !u.R.B) return; const B = u.R.B, k = u.k || 'm', Lm = Object.assign({}, LIMB[k] || LIMB.m), ML = (k === 'm' && MODELS && MODELS[k] && MODELS[k].limb) || {};
+  for (const [n, key] of [['fore', 'fore'], ['arm', 'arm'], ['neck', 'neck'], ['calf', 'calf'], ['thigh', 'thigh']]) if (ML[key]) Lm[n] = [ML[key] + 0.004, ML[key] * 0.92 + 0.004];
+  if (ML.wrist) Lm.wrist = ML.wrist + 0.004;
+  if (u.xg) for (const o of u.xg) if (o && o.parent) o.parent.remove(o); u.xg = [];
+  const add = o => { if (o) u.xg.push(o); return o; };
+  const bareM = k === 'm' && u.bareTop && bareUpper(u, g, look, add); if (bareM) { const D = LIMB.m; Lm.fore = [D.fore[0] + 0.004, D.fore[1] + 0.004]; Lm.arm = [D.arm[0] + 0.004, D.arm[1] + 0.004]; Lm.neck = [0.062, 0.06]; Lm.wrist = D.fore[1] * 0.9 + 0.006; }
+  // bermuda larga: cone folgado do quadril até passar o joelho
+  if (look.pants && look.pants.baggy) {
+    const it = look.pants, mat = new THREE.MeshStandardMaterial({ color: it.color, roughness: 0.85, side: THREE.DoubleSide, map: it.pat && it.pat !== 'plain' ? baggyTex(it) : null });
+    const TH = LIMB[k] && LIMB[k].thigh || [0.09, 0.07]; for (const s of ['Left', 'Right']) { add(boneShell(B[s + 'UpLeg'], B[s + 'Leg'], -0.04, 1.12, TH[0] * 1.12, TH[1] * 1.38, mat, true, 16)); }
+  }
+  // tatuagens (braço e perna sempre; ombro só sem manga; peito e costas só sem camisa)
+  const tats = look.tats || {}, bare = !!(look.shirt && look.shirt.nude), tank = bare || !!(look.shirt && look.shirt.tank), longLeg = look.pants && (look.pants.long || !look.pants.short && !look.pants.trunk);
+  const nm = look.tatName || 'AJBZ';
+  const shell = (spot, bone, child, part, side) => { const id = tats[spot]; if (!id) return; const [a, b] = SHELL[part], [r0, r1] = Lm[part]; const m = add(boneShell(bone, child, a, b, r0 * 1.04, r1 * 1.04, tatMat(id, nm, true), true, 18)); if (m && side) m.rotation.y = 0; };
+  shell('antebracoE', B.LeftForeArm, B.LeftHand, 'fore'); shell('antebracoD', B.RightForeArm, B.RightHand, 'fore');
+  if (tank) { shell('bracoE', B.LeftArm, B.LeftForeArm, 'arm'); shell('bracoD', B.RightArm, B.RightForeArm, 'arm'); }
+  shell('pescoco', B.Neck, B.Head, 'neck');
+  if (!longLeg) shell('perna', B.RightLeg, B.RightFoot, 'calf');
+  if (bare && (tats.peito || tats.costas) && B.Spine2) {
+    const fr = add(boneFrame(u, B.Spine2, g)), TS = MODELS.m && MODELS.m.torso, cf = bareM && TS ? TS.W * 0.95 * TS.D : ML.chestF != null ? ML.chestF : 0.12, cb = bareM && TS ? -TS.W * 0.95 * TS.D : ML.chestB != null ? ML.chestB : -0.11;
+    const patch = (id, z, ry, w) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w * 0.8), tatMat(id, nm, false)); m.position.set(0, k === 'f' ? -0.02 : 0.0, z); m.rotation.y = ry; fr.add(m); };
+    if (tats.peito) patch(tats.peito, cf + 0.008, 0, 0.2); if (tats.costas) patch(tats.costas, cb - 0.008, Math.PI, 0.26);
+  }
+  // relógio no pulso esquerdo
+  const w = look.wrist; if (w && w.wk && w.wk !== 'none' && B.LeftForeArm && B.LeftHand) {
+    const mat = new THREE.MeshStandardMaterial({ color: w.color, roughness: w.wk === 'sport' ? 0.7 : 0.2, metalness: w.wk === 'sport' ? 0.1 : 1, emissive: w.wk === 'ice' ? 0x223344 : 0 });
+    const wr = Lm.wrist || Lm.fore[1] * 1.12, band = add(boneShell(B.LeftForeArm, B.LeftHand, 0.84, 0.94, wr, wr, mat, false, 18));
+    if (band) { const ws = B.LeftForeArm.getWorldScale(new THREE.Vector3()).x || 1, face = new THREE.Mesh(CYL(0.019 / ws, 0.019 / ws, 0.008 / ws, 16), new THREE.MeshStandardMaterial({ color: w.wk === 'ice' ? 0xe8f6ff : 0x15161a, roughness: 0.2, metalness: 0.6, emissive: w.wk === 'ice' ? 0x88aacc : 0 })); face.rotation.z = Math.PI / 2; face.position.x = wr / ws; band.add(face); }
+  }
+  // brincos
+  const e = look.ear; if (e && e.ek && e.ek !== 'none' && B.Head) {
+    const fr = add(boneFrame(u, B.Head, g)), mat = new THREE.MeshStandardMaterial({ color: e.color, roughness: 0.15, metalness: e.ek === 'ice' ? 0.2 : 1, emissive: e.ek === 'ice' ? 0x5588aa : 0 });
+    const EO = k === 'f' ? [0.068, 0.035, 0.0] : [0.074, 0.03, -0.005];
+    for (const s of [1, -1]) { const m = e.ek === 'hoop' ? new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.0025, 6, 16), mat) : new THREE.Mesh(SPH(e.ek === 'ice' ? 0.006 : 0.005, 8, 6), mat); m.position.set(s * EO[0], EO[1], EO[2]); if (e.ek === 'hoop') { m.rotation.y = Math.PI / 2; m.position.y -= 0.012; } fr.add(m); }
+  }
+  // coldre com a arma na cintura (lado direito)
+  const h = look.hol; if (h && B.Hips) {
+    const fr = add(boneFrame(u, B.Hips, g)), dark = std(0x22252b, 0.5, 0.2), leather = std(0x3a2a1c, 0.8);
+    const H = new THREE.Group(); H.position.set(k === 'f' ? -0.19 : -0.215, k === 'f' ? -0.02 : -0.03, 0.01); fr.add(H);
+    if (h.startsWith('longa_')) { const c = h === 'longa_fuzil' ? 0x2e3328 : 0x3a2a1c; const b = new THREE.Mesh(boxGeo(0.05, 0.08, 0.62), std(c, 0.6)); b.position.set(-0.02, 0.2, -0.12); b.rotation.x = 1.0; H.add(b); const st = new THREE.Mesh(boxGeo(0.03, 0.42, 0.02), leather); st.position.set(-0.02, 0.3, -0.02); st.rotation.x = 0.4; H.add(st); }
+    else { const hol = new THREE.Mesh(boxGeo(0.045, 0.12, 0.05), leather); hol.position.y = -0.04; H.add(hol); const grip = new THREE.Mesh(boxGeo(0.035, 0.08, 0.035), h === 'taser' ? std(0xffcf3a, 0.5) : dark); grip.position.set(0, 0.05, -0.02); grip.rotation.x = 0.35; H.add(grip); if (h === 'revolver') { const cyl = new THREE.Mesh(CYL(0.026, 0.026, 0.045, 8), std(0x6d717a, 0.4, 0.6)); cyl.rotation.x = Math.PI / 2; cyl.position.set(0, 0.01, 0.0); H.add(cyl); } }
+  }
+}
+function baggyTex(it) {
+  const key = 'bg_' + it.pat + '_' + it.color; if (TAT_CACHE[key]) return TAT_CACHE[key];
+  const col = rgb(it.color), t = canvasTex(128, 128, (g, w, h) => { const d = g.createImageData(w, h); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = patColor(it.pat, x / w * 2, y / h * 2, col), i = (y * w + x) * 4; d.data[i] = c[0]; d.data[i + 1] = c[1]; d.data[i + 2] = c[2]; d.data[i + 3] = 255; } g.putImageData(d, 0, 0); });
+  t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return (TAT_CACHE[key] = t);
+}
+/* =========================================================
+   ESTÚDIO DE TATUAGEM: escolhe o desenho e o lugar, paga e o tatuador faz na hora
+   ========================================================= */
+const PANEL_TAT = function () {
+  const T = S.tats || {}, sel = city.tatSel || 'antebracoE';
+  let html = `<p class="muted">Escolha onde quer tatuar e o desenho. Paga e o tatuador faz na hora. Braço, pescoço e perna aparecem sempre; peito e costas aparecem quando você está <b>sem camisa</b>, e o ombro com regata ou sem camisa.</p>`;
+  html += `<div class="chips">${TAT_SPOTS.map(s => `<button class="chip${s.id === sel ? ' on' : ''}" data-act="tat-spot" data-id="${s.id}">${T[s.id] ? '✅ ' : ''}${esc(s.n)}</button>`).join('')}</div>`;
+  const cur = T[sel], sp = TAT_SPOTS.find(s => s.id === sel);
+  html += `<h3>${esc(sp.n)}${cur ? ' · agora: ' + esc(TATTOOS.find(t => t.id === cur).n) : ''}</h3><div class="grid-items">${TATTOOS.map(t => { const price = isAdm() ? 0 : t.c; return `<div class="item"><canvas class="swatch" width="64" height="64" data-tat="${t.id}"></canvas><b>${esc(t.n)}</b><small>$ ${fmt(price)}</small><button class="btn sm" data-act="tat-buy" data-id="${t.id}" ${cur === t.id || S.coins < price ? 'disabled' : ''}>${cur === t.id ? 'Feita' : 'Tatuar'}</button></div>`; }).join('')}</div>`;
+  if (cur) html += `<div class="row"><button class="btn ghost" data-act="tat-remove">🧽 Remover a tatuagem deste lugar ($ 300)</button></div>`;
+  if (!S.equip.shirt || !ITEM[S.equip.shirt].nude) html += `<div class="row"><button class="btn ghost" data-act="tat-shirtless">👕 Tirar a camisa para ver</button></div>`;
+  setTimeout(() => document.querySelectorAll('canvas[data-tat]').forEach(c => { const g = c.getContext('2d'); g.fillStyle = '#e6c3a0'; g.fillRect(0, 0, 64, 64); const tx = tatTex(c.dataset.tat, S.name, false); g.drawImage(tx.image, 0, 0, 64, 64); }), 0);
+  return { title: '🖋️ Estúdio de Tatuagem', html };
+};
+function tatBuy(id) {
+  const sel = city.tatSel || 'antebracoE', t = TATTOOS.find(x => x.id === id); if (!t) return; const price = isAdm() ? 0 : t.c;
+  if (S.coins < price) return toast('Grana insuficiente.', 'bad');
+  S.coins -= price; S.tats = S.tats || {}; S.tats[sel] = id; persist(); updateHUD(); closePanel();
+  const tat = city.tatNpc; P.v = 0;
+  toast('🖋️ O tatuador está fazendo a sua tatuagem… bzzzz', 'pink');
+  let n = 0; const buzz = setInterval(() => { tone('sawtooth', 120, 118, 0.18, 0.025); if (++n > 10) clearInterval(buzz); }, 200);
+  if (tat) bubble(tat, 'Fica parado aí que já tá saindo!', 3);
+  setTimeout(() => { applyLook(city.player, myLook()); netTrack && netTrack(); sfx('level'); toast(`✨ Tatuagem ${t.n} feita no ${TAT_SPOTS.find(s => s.id === sel).n.toLowerCase()}!`, 'good'); postFeed(`Fiz uma tatuagem: ${t.n}!`); if (tat) bubble(tat, 'Ficou top! Cuida bem dela.', 3); }, 2400);
+  if (!isAdm() && NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'taxa', payload: { amt: Math.round(price * 0.1), name: S.name, spot: 'Estúdio de Tatuagem' } });
+}
+/* =========================================================
+   INCÊNDIOS NA CIDADE: um prédio pega fogo, o caminhão dos bombeiros vem pelas ruas e eles apagam
+   (mesmo horário para todo mundo da cidade)
+   ========================================================= */
+const FIRE_EVERY = 6 * 60 * 1000, FIRE_DUR = 150;
+function fireSlot() { const n = Date.now(), s = Math.floor(n / FIRE_EVERY), r = mulberry32(s * 31 + cityId().length * 7); return { s, el: (n - s * FIRE_EVERY) / 1000, on: r() < 0.85, pick: r() }; }
+function fireTex() {
+  return city.fireT || (city.fireT = canvasTex(64, 128, (g, w, h) => { const gr = g.createLinearGradient(0, h, 0, 0); gr.addColorStop(0, 'rgba(255,240,120,1)'); gr.addColorStop(0.4, 'rgba(255,120,20,.9)'); gr.addColorStop(1, 'rgba(255,40,0,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(w / 2, 0); g.quadraticCurveTo(w, h * 0.6, w / 2, h); g.quadraticCurveTo(0, h * 0.6, w / 2, 0); g.fill(); }));
+}
+function startCityFire(sl) {
+  const L = city.blds.filter(b => b.h > 6 && Math.abs(b.x) < 100 && Math.abs(b.z) < 100); if (!L.length) return;
+  const b = L[Math.floor(sl.pick * L.length)], F = { s: sl.s, b, x: b.x, z: b.z, h: Math.min(b.h, 20), p: 0, fx: [], men: [], truck: null, path: null, u: 0, st: 'fogo', t: sl.el };
+  const T = fireTex();
+  const x0 = b.x0 != null ? b.x0 : b.x - 5, x1 = b.x1 != null ? b.x1 : b.x + 5, z0 = b.z0 != null ? b.z0 : b.z - 5, z1 = b.z1 != null ? b.z1 : b.z + 5;
+  for (let i = 0; i < 26; i++) { const sd = i % 4, u = rand(0.1, 0.9), y = i < 6 ? b.h + rand(0, 2) : rand(1.5, Math.min(b.h, 24)); const px = i < 6 ? lerp(x0, x1, rand(0.2, 0.8)) : sd === 0 ? x0 - 0.7 : sd === 1 ? x1 + 0.7 : lerp(x0, x1, u), pz = i < 6 ? lerp(z0, z1, rand(0.2, 0.8)) : sd === 2 ? z0 - 0.7 : sd === 3 ? z1 + 0.7 : lerp(z0, z1, u);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: T, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.position.set(px, y, pz); s.scale.set(3.5, 5.5, 1); s.userData.ph = rand(0, 6); city.scene.add(s); F.fx.push(s); }
+  F.h = b.h;
+  F.smoke = []; for (let i = 0; i < 10; i++) { const m = new THREE.Mesh(SPH(1.6, 8, 6), new THREE.MeshLambertMaterial({ color: 0x3a3a3a, transparent: true, opacity: 0.55, depthWrite: false })); m.position.set(b.x + rand(-3, 3), F.h + rand(0, 14), b.z + rand(-3, 3)); m.userData.ph = rand(0, 1); city.scene.add(m); F.smoke.push(m); }
+  F.light = new THREE.PointLight(0xff7a1a, 2.2, 36); F.light.position.set(b.x, 6, b.z); city.scene.add(F.light);
+  F.addr = nearestAddr(b.x, b.z);
+  const base = city.doors.find(d => d.kind === 'bombeiros') || { x: 0, z: 0 };
+  F.path = roadPath(base.x, base.z, F.addr[0], F.addr[1]); F.base = base;
+  city.fire = F;
+  if (Math.hypot(P.x - b.x, P.z - b.z) < 160 && !city.interior && !city.shopIn) { toast('🔥 Incêndio num prédio! Os bombeiros estão a caminho.', 'bad'); feed('🔥 Incêndio! Bombeiros a caminho (193)'); }
+}
+function endCityFire() {
+  const F = city.fire; if (!F) return;
+  for (const o of [...F.fx, ...F.smoke, F.light, F.truck, ...F.men.map(m => m.g), ...(F.drops || []).map(d => d.m)]) if (o && o.parent) o.parent.remove(o);
+  city.fire = null;
+}
+function pathAt(path, d) { let acc = 0; for (let i = 1; i < path.length; i++) { const a = path[i - 1], b = path[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (acc + L >= d) { const k = (d - acc) / Math.max(L, 1e-6); return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, Math.atan2(b[0] - a[0], b[1] - a[1]), false]; } acc += L; } const z = path[path.length - 1], y = path[path.length - 2] || z; return [z[0], z[1], Math.atan2(z[0] - y[0], z[1] - y[1]), true]; }
+function updateCityFire(dt, t) {
+  const sl = fireSlot(); let F = city.fire;
+  if (F && (F.s !== sl.s || sl.el > FIRE_DUR + 40)) { endCityFire(); F = null; }
+  if (!F && sl.on && sl.el < FIRE_DUR && city.blds && city.blds.length && !city.interior) startCityFire(sl), F = city.fire;
+  if (!F) return; F.t += dt;
+  const f = Math.max(0, 1 - F.p);
+  for (const s of F.fx) { s.visible = f > 0.02; s.material.opacity = f; s.scale.set(3.5 * (0.6 + 0.4 * Math.sin(t * 9 + s.userData.ph)) * (0.3 + f), 5.5 * (0.3 + f), 1); }
+  for (const m of F.smoke) { m.userData.ph = (m.userData.ph + dt * 0.12) % 1; const k = m.userData.ph; m.position.y = F.h + k * 22; m.scale.setScalar(0.6 + k * 2.2); m.material.opacity = 0.55 * (1 - k) * (0.25 + 0.75 * f); m.material.color.setHex(F.p > 0.6 ? 0xbfc3c8 : 0x3a3a3a); }
+  F.light.intensity = 2.2 * f + Math.sin(t * 20) * 0.3 * f;
+  // caminhão: sai do quartel 6 s depois do alarme e vem pelas ruas
+  if (!F.truck && F.t > 6 && F.path) { const V = VEH.j_abt || VEH.v_pickup; F.truck = makeVehicleMesh(V); city.scene.add(F.truck); F.d = 0; F.len = F.path.reduce((s, p, i) => i ? s + Math.hypot(p[0] - F.path[i - 1][0], p[1] - F.path[i - 1][1]) : 0, 0); }
+  if (F.truck) {
+    const u = F.truck.userData, on = Math.floor(t * 4) % 2; if (u.siren) { u.siren[0].visible = !!on; u.siren[1].visible = !on; }
+    if (F.st === 'fogo') {
+      F.d = Math.min(F.len, F.d + 12 * dt); const [x, z, h] = pathAt(F.path, F.d), end = F.d >= F.len - 0.05; F.truck.position.set(x, 0, z); F.truck.rotation.y = h;
+      if (u.wheels) { u.spin = (u.spin || 0) + 12 * dt / 0.35; for (const w of u.wheels) w.children[0].rotation.x = u.spin; }
+      if ((F.sirT = (F.sirT || 0) - dt) <= 0 && Math.hypot(P.x - x, P.z - z) < 70) { F.sirT = 1.2; tone('sine', 700, 1100, 0.55, 0.05); tone('sine', 1100, 700, 0.55, 0.05, 0.6); }
+      if (end) { F.st = 'apagando'; F.drops = []; for (let i = 0; i < 3; i++) { const g = makeSkater(roleLook('bombeiro', i), null); const a = h + Math.PI / 2 + (i - 1) * 0.5; g.position.set(x + Math.sin(a) * 2.5 + (i - 1) * 1.4, 0, z + Math.cos(a) * 2.5); city.scene.add(g); F.men.push({ g, x: g.position.x, z: g.position.z }); } }
+    } else if (F.st === 'apagando') {
+      F.p = Math.min(1, F.p + dt / (S.shift === 'bombeiro' ? 28 : 22));
+      for (const m of F.men) { const a = Math.atan2(F.x - m.x, F.z - m.z); m.g.rotation.y = a; animSkater(m.g, { walk: true, v: 0, fallT: 0, spray: true, wpProp: 'spray' }, t); if (Math.random() < dt * 14) { const s = new THREE.Mesh(SPH(0.14, 6, 4), new THREE.MeshBasicMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.8 })); s.position.set(m.x + Math.sin(a) * 0.6, 1.3, m.z + Math.cos(a) * 0.6); city.scene.add(s); city.fx.push({ m: s, vx: Math.sin(a) * 16 + rand(-1, 1), vy: rand(4, 7), vz: Math.cos(a) * 16 + rand(-1, 1), life: 0.9, max: 0.9 }); } }
+      if (F.p >= 1) { F.st = 'apagado'; F.offT = 14; for (const m of F.men) bubble(m.g, pick(['Fogo controlado!', 'Tá apagado, pessoal.', 'Ninguém se feriu, graças a Deus.']), 4); if (Math.hypot(P.x - F.x, P.z - F.z) < 80) toast('🚒 Os bombeiros apagaram o incêndio!', 'good'); }
+    } else if ((F.offT -= dt) <= 0) endCityFire();
+    for (const m of F.men) tickBubble(m.g, dt);
+  }
+  // perto do fogo esquenta
+  if (f > 0.2 && !P.drive && Math.hypot(P.x - F.x, P.z - F.z) < 5 && (F.hurtT = (F.hurtT || 0) - dt) <= 0) { F.hurtT = 1; hurt(3, 'fogo'); }
+}
+function fireHelpSpot() {
+  const F = city.fire; if (!F || F.p >= 1 || S.shift !== 'bombeiro') return null;
+  return { x: F.addr[0], z: F.addr[1], r: 14, label: () => `💦 Toque para jogar água no incêndio (${Math.round(F.p * 100)}%)`, fn: () => { F.p = Math.min(1, F.p + 0.06); P.v = 0; P.h = Math.atan2(F.x - P.x, F.z - P.z); P.spray = true; setTimeout(() => P.spray = false, 400); sfx('spray'); if (F.p >= 1) { const g = earn(jobPay('bombeiro', 120)); toast(`🚒 Você ajudou a apagar o fogo! +$ ${g}`, 'good'); addXP(20); } } };
+}
+/* =========================================================
+   OPERAÇÃO POLICIAL NO MORRO: a PM chega de viatura, sobe o morro e os traficantes trocam tiro
+   ========================================================= */
+const RAID_EVERY = 9 * 60 * 1000, RAID_DUR = 130;
+function raidSlot() { const n = Date.now(), s = Math.floor(n / RAID_EVERY), r = mulberry32(s * 53 + cityId().length * 11); return { s, el: (n - s * RAID_EVERY) / 1000 - 30, on: r() < 0.8 }; }
+function startRaid(sl) {
+  const R = { s: sl.s, cops: [], cars: [], t: Math.max(0, sl.el) }, sc = city.scene, V = VEH.j_viatura || VEH.v_sedan;
+  for (const [d, tt] of [[-14, -6], [-14, 6], [-20, 0]]) { const m = makeVehicleMesh(V), [x, z] = morroWorld(d, tt); m.position.set(x, 0, z); m.rotation.y = Math.atan2(...(() => { const [ax, az] = morroWorld(0, tt); return [ax - x, az - z]; })()); sc.add(m); R.cars.push(m); }
+  for (let i = 0; i < 7; i++) { const g = makeSkater(roleLook('policial', i), null); const tt = (i - 3) * 2.2, [x, z] = morroWorld(-10 - (i % 2) * 2, tt); g.position.set(x, groundH(x, z), z); sc.add(g); R.cops.push({ g, d: -10 - (i % 2) * 2, tt, hp: 3, shotT: rand(1, 3), fallT: 0, stop: rand(14, 34) }); }
+  city.raid = R;
+  if (Math.hypot(...(() => { const [x, z] = morroWorld(10, 0); return [P.x - x, P.z - z]; })()) < 170) { toast('🚨 Operação policial no morro! A PM está subindo e o tiroteio começou.', 'bad'); feed('🚨 Operação da PM no morro'); }
+}
+function endRaid() { const R = city.raid; if (!R) return; for (const o of [...R.cops.map(c => c.g), ...R.cars]) if (o.parent) o.parent.remove(o); for (const o of city.thugs || []) { o.raidA = null; if (o.raidDown) { o.fallT = 0; o.raidDown = false; } } city.raid = null; }
+function updateRaid(dt, t) {
+  if (!city.morro) return; const sl = raidSlot(); let R = city.raid;
+  if (R && (R.s !== sl.s || sl.el > RAID_DUR + 20)) { endRaid(); R = null; }
+  if (!R && sl.on && sl.el > 0 && sl.el < RAID_DUR && !city.interior) startRaid(sl), R = city.raid;
+  if (!R) return; R.t += dt; const back = R.t > RAID_DUR - 25, on = Math.floor(t * 4) % 2;
+  for (const m of R.cars) { const u = m.userData; if (u.siren) { u.siren[0].visible = !!on; u.siren[1].visible = !on; } }
+  const thugs = (city.thugs || []).filter(o => !o.off && o.g && o.g.visible && inMorro(o.x, o.z, -4));
+  const near = Math.hypot(...(() => { const [x, z] = morroWorld(20, 0); return [P.x - x, P.z - z]; })()) < 120;
+  for (const c of R.cops) {
+    const g = c.g; if (c.fallT > 0) { c.fallT -= dt; animSkater(g, { walk: true, v: 0, fallT: 1 }, t); continue; }
+    let tgt = null, bd = 60; for (const o of thugs) { if (o.fallT > 0) continue; const [x, z] = morroWorld(c.d, c.tt), k = Math.hypot(o.x - x, o.z - z); if (k < bd) { bd = k; tgt = o; } }
+    const want = back ? -16 : c.stop, mv = (want - c.d), sp = back ? 3.4 : (tgt && bd < 30 ? 0.8 : 2.2);
+    if (Math.abs(mv) > 0.2) c.d += Math.sign(mv) * Math.min(Math.abs(mv), sp * dt);
+    const [x, z] = morroWorld(c.d, c.tt); g.position.set(x, groundH(x, z), z);
+    const a = tgt && !back ? Math.atan2(tgt.x - x, tgt.z - z) : Math.atan2(...(() => { const [fx, fz] = morroWorld(c.d + (back ? -1 : 1), c.tt); return [fx - x, fz - z]; })());
+    g.rotation.y = a;
+    animSkater(g, { walk: true, v: Math.abs(mv) > 0.2 ? sp : 0, fallT: 0, wpHold: 'fuzil', wpProp: tgt && !back ? 'fuzil' : null }, t + c.tt);
+    if (tgt && !back && bd < 45 && (c.shotT -= dt) <= 0) { c.shotT = rand(0.9, 2.2); const y0 = groundH(x, z) + 1.4; gunFx(x + Math.sin(a) * 0.6, y0, z + Math.cos(a) * 0.6, tgt.x + rand(-0.6, 0.6), groundH(tgt.x, tgt.z) + rand(0.6, 1.6), tgt.z + rand(-0.6, 0.6), 'fuzil'); if (near) sfx('tiro'); if (Math.random() < 0.12) { tgt.fallT = 30; tgt.raidDown = true; bubble(tgt.g, 'Fui atingido!', 2); } }
+    // traficante (jogador) no morro durante a operação: a PM atira nele também
+    if (!back && !isAdm() && (S.shift === 'traficante' || S.gang) && !P.drive && Math.hypot(P.x - x, P.z - z) < 26 && P.fallT <= 0 && (c.pShot = (c.pShot || rand(2, 4)) - dt) <= 0) { c.pShot = rand(2.5, 5); gunFx(x, groundH(x, z) + 1.4, z, P.x, P.y + 1.2, P.z, 'fuzil'); sfx('tiro'); if (Math.random() < 0.4) hurt(6, 'tiro da polícia'); }
+  }
+  for (const o of thugs) {
+    if (o.fallT > 0) continue; let tgt = null, bd = 50; for (const c of R.cops) { if (c.fallT > 0) continue; const k = Math.hypot(c.g.position.x - o.x, c.g.position.z - o.z); if (k < bd) { bd = k; tgt = c; } }
+    if (!tgt || back) { o.raidA = null; continue; }
+    o.raidA = Math.atan2(tgt.g.position.x - o.x, tgt.g.position.z - o.z);
+    if ((o.raidShot = (o.raidShot ?? rand(0.5, 2)) - dt) <= 0) { o.raidShot = rand(0.8, 2); const y0 = groundH(o.x, o.z) + 1.4; gunFx(o.x + Math.sin(o.raidA) * 0.6, y0, o.z + Math.cos(o.raidA) * 0.6, tgt.g.position.x + rand(-0.6, 0.6), tgt.g.position.y + rand(0.6, 1.6), tgt.g.position.z + rand(-0.6, 0.6), o.gun || 'pistola'); if (near) sfx('tiro'); if ((o.shoutT = (o.shoutT || 0) - dt * 8) <= 0) { o.shoutT = 12; bubble(o.g, pick(['Sujou! É a polícia!', 'Segura eles!', 'Aqui não, polícia!', 'Recua, recua!']), 2); } if (Math.random() < 0.06) { tgt.fallT = 18; } }
+  }
+}
+/* =========================================================
+   CIDADE GRANDE: a cidade continua para fora do centro (bairros, avenidas e prédios),
+   com os pontos turísticos no lugar deles, cercados e com seguranças na entrada (só passa quem paga a taxa)
+   ========================================================= */
+const OUT_N = 360;
+const OUT_LINES = (() => { const a = [...ROADS]; for (let r = 147; r <= 357; r += 42) a.push(r, -r); return a.sort((p, q) => p - q); })();
+const OUT_CELLS = (() => { const a = [...BLOCKS]; for (let c = 126; c <= 336; c += 42) a.push(c, -c); return a.sort((p, q) => p - q); })();
+const outZMax = () => CITY().beach ? 146 : OUT_N;
+const OUT_HILLS = { rj: [[-40, -330, 124, 124], [-335, 0, 102, 150]], ssa: [[335, 0, 96, 132]], sp: [] };
+const SPOT_BASE = { estaiada: [174, 70], cristo: [-40, -198], pao: [190, 136], lacerda: [70, 136], farol: [-150, 136] };
+const BAIRROS = {
+  sp: [['Av. Paulista', 0, -128], ['Ibirapuera', -190, -112], ['Centro (Sé)', 150, -128], ['Pinheiros', 228, 30], ['Zona Leste', 270, -70], ['Zona Oeste', -260, 70], ['Zona Sul', -150, 210], ['Brooklin', 170, 210], ['Liberdade', 60, -260], ['Mooca', 270, -250]],
+  rj: [['Centro', 110, -132], ['Lapa', -190, -112], ['Tijuca / Maracanã', 160, -240], ['Santa Teresa', 30, -160], ['Copacabana', 170, 100], ['Botafogo', 250, 30], ['Leblon', -200, 110], ['Gávea', -250, -60], ['São Cristóvão', 260, -150]],
+  ssa: [['Pelourinho', 0, -128], ['Comércio', 150, 96], ['Barra', -150, 104], ['Bonfim', -200, -112], ['Tororó', 100, -150], ['Rio Vermelho', -260, 60], ['Liberdade', -230, -230], ['Itapuã', 250, 100], ['Brotas', 230, -130]],
+};
+const inInner = (x, z, m = 0) => Math.abs(x) <= 116 + m && z >= -116 - m && z <= cityBoundZ() + m;
+function morroBand(x, z) { if (!city.morro) return false; const [d, t] = morroLocal(x, z); return d > -4 && Math.abs(t) < MORRO_W + 25; }
+function inHill(x, z, m = 0) { for (const [hx, hz, rx, rz] of OUT_HILLS[cityId()] || []) { const a = (x - hx) / (rx + m), b = (z - hz) / (rz + m); if (a * a + b * b < 1) return true; } return false; }
+function spotZones() {
+  const out = [];
+  for (const T of tourList()) {
+    if (T.rect) out.push({ x0: T.rect[0] - 14, x1: T.rect[1] + 14, z0: T.rect[2] - 14, z1: T.rect[3] + 14 }); else out.push({ c: [T.x, T.z], r: T.r + 12 });
+    out.push({ c: T.lk, r: T.id === 'ibira' ? 46 : 30 });
+    const b = SPOT_BASE[T.id]; if (b) out.push({ c: b, r: 15 });
+  }
+  return out;
+}
+function buildFree(x, z, zones) {
+  if (Math.abs(x) > OUT_N - 10 || z < -OUT_N + 10 || z > (CITY().beach ? 104 : OUT_N - 10)) return false;
+  if (inInner(x, z, 4) || morroBand(x, z) || (city.park && inPark(x, z, -10)) || inHill(x, z, 10)) return false;
+  for (const F of regFav()) if (Math.hypot(x - F.x, z - F.z) < 48) return false;
+  const A = AIRPORT[cityId()]; if (A && Math.abs(x - A.x) < 84 && Math.abs(z) < 150) return false;
+  for (const q of zones) { if (q.c ? Math.hypot(x - q.c[0], z - q.c[1]) < q.r : (x > q.x0 && x < q.x1 && z > q.z0 && z < q.z1)) return false; }
+  return true;
+}
+function roadFree(x, z, zones) {
+  if (inInner(x, z, -6) || Math.abs(x) > OUT_N || z < -OUT_N || z > (CITY().beach ? 112 : OUT_N)) return false;
+  if (morroBand(x, z) || (city.park && inPark(x, z, -2)) || inHill(x, z, 2)) return false;
+  for (const F of regFav()) if (Math.hypot(x - F.x, z - F.z) < 37) return false;
+  const A = AIRPORT[cityId()]; if (A && Math.abs(x - A.x) < 20 && Math.abs(z) < 140) return false;
+  for (const T of tourList()) { if (!T.rect && Math.hypot(x - T.x, z - T.z) < T.r + 3) return false; if (T.rect && x > T.rect[0] - 4 && x < T.rect[1] + 4 && z > T.rect[2] - 4 && z < T.rect[3] + 4) return false; }
+  return true;
+}
+/* colisão rápida dos prédios de fora (grade de 24 m) */
+function oColAdd(x0, x1, z0, z1) { const G = city.ocol; for (let i = Math.floor(x0 / 24); i <= Math.floor(x1 / 24); i++) for (let j = Math.floor(z0 / 24); j <= Math.floor(z1 / 24); j++) { const k = i + ',' + j; (G[k] = G[k] || []).push({ x0, x1, z0, z1 }); } }
+function oColHit(x, z, r) { const L = city.ocol && city.ocol[Math.floor(x / 24) + ',' + Math.floor(z / 24)]; if (!L) return false; for (const c of L) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; return false; }
+function outerBlocked(x, z, r) {
+  if (inInner(x, z)) return false;
+  if (!city.outer) return true;
+  if (Math.abs(x) > OUT_N - r || z < -OUT_N + r || z > outZMax() - r) return true;
+  if (morroBand(x, z) || inHill(x, z)) return true;
+  if (oColHit(x, z, r)) return true;
+  return spotBlocked(x, z, r);
+}
+const angDiff = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+const tourPass = id => isAdm() || (S.tourPass && S.tourPass[id] === gameDay());
+function spotBlocked(x, z, r) {
+  for (const G of (city.outer && city.outer.gates) || []) {
+    if (G.hi) continue; const d = Math.hypot(x - G.cx, z - G.cz); if (d > G.R + 1 + r) continue;
+    const gate = angDiff(Math.atan2(x - G.cx, z - G.cz), G.a) < G.ga;
+    if (!gate && Math.abs(d - G.R) < 0.45 + r) return true;
+    if (gate && !tourPass(G.T.id) && d < G.R + 0.4 + r && d > G.R - 0.4 - r) return true;
+  }
+  return false;
+}
+function guardLook(i) { return lookOf({ shirt: 'shirt_black', pants: 'pants_black', cap: 'cap_none', shoes: 'shoes_black', glasses: 'gl_dark', acc: 'ac_none' }, SKINS[(i * 3 + 2) % SKINS.length], HAIRS[0], 'm'); }
+function buildOuterCity(sc) {
+  const id = cityId(), C = CITY(), zones = spotZones(), rng = mulberry32(id.length * 101 + 7);
+  city.outer = { blds: [], roads: [], gates: [], parks: [], guards: [] }; city.ocol = {};
+  // prédios de fundo que já existiam viram sólidos (e somem os que caíram em cima das avenidas novas)
+  sc.updateMatrixWorld(true);
+  const M4 = new THREE.Matrix4(), v = new THREE.Vector3(), q = new THREE.Quaternion(), s3 = new THREE.Vector3();
+  sc.traverse(o => {
+    if (!o.isInstancedMesh || o.userData.outer) return; const p = o.geometry.parameters; if (!p || p.width !== 1 || p.height !== 1 || p.depth !== 1) return;
+    let dirty = false;
+    for (let i = 0; i < o.count; i++) {
+      o.getMatrixAt(i, M4); M4.premultiply(o.matrixWorld); M4.decompose(v, q, s3); if (s3.x < 2.5 || s3.y < 2.5) continue; if (inInner(v.x, v.z, 2)) continue;
+      const x0 = v.x - s3.x / 2, x1 = v.x + s3.x / 2, z0 = v.z - s3.z / 2, z1 = v.z + s3.z / 2;
+      const onRoad = OUT_LINES.some(L => (Math.abs(L - v.x) < s3.x / 2 + 5 && roadFree(L, v.z, zones)) || (Math.abs(L - v.z) < s3.z / 2 + 5 && roadFree(v.x, L, zones)));
+      const onSpot = zones.some(q2 => q2.c ? Math.hypot(v.x - q2.c[0], v.z - q2.c[1]) < q2.r - 6 : false);
+      if ((onRoad || onSpot) && !o.userData.regfav) { o.getMatrixAt(i, M4); M4.decompose(v, q, s3); s3.set(0.001, 0.001, 0.001); M4.compose(v, q, s3); o.setMatrixAt(i, M4); dirty = true; continue; }
+      oColAdd(x0 - 0.2, x1 + 0.2, z0 - 0.2, z1 + 0.2);
+    }
+    if (dirty) o.instanceMatrix.needsUpdate = true;
+  });
+  // avenidas
+  const quads = [], dash = [], W = 9;
+  const strip = (x0, z0, x1, z1) => { const vert = x0 === x1; if (vert) { quads.push([x0 - W / 2, z0, x0 + W / 2, z1]); for (let z = z0; z < z1 - 3; z += 8) dash.push([x0 - 0.12, z, x0 + 0.12, z + 4]); } else { quads.push([x0, z0 - W / 2, x1, z0 + W / 2]); for (let x = x0; x < x1 - 3; x += 8) dash.push([x, z0 - 0.12, x + 4, z0 + 0.12]); } city.outer.roads.push([x0, z0, x1, z1]); };
+  const zEnd = CITY().beach ? 112 : OUT_N;
+  for (const L of OUT_LINES) {
+    for (const vert of [true, false]) {
+      let a = null; const end = vert ? zEnd : OUT_N;
+      for (let k = -OUT_N; k <= end; k += 3) { const x = vert ? L : k, z = vert ? k : L, ok = k < end && roadFree(x, z, zones) && !(vert ? false : z > zEnd); if (ok && a == null) a = k; if ((!ok || k >= end) && a != null) { if (k - a > 8) strip(vert ? L : a, vert ? a : L, vert ? L : k, vert ? k : L); a = null; } }
+    }
+  }
+  const rect = (L, y, mat) => { const pos = [], idx = []; L.forEach(([x0, z0, x1, z1], i) => { pos.push(x0, y, z0, x1, y, z0, x1, y, z1, x0, y, z1); const b = i * 4; idx.push(b, b + 2, b + 1, b, b + 3, b + 2); }); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); const m = new THREE.Mesh(g, mat); m.receiveShadow = true; sc.add(m); return m; };
+  rect(quads, 0.02, new THREE.MeshLambertMaterial({ color: id === 'ssa' ? 0x55524c : 0x3a3d44 })); rect(dash, 0.035, new THREE.MeshBasicMaterial({ color: 0xf2c230 }));
+  // calçadas em volta dos quarteirões e prédios
+  const B = [], walks = [], pal = C.pal, [h0, h1] = C.h;
+  for (const cx of OUT_CELLS) for (const cz of OUT_CELLS) {
+    if (Math.abs(cx) <= 84 && Math.abs(cz) <= 84) continue;
+    const pts = [[cx, cz], [cx - 13, cz - 13], [cx + 13, cz - 13], [cx - 13, cz + 13], [cx + 13, cz + 13]];
+    if (!pts.every(([x, z]) => buildFree(x, z, zones))) continue;
+    walks.push([cx - 16, cz - 16, cx + 16, cz + 16]);
+    const r = rng();
+    if (r < 0.14) { city.outer.parks.push([cx, cz]); continue; }
+    const tall = () => { const t = rng() < C.tall ? h1 * (1 + rng() * 0.5) : h0 + rng() * (h1 - h0) * 0.7; return Math.max(5, t); };
+    const lots = r < 0.45 ? [[0, 0, 26, 26]] : r < 0.75 ? [[-6.5, 0, 12, 26], [6.5, 0, 12, 26]] : [[-6.5, -6.5, 12, 12], [6.5, -6.5, 12, 12], [-6.5, 6.5, 12, 12], [6.5, 6.5, 12, 12]];
+    for (const [ox, oz, w, d] of lots) { const ww = w - rng() * 2, dd = d - rng() * 2, h = tall(); B.push([cx + ox, cz + oz, ww, dd, h, pick(pal)]); }
+  }
+  rect(walks, 0.012, new THREE.MeshLambertMaterial({ color: id === 'ssa' ? 0x9c9488 : 0x8f8b84 }));
+  const winT = canvasTex(64, 128, (g, w, h) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(30,40,60,.55)'; for (let y = 6; y < h - 4; y += 12) for (let x = 5; x < w - 4; x += 14) g.fillRect(x, y, 8, 7); g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, h - 10, w, 10); });
+  winT.wrapS = winT.wrapT = THREE.RepeatWrapping;
+  if (B.length) {
+    const im = new THREE.InstancedMesh(boxGeo(1, 1, 1), new THREE.MeshLambertMaterial({ map: winT }), B.length), col = new THREE.Color(); im.userData.outer = true;
+    B.forEach(([x, z, w, d, h, c], i) => { im.setMatrixAt(i, M4.compose(new THREE.Vector3(x, h / 2, z), new THREE.Quaternion(), new THREE.Vector3(w, h, d))); im.setColorAt(i, col.setHex(c)); oColAdd(x - w / 2 - 0.15, x + w / 2 + 0.15, z - d / 2 - 0.15, z + d / 2 + 0.15); city.outer.blds.push([x, z, w, d]); });
+    im.castShadow = true; im.receiveShadow = true; sc.add(im);
+  }
+  // pracinhas
+  for (const [cx, cz] of city.outer.parks) {
+    const gr = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), lam(0x4f8a3a)); gr.rotation.x = -Math.PI / 2; gr.position.set(cx, 0.03, cz); sc.add(gr);
+    for (let k = 0; k < 5; k++) { const x = cx + rand(-11, 11), z = cz + rand(-11, 11), t = new THREE.Mesh(CYL(0.25, 0.35, 3, 6), lam(0x6b4a2f)); t.position.set(x, 1.5, z); sc.add(t); const cr = new THREE.Mesh(new THREE.IcosahedronGeometry(2.2, 0), new THREE.MeshLambertMaterial({ color: pick([0x2e7a35, 0x3f8a3a, 0x4f9a45]), flatShading: true })); cr.position.set(x, 4.2, z); sc.add(cr); oColAdd(x - 0.35, x + 0.35, z - 0.35, z + 0.35); }
+  }
+  // placas dos bairros
+  for (const [n, x, z] of BAIRROS[id] || []) { const s = textSprite(n.toUpperCase(), { bg: '#1e5b3a', fg: '#ffffff', size: 40, scale: [Math.min(12, n.length * 0.5 + 2.5), 1.1, 1] }); s.position.set(x, 6.5, z); sc.add(s); }
+  // pontos turísticos: cerca, bilheteria e seguranças na entrada
+  const postM = std(0x2a2d34, 0.5, 0.4), postG = boxGeo(0.12, 1.5, 0.12), railG = boxGeo(1, 0.08, 0.06), posts = [], rails = [];
+  for (const T of tourList()) {
+    const hi = !!(T.rect || T.hi || T.y >= 1), base = SPOT_BASE[T.id];
+    let G;
+    if (!hi) {
+      const R = T.r + 1, a = Math.atan2(-T.x, -T.z), ga = 2.4 / R;
+      G = { T, hi: false, cx: T.x, cz: T.z, R, a, ga, gx: T.x + Math.sin(a) * (R + 1.2), gz: T.z + Math.cos(a) * (R + 1.2) };
+      const n = Math.max(16, Math.round(TAU * R / 2.4));
+      for (let i = 0; i < n; i++) { const t = i / n * TAU, t2 = (i + 1) / n * TAU; if (angDiff(t, a) < ga || angDiff(t2, a) < ga) continue; const x = T.x + Math.sin(t) * R, z = T.z + Math.cos(t) * R, x2 = T.x + Math.sin(t2) * R, z2 = T.z + Math.cos(t2) * R; posts.push([x, z]); rails.push([(x + x2) / 2, (z + z2) / 2, Math.hypot(x2 - x, z2 - z), Math.atan2(x2 - x, z2 - z)]); }
+    } else if (base) G = { T, hi: true, gx: base[0], gz: base[1], a: Math.atan2(-base[0], -base[1]) };
+    else continue;
+    city.outer.gates.push(G);
+    // bilheteria
+    const bx = G.gx + Math.cos(G.a) * 3.2, bz = G.gz - Math.sin(G.a) * 3.2, booth = new THREE.Group(); booth.position.set(bx, 0, bz); booth.rotation.y = G.a; sc.add(booth);
+    const bb = new THREE.Mesh(boxGeo(1.8, 2.4, 1.6), std(0xf2efe6, 0.7)); bb.position.y = 1.2; booth.add(bb); const roof = new THREE.Mesh(boxGeo(2.2, 0.2, 2), std(0xd8312f, 0.6)); roof.position.y = 2.5; booth.add(roof);
+    oColAdd(bx - 1, bx + 1, bz - 1, bz + 1);
+    const sg = textSprite(`🎟️ ${T.n.split(' (')[0].split(' · ')[0].toUpperCase()} · $ ${T.fee}`, { bg: '#15161a', fg: '#ffcf3a', size: 38, scale: [Math.min(11, T.n.length * 0.3 + 4), 0.9, 1] }); sg.position.set(G.gx, 4.4, G.gz); sc.add(sg);
+    if (hi) { const lb = textSprite(T.id === 'cristo' ? '🚞 TREM DO CORCOVADO' : T.id === 'pao' ? '🚡 BONDINHO' : T.id === 'lacerda' ? '🛗 ELEVADOR' : T.id === 'farol' ? '🪨 SUBIDA DO FAROL' : '🌉 ACESSO À PONTE', { bg: '#2f6db5', fg: '#fff', size: 36, scale: [6, 0.9, 1] }); lb.position.set(G.gx, 5.6, G.gz); sc.add(lb); }
+    // seguranças
+    for (const sd of [-1, 1]) { const gx = G.gx + Math.cos(G.a) * sd * 1.6, gz = G.gz - Math.sin(G.a) * sd * 1.6, g = makeSkater(guardLook(sd + 2), 'Segurança', '#ffcf3a'); g.position.set(gx, 0, gz); g.rotation.y = G.a; sc.add(g); city.outer.guards.push({ g, x: gx, z: gz, h: G.a, G, ph: rand(0, 9) }); }
+  }
+  if (posts.length) { const im = new THREE.InstancedMesh(postG, postM, posts.length); im.userData.outer = true; posts.forEach(([x, z], i) => im.setMatrixAt(i, M4.makeTranslation(x, 0.75, z))); sc.add(im); }
+  if (rails.length) { const im = new THREE.InstancedMesh(railG, postM, rails.length * 2); im.userData.outer = true; rails.forEach(([x, z, L, a], i) => { for (const k of [0, 1]) im.setMatrixAt(i * 2 + k, M4.compose(new THREE.Vector3(x, 0.55 + k * 0.75, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), a + Math.PI / 2), new THREE.Vector3(L, 1, 1))); }); sc.add(im); }
+  // pontos de interação
+  city.xspots = (city.xspots || []).filter(x => !x.outer);
+  for (const G of city.outer.gates) {
+    const T = G.T;
+    city.xspots.push({ outer: true, x: G.gx, z: G.gz, r: 2.6, ok: () => !(G.hi ? false : tourPass(T.id)) || G.hi, label: () => G.hi ? `🎟️ ${isAdm() ? 'Subir (o chefe não paga)' : `Pagar $ ${T.fee} e subir`}: ${T.n}` : `🎟️ Pagar $ ${T.fee} ao segurança e entrar: ${T.n}`, fn: () => tourPay(G) });
+    if (!G.hi) city.xspots.push({ outer: true, x: T.x, z: T.z, r: 3, ok: () => tourPass(T.id), label: '📸 Tirar foto do cartão-postal', fn: () => tourPhoto(T) });
+  }
+}
+function tourPay(G) {
+  const T = G.T, fee = isAdm() ? 0 : T.fee, paid = tourPass(T.id);
+  if (!paid) {
+    if (S.coins < fee) return toast(`A entrada custa $ ${fee}. Grana insuficiente.`, 'bad');
+    if (fee) { S.coins -= fee; updateHUD(); sfx('coin'); if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'taxa', payload: { amt: fee, name: S.name, spot: T.n } }); }
+    S.tourPass = S.tourPass || {}; S.tourPass[T.id] = gameDay(); persist();
+  }
+  const gd = city.outer.guards.find(o => o.G === G); if (gd) bubble(gd.g, isAdm() ? 'Pode passar, chefe!' : pick(['Pode entrar, boa visita!', 'Liberado! Aproveita.', 'Entrada paga, pode passar.']), 3);
+  if (!paid && fee) toast(`💰 Entrada paga: $ ${fee} para o Bonde do AJBZ. Pode entrar!`, 'pink');
+  if (G.hi) { city.tourFree = true; tourGo(T.id); }
+}
+function tourStampHere(T) {
+  S.stamps = S.stamps || {}; const first = !S.stamps[T.id]; S.stamps[T.id] = Date.now(); persist();
+  toast(`📍 ${T.n}${first ? ' · carimbo novo no passaporte!' : ''}`, 'good'); if (first) { addXP(25); sfx('level'); }
+  const all = tourList().every(t => S.stamps[t.id]); if (first && all) { earn(800); toast(`🏆 Você visitou todos os pontos turísticos de ${CITY().name}! +$ 800`, 'good'); }
+}
+function updateOuter(dt, t) {
+  const O = city.outer; if (!O) return;
+  for (const o of O.guards) { const d = Math.hypot(P.x - o.x, P.z - o.z); o.g.userData.lod = Math.hypot(o.x - camera.position.x, o.z - camera.position.z) > 40; if (o.g.userData.lod && d > 40) continue; const want = d < 8 ? Math.atan2(P.x - o.x, P.z - o.z) : o.h; o.g.rotation.y += Math.atan2(Math.sin(want - o.g.rotation.y), Math.cos(want - o.g.rotation.y)) * Math.min(1, dt * 4); animSkater(o.g, { walk: true, v: 0, fallT: 0 }, t + o.ph); tickBubble(o.g, dt); if (d < 4.5 && (o.sayT = (o.sayT || 0) - dt) <= 0) { o.sayT = 9; bubble(o.g, isAdm() ? 'Bem-vindo, chefe!' : tourPass(o.G.T.id) ? 'Boa visita!' : `Entrada $ ${o.G.T.fee}. Só passa pagando.`, 3); } }
+  // carimbo quando entra no ponto turístico
+  for (const G of O.gates) { if (G.hi) continue; const inside = Math.hypot(P.x - G.cx, P.z - G.cz) < G.R - 1.2; if (inside && !G.inside) { if (!tourPass(G.T.id)) { S.tourPass = S.tourPass || {}; S.tourPass[G.T.id] = gameDay(); } tourStampHere(G.T); } G.inside = inside; }
+}
+/* mapa: bairros, avenidas, prédios, morros de fora, aeroporto e pontos turísticos */
+function drawOuterMap(g, X, Z, s, mini) {
+  const id = cityId(), O = city.outer;
+  for (const [hx, hz, rx, rz] of OUT_HILLS[id] || []) { g.fillStyle = '#3f6a35'; g.beginPath(); g.ellipse(X(hx), Z(hz), rx * s, rz * s, 0, 0, TAU); g.fill(); }
+  const A = AIRPORT[id]; if (A) { g.fillStyle = '#8d9097'; g.fillRect(X(A.x - 15), Z(-135), 30 * s, 270 * s); g.fillStyle = '#3a3d44'; g.fillRect(X(A.x - 6), Z(-130), 12 * s, 260 * s); }
+  if (!O) return;
+  g.fillStyle = id === 'ssa' ? '#6f6658' : '#34363c'; for (const [x0, z0, x1, z1] of O.roads) { if (x0 === x1) g.fillRect(X(x0 - 4.5), Z(z0), 9 * s, (z1 - z0) * s); else g.fillRect(X(x0), Z(z0 - 4.5), (x1 - x0) * s, 9 * s); }
+  g.fillStyle = '#7c776d'; for (const [x, z, w, d] of O.blds) g.fillRect(X(x - w / 2), Z(z - d / 2), Math.max(1, w * s), Math.max(1, d * s));
+  g.fillStyle = '#4f8a3a'; for (const [x, z] of O.parks) g.fillRect(X(x - 14), Z(z - 14), 28 * s, 28 * s);
+  for (const F of regFav()) { g.fillStyle = '#7a6250'; g.fillRect(X(F.x - 35), Z(F.z - 35), 70 * s, 70 * s); }
+  for (const G of O.gates) { const T = G.T; if (!G.hi) { g.fillStyle = '#cfc6b4'; g.beginPath(); g.arc(X(T.x), Z(T.z), Math.max(3, G.R * s), 0, TAU); g.fill(); g.strokeStyle = '#15161a'; g.lineWidth = 1.5; g.stroke(); } g.fillStyle = '#ffcf3a'; g.beginPath(); g.arc(X(G.gx), Z(G.gz), Math.max(2.5, 3 * s), 0, TAU); g.fill(); }
+  if (!mini) {
+    g.font = `700 ${Math.max(11, Math.round(g.canvas.width * 0.024))}px "Barlow Condensed", sans-serif`; g.textAlign = 'center';
+    for (const [n, x, z] of BAIRROS[id] || []) { g.fillStyle = 'rgba(21,22,26,.55)'; const w = g.measureText(n).width + 10; g.fillRect(X(x) - w / 2, Z(z) - 11, w, 16); g.fillStyle = '#e8ffd6'; g.fillText(n, X(x), Z(z) + 2); }
+    for (const F of regFav()) { g.fillStyle = '#ffd6a0'; g.fillText(F.n, X(F.x), Z(F.z) + 4); }
+    if (A) { g.fillStyle = '#d6f1ff'; g.fillText('✈ ' + A.name, X(A.x), Z(-140)); }
+    g.textAlign = 'start';
+  }
+}
+/* painel de turismo: agora os pontos ficam na cidade (vai andando, de carro ou pelo GPS) */
+const PANEL_TUR = function () {
+  const L = tourList(), st = S.stamps || {}, C = CITY();
+  let html = city.tour ? `<div class="row"><button class="btn" data-act="tour-back">↩ Voltar para a cidade</button></div>` : '';
+  html += `<p class="muted">Os pontos turísticos de <b>${esc(C.name)}</b> ficam dentro da cidade, nos bairros de fora do centro. Vá a pé, de carro ou pelo GPS. Na entrada tem <b>seguranças</b>: só passa quem paga a taxa do Bonde do AJBZ${isAdm() ? ' (o chefe não paga)' : ''}. Pagou, vale o dia inteiro do jogo.</p>`;
+  html += `<div class="note">🛂 Passaporte: <b>${L.filter(t => st[t.id]).length}/${L.length}</b> carimbos em ${esc(C.name)}</div>`;
+  if (C.beach) html += `<div class="card"><h4>🏖️ Praia</h4><p>É só ir até a areia, no sul da cidade (de graça).</p><button class="btn ghost" data-act="gps-beach">GPS até a praia</button></div>`;
+  html += L.map(T => { const G = city.outer && city.outer.gates.find(q => q.T === T), d = G ? Math.round(Math.hypot(G.gx - P.x, G.gz - P.z)) : null; return `<div class="card"><h4>${st[T.id] ? '✅' : '📍'} ${esc(T.n)}</h4><p>${esc(T.d)}</p><p class="muted">Entrada: <b>$ ${isAdm() ? 0 : T.fee}</b>${d != null ? ` · a ${d} m daqui` : ''}${tourPass(T.id) ? ' · <b>entrada paga hoje</b>' : ''}</p><div class="row"><button class="btn" data-act="tour-gps" data-id="${T.id}">🧭 GPS até a entrada</button></div></div>`; }).join('');
+  return { title: '🗺️ Pontos turísticos', html };
+};
+function tourGps(id) { const G = city.outer && city.outer.gates.find(q => q.T.id === id); if (!G) return; setGps(G.gx, G.gz, G.T.n); closePanel(); toast(`🧭 GPS marcado até a entrada: ${G.T.n}`); }
+/* =========================================================
+   ESTÚDIO DE TATUAGEM (na calçada do centro) e atualização geral
+   ========================================================= */
+function buildTattooShop(sc) {
+  const x = 49, z = -28.4, g = new THREE.Group(); g.position.set(x, 0, z); sc.add(g);
+  const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  add(boxGeo(5, 3, 2.6), std(0x15161a, 0.7), 0, 1.5, -1.6); add(boxGeo(5.4, 0.25, 3.4), std(0x9b5cff, 0.5), 0, 3.1, -1.2);
+  add(boxGeo(2.4, 1, 0.5), std(0x3a2a1c, 0.8), -1, 0.5, -0.1); const chair = add(boxGeo(0.8, 0.5, 1.6), std(0x8a1a2a, 0.6), 1.4, 0.45, 0.6); chair.rotation.y = 0.3;
+  const s = textSprite('🖋️ TATTOO · TINTA FORTE', { bg: '#15161a', fg: '#c9a7ff', size: 42, scale: [6.5, 1.1, 1] }); s.position.set(0, 4, -1.2); g.add(s);
+  city.colliders.push({ x0: x - 2.6, x1: x + 2.6, z0: z - 3, z1: z - 0.3 });
+  const t = makeSkater(lookOf({ shirt: 'rg_preta', pants: 'pants_black', cap: 'cap_black', shoes: 'shoes_black', acc: 'ac_chain' }, SKINS[1], HAIRS[0], 'm'), 'Tatuador', '#c9a7ff'); t.position.set(x - 1, 0, z + 0.7); sc.add(t); city.tatNpc = t;
+  city.xspots = (city.xspots || []).filter(o => !o.tat); city.xspots.push({ tat: true, x, z: z + 1.6, r: 2.6, label: '🖋️ Estúdio de Tatuagem: fazer uma tatuagem', fn: () => openPanel('tattoo') });
+  LANDMARKS[cityId()] && !LANDMARKS[cityId()].some(l => l[2] === 'Tattoo') && LANDMARKS[cityId()].push([x, z, 'Tattoo']);
+}
+function updateRP20(dt, t) {
+  P.drawnT = (P.drawnT || 0) - dt; if (P.drawnT <= 0 && P.wasDrawn) { P.wasDrawn = false; netTrack && netTrack(); } if (P.drawnT > 0) P.wasDrawn = true;
+  const hol = holsterNow(); if (hol !== city.holK) { city.holK = hol; if (city.player) applyLook(city.player, myLook()); }
+  if (city.tatNpc) { const tn = city.tatNpc, d = Math.hypot(P.x - tn.position.x, P.z - tn.position.z); if (d < 30) { tn.rotation.y = Math.atan2(P.x - tn.position.x, P.z - tn.position.z); animSkater(tn, { walk: true, v: 0, fallT: 0 }, t); tickBubble(tn, dt); } }
+  const fh = fireHelpSpot(); city.xspots = (city.xspots || []).filter(x => !x.fire); if (fh) { fh.fire = true; city.xspots.push(fh); }
+  try { updateCityFire(dt, t); } catch (e) { console.warn('fogo', e); }
+  try { updateRaid(dt, t); } catch (e) { console.warn('operação', e); }
+  updateOuter(dt, t);
+}
+/* mede a grossura de braço, antebraço, pescoço e pernas de cada modelo (para tatuagem e relógio ficarem por cima da pele/manga) */
+function prepWearInfo(info, scene, k) {
+  scene.updateMatrixWorld(true);
+  const B = {}; scene.traverse(o => { if (o.isBone) B[o.name.replace(/^mixamorig:?/, '')] = o; });
+  let sc2 = 1, raw = false;
+  if (k === 'f') { const bm = info.mats.Ch03_Body; let mesh = null; scene.traverse(o => { if (o.isMesh && o.material.name === 'Ch03_Body') mesh = o; }); let top = null; scene.traverse(o => { if (o.isBone && /HeadTop_End$/.test(o.name)) top = o; }); const h = top ? top.getWorldPosition(new THREE.Vector3()).y : 1.75; if (mesh) { mesh.geometry.computeBoundingBox(); sc2 = mesh.geometry.boundingBox.max.y / h; raw = true; } }
+  const pts = [], v = new THREE.Vector3();
+  scene.traverse(o => { if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return; const n = o.material && o.material.name || ''; if (/Eye|Teeth|Hair|Head/i.test(n) && k === 'm') return; const pos = o.geometry.attributes.position; const step = Math.max(1, Math.floor(pos.count / 6000)); for (let i = 0; i < pos.count; i += step) { if (raw) pts.push(pos.getX(i) / sc2, pos.getY(i) / sc2, pos.getZ(i) / sc2); else { v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); pts.push(v.x, v.y, v.z); } } });
+  const wp = b => b.getWorldPosition(new THREE.Vector3());
+  const seg = (bn, cn, from, to, cap) => { const a = B[bn], c = B[cn]; if (!a || !c) return null; const A = wp(a), C = wp(c), d = C.clone().sub(A), L2 = d.lengthSq(), rs = []; for (let i = 0; i < pts.length; i += 3) { const px = pts[i] - A.x, py = pts[i + 1] - A.y, pz = pts[i + 2] - A.z, t = (px * d.x + py * d.y + pz * d.z) / L2; if (t < from || t > to) continue; const qx = px - d.x * t, qy = py - d.y * t, qz = pz - d.z * t, r = Math.sqrt(qx * qx + qy * qy + qz * qz); if (r < cap) rs.push(r); } if (rs.length < 8) return null; rs.sort((p, q) => p - q); return rs[Math.floor(rs.length * 0.9)] * info.scale; };
+  info.limb = {
+    fore: seg('LeftForeArm', 'LeftHand', 0.25, 0.85, 0.09), foreR: seg('RightForeArm', 'RightHand', 0.25, 0.85, 0.09),
+    wrist: seg('LeftForeArm', 'LeftHand', 0.82, 0.97, 0.08),
+    arm: seg('LeftArm', 'LeftForeArm', 0.15, 0.75, 0.1), armR: seg('RightArm', 'RightForeArm', 0.15, 0.75, 0.1),
+    neck: seg('Neck', 'Head', 0.1, 0.9, 0.1), calf: seg('RightLeg', 'RightFoot', 0.15, 0.6, 0.1),
+    thigh: seg('LeftUpLeg', 'LeftLeg', 0.1, 0.9, 0.14),
+  };
+  // peito e costas: frente e trás do tronco na altura do Spine2
+  const s2 = B.Spine2 && wp(B.Spine2); if (s2) { let f = -1, bk = 1; for (let i = 0; i < pts.length; i += 3) { if (Math.abs(pts[i]) > 0.07 || Math.abs(pts[i + 1] - s2.y) > 0.05) continue; f = Math.max(f, pts[i + 2] - s2.z); bk = Math.min(bk, pts[i + 2] - s2.z); } info.limb.chestF = f > -1 ? f * info.scale : null; info.limb.chestB = bk < 1 ? bk * info.scale : null; }
+  if (k === 'm' && B.Spine1 && B.Hips && B.Neck && B.LeftArm) { const s1 = wp(B.Spine1), sc = info.scale; info.torso = { hipY: (wp(B.Hips).y - s1.y) * sc, neckY: (wp(B.Neck).y - s1.y) * sc, shY: (wp(B.LeftArm).y - s1.y) * sc, W: Math.abs(wp(B.LeftArm).x - s1.x) * sc * 0.92, D: 0.62, zOff: 0.0 }; }
+  // homem: rabo do "casaco" do modelo (abaixo da cintura) some nas camisetas
+  if (k === 'm') { let tm = null; scene.traverse(o => { if (o.isMesh && o.material.name === 'Wolf3D_Outfit_Top') tm = o; }); const hip = B.Hips && wp(B.Hips); if (tm && hip) { info.tailMask = legMask(tm, 512, 512, 0, false, y => y < hip.y + 0.02); info.tailMask.nm = 'tail'; } }
+}
+/* textura sem o rabo do casaco (alpha 0 abaixo da cintura) */
+function tailCut(tex, M) {
+  if (!tex || !M.tailMask || !tex.image) return tex; M.tailCache = M.tailCache || {}; const key = tex.uuid; if (M.tailCache[key]) return M.tailCache[key];
+  const img = tex.image, W = 512, c = document.createElement('canvas'); c.width = c.height = W; const g = c.getContext('2d'); g.drawImage(img, 0, 0, W, W); const d = g.getImageData(0, 0, W, W), p = d.data, m = M.tailMask;
+  for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) { const j = (tex.flipY === false ? y : y) * W + x; if (m[j]) p[(y * W + x) * 4 + 3] = 0; }
+  g.putImageData(d, 0, 0); const t = new THREE.CanvasTexture(c); t.flipY = tex.flipY; t.encoding = THREE.sRGBEncoding; t.wrapS = tex.wrapS; t.wrapT = tex.wrapT; t.anisotropy = 4; return (M.tailCache[key] = t);
+}
+function skinFlatTex(M) { if (M.skinFlat) return M.skinFlat; const t = canvasTex(64, 64, (g, w, h) => { g.fillStyle = 'rgb(205,205,205)'; g.fillRect(0, 0, w, h); }); t.encoding = THREE.sRGBEncoding; return (M.skinFlat = t); }
+/* depois de vestir: camiseta sem rabo de casaco e "sem camisa" com pele lisa */
+function fixTopMat(u, look) { if (!u.R) return;
+  if (u.k !== 'm') return; const M = MODELS.m, m = u.mats.Wolf3D_Outfit_Top; if (!m || !M) return;
+  const bare = !!(look.shirt.nude || look.shirt.tank) && !!M.torso; u.bareTop = bare;
+  g0: { const o = u.topMesh || (u.topMesh = (() => { let r = null; u.R.body.traverse(q => { if (q.isMesh && q.material === m) r = q; }); return r; })()); if (o) o.visible = !bare; }
+}
+/* homem sem camisa / de regata: o modelo não tem corpo por baixo da roupa, então monta tronco, braços e pescoço de pele presos aos ossos */
+function torsoTex(skin, tank) {
+  const key = 'torso_' + (tank ? 't' : 'n'); if (TAT_CACHE[key]) return TAT_CACHE[key];
+  const t = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#d2d2d2'; g.fillRect(0, 0, w, h); if (tank) return;
+    const sh = (x, y, rx, ry, a) => { const gr = g.createRadialGradient(x, y, 1, x, y, Math.max(rx, ry)); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU); g.fill(); };
+    // peitoral (frente = u 0.5), barriga e umbigo; costas com a linha da coluna
+    for (const s of [-1, 1]) { sh(w * (0.5 + s * 0.055), h * 0.2, 26, 10, 0.22); }
+    g.strokeStyle = 'rgba(0,0,0,.16)'; g.lineWidth = 3; g.beginPath(); g.moveTo(w * 0.5, h * 0.12); g.lineTo(w * 0.5, h * 0.78); g.stroke();
+    for (let i = 0; i < 3; i++) for (const s of [-1, 1]) sh(w * (0.5 + s * 0.025), h * (0.42 + i * 0.11), 9, 7, 0.1);
+    sh(w * 0.5, h * 0.82, 4, 4, 0.5);
+    g.strokeStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.moveTo(w * 0.0, h * 0.1); g.lineTo(w * 0.0, h); g.moveTo(w, h * 0.1); g.lineTo(w, h); g.stroke();
+  }); t.encoding = THREE.sRGBEncoding; return (TAT_CACHE[key] = t);
+}
+function bareUpper(u, g, look, add) {
+  const B = u.R.B, M = MODELS.m, TS = M && M.torso; if (!TS || !B.Spine1) return false;
+  const sk = new THREE.Color(look.skin).multiplyScalar(0.8).getHex(), tank = !look.shirt.nude, skinM = new THREE.MeshStandardMaterial({ color: sk, roughness: 0.55, map: torsoTex(look.skin, false) });
+  const plain = new THREE.MeshStandardMaterial({ color: sk, roughness: 0.55 });
+  // tronco (perfil girado em volta da coluna, achatado na frente/trás)
+  const fr = add(boneFrame(u, B.Spine1, g)), W = TS.W, y0 = TS.hipY + 0.07, y3 = TS.shY, yn = TS.neckY;
+  const prof = [[W * 0.8, y0], [W * 0.82, y0 + (y3 - y0) * 0.3], [W * 0.9, y0 + (y3 - y0) * 0.62], [W * 0.98, y3 - 0.05], [W * 0.92, y3 + 0.0], [W * 0.62, y3 + 0.04], [0.065, yn - 0.005]].map(([r, y]) => new THREE.Vector2(r, y));
+  const geo = new THREE.LatheGeometry(prof, 28, Math.PI, TAU), torso = new THREE.Mesh(geo, skinM); torso.scale.set(1, 1, TS.D); torso.position.z = TS.zOff; torso.castShadow = true; fr.add(torso);
+  if (tank) {
+    const it = look.shirt, tm = new THREE.MeshStandardMaterial({ color: it.color, roughness: 0.85, map: it.pat && it.pat !== 'plain' ? baggyTex(it) : null, side: THREE.DoubleSide });
+    const tp = [[W * 0.84, y0 - 0.01], [W * 0.86, y0 + (y3 - y0) * 0.3], [W * 0.94, y0 + (y3 - y0) * 0.62], [W * 0.93, y3 - 0.06], [W * 0.55, y3 + 0.02]].map(([r, y]) => new THREE.Vector2(r, y));
+    const tk = new THREE.Mesh(new THREE.LatheGeometry(tp, 28, Math.PI, TAU), tm); tk.scale.set(1, 1, TS.D * 1.04); tk.position.z = TS.zOff; tk.castShadow = true; fr.add(tk);
+  }
+  // ombros, braços, cotovelos, antebraços e pescoço
+  const L = LIMB.m;
+  for (const sd of ['Left', 'Right']) {
+    const A = B[sd + 'Arm'], F = B[sd + 'ForeArm'], Hd = B[sd + 'Hand']; if (!A || !F || !Hd) continue;
+    const ws = A.getWorldScale(new THREE.Vector3()).x || 1, sp = new THREE.Mesh(SPH(0.058 / ws, 12, 10), plain); A.add(sp); add(sp);
+    add(boneShell(A, F, 0.0, 1.0, L.arm[0], L.arm[1], plain, false, 14));
+    const wf = F.getWorldScale(new THREE.Vector3()).x || 1, el = new THREE.Mesh(SPH(0.044 / wf, 10, 8), plain); F.add(el); add(el);
+    add(boneShell(F, Hd, 0.0, 1.02, L.fore[0], L.fore[1] * 0.9, plain, false, 14));
+  }
+  if (B.Neck && B.Head) add(boneShell(B.Neck, B.Head, -0.3, 0.75, 0.058, 0.055, plain, false, 14));
+  return true;
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
@@ -8617,7 +9294,7 @@ const ICONS = { 'cap:none': '∅', 'glasses:none': '∅', 'acc:none': '∅', 'we
 const PANELS = {
   shop(kind) {
     city.lastShop = kind;
-    const conf = { roupas: ['Drip Store', ['shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc']], skate: ['Shape & Truck', ['skate', 'wheels', 'print']], celular: ['CelZap', ['phone']] }[kind];
+    const conf = { roupas: ['Drip Store', ['shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'wrist', 'ear']], skate: ['Shape & Truck', ['skate', 'wheels', 'print']], celular: ['CelZap', ['phone']] }[kind];
     let html = `<p class="muted">Saldo: <b class="coin">$ ${fmt(S.coins)}</b> · <b class="tokc">${fmt(S.tokens)} T</b>. Raridade: <span class="rar" style="--rc:${RAR.comum.c}">Comum</span> <span class="rar" style="--rc:${RAR.raro.c}">Raro</span> <span class="rar" style="--rc:${RAR.lendario.c}">Lendário</span>. Itens lendários também saem em caixas, eventos e no ranking semanal.</p>`;
     if (kind === 'roupas') html += `<div class="note"><b>Peças simples</b> (comuns): compre com a grana de missões e trampos. <b>Raras e lendárias</b> (as mais procuradas): só com tokens, comprados com dinheiro real na Casa de Tokens.</div>`;
     if (kind === 'skate') html += `<div class="card"><h4>Oficina</h4><p>Monte seu skate: cor do shape, estampa, rodas, lixa e trucks.</p><div><button class="btn" data-act="open-oficina" ${hasSkate() ? '' : 'disabled'}>Abrir Oficina</button></div></div>`;
@@ -8795,7 +9472,7 @@ const PANELS = {
       html += `<h3>Caixas</h3><div class="crates">${[['rara', 'Caixa Rara', 'peça comum ou $ 600'], ['lendaria', 'Caixa Lendária', 'peça comum ou $ 2.500 + 25 tokens']].map(([k, n, d]) => `<div class="crate c-${k}"><b>${n}</b><small>${d}</small><span class="big-num">${S.crates[k]}</span><button class="btn sm" data-act="crate" data-k="${k}" ${S.crates[k] ? '' : 'disabled'}>Abrir</button></div>`).join('')}</div>
       <p class="muted">Caixas não são vendidas: você ganha vencendo campeonatos de manobras e no ranking semanal.</p>
       ${cr ? `<div class="reveal" style="--rc:${RAR[cr.item ? cr.item.r : cr.rar].c}">${cr.item ? `<span>${RAR[cr.item.r].n}</span><b>${esc(cr.item.name)}</b><small>${SLOT_NAMES[cr.item.slot]}</small>` : `<span>Você já tem tudo dessa raridade</span><b>+$ ${fmt(cr.coins)}</b>`}</div>` : ''}
-      <h3>Seus itens (${S.owned.length})</h3>${['skate', 'wheels', 'print', 'shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'weapon', 'gun'].map(sl => { const its = [...ITEMS, ...EXCL_ITEMS].filter(i => i.slot === sl && S.owned.includes(i.id)); return its.length ? `<h3>${SLOT_NAMES[sl]}</h3><div class="grid-items">${its.map(itemCard).join('')}</div>` : ''; }).join('')}`;
+      <h3>Seus itens (${S.owned.length})</h3>${['skate', 'wheels', 'print', 'shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'wrist', 'ear', 'weapon', 'gun'].map(sl => { const its = [...ITEMS, ...EXCL_ITEMS].filter(i => i.slot === sl && S.owned.includes(i.id)); return its.length ? `<h3>${SLOT_NAMES[sl]}</h3><div class="grid-items">${its.map(itemCard).join('')}</div>` : ''; }).join('')}`;
       paintPrintSwatches();
     }
     return { title: S.name, html };
@@ -9021,14 +9698,15 @@ const PANELS = {
       return { title: 'Mapa · ' + CITY_DEFS[sel].name, html: `${ctabs}<p class="muted">${{ sp: 'Avenida Paulista, MASP, prédios altos e a Ponte Estaiada.', rj: 'Praia, calçadão de ondas, Cristo Redentor, Pão de Açúcar e o morro.', ssa: 'Ruas de paralelepípedo, casarões coloniais, favela, Elevador Lacerda, a praia e o Farol da Barra.' }[sel]} Cada cidade tem ruas, lojas e bairros em lugares diferentes.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa de ${esc(CITY_DEFS[sel].name)}"></canvas>
         <div class="row">${hasV ? `<button class="btn" data-act="travel" data-id="${sel}" data-how="veh">Ir de ${VEH[S.veh].kind === 'car' ? 'carro' : 'moto'}</button>` : ''}<button class="btn ghost" data-act="travel" data-id="${sel}" data-how="bus" ${S.coins < 150 ? 'disabled' : ''}>Ônibus ($ 150)</button></div>` };
     }
-    setTimeout(() => { const cv = $('bigmap'); if (!cv) return; drawCityMapOn(cv, 0, 0, 165); cv.onclick = bigmapClick; }, 0);
+    setTimeout(() => { const cv = $('bigmap'); if (!cv) return; drawCityMapOn(cv, 0, 0, city.mapRad || 300); cv.onclick = bigmapClick; }, 0);
     const places = city.doors.filter(d => !d.inside).map(d => `<button class="chip" data-act="gps-door" data-x="${d.x}" data-z="${d.z}" data-l="${esc(d.label)}">${esc(d.label)}</button>`).join('');
-    return { title: 'Mapa · ' + CITY().name, html: `${ctabs}<p class="muted">Toque no mapa para marcar o destino: aparece uma linha azul no chão e no mapa mostrando o caminho pelas ruas.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa completo da cidade, toque para marcar destino"></canvas><div class="chips">${places}<button class="chip" data-act="open-turismo">🗺️ Pontos turísticos</button><button class="chip" data-act="go-airport">✈️ Aeroporto</button><button class="chip" data-act="open-favelas">🏚️ Favelas da região</button>${S.gps ? '<button class="chip" data-act="gps-clear">✕ Limpar GPS</button>' : ''}</div><div class="legend">${Object.entries({ roupas: 'Drip Store (roupas)', skate: 'Shape & Truck (skates)', celular: 'CelZap', arena: 'Terminal Mundial', tokens: 'Casa de Tokens', crew: 'Garagem da Crew', missoes: 'Quadro de Missões', agencia: 'Agência de Empregos', imobiliaria: 'Imobiliária', casa: 'Sua casa' }).map(([k, n]) => `<span><i style="background:${DOOR_COL[k]}"></i>${n}</span>`).join('')}<span><i style="background:#ffe9a3"></i>Amigos</span><span><i style="background:#3ddc84"></i>Crew</span></div>` };
+    return { title: 'Mapa · ' + CITY().name, html: `${ctabs}<p class="muted">Toque no mapa para marcar o destino: aparece uma linha azul no chão e no mapa mostrando o caminho pelas ruas.</p><canvas id="bigmap" width="640" height="640" aria-label="Mapa completo da cidade, toque para marcar destino"></canvas><div class="chips">${places}<button class="chip" data-act="map-zoom">🔍 ${(city.mapRad || 300) > 200 ? 'Ver o centro' : 'Ver a cidade toda'}</button><button class="chip" data-act="open-turismo">🗺️ Pontos turísticos</button><button class="chip" data-act="go-airport">✈️ Aeroporto</button><button class="chip" data-act="open-favelas">🏚️ Favelas da região</button>${S.gps ? '<button class="chip" data-act="gps-clear">✕ Limpar GPS</button>' : ''}</div><div class="legend">${Object.entries({ roupas: 'Drip Store (roupas)', skate: 'Shape & Truck (skates)', celular: 'CelZap', arena: 'Terminal Mundial', tokens: 'Casa de Tokens', crew: 'Garagem da Crew', missoes: 'Quadro de Missões', agencia: 'Agência de Empregos', imobiliaria: 'Imobiliária', casa: 'Sua casa' }).map(([k, n]) => `<span><i style="background:${DOOR_COL[k]}"></i>${n}</span>`).join('')}<span><i style="background:#ffe9a3"></i>Amigos</span><span><i style="background:#3ddc84"></i>Crew</span></div>` };
   },
 };
 ['tokens', 'crew', 'config', 'results'].forEach(k => PANELS[k] = OLD_PANELS[k]);
 
 /* ---------------- CELULAR ---------------- */
+Object.assign(PANELS, { pix: PANEL_PIX, tattoo: PANEL_TAT, turismo: PANEL_TUR });
 const phoneState = { screen: 'home', contact: null, callT: 0 };
 function togglePhone(force) {
   const el = $('phone'); const show = force != null ? force : el.hidden;
@@ -9142,6 +9820,14 @@ function act(a, ds, el) {
     case 'provar': tryOn(ds.id); break;
     case 'shop-back': openPanel('shop:' + (city.lastShop || 'roupas')); break;
     case 'open-turismo': openPanel('turismo'); break;
+    case 'pix-quick': { const el = $('pix-val'); if (el) el.value = ds.v; break; }
+    case 'pix-send': pixSend(ds.id); break;
+    case 'tat-spot': city.tatSel = ds.id; renderPanel(); break;
+    case 'tat-buy': tatBuy(ds.id); break;
+    case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
+    case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
+    case 'tour-gps': tourGps(ds.id); break;
+    case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
     case 'tour-back': closePanel(); tourBack(); break;
     case 'gps-beach': setGps(P.x, 140, 'Praia'); closePanel(); toast('GPS marcado até a praia.'); break;
@@ -9361,7 +10047,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && NET
 
 /* aparência compacta enviada para os outros jogadores */
 const myNetLook = () => { const L = myNetLook0(); if (S.beachWear) Object.assign(L.e, beachEquip()); return L; };
-const myNetLook0 = () => ({ bd: S.body || null, w: myHandKind(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print }, b: S.board });
+const myNetLook0 = () => ({ bd: S.body || null, w: handNow(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print, wrist: S.equip.wrist, ear: S.equip.ear, tats: S.tats || null, tn: S.name, hol: holsterNow() }, b: S.board });
 const myPresence = () => ({ id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', sp: S.spouse ? S.spouse.name : '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
 function netJoinPlaza() {
   if (!NET.user || NET.ch) return;
@@ -9373,6 +10059,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'tiro' }, ({ payload }) => onPeerShot(payload))
     .on('broadcast', { event: 'assalto' }, ({ payload }) => onRobbed(payload))
     .on('broadcast', { event: 'samu' }, ({ payload }) => onSamuCall(payload))
+    .on('broadcast', { event: 'pix' }, ({ payload }) => onPix(payload))
     .on('broadcast', { event: 'socorrido' }, ({ payload }) => onRescued(payload))
     .on('broadcast', { event: 'assalto_ok' }, ({ payload }) => onRobOk(payload))
     .on('broadcast', { event: 'marca' }, ({ payload }) => renderMark(payload))
@@ -9667,7 +10354,7 @@ async function afterLogin() {
 async function enterGame() {
   try { await Promise.race([Promise.all([document.fonts.load('40px Bungee'), document.fonts.load('700 40px "Barlow Condensed"')]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
   S.settings = S.settings || { quality: 'media', sound: true }; S.invite = S.invite || []; S.purchases = S.purchases || [];
-  migrate(S); checkWeek();
+  migrate(S); wearMigrate(); checkWeek();
   if (NET.user) { await checkAdmin(); grantAdmin(); if (isAdm()) setTimeout(() => { toast(`Conta de administrador: tudo liberado. Chefe ${CHIEF} de todos os morros.`, 'pink'); if (city.player) setTag(city.player, myTagText(), '#ffd700'); }, 2000); }
   if (S.mission && S.mission.time != null) S.mission.time = Math.max(S.mission.time, 20);
   if (MODELS === null && !enterGame.tried) {

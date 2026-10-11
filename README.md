@@ -150,3 +150,14 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Pátio da PM**: 3 viaturas (PM, Força Tática, Caminhonete) e 3 motos (Rocam, Patrulha, Rocam Esportiva) sempre estacionadas na frente da Delegacia; policial em serviço chega perto e escolhe. **Cassetete** na mão dos policiais.
 - **Casa do chefe de ouro** (a da Imobiliária), com o retrato dele na frente e a bandeira dele.
 - **Hilux de Ouro do Chefe** (Concessionária → Usar) com paredão na caçamba tocando o "Trap do Chefe" (beat original do jogo). Tocando no chip de música dentro da Hilux, o chefe escolhe uma música do próprio celular para tocar no som dela.
+
+### Cidade grande, viagem dirigindo, tatuagem e vida na cidade
+- **Viagem dirigindo**: indo para outra cidade com o seu carro ou moto, quem dirige na BR é você (acelera, freia, troca de faixa, desvia dos carros e caminhões, para no pedágio). Ônibus e avião continuam com o percurso automático.
+- **Dar dinheiro**: chegue perto de outro jogador e aperte Ação → "Dar dinheiro", digite o valor e toque em Dar. O dinheiro sai da sua conta e cai na hora para a pessoa.
+- **Roupas novas**: bermudões compridos e largos (passam do joelho), regatas, camisetas de manga curta e **Sem camisa** (mostra o corpo). **Relógios** e **brincos** (novas seções na Drip Store).
+- **Revólver na cintura**: a arma de fogo fica no coldre; o botão da arma tira da cintura (o próximo toque atira) e ela volta para a cintura sozinha depois de um tempo.
+- **Estúdio de Tatuagem** (calçada do centro, perto da praça): escolha o lugar (antebraços, ombros, peito, costas, pescoço, panturrilha) e o desenho (tribal, rosa, coroa, estrelas, terço, seu nome, "Fé", "157", "Família", carpa, leão, asas), pague e o tatuador faz na hora. Todo mundo vê.
+- **Incêndios**: de tempos em tempos um prédio pega fogo; o caminhão dos bombeiros sai do Quartel pelas ruas com sirene e os bombeiros apagam. Bombeiro em serviço pode ajudar jogando água.
+- **Operação policial no morro**: de tempos em tempos a PM chega de viatura, sobe o morro e os traficantes trocam tiro com ela.
+- **Cidades maiores**: a cidade continua para fora do centro, com avenidas, quarteirões, prédios, pracinhas e placas dos bairros (Av. Paulista, Ibirapuera, Pinheiros...; Centro, Lapa, Copacabana...; Pelourinho, Barra, Bonfim...). Mapa com "Ver a cidade toda" / "Ver o centro".
+- **Pontos turísticos dentro da cidade**: cada um no seu bairro, cercado, com bilheteria e **dois seguranças na entrada** — só passa quem paga a taxa do Bonde do AJBZ (vale o dia do jogo; o chefe não paga). Cristo, Pão de Açúcar, Elevador Lacerda, Farol e Ponte Estaiada têm a entrada embaixo (trem, bondinho, elevador). Mapa → Pontos turísticos tem GPS até a entrada.
