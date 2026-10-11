@@ -145,8 +145,8 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #tb-horn svg{width:28px;height:28px;color:var(--wax)}
 #tb-lights{right:122px;bottom:108px;width:60px;height:60px}
 #tb-lights.on{background:radial-gradient(circle at 50% 35%,rgba(255,244,200,.95),rgba(220,190,90,.85));color:#1a1405}
-#tb-blL{left:22px;bottom:126px;width:54px;height:54px}
-#tb-blR{left:150px;bottom:126px;width:54px;height:54px}
+#tb-blL{right:262px;bottom:96px;width:50px;height:50px}
+#tb-blR{right:206px;bottom:96px;width:50px;height:50px}
 #tb-blL.on,#tb-blR.on{background:radial-gradient(circle at 50% 35%,rgba(255,170,40,.95),rgba(220,120,20,.85));animation:blink .8s steps(1) infinite}
 @keyframes blink{50%{filter:brightness(.6)}}
 #tb-vexit{right:216px;bottom:24px;width:60px;height:60px;border-color:rgba(61,220,132,.9)}
@@ -2091,7 +2091,7 @@ async function installApp() {
 /* ---------------- POSIÇÃO DOS BOTÕES (editável nas Configurações) ---------------- */
 const BTN_IDS = ['tb-left', 'tb-right', 'tb-gas', 'tb-rev', 'tb-mic', 'tb-act', 'tb-item', 'tb-board', 'tb-hit', 'tb-jump', 'tb-wp', 'tb-horn', 'tb-lights', 'tb-blL', 'tb-blR', 'tb-vexit'];
 // celular em pé: tela estreita, os botões ficam num bloco compacto à direita para não encostar no joystick
-const BTN_PORTRAIT = { 'tb-mic': [24, 290], 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [20, 126], 'tb-lights': [104, 100], 'tb-gas': [14, 20], 'tb-rev': [118, 14], 'tb-vexit': [20, 204] };
+const BTN_PORTRAIT = { 'tb-mic': [24, 290], 'tb-jump': [14, 22], 'tb-hit': [118, 16], 'tb-item': [108, 96], 'tb-wp': [16, 128], 'tb-board': [176, 92], 'tb-act': [20, 204], 'tb-horn': [20, 126], 'tb-lights': [104, 100], 'tb-blL': [160, 172], 'tb-blR': [104, 172], 'tb-gas': [14, 20], 'tb-rev': [118, 14], 'tb-vexit': [20, 204] };
 const btnOrient = () => innerWidth < innerHeight ? 'port' : 'land';
 const btnEditing = () => $('touch').classList.contains('editing');
 function btnCfg() { const st = S.settings; st.btnPos = st.btnPos || { port: {}, land: {} }; st.joyPos = st.joyPos || {}; return st; }
