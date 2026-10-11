@@ -80,3 +80,16 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - **Camisas de time** (Seleção amarela e azul e clubes de vários estados, com listras, faixas e três cores) e **shorts/bermudas** (a canela aparece).
 - **Botões editáveis** (Configurações → Botões da tela) e botões próprios no carro/moto: buzina, farol e setas.
 - **Instalar no celular**: o jogo é um app instalável (PWA). Android: botão "Baixar o jogo no celular" ou menu ⋮ → Instalar app. iPhone: Safari → Compartilhar → Adicionar à Tela de Início.
+- **Morro com favela em cada cidade** (SP ao sul, Rio a oeste, Salvador a leste): dá para subir a pé, de skate, carro ou moto. Terreno que sobe, escadaria de cimento, centenas de casas de tijolo e coloridas, lajes com caixa d'água, fios, bandeiras do Brasil e varais de bandeirinhas. Aparece no mapa.
+- **Profissões** (Agência de Empregos): entregador, grafiteiro, instrutor, **motoboy** (precisa de moto), **taxista** (precisa de carro), **catador/gari**, **bombeiro** (apagar incêndios), **policial** (só depois de passar na prova da Delegacia: 10 perguntas, precisa acertar 7) e **traficante** (só para quem está numa facção: corre da encomenda, fica procurado enquanto carrega).
+- **Figurantes por profissão**: PMs a pé e viatura com giroflex, bombeiros, garis, contenção armada no morro, táxi e motoboy no trânsito. Cada jogador real da mesma profissão na cidade substitui um figurante; os skatistas de mentira também vão sumindo quando entram jogadores reais.
+- **Procurado (estrelas)**: atirar, atacar policial, pichar ou carregar encomenda deixa você procurado; a PM persegue e prende (multa). Policiais reais prendem jogadores procurados. Na Delegacia dá para se entregar.
+- **Facções**: crie (nome, emoji e cor, $ 2.000) ou entre num grupo no QG da Comunidade (no morro). Membros pintam a marca do grupo nos muros e fincam bandeiras; tudo fica salvo no servidor e todos veem.
+- **Armas de fogo** (Taser, Revólver, Pistola, Escopeta, Fuzil): só com tokens (dinheiro real). Derrubam por alguns segundos (sem sangue).
+- **Carona**: chegue perto do veículo de outro jogador e aperte Ação. Moto leva 1 na garupa, carro leva até 3 passageiros.
+- **Direção por botões**: no carro/moto aparecem ◀ ▶, Acelerar e Ré (ou joystick, nas Configurações), além de buzina, farol e setas.
+
+### Banco de dados (Supabase)
+- `jogadores`: progresso de cada conta.
+- `grupos`: facções (nome único, emoji, cor, dono). Todos leem; só o dono altera/apaga.
+- `marcas`: pinturas e bandeiras por cidade. Todos leem; cada um cria/apaga só as suas.
