@@ -3470,6 +3470,14 @@ function buildShop(sc, cx, cz, info, addBuilding) {
   const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: info.color, transparent: true, opacity: .8, side: THREE.DoubleSide }));
   ring.position.set(dx, 0.13, dz); sc.add(ring);
   city.doors.push({ kind: info.kind, label: info.label, x: dx, z: dz, ring });
+  if (info.kind === 'viagem') {
+    const px = xFace ? 0 : 1, pz = xFace ? 1 : 0, hx = cx + px * 12, hz = cz + pz * 12;
+    const hr = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: .85, side: THREE.DoubleSide })); hr.position.set(hx, 0.13, hz); sc.add(hr);
+    const hs = textSprite('👑 HANGAR AJBZ · AVIÕES E HELICÓPTEROS', { bg: '#15161a', fg: '#ffd700', size: 50, scale: [11, 1.6, 1], stroke: '#d4a017' }); hs.position.set(hx + px * 0.5, 7.6, hz + pz * 0.5); sc.add(hs);
+    const gd = new THREE.Mesh(boxGeo(px ? 0.3 : 6, 3, px ? 6 : 0.3), goldM()); gd.position.set(cx + px * 10.1, 1.5, cz + pz * 10.1); sc.add(gd);
+    city.doors.push({ kind: 'hangar', label: '👑 Hangar AJBZ (aviões e helicópteros)', x: hx, z: hz, ring: hr });
+    const rh = makeAnyHeli(VEH.h_esquilo); rh.position.set(cx, 13.05, cz); rh.rotation.y = 0.6; sc.add(rh); city.roofHeli = rh;
+  }
 }
 function buildPlaza(sc) {
   const conc = lam(0xb3ac9e);
@@ -4022,6 +4030,7 @@ function interact(n) {
   if (n.type === 'door') {
     const k = n.d.kind;
     if (k === 'mansao') { enterMansion(n.d); return; }
+    if (k === 'hangar') { openPanel('hangar'); return; }
     if (k === 'biz' && !n.d.inside) { enterBiz(n.d); return; }
     if (INSIDE_KINDS.includes(k) && !n.d.inside) { enterShop(n.d); return; }
     if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
@@ -5476,7 +5485,7 @@ Object.assign(SPECIAL, {
 });
 Object.assign(CITY_SHOPS.rj, { hospital: '42,84', prefeitura: '84,-42', igreja: '-42,84' });
 Object.assign(CITY_SHOPS.ssa, { hospital: '84,0', prefeitura: '0,-84', igreja: '-42,-84' });
-Object.assign(DOOR_COL, { hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6', biz: '#ffcf3a', mansao: '#ffd700' });
+Object.assign(DOOR_COL, { hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6', biz: '#ffcf3a', mansao: '#ffd700', hangar: '#d4a017' });
 UNI_ITEMS.push(I('shirt', 'uni_samu', 'Macacão do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('pants', 'uni_samu_p', 'Calça do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('shirt', 'uni_med', 'Jaleco de Médico', 0xf4f6f8, 0, null, 'comum', { pat: 'plain' }), I('pants', 'uni_med_p', 'Calça Hospitalar', 0x3fa7a0, 0, null, 'comum', { pat: 'plain' }));
 UNI_ITEMS.forEach(i => ITEM[i.id] = i);
 Object.assign(UNIFORM, { socorrista: { shirt: 'uni_samu', pants: 'uni_samu_p' }, medico: { shirt: 'uni_med', pants: 'uni_med_p' } });
@@ -6186,7 +6195,7 @@ function buildMansion(sc) {
   add(boxGeo(1.6, 2.4, 1.6), gold, -8, top + 1.2, 4); const hs = textSprite('🚪 COBERTURA', { bg: '#15161a', fg: '#ffd700', size: 36, scale: [1.6, 0.35, 1] }); hs.position.set(-8, top + 2.8, 4); g.add(hs);
   g.updateMatrixWorld(true); const pw = g.localToWorld(new THREE.Vector3(-3.5, top + 0.14, 0)), sw = g.localToWorld(new THREE.Vector3(-3.5, top, 4.5)), dw = g.localToWorld(new THREE.Vector3(-6.9, top, 3));
   city.helipad = { x: pw.x, z: pw.z, y: y0 + top + 0.14, r: 5.4, sx: sw.x, sz: sw.z, dx: dw.x, dz: dw.z, ry };
-  if (!isAdm()) { const ph = makeHeliMesh(VEH.v_heli); ph.position.set(-3.5, top + 0.14, 0); g.add(ph); city.heliParked = ph; }
+  { const ph = makeHeliMesh(VEH.v_heli); ph.position.set(-3.5, top + 0.14, 0); g.add(ph); city.heliParked = ph; } // sempre estacionado no heliponto (some quando o chefe sai voando)
   // piscina com borda de mármore e coqueiros na lateral
   add(boxGeo(7, 0.3, 11), marble, 15.5, 0.75, 0); const water = add(new THREE.PlaneGeometry(6, 10), new THREE.MeshStandardMaterial({ color: 0x29b6f6, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.85 }), 15.5, 0.92, 0, -Math.PI / 2);
   for (const [x, z] of [[19.5, -5], [19.5, 5], [11.8, -6.5], [-14, 6]]) { add(CYL(0.18, 0.26, 6, 8), std(0x8a6a4a, 0.9), x, 3.6, z); for (let k = 0; k < 6; k++) { const lg = boxGeo(0.5, 0.06, 2.6).clone(); lg.translate(0, 0, 1.2); const leaf = add(lg, std(0x2e8b3a, 0.8), x, 6.6, z); leaf.rotation.order = 'YXZ'; leaf.rotation.set(0.45, k / 6 * TAU, 0); } }
@@ -8466,7 +8475,7 @@ const PANELS = {
   },
   elevador() {
     const cur = city.shopIn ? +String(city.shopIn.kind).slice(6) : 1;
-    return { title: '🛗 Elevador', html: `<div class="quiz">${['1º andar · Lazer: sinuca, bar, fliperama e TV', '2º andar · Cofre: dinheiro e barras de ouro', '3º andar · Cobertura do chefe: suíte, hidro e trono'].reverse().map((l, i) => { const n = 3 - i; return `<button class="btn ${n === cur ? 'ghost' : ''}" data-act="floor" data-n="${n}" ${n === cur ? 'disabled' : ''}>${n === cur ? '● ' : ''}${l}</button>`; }).join('')}</div>` };
+    return { title: '🛗 Elevador', html: `<div class="quiz">${['1º andar · Lazer: sinuca, bar, fliperama e TV', '2º andar · Cofre: dinheiro e barras de ouro', '3º andar · Cobertura do chefe: suíte, hidro e trono'].reverse().map((l, i) => { const n = 3 - i; return `<button class="btn ${n === cur ? 'ghost' : ''}" data-act="floor" data-n="${n}" ${n === cur ? 'disabled' : ''}>${n === cur ? '● ' : ''}${l}</button>`; }).join('')}${isAdm() ? '<button class="btn" data-act="go-roof">🚁 Telhado · Heliponto (helicóptero do chefe)</button>' : ''}</div>` };
   },
   cofre() {
     const v = S.vault || 0;
@@ -8513,7 +8522,7 @@ const PANELS = {
     const card = V => { const has = own.includes(V.id) || adm, ic = V.heli ? '🚁' : V.pm === 'airliner' || V.pm === 'jato' ? '✈️' : '🛩️';
       const act = has ? `<span class="pill on">${adm && !own.includes(V.id) ? 'Do dono' : 'Seu'}</span>` : `<button class="btn sm" data-act="air-buy" data-id="${V.id}" data-cur="c" ${S.coins < V.c ? 'disabled' : ''}>$ ${fmt(V.c)}</button><button class="btn tok sm" data-act="air-buy" data-id="${V.id}" data-cur="t" ${S.tokens < V.t ? 'disabled' : ''}>${fmt(V.t)} T</button>`;
       return `<div class="item-card r-${V.r}"><div class="swatch ico" style="--sw:${hex(V.color)}">${ic}</div><div class="item-info"><b>${esc(V.name)}</b>${rarBadge(V)}<small>${esc(V.desc)} · até ${Math.round(V.top * 3.6 * (V.heli ? 1 : 3))} km/h</small></div><div class="item-actions">${act}</div></div>`; };
-    const html = `<p class="muted">👑 <b>Hangar AJBZ</b> · dono: <b>${CHIEF}</b>. Do mais barato ao mais caro. Saldo: <b class="coin">$ ${fmt(S.coins)}</b> · <b class="tokc">${fmt(S.tokens)} T</b></p>
+    const html = `${city.tour && city.tour.id === 'aero' ? '' : '<div class="row"><button class="btn ghost" data-act="go-airport">✈️ Ir ao aeroporto (pista, heliponto e embarque)</button></div>'}<p class="muted">👑 <b>Hangar AJBZ</b> · dono: <b>${CHIEF}</b>. Do mais barato ao mais caro. Saldo: <b class="coin">$ ${fmt(S.coins)}</b> · <b class="tokc">${fmt(S.tokens)} T</b></p>
       <h3>🚁 Helicópteros</h3><div class="grid-items">${AIRCRAFT.filter(V => V.heli).map(card).join('')}</div>
       <h3>✈️ Aviões</h3><div class="grid-items">${AIRCRAFT.filter(V => V.plane).map(card).join('')}</div>
       <div class="note">Com aeronave própria você viaja de graça entre Salvador, Rio e São Paulo (no Embarque), faz passeio aéreo sobre a cidade e, de helicóptero, pilota livre pelo céu.</div>`;
@@ -8701,6 +8710,7 @@ function act(a, ds, el) {
     case 'air-tour': sightseeing(ds.id); break;
     case 'open-hangar': openPanel('hangar'); break;
     case 'go-airport': goAirport(); break;
+    case 'go-roof': closePanel(); goRoof(); break;
     case 'open-prefeitura': openPanel('prefeitura'); break;
     case 'biz-tipo': city.bizTipo = ds.id; renderPanel(); break;
     case 'biz-slot': city.bizSlot = +ds.id; renderPanel(); break;
