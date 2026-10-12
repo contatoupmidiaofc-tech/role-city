@@ -294,3 +294,23 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
     - No Hangar, "Pilotar eu mesmo" coloca o avião na cabeceira da pista. Você acelera, passa de 25 m/s e decola.
     - Voando de avião ou helicóptero, o botão 🧭 Rota desenha anéis dourados no céu até o corredor aéreo da cidade escolhida. Passando pelo corredor, a viagem começa.
   - 🏘️ Os lotes das casas novas, do cinema, do parquinho e do comércio agora são sempre os mesmos para todos os jogadores. Antes podiam mudar de um aparelho para outro.
+
+### Build 2026.10.12-31
+  - 🛣️ **Chegada natural nas cidades** (sem tela preta):
+    - De carro: a BR termina na entrada da cidade, com o pórtico "Bem-vindo", e você entra dirigindo.
+    - De avião próprio: você chega no céu alinhado com a pista e pousa sozinho. Anéis verdes guiam a descida. Pousar fora da pista é pouso forçado e tira vida.
+    - De helicóptero: você chega no céu e pousa onde quiser, inclusive no telhado dos prédios. Saindo no telhado, você desce pela escada do prédio.
+    - Voo de linha continua com pouso automático, agora sem a tela preta.
+  - 🚔 **Assalto**:
+    - Botão 🏃 Fugir quando o assalto termina.
+    - Na fuga, botão 🔫 Atirar nas viaturas e câmera mais afastada para ver a polícia.
+    - A câmera do chefe segue o carro normalmente.
+    - Chegando na favela, as Hilux ficam estacionadas em fileira e os caras descem e ficam por lá. O chefe pode dispensar o bonde no painel.
+  - ☰ **Menu tracinho**: os botões de cima (rádio, filhas, etc.) ficam recolhidos num ☰. Os controles continuam à mostra.
+  - 🪑 Bancos só nas calçadas e praças, nunca no meio da rua.
+  - 🎯 **Mira exata**: o tiro sai da ponta da arma e vai direto no alvo.
+  - 🪖 **Tanque de guerra do chefe**: na Concessionária, em "Usar". A torre gira para o alvo e o botão 💥 Canhão dispara. A explosão derruba quem está perto e explode carros e viaturas.
+  - 👶 **Filhos para casados**:
+    - Depois de casar na igreja aparece "👶 Ter filhos".
+    - Você cria até 4 filhos: nome, menino ou menina, idade, roupa, cabelo e pele.
+    - Eles funcionam igual às filhas do chefe: ficam em casa, andam com você, brincam no parque e aparecem para todos online.
