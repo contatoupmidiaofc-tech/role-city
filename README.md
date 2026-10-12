@@ -233,3 +233,11 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
 - Cine Rolê: ingresso de $ 15, três filmes passando no telão com plateia, pipoca.
 - Parquinho com balanço, escorregador, gangorra, gira-gira e caixa de areia, cheio de crianças brincando e mães olhando.
 - **Seguranças – liberar** (build 2026.10.11-26): no painel 🕶️ Seguranças dá pra escolher "Comigo (do lado)", "Esperar aqui na porta" ou "Se afastar um pouco". Ao entrar em lojas, casas ou cinema eles esperam sozinhos na porta. Só barram quem chega perto no modo "Comigo". Outros jogadores veem o mesmo modo (presença `segm`/`sa`).
+- **Build 2026.10.12-27**
+  - 🚪 Botão **Sair** (vermelho, no topo) aparece em qualquer lugar fechado: cinema, lojas/comércios e casas.
+  - 🛝 Filhas: no parquinho ou na pista de skate aparece o botão **Brincar**. As meninas ficam brincando sozinhas até você tocar em **Voltar, filhas**. Se você se afastar muito, um segurança traz as duas de volta.
+  - 👗 Moda feminina: vestidos (mini, midi e longo, com saia de verdade no corpo), saias, saltos, bolsas (novo item "Bolsas": de mão, transversal e clutch) e brincos novos (pérola, gota, argolão e esmeralda). As figurantes também usam.
+  - ⚽ Torneio de futsal: com 10 ou mais na fila começa sozinho em 20s, com 2 a 4 times (semifinal e final; empate vai pros pênaltis). Prêmios: campeão $ 5.000 + Medalha de Ouro do Futsal; vice $ 1.500.
+  - 🥊 Luta mais rápida: anda mais rápido, gingado na guarda, golpes mais curtos, esquiva com o direcional (para os lados, para trás ou abaixando) e combos (jab+jab = gancho, esquiva+direto = uppercut, chute colado = joelhada). O figurante circula, esquiva e contra-ataca.
+  - 🛹 Corridas com vários mapas por país, escolhidos no painel ou sorteados. Brasil: SP Consolação, Rio Santa Teresa, Salvador Pelourinho e Paulista à noite; também São Francisco, Kyoto, Champs-Élysées e Porto.
+  - 🛹 Torneio de Skate nas pistas de SP, Rio e Salvador: inscrição na barraca roxa, começa com 5 inscritos (ou completa com figurantes). São 75s de sessão; cada queda tira 150 pts e quem acerta mais ganha bônus. Prêmios: 1º $ 3.000 + Medalha de Ouro do Skate, 2º $ 1.000, 3º $ 500.

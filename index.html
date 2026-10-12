@@ -360,9 +360,10 @@ table.res tr.ally td:nth-child(2){color:var(--ok)}
 .lives{color:#ff4f7b;letter-spacing:2px}
 #mission-box .tm.low{color:var(--bad)}
 #mission-box .btn.sm{display:flex;min-height:26px;padding:0 8px;font-size:12px;margin:5px auto 0;pointer-events:auto}
-#contest-box{position:absolute;left:50%;transform:translateX(-50%) rotate(-1.5deg);top:calc(env(safe-area-inset-top,0px) + 64px);background:var(--sticker);color:#fff;border-radius:12px;padding:6px 18px;text-align:center;box-shadow:5px 5px 0 #000;pointer-events:none}
-#contest-box .cl{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:13px}
-#contest-box .cs{font-family:var(--display);font-size:26px;font-variant-numeric:tabular-nums}
+#contest-box{position:absolute;left:calc(env(safe-area-inset-left,0px) + 10px);top:calc(env(safe-area-inset-top,0px) + 200px);background:var(--sticker);color:#fff;border-radius:10px;padding:4px 10px;text-align:left;box-shadow:3px 3px 0 #000;pointer-events:none;max-width:200px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0}.tbl td{padding:5px 6px;border-bottom:1px solid var(--line)}
+#contest-box .cl{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:11px}
+#contest-box .cs{font-family:var(--display);font-size:16px;font-variant-numeric:tabular-nums}
 #trick-pop{position:fixed;left:50%;top:32%;transform:translate(-50%,-50%) rotate(-4deg);z-index:31;pointer-events:none;text-align:center;width:min(92vw,720px)}
 #trick-pop .nm{font-family:var(--display);font-size:clamp(26px,6vw,52px);color:var(--wax);text-shadow:3px 3px 0 var(--sticker),6px 6px 0 #000;line-height:1;text-wrap:balance}
 #trick-pop .pt{font-family:var(--cond);font-weight:700;font-size:24px;background:#000;color:#fff;display:inline-block;padding:2px 12px;margin-top:8px;transform:rotate(3deg)}
@@ -444,7 +445,7 @@ canvas.swatch{background:#333}
   .profile{min-width:0;max-width:calc(100vw - 190px)}
   .profile .nm{max-width:calc(100vw - 210px)}
   .oficina{grid-template-columns:1fr}.deck-wrap{position:static}.deck-prev{transform:rotate(-90deg);margin-block:-90px}
-  #contest-box{top:calc(env(safe-area-inset-top,0px) + 160px)}
+  #contest-box{top:calc(env(safe-area-inset-top,0px) + 190px)}
 }
 @media (max-width:640px){
   #mission-box{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 190px);max-width:calc(100vw - 32px);min-width:0;left:16px;right:16px;transform:none}
@@ -536,11 +537,13 @@ canvas.swatch{background:#333}
     <span id="h-hp" aria-label="Vida"><i></i><b>100%</b></span>
   </button>
   <div class="hud-tr">
+    <button class="hud-btn" id="hb-sair" style="background:#d6304a;border-color:#ff7088" data-act="sair-local" aria-label="Sair deste lugar" hidden><span style="font-size:17px">🚪</span><span class="lbl">Sair</span></button>
     <button class="hud-btn" data-act="phone-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="lbl">Celular</span></button>
     <button class="hud-btn" data-act="open-social"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lbl">Social</span></button>
     <button class="hud-btn" data-act="open-crew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4.5"/></svg><span class="lbl">Crew</span></button>
     <button class="hud-btn" id="hb-veh" data-act="veh-call" aria-label="Chamar veículo" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15l2-6h14l2 6v4H3z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="lbl">Carro</span></button>
     <button class="hud-btn" id="hb-fam" data-act="familia" aria-label="Chamar as filhas" hidden><span style="font-size:17px">👧</span><span class="lbl">Filhas</span></button>
+    <button class="hud-btn" id="hb-brincar" data-act="filhas-brincar" aria-label="Liberar as filhas pra brincar" hidden><span style="font-size:17px">🛝</span><span class="lbl">Brincar</span></button>
     <button class="hud-btn" id="hb-seg" data-act="open-seg" aria-label="Seguranças" hidden><span style="font-size:17px">🕶️</span><span class="lbl">Seguranças</span></button>
     <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
     <button class="hud-btn" data-act="radio" aria-label="Rádio do grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8 15 3M9 13h6M9 17h3"/></svg><span class="lbl">Rádio</span></button>
@@ -639,7 +642,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.11-26';
+const BUILD = '2026.10.12-27';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -768,6 +771,8 @@ const ITEMS = [
   I('acc', 'ac_phones', 'Fone de Ouvido', 0xff4f7b, 300, 24, 'raro', { ak: 'phones' }),
   I('acc', 'ac_goldchain', 'Corrente de Ouro', 0xd4a017, null, 100, 'lendario', { ak: 'chain', metal: true }),
   I('acc', 'ac_wings', 'Mochila Asas', 0xffffff, null, 150, 'lendario', { ak: 'wings' }),
+  I('acc', 'ac_med_fs', 'Medalha de Ouro do Futsal', 0xffd23f, null, null, 'lendario', { ak: 'medal', src: 'Campeão do torneio de futsal' }),
+  I('acc', 'ac_med_sk', 'Medalha de Ouro do Skate', 0xffd23f, null, null, 'lendario', { ak: 'medal', sk: true, src: 'Campeão do torneio de skate' }),
   // skates
   I('skate', 'sk_basic', 'Shape Básico', 0xb88a55, 80, null, 'comum', { spd: 1.0, acc: 1.0, ctl: 1.0 }),
   I('skate', 'sk_street', 'Street Pro 8.0', 0x2a2a2e, 600, 48, 'raro', { spd: 1.06, acc: 1.12, ctl: 1.08 }),
@@ -1006,7 +1011,7 @@ function addCoins(n) { S.coins += n; updateHUD(); }
 function earn(n) { n = Math.round(n * evMult('coinMult')); addCoins(n); return n; }
 function lookOf(equip, skin, hair, gender, board, body) {
   const sk = ITEM[equip.skate] || ITEM.sk_basic, wh = ITEM[equip.wheels] || ITEM.wh_basic;
-  return { body: body || null, skin, gender: gender || 'm', hair: hair ?? HAIRS[0], shirt: ITEM[equip.shirt] || ITEM.shirt_basic, pants: ITEM[equip.pants] || ITEM.pants_basic, cap: ITEM[equip.cap] || ITEM.cap_none, shoes: ITEM[equip.shoes] || ITEM.shoes_basic, glasses: ITEM[equip.glasses] || ITEM.gl_none, acc: ITEM[equip.acc] || ITEM.ac_none, wrist: ITEM[equip.wrist] || null, ear: ITEM[equip.ear] || null, tats: equip.tats || null, tatName: equip.tn || null, hol: equip.hol || null, bag: !!(equip.bag),
+  return { body: body || null, skin, gender: gender || 'm', hair: hair ?? HAIRS[0], shirt: ITEM[equip.shirt] || ITEM.shirt_basic, pants: ITEM[equip.shirt] && ITEM[equip.shirt].dress ? dressLegs(ITEM[equip.shirt]) : ITEM[equip.pants] || ITEM.pants_basic, cap: ITEM[equip.cap] || ITEM.cap_none, shoes: ITEM[equip.shoes] || ITEM.shoes_basic, glasses: ITEM[equip.glasses] || ITEM.gl_none, acc: ITEM[equip.acc] || ITEM.ac_none, wrist: ITEM[equip.wrist] || null, ear: ITEM[equip.ear] || null, bolsa: ITEM[equip.bolsa] || null, tats: equip.tats || null, tatName: equip.tn || null, hol: equip.hol || null, bag: !!(equip.bag),
     board: { deck: (board && board.color) ?? sk.color, pat: (ITEM[equip.print] || ITEM.pr_none).pat, wheel: wh.color, glow: !!wh.glow, grip: (board && board.grip) ?? 0x18181b, truck: (board && board.truck) ?? 0xb7bcc4 } };
 }
 const botLook = b => lookOf(b.equip, b.skin, b.hair, b.gender);
@@ -1501,6 +1506,11 @@ function buildAcc(u, acc, bag) {
     const m = new THREE.MeshStandardMaterial({ color: acc.color, roughness: 0.25, metalness: 1 });
     mk(new THREE.TorusGeometry(0.085, 0.007, 6, 28), m, 0, 0.25, 0.0, 1.05, 1.3, 1, 1.2);
     mk(CYL(0.025, 0.025, 0.006, 12), m, 0, 0.15, 0.1, 1, 1, 1, Math.PI / 2 - 0.25);
+  } else if (kind === 'medal') {
+    const gm = new THREE.MeshStandardMaterial({ color: 0xffd23f, roughness: 0.2, metalness: 1 }), rib = std(acc.sk ? 0x9b5cff : 0x1a8a3a, 0.7);
+    for (const sx of [1, -1]) mk(boxGeo(0.03, 0.2, 0.006), rib, sx * 0.05, 0.16, 0.115, 1, 1, 1, -0.2, 0, sx * 0.35);
+    mk(CYL(0.04, 0.04, 0.008, 20), gm, 0, 0.05, 0.13, 1, 1, 1, Math.PI / 2 - 0.15);
+    mk(CYL(0.026, 0.026, 0.01, 5), std(0xfff3b0, 0.3, 0.5), 0, 0.05, 0.135, 1, 1, 1, Math.PI / 2 - 0.15);
   } else if (kind === 'phones') {
     const m = std(acc.color, 0.4, 0.2);
     mk(new THREE.TorusGeometry(0.1, 0.012, 6, 24, Math.PI), m, 0, 0.17, -0.01, 1, 0.8, 1, 0.9);
@@ -2754,8 +2764,9 @@ function makePed(o) {
 }
 /* figurante com o modelo realista e roupa sorteada */
 function makeRealPed(f) {
-  const byS = s => ITEMS.filter(i => i.slot === s && i.r !== 'lendario'), eq = {};
+  const byS = s => ITEMS.filter(i => i.slot === s && i.r !== 'lendario' && (f || !(i.dress || i.skirt || i.heel || i.trunk || i.bra))), eq = {};
   for (const s of ['shirt', 'pants', 'shoes']) eq[s] = pick(byS(s)).id;
+  if (f) { if (Math.random() < 0.35) eq.shirt = pick(byS('shirt').filter(i => i.dress)).id; if (Math.random() < 0.4) eq.bolsa = pick(byS('bolsa').filter(i => i.bk !== 'none')).id; if (Math.random() < 0.5) eq.ear = pick(byS('ear').filter(i => i.ek !== 'none')).id; if (Math.random() < 0.3) eq.shoes = pick(byS('shoes').filter(i => i.heel)).id; }
   eq.cap = Math.random() < 0.7 ? 'cap_none' : pick(byS('cap')).id; eq.glasses = Math.random() < 0.75 ? 'gl_none' : pick(byS('glasses')).id; eq.acc = Math.random() < 0.8 ? 'ac_none' : 'ac_backpack';
   const g = makeSkater(lookOf(eq, pick(SKINS), pick(HAIRS), f ? 'f' : 'm'), null); g.userData.ped = true; return g;
 }
@@ -4169,15 +4180,15 @@ function updateCity(dt, t) {
 /* pouso no skate: conta o combo, dá pontos, grana e guarda replay */
 function onLand() {
   const st = myStats(), { bail, combo } = landTrick(P, st.equ);
-  if (bail) { P.fallT = 1.2 * (1 - st.equ * 0.04); P.v *= 0.3; feed('Caiu! Termine a manobra antes de pousar.'); sfx('hit'); hurt(5, 'queda do skate'); playerFell('bail'); return; }
-  if (!combo.length) { if (city.contest && P.airT > 0.55) { city.contest.score += 20; trickPop('Ollie', 20); } return; }
+  if (bail) { sktFall(); P.fallT = 1.2 * (1 - st.equ * 0.04); P.v *= 0.3; feed('Caiu! Termine a manobra antes de pousar.'); sfx('hit'); hurt(5, 'queda do skate'); playerFell('bail'); return; }
+  if (!combo.length) { if (city.contest && P.airT > 0.55) { city.contest.score += 20; trickPop('Ollie', 20); } if (SKT.run && P.airT > 0.55) { sktTrick(20, 1); trickPop('Ollie', 20); } return; }
   const pts = comboScore(combo), names = combo.map(d => d.name).join(' + ');
   sfx('trick'); S.stats.tricks += combo.length; combo.forEach(d => S.stats.trickCount[d.id] = (S.stats.trickCount[d.id] || 0) + 1);
   S.stats.bestCombo = Math.max(S.stats.bestCombo, pts);
-  const coins = city.contest ? 0 : earn(Math.round(pts / 25));
+  const coins = city.contest || SKT.run ? 0 : earn(Math.round(pts / 25));
   addXP(Math.max(2, Math.round(pts / 40)));
   trickPop(names, pts, combo.length > 1 ? `combo x${combo.length}` : (coins ? `$ ${coins}` : ''));
-  if (city.contest) city.contest.score += pts;
+  if (city.contest) city.contest.score += pts; sktTrick(pts, combo.length);
   combo.forEach(d => missionEvent('trick', d.id)); missionEvent('combo', combo.length); evProgress('trick', combo.length);
   if (pts >= 150) scheduleReplay(names, pts);
 }
@@ -4306,6 +4317,7 @@ function checkWeek() {
   if (old.pts > 0) setTimeout(() => toast(`Ranking semanal fechado: você ficou em ${rank}º. ${reward}`, 'pink'), 1500);
 }
 function startContest() {
+  if (SKT.run) return toast('Você está no torneio de skate.', 'bad');
   if (!hasSkate()) return toast('Você precisa de um skate para competir.', 'bad');
   const dv = division(), fee = Math.round(60 * (dv.mult - 1));
   if (S.coins < fee) return toast('Grana insuficiente para a inscrição.', 'bad');
@@ -5520,7 +5532,7 @@ function grindTick(dt) {
   if (off || jump) {
     P.grind = null; P.air = true; P.airT = 0; P.vy = jump ? 6.5 : 2;
     const name = r.ledge ? (G.t > 1 ? 'Nosegrind no Ledge' : '5-0 no Ledge') : (G.t > 1 ? 'Boardslide' : '50-50 Grind'), pts = Math.round(80 + G.t * 120);
-    const coins = city.contest ? 0 : earn(Math.round(pts / 25)); addXP(Math.max(2, Math.round(pts / 40))); trickPop(name, pts, coins ? `$ ${coins}` : ''); if (city.contest) city.contest.score += pts; S.stats.tricks++; evProgress('trick', 1); missionEvent('trick', 'grind');
+    const coins = city.contest ? 0 : earn(Math.round(pts / 25)); addXP(Math.max(2, Math.round(pts / 40))); trickPop(name, pts, coins ? `$ ${coins}` : ''); if (city.contest) city.contest.score += pts; sktTrick(pts, 1); S.stats.tricks++; evProgress('trick', 1); missionEvent('trick', 'grind');
   }
 }
 
@@ -6763,9 +6775,9 @@ function fliperHit() {
    VITRINE DAS LOJAS: foto de cada peça vestida num manequim (gerada no próprio jogo) e botão "Ver"
    ========================================================= */
 const THUMB = { cache: {}, queue: [], busy: false };
-const WEAR_SLOTS = ['shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc'];
+const WEAR_SLOTS = ['shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'bolsa', 'ear'];
 // [altura do foco, distância, lado] da câmera para cada tipo de peça
-const THUMB_CAM = { shirt: [1.22, 1.45, 0.22], pants: [0.68, 1.75, 0.22], shoes: [0.16, 0.95, 0.55], cap: [1.66, 0.85, 0.35], glasses: [1.58, 0.6, 0.2], acc: [1.25, 1.4, 0.45], full: [0.92, 2.9, 0.25] };
+const THUMB_CAM = { shirt: [1.22, 1.45, 0.22], pants: [0.68, 1.75, 0.22], shoes: [0.16, 0.95, 0.55], cap: [1.66, 0.85, 0.35], glasses: [1.58, 0.6, 0.2], acc: [1.25, 1.4, 0.45], bolsa: [0.95, 1.9, 0.7], ear: [1.56, 0.42, 1.6], full: [0.92, 2.9, 0.25] };
 const thumbKey = (id, big) => id + '_' + (S.gender === 'f' ? 'f' : 'm') + (big ? '_B' : '');
 function thumbStudio() {
   if (THUMB.st) return THUMB.st;
@@ -8035,8 +8047,47 @@ const NEW_WEAR = [
 ];
 NEW_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 SLOT_NAMES.wrist = 'Relógios'; SLOT_NAMES.ear = 'Brincos';
-const WEAR_FREE = ['shirt_none', 'wr_none', 'ea_none'];
-function wearMigrate() { if (!S) return; for (const id of WEAR_FREE) if (!S.owned.includes(id)) S.owned.push(id); S.equip.wrist = S.equip.wrist || 'wr_none'; S.equip.ear = S.equip.ear || 'ea_none'; S.tats = S.tats || {}; }
+/* moda feminina: vestidos, saias, saltos, bolsas e mais brincos */
+const FEM_WEAR = [
+  I('shirt', 'vd_tubinho', 'Vestido Tubinho Preto', 0x15161a, 380, null, 'comum', { pat: 'plain', tank: true, dress: 'mini' }),
+  I('shirt', 'vd_rosa', 'Vestido Rosa Chiclete', 0xff4fa3, 360, null, 'comum', { pat: 'plain', tank: true, dress: 'mini' }),
+  I('shirt', 'vd_jeans', 'Vestido Jeans', 0x3b5a8f, 340, null, 'comum', { pat: 'denim', dress: 'mini' }),
+  I('shirt', 'vd_floral', 'Vestido Floral de Verão', 0xff7aa8, 420, null, 'comum', { pat: 'floral', tank: true, dress: 'midi' }),
+  I('shirt', 'vd_branco', 'Vestido Branco de Réveillon', 0xf4f2ec, 450, null, 'comum', { pat: 'plain', dress: 'midi' }),
+  I('shirt', 'vd_azul', 'Vestido Azul Bebê', 0x8fc8f0, 420, null, 'comum', { pat: 'plain', tank: true, dress: 'midi' }),
+  I('shirt', 'vd_vermelho', 'Vestido Longo Vermelho', 0xc8102e, 680, null, 'comum', { pat: 'plain', tank: true, dress: 'longo' }),
+  I('shirt', 'vd_verde', 'Vestido Longo Esmeralda', 0x0f7a4a, 680, null, 'comum', { pat: 'plain', tank: true, dress: 'longo' }),
+  I('shirt', 'vd_dourado', 'Vestido de Festa Dourado', 0xd4a017, 1600, 45, 'raro', { pat: 'plain', tank: true, dress: 'longo', shine: true }),
+  I('shirt', 'vd_galaxia', 'Vestido Galáxia', 0x3a2a8a, null, 110, 'lendario', { pat: 'galaxy', tank: true, dress: 'longo' }),
+  I('pants', 'sa_jeans', 'Saia Jeans', 0x3b5a8f, 220, null, 'comum', { pat: 'denim', trunk: true, skirt: 'mini' }),
+  I('pants', 'sa_preta', 'Saia Preta Midi', 0x15161a, 260, null, 'comum', { pat: 'plain', trunk: true, skirt: 'midi' }),
+  I('pants', 'sa_plissada', 'Saia Plissada Rosa', 0xff9ccf, 280, null, 'comum', { pat: 'plain', trunk: true, skirt: 'midi' }),
+  I('pants', 'sa_xadrez', 'Saia Xadrez', 0xb3262e, 300, null, 'comum', { pat: 'check', trunk: true, skirt: 'mini' }),
+  I('pants', 'sa_longa', 'Saia Longa Floral', 0x169aa8, 340, null, 'comum', { pat: 'floral', trunk: true, skirt: 'longo' }),
+  I('shoes', 'sl_preto', 'Salto Alto Preto', 0x15161a, 420, null, 'comum', { pat: 'plain', heel: true }),
+  I('shoes', 'sl_nude', 'Scarpin Nude', 0xd9a88a, 420, null, 'comum', { pat: 'plain', heel: true }),
+  I('shoes', 'sl_vermelho', 'Salto Vermelho', 0xc8102e, 460, null, 'comum', { pat: 'plain', heel: true }),
+  I('shoes', 'sl_branco', 'Sandália de Salto Branca', 0xf4f2ec, 460, null, 'comum', { pat: 'sandal', heel: true }),
+  I('shoes', 'sl_dourado', 'Sandália de Salto Dourada', 0xd4a017, 1200, 35, 'raro', { pat: 'sandal', heel: true, shine: true }),
+  I('ear', 'ea_perola', 'Brinco de Pérola', 0xf4efe6, 380, null, 'comum', { ek: 'pearl' }),
+  I('ear', 'ea_gota', 'Brinco Gota de Prata', 0xcfd3d8, 320, null, 'comum', { ek: 'drop' }),
+  I('ear', 'ea_coracao', 'Brinco Coração Rosa', 0xff4fa3, 260, null, 'comum', { ek: 'drop' }),
+  I('ear', 'ea_argolao', 'Argolão Dourado', 0xd4a017, 600, null, 'comum', { ek: 'bighoop' }),
+  I('ear', 'ea_esmeralda', 'Brinco de Esmeralda', 0x2ecc71, null, 90, 'lendario', { ek: 'drop', gem: true }),
+  I('bolsa', 'bo_none', 'Sem bolsa', 0x555555, 0, null, 'comum', { bk: 'none' }),
+  I('bolsa', 'bo_preta', 'Bolsa de Mão Preta', 0x15161a, 380, null, 'comum', { bk: 'mao' }),
+  I('bolsa', 'bo_caramelo', 'Bolsa Transversal Caramelo', 0x9a5a2a, 420, null, 'comum', { bk: 'ombro' }),
+  I('bolsa', 'bo_rosa', 'Bolsinha Rosa', 0xff7aa8, 300, null, 'comum', { bk: 'ombro', small: true }),
+  I('bolsa', 'bo_branca', 'Bolsa de Mão Branca', 0xf4f2ec, 380, null, 'comum', { bk: 'mao' }),
+  I('bolsa', 'bo_clutch', 'Clutch Dourada de Festa', 0xd4a017, 900, 30, 'raro', { bk: 'clutch', shine: true }),
+  I('bolsa', 'bo_grife', 'Bolsa de Grife', 0x6b3a1c, null, 100, 'lendario', { bk: 'mao', grife: true }),
+];
+FEM_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
+SLOT_NAMES.bolsa = 'Bolsas';
+const _dressLegs = {};
+function dressLegs(sh) { return _dressLegs[sh.id] || (_dressLegs[sh.id] = { slot: 'pants', id: '_dl_' + sh.id, name: sh.name, color: sh.color, pat: sh.pat, trunk: true }); }
+const WEAR_FREE = ['shirt_none', 'wr_none', 'ea_none', 'bo_none'];
+function wearMigrate() { if (!S) return; for (const id of WEAR_FREE) if (!S.owned.includes(id)) S.owned.push(id); S.equip.wrist = S.equip.wrist || 'wr_none'; S.equip.ear = S.equip.ear || 'ea_none'; S.equip.bolsa = S.equip.bolsa || 'bo_none'; S.tats = S.tats || {}; }
 /* arma de fogo: fica no coldre na cintura; o botão da arma tira da cintura (e depois atira) */
 const handNow = () => { const k = myHandKind(); if (!k) return null; return myGun() && !(P.drawnT > 0) && !P.aim ? null : k; };
 const holsterNow = () => { const g = myGun(); return g && !(P.drawnT > 0) && !P.aim && !(P.jailT > 0) && ['pistola', 'revolver', 'taser'].includes(g.gun) ? g.gun : g && !(P.drawnT > 0) && !P.aim ? 'longa_' + g.gun : null; };
@@ -8090,6 +8141,62 @@ function tatMat(id, name, wrap) { return new THREE.MeshStandardMaterial({ map: t
 /* tamanho dos membros (metros) para a pele "por cima" da malha: homem e mulher */
 const LIMB = { m: { thigh: [0.095, 0.075], arm: [0.052, 0.045], fore: [0.043, 0.036], neck: [0.058, 0.055], calf: [0.052, 0.04] }, f: { thigh: [0.088, 0.066], arm: [0.045, 0.038], fore: [0.036, 0.03], neck: [0.05, 0.048], calf: [0.048, 0.036] } };
 const SHELL = { thigh: [0.0, 1.06], arm: [0.08, 0.75], fore: [0.22, 0.86], neck: [0.05, 0.95], calf: [0.15, 0.6] };
+/* saia/vestido, salto alto e bolsa (presos aos ossos do personagem) */
+const SKIRT_LEN = { mini: [0.36, 0.19], midi: [0.6, 0.235], longo: [0.84, 0.29] };
+function femWear(u, g, B, k, look, add) {
+  const sh = look.shirt || {}, pa = look.pants || {}, sk = sh.dress || pa.skirt, shoes = look.shoes || {};
+  // salto: o corpo sobe um pouco e ganha plataforma + salto fino debaixo do pé
+  const lift = shoes.heel ? 0.04 : 0; if (u.stance) u.stance.position.y = lift;
+  g.updateMatrixWorld(true);
+  const rq = g.getWorldQuaternion(new THREE.Quaternion()), rp = g.getWorldPosition(new THREE.Vector3()), up = new THREE.Vector3(0, 1, 0).applyQuaternion(rq), fw = new THREE.Vector3(0, 0, 1).applyQuaternion(rq);
+  const mat = it => { const m = new THREE.MeshStandardMaterial({ roughness: it.shine ? 0.3 : 0.8, metalness: it.shine ? 0.6 : 0, side: THREE.DoubleSide }); setClothMat(m, it); m.side = THREE.DoubleSide; return m; };
+  if (sk && B.Hips) {
+    const it = sh.dress ? sh : pa, fr = add(boneFrame(u, B.Hips, g)), [L, R1] = SKIRT_LEN[sk] || SKIRT_LEN.midi, f = k === 'f';
+    const hw = B.LeftUpLeg ? Math.abs(B.LeftUpLeg.getWorldPosition(new THREE.Vector3()).sub(B.Hips.getWorldPosition(new THREE.Vector3())).dot(new THREE.Vector3(1, 0, 0).applyQuaternion(rq))) : 0.09;
+    const top = 0.1, R0 = Math.max(0.118, hw * 1.32) * (f ? 1 : 1.08), r1 = Math.max(R1, R0 + 0.04);
+    // perfil: cintura fina, cobre o quadril e abre até a barra
+    const Rh = Math.max(R0 + 0.03, hw * 1.85), prof = [[R0, 0], [R0 + (Rh - R0) * 0.6, 0.05], [Rh, 0.12], [Rh * 1.01, 0.19]]; for (let i = 1; i <= 6; i++) { const tt = i / 6, y = 0.19 + (L - 0.19) * tt; prof.push([Rh * 1.01 + (Math.max(r1, Rh + 0.02) - Rh * 1.01) * tt, y]); }
+    const geo = new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, -y)).reverse(), 32), ps = geo.attributes.position;
+    for (let i = 0; i < ps.count; i++) { const y = -ps.getY(i), tt = y / L, a = Math.atan2(ps.getZ(i), ps.getX(i)); const wav = sk === 'mini' ? 0 : Math.sin(a * 9) * 0.008 * tt; ps.setX(i, ps.getX(i) * (1 + wav)); ps.setZ(i, ps.getZ(i) * (0.8 + 0.18 * tt) * (1 + wav)); }
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat(it)); m.position.set(0, top, -0.005); m.castShadow = true; fr.add(m);
+    const belt = new THREE.Mesh(new THREE.TorusGeometry(R0 * 0.99, 0.008, 6, 28), mat(it)); belt.rotation.x = Math.PI / 2; belt.scale.set(1, 0.8, 1); belt.position.y = top; fr.add(belt);
+  }
+  if (lift && B.LeftFoot && B.RightFoot) {
+    const sm = new THREE.MeshStandardMaterial({ color: shoes.color, roughness: shoes.shine ? 0.25 : 0.45, metalness: shoes.shine ? 0.8 : 0.1 });
+    for (const s of ['Left', 'Right']) {
+      const foot = B[s + 'Foot'], toe = B[s + 'ToeBase'], fr = add(boneFrame(u, foot, g)), fp = foot.getWorldPosition(new THREE.Vector3());
+      const fy = fp.clone().sub(rp).dot(up) - lift, tz = toe ? toe.getWorldPosition(new THREE.Vector3()).sub(fp).dot(fw) : 0.1;
+      const heel = new THREE.Mesh(CYL(0.006, 0.011, lift + 0.012, 8), sm); heel.position.set(0, -fy - lift / 2 + 0.004, -0.035); fr.add(heel);
+      const plat = new THREE.Mesh(boxGeo(0.06, lift * 0.75, 0.1), sm); plat.position.set(0, -fy - lift * 0.62, tz * 0.7 + 0.005); fr.add(plat);
+      const cup = new THREE.Mesh(boxGeo(0.07, 0.012, 0.07), sm); cup.position.set(0, -fy + 0.002, -0.02); fr.add(cup);
+    }
+  }
+  const bo = look.bolsa; if (bo && bo.bk && bo.bk !== 'none') {
+    const bm = new THREE.MeshStandardMaterial({ color: bo.color, roughness: bo.shine ? 0.25 : 0.55, metalness: bo.shine ? 0.85 : 0.05 }), gold = new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.2, metalness: 1 });
+    if (bo.grife) bm.map = grifeTex();
+    if (bo.bk === 'ombro' && B.Spine2 && B.Spine) {
+      const fr = add(boneFrame(u, B.Spine2, g)), sc = bo.small ? 0.75 : 1, bx = 0.15, by = -0.36, bz = 0.1;
+      const bag = new THREE.Mesh(boxGeo(0.2 * sc, 0.15 * sc, 0.06), bm); bag.position.set(bx, by, bz); bag.rotation.y = -0.35; fr.add(bag);
+      const flap = new THREE.Mesh(boxGeo(0.205 * sc, 0.07 * sc, 0.065), bm); flap.position.set(bx, by + 0.045 * sc, bz + 0.004); flap.rotation.y = -0.35; fr.add(flap);
+      const clasp = new THREE.Mesh(boxGeo(0.02, 0.014, 0.01), gold); clasp.position.set(bx + 0.012, by + 0.02 * sc, bz + 0.035); clasp.rotation.y = -0.35; fr.add(clasp);
+      const strap = (a, b2) => { const d = b2.clone().sub(a), st = new THREE.Mesh(boxGeo(0.022, d.length(), 0.006), new THREE.MeshStandardMaterial({ color: new THREE.Color(bo.color).multiplyScalar(0.8), roughness: 0.6 })); st.position.copy(a).add(b2).multiplyScalar(0.5); st.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); fr.add(st); };
+      const sh0 = new THREE.Vector3(-0.1, 0.13, 0.0), fA = new THREE.Vector3(-0.08, 0.1, 0.1), fM = new THREE.Vector3(0.02, -0.08, 0.125), fB = new THREE.Vector3(bx - 0.07, by + 0.05 * sc, bz + 0.03), bA = new THREE.Vector3(-0.08, 0.1, -0.095), bM = new THREE.Vector3(0.04, -0.1, -0.11), bB = new THREE.Vector3(bx + 0.06, by + 0.05 * sc, bz - 0.05);
+      strap(sh0, fA); strap(fA, fM); strap(fM, fB); strap(sh0, bA); strap(bA, bM); strap(bM, bB);
+    } else if ((bo.bk === 'mao' || bo.bk === 'clutch') && B.LeftHand) {
+      const fr = add(boneFrame(u, B.LeftHand, g));
+      if (bo.bk === 'clutch') { const c = new THREE.Mesh(boxGeo(0.17, 0.09, 0.03), bm); c.position.set(0, -0.05, 0.02); c.rotation.x = 0.1; fr.add(c); const cl = new THREE.Mesh(boxGeo(0.03, 0.02, 0.008), gold); cl.position.set(0, -0.03, 0.037); fr.add(cl); }
+      else {
+        const hd = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.006, 6, 18, Math.PI), new THREE.MeshStandardMaterial({ color: new THREE.Color(bo.color).multiplyScalar(0.75), roughness: 0.5 })); hd.position.set(0, -0.06, 0); fr.add(hd);
+        const body = new THREE.Mesh(boxGeo(0.23, 0.16, 0.09), bm); body.position.set(0, -0.14, 0); fr.add(body);
+        const lid = new THREE.Mesh(boxGeo(0.235, 0.03, 0.095), bm); lid.position.set(0, -0.065, 0); fr.add(lid);
+        const cl = new THREE.Mesh(boxGeo(0.03, 0.022, 0.01), gold); cl.position.set(0, -0.085, 0.05); fr.add(cl);
+      }
+    }
+  }
+}
+let _grifeT = null;
+function grifeTex() { return _grifeT || (_grifeT = canvasTex(128, 128, (c, w, h) => { c.fillStyle = '#6b3a1c'; c.fillRect(0, 0, w, h); c.fillStyle = '#c8a25a'; c.font = 'bold 18px serif'; for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) c.fillText((x + y) % 2 ? '✦' : 'R', x * 22 + (y % 2) * 11, y * 22 + 16); })); }
 function buildWearExtras(g, look) {
   const u = g.userData; if (!u.R || !u.R.B) return; const B = u.R.B, k = u.k || 'm', Lm = Object.assign({}, LIMB[k] || LIMB.m), ML = ((k === 'm' || (MODELS && MODELS[k] && MODELS[k].rpm)) && MODELS && MODELS[k] && MODELS[k].limb) || {};
   for (const [n, key] of [['fore', 'fore'], ['arm', 'arm'], ['neck', 'neck'], ['calf', 'calf'], ['thigh', 'thigh']]) if (ML[key]) Lm[n] = [ML[key] + 0.004, ML[key] * 0.92 + 0.004];
@@ -8125,8 +8232,13 @@ function buildWearExtras(g, look) {
   const e = look.ear; if (e && e.ek && e.ek !== 'none' && B.Head) {
     const fr = add(boneFrame(u, B.Head, g)), mat = new THREE.MeshStandardMaterial({ color: e.color, roughness: 0.15, metalness: e.ek === 'ice' ? 0.2 : 1, emissive: e.ek === 'ice' ? 0x5588aa : 0 });
     const EO = k === 'f' ? [0.068, 0.035, 0.0] : [0.074, 0.03, -0.005];
-    for (const s of [1, -1]) { const m = e.ek === 'hoop' ? new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.0025, 6, 16), mat) : new THREE.Mesh(SPH(e.ek === 'ice' ? 0.006 : 0.005, 8, 6), mat); m.position.set(s * EO[0], EO[1], EO[2]); if (e.ek === 'hoop') { m.rotation.y = Math.PI / 2; m.position.y -= 0.012; } fr.add(m); }
+    if (e.ek === 'pearl') { mat.metalness = 0; mat.roughness = 0.25; }
+    for (const s of [1, -1]) {
+      if (e.ek === 'drop') { const pin = new THREE.Mesh(SPH(0.0035, 6, 5), new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.2, metalness: 1 })); pin.position.set(s * EO[0], EO[1], EO[2]); fr.add(pin); const ch = new THREE.Mesh(CYL(0.0012, 0.0012, 0.022, 4), pin.material); ch.position.set(s * EO[0], EO[1] - 0.012, EO[2]); fr.add(ch); const gm = new THREE.Mesh(SPH(0.0075, 10, 8), e.gem ? new THREE.MeshStandardMaterial({ color: e.color, roughness: 0.05, metalness: 0.3, emissive: 0x0a4020 }) : mat); gm.scale.set(0.8, 1.35, 0.6); gm.position.set(s * EO[0], EO[1] - 0.028, EO[2]); fr.add(gm); continue; }
+      const m = e.ek === 'hoop' || e.ek === 'bighoop' ? new THREE.Mesh(new THREE.TorusGeometry(e.ek === 'bighoop' ? 0.022 : 0.012, 0.0025, 6, 20), mat) : new THREE.Mesh(SPH(e.ek === 'ice' ? 0.006 : e.ek === 'pearl' ? 0.0068 : 0.005, 10, 8), mat); m.position.set(s * EO[0], EO[1], EO[2]); if (e.ek === 'hoop' || e.ek === 'bighoop') { m.rotation.y = Math.PI / 2; m.position.y -= e.ek === 'bighoop' ? 0.022 : 0.012; } fr.add(m);
+    }
   }
+  try { femWear(u, g, B, k, look, add); } catch (er) { console.warn('moda', er); }
   // coldre com a arma na cintura (lado direito)
   const h = look.hol; if (h && B.Hips) {
     const fr = add(boneFrame(u, B.Hips, g)), dark = std(0x22252b, 0.5, 0.2), leather = std(0x3a2a1c, 0.8);
@@ -9300,13 +9412,124 @@ function buildLife(sc) {
   try { buildWalkers(sc); } catch (e) { console.warn('pedestres', e); }
   try { buildArena(sc); } catch (e) { console.warn('ringue', e); }
   try { buildQuadra(sc); } catch (e) { console.warn('quadra', e); }
+  try { buildSktBooth(sc); } catch (e) { console.warn('torneio skate', e); }
   buildFamilyCity(sc);
   setTimeout(loadCasas, 900);
+}
+/* =========================================================
+   TORNEIO DE SKATE nas pistas (SP, Rio e Salvador): inscrição na barraca da pista,
+   começa com 5 inscritos (ou completa com figurantes). 75s de sessão: ganha quem somar
+   mais pontos de manobra, cair menos e acertar mais.
+   ========================================================= */
+const SKT = { q: [], m: null, run: null, scores: {}, last: null }, SKT_DUR = 75, SKT_N = 5;
+const SKT_PRIZE = [3000, 1000, 500];
+const sktSpot = () => city.park ? parkWorld(-1.5, 9) : null;
+function buildSktBooth(sc) {
+  SKT.q = []; SKT.m = null; SKT.run = null; SKT.scores = {}; if (!city.park) return;
+  const [x, z] = sktSpot(), g = new THREE.Group(); g.position.set(x, 0, z); sc.add(g);
+  const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  add(boxGeo(2.4, 0.9, 0.8), lam(0x9b5cff), 0, 0.45, 0); add(boxGeo(2.5, 0.06, 0.9), lam(0xffcf3a), 0, 0.93, 0);
+  for (const sx of [-1.15, 1.15]) add(CYL(0.04, 0.04, 2.6, 6), lam(0x15161a), sx, 1.3, -0.3);
+  add(boxGeo(2.6, 0.5, 0.06), lam(0x15161a), 0, 2.45, -0.3);
+  const sp = textSprite('🛹 TORNEIO DE SKATE', { bg: '#9b5cff', fg: '#ffffff', size: 42, scale: [3.4, 0.55, 1] }); sp.position.set(0, 3.1, -0.3); g.add(sp);
+  city.xspots = (city.xspots || []).filter(o => !o.skt);
+  city.xspots.push({ skt: true, x, z: z + 1.2, r: 3, label: () => SKT.m ? '🛹 Torneio de skate rolando: ver placar' : `🛹 Torneio de Skate: inscrição (${sktReals().length}/${SKT_N})`, fn: () => { sktSend('hello', {}); openPanel('skt'); } });
+}
+function sktSend(op, d) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'skt', payload: Object.assign({ op }, d || {}) }); }
+const sktReals = () => SKT.q.filter(q => q.id === myId() || NET.peers[q.id]);
+function sktJoin() {
+  if (!hasSkate()) return toast('Você precisa de um skate para o torneio (Shape & Truck).', 'bad');
+  if (SKT.m) return toast('Já tem torneio rolando. Espere o próximo.', 'bad');
+  if (SKT.q.some(q => q.id === myId())) return; const e = { id: myId(), name: S.name }; SKT.q.push(e); sktSend('join', { e }); toast('🛹 Inscrição feita! Com 5 inscritos o torneio começa.', 'good'); renderPanel();
+}
+function sktLeave() { SKT.q = SKT.q.filter(q => q.id !== myId()); sktSend('leave', { id: myId() }); renderPanel(); }
+function onSkt(d) {
+  if (!d) return;
+  if (d.op === 'join' && d.e && !SKT.q.some(q => q.id === d.e.id)) SKT.q.push(d.e);
+  else if (d.op === 'leave') SKT.q = SKT.q.filter(q => q.id !== d.id);
+  else if (d.op === 'hello') { const me = SKT.q.find(q => q.id === myId()); if (me) sktSend('join', { e: me }); if (SKT.m && SKT.m.host === myId()) sktSend('start', { m: SKT.m }); }
+  else if (d.op === 'start' && d.m && (!SKT.m || SKT.m.t0 !== d.m.t0)) sktBegin(d.m);
+  else if (d.op === 'sc' && SKT.m) SKT.scores[d.id] = d;
+  else if (d.op === 'end' && d.rank) sktFinal(d.rank);
+  else if (d.op === 'ann' && d.txt) toast(d.txt, 'good');
+  if (panelKind === 'skt') renderPanel();
+}
+function sktStart(fill) {
+  if (SKT.m) return; let reals = sktReals(); if (!reals.some(q => q.id === myId())) reals.unshift({ id: myId(), name: S.name });
+  reals = reals.slice(0, 8); const players = reals.map(q => ({ id: q.id, name: q.name }));
+  const BOTN = ['Tico Flip', 'Rafa Rampa', 'Duda Ollie', 'Kaio Grind', 'Bia Kickflip', 'Lelê Varial', 'Juca 360'];
+  if (fill) for (let i = 0; players.length < SKT_N; i++) players.push({ id: 'bot' + i, name: BOTN[i % BOTN.length], bot: true, sk: 0.55 + Math.random() * 0.4 });
+  if (players.length < 2) return toast('Precisa de pelo menos mais um competidor.', 'bad');
+  const m = { t0: Date.now() + 6000, dur: SKT_DUR, host: myId(), players, city: cityId() };
+  SKT.q = SKT.q.filter(q => !players.some(p => p.id === q.id)); sktSend('leave', { id: myId() });
+  sktSend('start', { m }); sktSend('ann', { txt: `🛹 Torneio de skate começando na pista: ${players.map(p => p.name).join(', ')}!` }); sktBegin(m); closePanel();
+}
+function sktBegin(m) {
+  SKT.m = m; SKT.scores = {}; SKT.endSent = false; SKT.bots = m.players.filter(p => p.bot).map(p => ({ p, s: 0, f: 0, l: 0, nt: rand(1, 3) }));
+  const me = m.players.find(p => p.id === myId());
+  if (me) {
+    SKT.run = { s: 0, f: 0, l: 0, best: 0 }; if (city.contest) { city.contest = null; }
+    if (P.drive) exitVehicle(true);
+    fadeTo(() => { const [x, z] = parkWorld(8, 0); P.x = x; P.z = z; P.y = 0; P.v = 0; P.air = false; P.fallT = 0; P.onBoard = hasSkate(); P.emote = null; city.camSnap = true; });
+    $('contest-box').hidden = false; toast('🛹 Torneio em 6 segundos! Encadeie manobras nas rampas, sem cair.', 'pink');
+  }
+  bigBanner('🛹 TORNEIO DE SKATE');
+}
+const sktFinalScore = r => { const tot = r.l + r.f, acc = tot ? r.l / tot : 0; return Math.max(0, Math.round(r.s - r.f * 150 + r.s * 0.25 * acc)); };
+function sktTrick(pts, n) { const R2 = SKT.run, M = SKT.m; if (!R2 || !M || Date.now() < M.t0 || Date.now() > M.t0 + M.dur * 1000) return; R2.s += pts; R2.l += Math.max(1, n || 1); R2.best = Math.max(R2.best, pts); }
+function sktFall() { const R2 = SKT.run, M = SKT.m; if (!R2 || !M || Date.now() < M.t0 || Date.now() > M.t0 + M.dur * 1000) return; R2.f++; trickPop('Queda! -150', 0); }
+function sktTable() {
+  const M = SKT.m, rows = [];
+  for (const p of M.players) { const r = p.id === myId() && SKT.run ? SKT.run : p.bot && M.host === myId() ? (SKT.bots.find(b => b.p.id === p.id) || {}) : SKT.scores[p.id]; const rr = { s: (r && r.s) || 0, f: (r && r.f) || 0, l: (r && r.l) || 0 }; rows.push({ id: p.id, name: p.name, s: rr.s, f: rr.f, l: rr.l, fin: sktFinalScore(rr), bot: !!p.bot }); }
+  return rows.sort((a, b) => b.fin - a.fin);
+}
+function updateSkt(dt, t) {
+  const M = SKT.m; if (!M) return; const el = (Date.now() - M.t0) / 1000, box = $('contest-box');
+  // figurantes: o organizador simula e manda o placar
+  if (M.host === myId() && el >= 0 && el < M.dur) for (const b of SKT.bots) { const nw = performance.now(); if (!b.nx) b.nx = nw + rand(800, 2500); if (nw >= b.nx) { b.nx = nw + rand(1800, 3400); if (Math.random() < 0.55 + b.p.sk * 0.35) { b.s += Math.round(rand(80, 420) * b.p.sk); b.l++; } else b.f++; } }
+  if (M.host === myId() && (SKT.bAt || 0) < performance.now()) { SKT.bAt = performance.now() + 1500; for (const b of SKT.bots) sktSend('sc', { id: b.p.id, s: b.s, f: b.f, l: b.l }); }
+  if (SKT.run && (SKT.sAt || 0) < performance.now()) { SKT.sAt = performance.now() + 1500; sktSend('sc', { id: myId(), s: SKT.run.s, f: SKT.run.f, l: SKT.run.l }); }
+  if (SKT.run && box) {
+    if (box.hidden) box.hidden = false;
+    const tb = sktTable(), pos = tb.findIndex(r => r.id === myId()) + 1, me = tb[pos - 1];
+    box.innerHTML = el < 0 ? `<div class="cl">Torneio de Skate</div><div class="cs">Começa em ${Math.ceil(-el)}s</div>` : `<div class="cl">Torneio de Skate · ${pos}º de ${tb.length}</div><div class="cs">${fmt(me.fin)} pts · ${me.f} quedas · ${Math.max(0, Math.ceil(M.dur - el))}s</div>`;
+    if (el >= 0 && el < M.dur && SKT.run && !inPark(P.x, P.z, -8) && (SKT.warnT || 0) < performance.now()) { SKT.warnT = performance.now() + 6000; toast('🛹 Volte para a pista! Fora dela as manobras não contam.', 'bad'); }
+  }
+  if (el >= M.dur + 2 && M.host === myId() && !SKT.endSent) { SKT.endSent = true; const rank = sktTable().map(r => ({ id: r.id, name: r.name, fin: r.fin, f: r.f, l: r.l, s: r.s })); sktSend('end', { rank }); sktFinal(rank); }
+  else if (el >= M.dur + 9 && M.host !== myId()) sktFinal(sktTable().map(r => ({ id: r.id, name: r.name, fin: r.fin, f: r.f, l: r.l, s: r.s })));
+}
+function sktFinal(rank) {
+  if (!SKT.m) return; const M = SKT.m, was = !!SKT.run; SKT.m = null; SKT.run = null; SKT.last = { rank, t: Date.now() }; $('contest-box').hidden = !city.contest;
+  const champ = rank[0]; if (champ) feed(`🏆 ${champ.name} é o campeão do torneio de skate com ${fmt(champ.fin)} pontos!`);
+  if (was) {
+    const pos = rank.findIndex(r => r.id === myId()) + 1, prize = SKT_PRIZE[pos - 1] || 100; earn(prize); addXP(30 + Math.max(0, 4 - pos) * 20); S.stats.contests++;
+    if (pos === 1) { bigBanner('🏆 CAMPEÃO DO TORNEIO DE SKATE!'); celebrate && celebrate(); sfx('level'); postFeed(`Fui campeão do torneio de skate com ${fmt(rank[0].fin)} pontos! 🛹🏆`); if (!S.owned.includes('ac_med_sk')) { S.owned.push('ac_med_sk'); setTimeout(() => toast('🥇 Você ganhou a Medalha de Ouro do Skate! (Perfil > Acessórios)', 'good'), 1500); } }
+    else bigBanner(`${pos}º LUGAR NO TORNEIO`);
+    persist(); updateHUD(); toast(`🛹 Torneio: ${pos}º lugar · +$ ${fmt(prize)}`, pos === 1 ? 'good' : 'pink'); openPanel('skt');
+  }
+}
+const PANEL_SKT = function () {
+  const n = sktReals().length, inQ = SKT.q.some(q => q.id === myId());
+  let html = `<p>Inscreva-se e espere completar <b>${SKT_N} skatistas</b>. A sessão dura ${SKT_DUR}s na pista: <b>ganha quem fizer mais manobras, cair menos e acertar mais</b> (cada queda tira 150 pts; quem acerta tudo ganha bônus de até 25%).</p>`;
+  html += `<div class="meta"><span class="coin">🥇 $ ${fmt(SKT_PRIZE[0])} + Medalha de Ouro</span><span>🥈 $ ${fmt(SKT_PRIZE[1])}</span><span>🥉 $ ${fmt(SKT_PRIZE[2])}</span></div>`;
+  if (SKT.m) { const el = (Date.now() - SKT.m.t0) / 1000; html += `<div class="note">🔴 Torneio rolando (${Math.max(0, Math.ceil(SKT.m.dur - el))}s)</div><table class="tbl">${sktTable().map((r, i) => `<tr><td>${i + 1}º</td><td>${esc(r.name)}</td><td>${fmt(r.fin)} pts</td><td>${r.f} quedas</td></tr>`).join('')}</table>`; }
+  else {
+    html += `<div class="note">🛹 Inscritos: <b>${n}/${SKT_N}</b>${SKT.q.length ? ' · ' + SKT.q.map(q => esc(q.name)).join(', ') : ''}${SKT.autoT ? `<br>⏳ Começa em ${Math.max(0, Math.ceil((SKT.autoT - Date.now()) / 1000))}s` : ''}</div>`;
+    html += `<div class="row">${inQ ? '<button class="btn ghost" data-act="skt-leave">Cancelar inscrição</button>' : '<button class="btn" data-act="skt-join">Inscrever no torneio</button>'}<button class="btn ghost" data-act="skt-fill">Começar já (completa com figurantes)</button></div>`;
+  }
+  if (SKT.last) html += `<h4>Último resultado</h4><table class="tbl">${SKT.last.rank.map((r, i) => `<tr><td>${['🥇', '🥈', '🥉'][i] || (i + 1) + 'º'}</td><td>${esc(r.name)}</td><td>${fmt(r.fin)} pts</td><td>${r.f} quedas</td></tr>`).join('')}</table>`;
+  return { title: '🛹 Torneio de Skate', html };
+};
+function sktAutoTick() {
+  if (SKT.m) { SKT.autoT = null; return; } const reals = sktReals(); if (reals.length < SKT_N) { SKT.autoT = null; return; }
+  if (reals.map(q => q.id).sort()[0] !== myId()) return;
+  if (!SKT.autoT) { SKT.autoT = Date.now() + 15000; sktSend('ann', { txt: '🛹 5 inscritos! O torneio de skate começa em 15 segundos.' }); toast('🛹 5 inscritos! O torneio de skate começa em 15 segundos.', 'good'); return; }
+  if (Date.now() >= SKT.autoT) { SKT.autoT = null; sktStart(false); }
 }
 /* sai do futebol/luta se a pessoa foi embora (carro, viagem, longe da quadra ou do ringue) */
 function sportGuard() {
   const away = mode !== 'city' || !!P.drive || !!city.interior || !!city.shopIn;
-  if (FS.m && FS.m.me && (away || Math.hypot(P.x - QUADRA_POS[0], P.z - QUADRA_POS[1]) > 45)) { toast('Você saiu do jogo de futsal.', 'pink'); fsQuit(); }
+  if (FS.m && FS.m.me && Date.now() > FS.m.t0 && (away || Math.hypot(P.x - QUADRA_POS[0], P.z - QUADRA_POS[1]) > 45)) { toast('Você saiu do jogo de futsal.', 'pink'); fsQuit(); }
   if (RING.mine && !RING.mine.done && (away || Math.hypot(P.x - ARENA_POS[0], P.z - ARENA_POS[1]) > 20)) fightGiveUp();
   if (RING.mine && RING.mine.done && away) fightCleanup();
   if (P.sport && !(FS.m && FS.m.me) && !RING.mine) { P.fp = null; P.fpc = 0; P.sprint = 1; P.sportV = null; setSport(null); setGloves(city.player, null); }
@@ -9324,6 +9547,7 @@ function updateLife25(dt, t) {
   try { updateHandHold(); } catch (e) { console.warn('mãos dadas', e); }
   try { updateFight(dt, t); } catch (e) { console.warn('luta', e); }
   try { updateFutsal(dt, t); } catch (e) { console.warn('futsal', e); }
+  try { if ((SKT.aT || 0) < performance.now()) { SKT.aT = performance.now() + 1000; sktAutoTick(); } updateSkt(dt, t); } catch (e) { console.warn('torneio skate', e); }
 }
 
 /* =========================================================
@@ -9341,7 +9565,7 @@ function setSport(k) {
   let hud = $('sport-hud'); if (!k) { if (hud) hud.hidden = true; return; }
   if (!hud) { hud = document.createElement('div'); hud.id = 'sport-hud'; document.body.appendChild(hud); }
   hud.hidden = false;
-  if (!IS_TOUCH) toast(k === 'luta' ? 'Teclado: J/1 jab · K/2 direto · 3 chute · 4 (segure) defesa · 5 esquiva' : 'Teclado: J/1 chutar · K/2 passe · 3 carrinho · 4 (segure) correr', 'pink');
+  if (!IS_TOUCH) toast(k === 'luta' ? 'Teclado: J/1 jab · K/2 direto · 3 chute · 4 (segure) defesa · 5 esquiva (com a seta pro lado)' : 'Teclado: J/1 chutar · K/2 passe · 3 carrinho · 4 (segure) correr', 'pink');
 }
 const spTap = (a, alt) => tap(a) || (alt ? tap(alt) : false);
 const spHold = (a, key) => !!(input.hold[a] || (key && input.held[key]));
@@ -9359,12 +9583,17 @@ const GUARD = { lArmFwd: 0.7, rArmFwd: 0.6, lElbow: 2.4, rElbow: 2.5, lArmDown: 
 function fpPose(code, k) {
   const s = Math.sin(Math.min(1, k) * Math.PI);
   switch (code) {
-    case 'g': return GUARD;
+    case 'g': case 'b': { const bt = performance.now() / 1000, bo = Math.abs(Math.sin(bt * 6.5)) * 0.14, sw = Math.sin(bt * 3.25) * 0.08; const base = code === 'g' ? GUARD : Object.assign({}, GUARD, { lArmFwd: 0.95, rArmFwd: 0.95, lElbow: 2.65, rElbow: 2.65, lArmDown: 1.4, rArmDown: 1.4, headX: 0.35, lean: 0.2, twist: 0 }); return Object.assign({}, base, { lKnee: base.lKnee + bo, rKnee: base.rKnee + bo, lThigh: base.lThigh + bo * 0.5, rThigh: base.rThigh + bo * 0.5, twist: base.twist + sw, side: sw * 0.6 }); }
+    case 'h': return Object.assign({}, GUARD, { lArmFwd: 0.7 + s * 0.45, lElbow: 2.4 - s * 0.95, lArmDown: 1.45 - s * 1.0, twist: -0.15 - 0.6 * s, lean: 0.16 });
+    case 'u': return Object.assign({}, GUARD, { rArmFwd: 0.6 + s * 0.95, rElbow: 2.5 - s * 0.85, rArmDown: 1.5 - s * 0.45, twist: -0.15 + 0.45 * s, lean: 0.25 - 0.35 * s, lKnee: 0.4 + 0.35 * (1 - s), rKnee: 0.3 + 0.35 * (1 - s) });
+    case 'n': return Object.assign({}, GUARD, { rThigh: -0.1 + s * 1.75, rKnee: 0.3 + s * 1.6, lean: 0.12 - 0.15 * s, lArmFwd: 1.05, rArmFwd: 1.05, lElbow: 1.5, rElbow: 1.5, lArmDown: 1.2, rArmDown: 1.2 });
+    case 'dl': case 'dr': { const sd = code === 'dl' ? 1 : -1; return Object.assign({}, GUARD, { side: 0.42 * sd * s, lean: 0.3 * s + 0.12, twist: -0.15 + 0.3 * sd * s, lKnee: 0.4 + 0.45 * s, rKnee: 0.3 + 0.45 * s }); }
+    case 'db': return Object.assign({}, GUARD, { lean: 0.12 - 0.22 * s, headX: 0.12 - 0.3 * s, lArmFwd: 0.95, rArmFwd: 0.95 });
+    case 'x': return Object.assign({}, GUARD, { headX: -0.4 * s, lean: 0.12 - 0.3 * s, twist: -0.15 + 0.35 * s, lArmFwd: 0.4, rArmFwd: 0.4 });
     case 'j': return Object.assign({}, GUARD, { lArmFwd: 0.7 + s * 0.85, lElbow: 2.4 - s * 2.35, lArmDown: 1.45 - s * 0.05, twist: -0.15 - 0.25 * s });
     case 'c': return Object.assign({}, GUARD, { rArmFwd: 0.6 + s * 0.95, rElbow: 2.5 - s * 2.45, rArmDown: 1.5 - s * 0.1, twist: -0.15 + 0.6 * s, lean: 0.12 + 0.12 * s });
     case 'k': return Object.assign({}, GUARD, { rThigh: -0.1 + s * 1.6, rKnee: 0.3 + (1 - s) * 0.9, lean: 0.12 - 0.35 * s, twist: 0.3 * s });
-    case 'b': return Object.assign({}, GUARD, { lArmFwd: 0.95, rArmFwd: 0.95, lElbow: 2.65, rElbow: 2.65, lArmDown: 1.4, rArmDown: 1.4, headX: 0.35, lean: 0.2, twist: 0 });
-    case 'd': return Object.assign({}, GUARD, { lean: 0.45, side: 0.25 * (k < 0.5 ? 1 : -1), lKnee: 0.8, rKnee: 0.8, lThigh: 0.6, rThigh: 0.4 });
+    case 'd': return Object.assign({}, GUARD, { lean: 0.2 + 0.4 * s, headX: 0.12 + 0.25 * s, lKnee: 0.4 + 0.8 * s, rKnee: 0.3 + 0.8 * s, lThigh: 0.3 + 0.5 * s, rThigh: -0.1 + 0.5 * s });
     case 'fk': return { rThigh: -0.6 + s * 2.0, rKnee: 0.2 + (1 - s) * 0.6, lArmFwd: 0.5, rArmFwd: -0.3, lArmDown: 0.6, lean: -0.15 * s };
     case 'fp': return { rThigh: -0.3 + s * 1.1, rKnee: 0.2, lArmFwd: 0.3, lean: -0.05 };
     case 'ft': return { lThigh: 1.2, rThigh: 0.2, lKnee: 0.2, rKnee: 0.8, lean: -0.5, lArmDown: 0.2, rArmDown: 0.2 };
@@ -9477,6 +9706,7 @@ function ringBoard() {
 }
 /* ---------- a luta ---------- */
 function startFight(m) {
+  setTimeout(() => toast('🥊 Combos: Jab+Jab = Gancho · Esquiva+Direto = Uppercut · Chute colado = Joelhada · Esquiva com o direcional pro lado = desvio', 'pink'), 1500);
   if (RING.mine) return;
   const vsNpc = !!m.npc, me = m.a === myId() ? 'a' : 'b', opId = vsNpc ? null : (me === 'a' ? m.b : m.a);
   if (P.drive) exitVehicle(true); P.onBoard = false; P.emote = null; closePanel();
@@ -9503,13 +9733,14 @@ function fightPhase(F) {
   if (r > ROUNDS) return { ph: 'fim', round: ROUNDS, left: 0 };
   return inR < ROUND_S ? { ph: 'luta', round: r, left: ROUND_S - inR } : { ph: 'pausa', round: r, left: per - inR };
 }
-const FMOVES = { j: { dmg: 5, st: 5, cd: 0.38, reach: 1.3, pts: 1, dur: 0.22 }, c: { dmg: 9, st: 11, cd: 0.62, reach: 1.35, pts: 2, dur: 0.3 }, k: { dmg: 13, st: 17, cd: 0.95, reach: 1.6, pts: 3, dur: 0.45 } };
+const FMOVES = { j: { dmg: 5, st: 4, cd: 0.24, reach: 1.3, pts: 1, dur: 0.14, n: 'Jab' }, c: { dmg: 9, st: 8, cd: 0.42, reach: 1.35, pts: 2, dur: 0.2, n: 'Direto' }, k: { dmg: 13, st: 14, cd: 0.7, reach: 1.6, pts: 3, dur: 0.32, n: 'Chute alto' }, h: { dmg: 11, st: 9, cd: 0.5, reach: 1.15, pts: 2, dur: 0.22, n: 'Gancho' }, u: { dmg: 15, st: 10, cd: 0.55, reach: 1.1, pts: 3, dur: 0.24, n: 'Uppercut' }, n: { dmg: 12, st: 12, cd: 0.6, reach: 0.95, pts: 2, dur: 0.26, n: 'Joelhada' } };
+const fdur = a => FMOVES[a] ? FMOVES[a].dur : 0.3;
 function fightOpPos(F) { if (F.vsNpc) return F.npc; const p = NET.peers[F.opId]; return p ? { x: p.x, z: p.z, h: p.h, fp: p.t && p.t.fp } : null; }
 function fightTakeHit(d) {
   const F = RING.mine; if (!F || F.done || F.inv > 0) return;
   let dmg = d.dmg; const blocked = F.block && F.st > 0; if (blocked) { dmg *= 0.2; F.st = Math.max(0, F.st - 4); }
   F.hp = Math.max(0, F.hp - dmg); if (!blocked) F.gotPts = (F.gotPts || 0) + (d.pts || 0);
-  sfx('hit'); if (!blocked) { $('hurt') && ($('hurt').style.opacity = 0.5, setTimeout(() => { $('hurt').style.opacity = 0; }, 160)); P.v = 0; }
+  sfx('hit'); if (!blocked) { F.hurtT = 0.25; try { dmgPop(P.x, RING_H + 1.9, P.z, Math.round(dmg)); } catch (e) { } } if (!blocked) { $('hurt') && ($('hurt').style.opacity = 0.5, setTimeout(() => { $('hurt').style.opacity = 0; }, 160)); P.v = 0; }
   crowdReact(blocked ? 0.3 : 1);
   if (F.hp <= 0) { if (!F.vsNpc) ringSend({ op: 'ko', id: myId() }); fightEnd(false, true); }
 }
@@ -9522,9 +9753,9 @@ function fightAttack(F, k) {
   const weak = F.st < 10 ? 0.6 : 1, dmg = M.dmg * weak;
   setTimeout(() => {
     if (!RING.mine || RING.mine !== F || F.done) return;
-    if (F.vsNpc) { const N = F.npc; if (N.inv > 0) return; const bl = N.block > 0; N.hp = Math.max(0, N.hp - (bl ? dmg * 0.2 : dmg)); if (!bl) { F.pts += M.pts; N.flinch = 0.25; } sfx('hit'); crowdReact(bl ? 0.3 : 1); if (N.hp <= 0) { N.fallT = 99; fightEnd(true, true); } }
+    if (F.vsNpc) { const N = F.npc; if (N.inv > 0) { if (Math.random() < 0.5) bubble(N.g, pick(['Errou!', 'Tá lento!', 'Quase!']), 1); return; } const bl = N.block > 0; N.hp = Math.max(0, N.hp - (bl ? dmg * 0.2 : dmg)); if (!bl) { F.pts += M.pts; N.flinch = 0.22; N.hitT = 0; const now = performance.now(); F.combo = now - (F.comboAt || 0) < 1100 ? (F.combo || 1) + 1 : 1; F.comboAt = now; if (F.combo >= 3) { F.pts += 1; bigBanner(`COMBO x${F.combo}! ${M.n}`); } try { dmgPop(N.x, RING_H + 1.9, N.z, Math.round(dmg)); } catch (e) { } } sfx('hit'); crowdReact(bl ? 0.3 : F.combo >= 3 ? 2 : 1); if (N.hp <= 0) { N.fallT = 99; fightEnd(true, true); } }
     else { ringSend({ op: 'hit', to: F.opId, dmg, pts: M.pts, k }); F.pts += 0; }
-  }, M.dur * 450);
+  }, M.dur * 600);
 }
 function updateFight(dt, t) {
   // plateia
@@ -9539,48 +9770,64 @@ function updateFight(dt, t) {
   if (F.done) { F.doneT -= dt; if (F.doneT <= 0) fightCleanup(); return; }
   if (ph.ph !== F.lastPh) { F.lastPh = ph.ph; if (ph.ph === 'luta') { bigBanner(`ROUND ${ph.round}`); tone('square', 880, 880, 0.25, 0.08); tone('square', 880, 880, 0.25, 0.08, 0.35); } if (ph.ph === 'pausa') { bigBanner('INTERVALO'); F.hp = Math.min(100, F.hp + 15); F.st = 100; if (F.vsNpc) F.npc.hp = Math.min(100, F.npc.hp + 15); } if (ph.ph === 'fim') { const opPts = F.vsNpc ? F.npcPts || 0 : F.gotPts || 0; fightEnd(F.pts > opPts, false, F.pts === opPts ? 'empate' : null); return; } }
   // movimento dentro do ringue, sempre de frente para o adversário
-  F.cd -= dt; F.inv -= dt; F.actT += dt; if (F.act && F.actT > (F.act === 'd' ? 0.35 : FMOVES[F.act] ? FMOVES[F.act].dur : 0.3)) { F.act = null; }
+  F.cd -= dt; F.inv -= dt; F.actT += dt; F.dodgeCd = (F.dodgeCd || 0) - dt; F.hurtT = Math.max(0, (F.hurtT || 0) - dt); if (F.act && F.actT > fdur(F.act)) { F.act = null; }
   const fighting = ph.ph === 'luta';
   F.block = fighting && spHold('sp4', 'Digit4') && F.st > 0;
   F.st = Math.min(100, F.st + (F.block ? 5 : 15) * dt);
   const ax = uiBlocking() ? { x: 0, y: 0 } : axis(), cy = city.camYaw, mag = Math.min(1, Math.hypot(ax.x, ax.y));
-  if (mag > 0.15 && ph.ph !== 'pre') { const wx = Math.sin(cy) * ax.y - Math.cos(cy) * ax.x, wz = Math.cos(cy) * ax.y + Math.sin(cy) * ax.x, sp = (F.block ? 1.4 : 2.8) * mag; P.x += wx * sp * dt; P.z += wz * sp * dt; }
-  P.x = clamp(P.x, ax0 - RING_R, ax0 + RING_R); P.z = clamp(P.z, az0 - RING_R, az0 + RING_R); P.y = RING_H; P.v = 0; P.sportV = mag > 0.15 ? 2 : 0;
+  if (mag > 0.15 && ph.ph !== 'pre') { const wx = Math.sin(cy) * ax.y - Math.cos(cy) * ax.x, wz = Math.cos(cy) * ax.y + Math.sin(cy) * ax.x, sp = (F.block ? 2.2 : 4.3) * mag; P.x += wx * sp * dt; P.z += wz * sp * dt; }
+  if (F.dash) { const k2 = Math.min(1, dt / F.dash.t); P.x += F.dash.x * k2; P.z += F.dash.z * k2; F.dash.x *= 1 - k2; F.dash.z *= 1 - k2; F.dash.t -= dt; if (F.dash.t <= 0) F.dash = null; }
+  P.x = clamp(P.x, ax0 - RING_R, ax0 + RING_R); P.z = clamp(P.z, az0 - RING_R, az0 + RING_R); P.y = RING_H; P.v = 0; P.sportV = mag > 0.15 ? 3.6 : 0;
   if (op) { P.h = Math.atan2(op.x - P.x, op.z - P.z); const d = Math.hypot(op.x - P.x, op.z - P.z); if (d < 0.75) { P.x -= (op.x - P.x) / d * (0.75 - d); P.z -= (op.z - P.z) / d * (0.75 - d); } }
   if (fighting) {
-    if (spTap('sp1', 'punch')) fightAttack(F, 'j'); else if (spTap('sp2', 'item')) fightAttack(F, 'c'); else if (spTap('sp3')) fightAttack(F, 'k');
-    else if (spTap('sp5', 'jump') && F.cd <= 0 && F.st >= 10) { F.cd = 0.7; F.st -= 10; F.inv = 0.35; F.act = 'd'; F.actT = 0; const bx = -Math.sin(P.h), bz = -Math.cos(P.h), lx = Math.cos(P.h), lz = -Math.sin(P.h), s2 = Math.random() < 0.5 ? 1 : -1; P.x += (bx * 0.6 + lx * s2 * 0.8); P.z += (bz * 0.6 + lz * s2 * 0.8); }
+    const nowS = performance.now() / 1000, opD = op ? Math.hypot(op.x - P.x, op.z - P.z) : 9;
+    // combos: jab+jab = gancho · esquiva+direto = uppercut · chute colado = joelhada
+    const atk = k => { fightAttack(F, k); if (F.act === k) { F.lastAtk = nowS; F.lastK = k; } };
+    if (spTap('sp1', 'punch')) atk(F.lastK === 'j' && nowS - (F.lastAtk || 0) < 0.55 ? 'h' : 'j');
+    else if (spTap('sp2', 'item')) atk(nowS - (F.dodgeAt || 0) < 0.7 ? 'u' : 'c');
+    else if (spTap('sp3')) atk(opD < 1.0 ? 'n' : 'k');
+    else if (spTap('sp5', 'jump') && F.dodgeCd <= 0 && F.st >= 8) {
+      F.dodgeCd = 0.42; F.cd = Math.min(F.cd, 0.12); F.st -= 8; F.inv = 0.3; F.actT = 0; F.dodgeAt = nowS + 0.3;
+      const lx = Math.cos(P.h), lz = -Math.sin(P.h), bx = -Math.sin(P.h), bz = -Math.cos(P.h);
+      let side = 0, back = 0; if (mag > 0.15) { const mx = Math.sin(cy) * ax.y - Math.cos(cy) * ax.x, mz = Math.cos(cy) * ax.y + Math.sin(cy) * ax.x; side = mx * lx + mz * lz; back = mx * bx + mz * bz; }
+      if (mag <= 0.15) { F.act = 'd'; }
+      else if (back > Math.abs(side)) { F.act = 'db'; F.dash = { x: bx * 1.1, z: bz * 1.1, t: 0.18 }; }
+      else { const sd = side >= 0 ? 1 : -1; F.act = sd > 0 ? 'dl' : 'dr'; F.dash = { x: lx * sd * 0.95 + bx * 0.25, z: lz * sd * 0.95 + bz * 0.25, t: 0.16 }; }
+      tone('triangle', 500, 300, 0.05, 0.03);
+    }
   } else { tap('sp1'); tap('sp2'); tap('sp3'); tap('sp5'); }
-  P.fpc = F.act || (F.block ? 'b' : 'g');
-  P.fp = fpPose(P.fpc, F.act ? F.actT / (F.act === 'd' ? 0.35 : FMOVES[F.act].dur) : 0);
+  P.fpc = F.act || (F.hurtT > 0 ? 'x' : F.block ? 'b' : 'g');
+  P.fp = fpPose(P.fpc, F.act ? F.actT / fdur(F.act) : F.hurtT > 0 ? 1 - F.hurtT / 0.25 : 0);
   // estado para o adversário real
   if (!F.vsNpc && performance.now() > (F.stAt || 0)) { F.stAt = performance.now() + 400; ringSend({ op: 'st', id: myId(), hp: Math.round(F.hp), given: F.gotPts || 0 }); }
   if (F.vsNpc) fightNpcTick(F, dt, t, fighting, ph);
 }
 /* figurante que luta: chega perto, bate, defende e esquiva */
 function fightNpcTick(F, dt, t, fighting, ph) {
-  const N = F.npc, g = N.g, [ax0, az0] = ARENA_POS; N.cd -= dt; N.inv -= dt; N.block -= dt; N.actT += dt; N.think -= dt; N.flinch = Math.max(0, (N.flinch || 0) - dt);
+  const N = F.npc, g = N.g, [ax0, az0] = ARENA_POS; N.cd -= dt; N.inv -= dt; N.block -= dt; N.actT += dt; N.think -= dt; N.counter = (N.counter || 0) - dt; N.hitT = (N.hitT ?? 9) + dt; N.flinch = Math.max(0, (N.flinch || 0) - dt);
   const dx = P.x - N.x, dz = P.z - N.z, d = Math.hypot(dx, dz) || 1; N.h = Math.atan2(dx, dz);
   if (N.fallT > 0) { g.position.set(N.x, RING_H, N.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t); return; }
   let v = 0;
   if (fighting && !N.flinch) {
-    const want = N.act ? d : d > 1.15 ? 1 : d < 0.85 ? -1 : 0, sp = 2.4;
-    if (want) { N.x += dx / d * want * sp * dt; N.z += dz / d * want * sp * dt; v = sp; }
+    const want = N.act ? 0 : d > 1.15 ? 1 : d < 0.8 ? -1 : 0, sp = 3.7, cir = Math.sin(t * 1.4 + (N.ph || 0)) * (N.act ? 0 : 1.6);
+    const lx = dz / d, lz = -dx / d; N.x += (dx / d * want * sp + lx * cir) * dt; N.z += (dz / d * want * sp + lz * cir) * dt; v = want || Math.abs(cir) > 0.4 ? sp : 0;
+    if (N.dash) { const k2 = Math.min(1, dt / N.dash.t); N.x += N.dash.x * k2; N.z += N.dash.z * k2; N.dash.t -= dt; if (N.dash.t <= 0) N.dash = null; }
     if (N.think <= 0) {
-      N.think = rand(0.25, 0.55) * (1.3 - N.skill);
-      if (F.act && F.actT < 0.15 && Math.random() < N.skill * 0.7) { if (Math.random() < 0.7) N.block = 0.5; else { N.inv = 0.35; N.act = 'd'; N.actT = 0; } }
-      else if (d < 1.5 && N.cd <= 0 && N.st > 8) {
-        const k = Math.random() < 0.5 ? 'j' : Math.random() < 0.65 ? 'c' : 'k', M = FMOVES[k]; N.act = k; N.actT = 0; N.cd = M.cd * rand(1.1, 1.8); N.st -= M.st;
-        setTimeout(() => { if (RING.mine !== F || F.done || N.fallT > 0) return; const dd = Math.hypot(P.x - N.x, P.z - N.z); if (dd <= M.reach) { const blocked = F.block && F.st > 0; fightTakeHit({ dmg: M.dmg * (0.75 + N.skill * 0.4), pts: 0 }); if (!blocked) F.npcPts = (F.npcPts || 0) + M.pts; } }, M.dur * 450);
+      N.think = rand(0.12, 0.35) * (1.3 - N.skill);
+      if (F.act && FMOVES[F.act] && F.actT < 0.1 && Math.random() < N.skill * 0.65) { const r2 = Math.random(); if (r2 < 0.5) N.block = 0.45; else { N.inv = 0.3; N.act = r2 < 0.65 ? 'd' : r2 < 0.82 ? 'dl' : 'dr'; N.actT = 0; if (N.act !== 'd') { const sd = N.act === 'dl' ? 1 : -1, lx2 = Math.cos(N.h), lz2 = -Math.sin(N.h); N.dash = { x: lx2 * sd * 0.9, z: lz2 * sd * 0.9, t: 0.16 }; } N.counter = 0.6; } }
+      else if (d < 1.6 && N.cd <= 0 && N.st > 8) {
+        const r3 = Math.random(), k = N.counter > 0 ? 'u' : d < 0.95 ? (r3 < 0.5 ? 'n' : 'h') : r3 < 0.35 ? 'j' : r3 < 0.55 ? 'c' : r3 < 0.72 ? 'h' : r3 < 0.85 ? 'u' : 'k', M = FMOVES[k]; N.act = k; N.actT = 0; N.cd = M.cd * rand(1.0, 1.5); N.st -= M.st; N.counter = 0;
+        if (k === 'j' && Math.random() < 0.5) setTimeout(() => { if (RING.mine === F && !F.done && !N.act && N.cd < 0.3) { N.act = 'c'; N.actT = 0; N.cd = 0.5; } }, 220);
+        setTimeout(() => { if (RING.mine !== F || F.done || N.fallT > 0) return; const dd = Math.hypot(P.x - N.x, P.z - N.z); if (dd <= M.reach) { const blocked = F.block && F.st > 0; fightTakeHit({ dmg: M.dmg * (0.75 + N.skill * 0.4), pts: 0 }); if (!blocked) F.npcPts = (F.npcPts || 0) + M.pts; } }, M.dur * 600);
       }
     }
   }
   N.st = Math.min(100, N.st + 13 * dt);
-  if (N.act && N.actT > (N.act === 'd' ? 0.35 : FMOVES[N.act].dur)) N.act = null;
+  if (N.act && N.actT > fdur(N.act)) N.act = null;
   N.x = clamp(N.x, ax0 - RING_R, ax0 + RING_R); N.z = clamp(N.z, az0 - RING_R, az0 + RING_R);
   g.position.set(N.x, RING_H, N.z); g.rotation.y = N.h;
-  const code = N.act || (N.block > 0 ? 'b' : 'g');
-  animSkater(g, { walk: true, v, fallT: 0, fp: fpPose(code, N.act ? N.actT / (N.act === 'd' ? 0.35 : FMOVES[N.act].dur) : 0) }, t); tickBubble(g, dt);
+  const code = N.act || (N.hitT < 0.25 ? 'x' : N.block > 0 ? 'b' : 'g');
+  animSkater(g, { walk: true, v, fallT: 0, fp: fpPose(code, N.act ? N.actT / fdur(N.act) : N.hitT < 0.25 ? N.hitT / 0.25 : 0) }, t); tickBubble(g, dt);
 }
 function bigBanner(txt) { let b = $('big-banner'); if (!b) { b = document.createElement('div'); b.id = 'big-banner'; document.body.appendChild(b); } b.textContent = txt; b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
 function fightEnd(win, ko, why) {
@@ -9655,12 +9902,14 @@ const PANEL_FSLOJA = function () {
 };
 const PANEL_FUTSAL = function () {
   const n = onlineCount(), inQ = FS.q.some(q => q.id === myId()), tm = myTeam();
-  let html = `<p>Futsal 5 contra 5 (4 na linha + goleiro), 2 tempos de 2:30. <b>Com 10 jogadores online na fila vira campeonato</b> entre os times; com menos, a pelada completa com figurantes.</p>`;
+  let html = `<p>Futsal 5 contra 5 (4 na linha + goleiro), 2 tempos de 2:30. <b>Com 10 ou mais jogadores na fila vira TORNEIO</b> (2 a 4 times, semifinal e final, começa sozinho em 20s). Campeão: <b>$ 5.000 + Medalha de Ouro</b> pra cada jogador; vice: $ 1.500. Com menos gente, a pelada completa com figurantes.</p>`;
+  if (FS.lastChamp && Date.now() - FS.lastChamp.t < 3600e3) html += `<p>🏆 Último campeão: <b>${esc(FS.lastChamp.n)}</b></p>`;
+  if (FS.autoT) html += `<div class="note">⏳ Torneio começa em ${Math.max(0, Math.ceil((FS.autoT - Date.now()) / 1000))}s</div>`;
   html += `<div class="note">👥 Online na cidade: <b>${n}</b> · ⚽ Na fila: <b>${FS.q.length}</b>${FS.m ? `<br>🔴 Jogo rolando: <b>${esc(FS.m.tn[0])} ${FS.m.sc[0]} x ${FS.m.sc[1]} ${esc(FS.m.tn[1])}</b>` : ''}</div>`;
   html += `<p>Seu time: ${tm ? `<b>${esc(FS_TEAMS.find(t => t.id === tm).n)}</b>` : '<b>sem camisa de time</b> (compre na barraca do lado ou jogue de colete)'}</p>`;
   if (FS.q.length) html += `<p class="muted">Fila: ${FS.q.map(q => esc(q.name) + (q.tm ? ' (' + esc(FS_TEAMS.find(t => t.id === q.tm).n) + ')' : '')).join(' · ')}</p>`;
   if (FS.m && FS.m.me) html += `<div class="row"><button class="btn ghost" data-act="fs-quit">Sair do jogo</button></div>`;
-  else html += `<div class="row">${inQ ? '<button class="btn ghost" data-act="fs-leave">Sair da fila</button>' : '<button class="btn" data-act="fs-join">Entrar na fila</button>'}<button class="btn" data-act="fs-start" ${FS.m ? 'disabled' : ''}>Começar ${FS.q.length >= 10 ? 'campeonato' : 'pelada'} agora</button></div>`;
+  else html += `<div class="row">${inQ ? '<button class="btn ghost" data-act="fs-leave">Sair da fila</button>' : '<button class="btn" data-act="fs-join">Entrar na fila</button>'}<button class="btn" data-act="fs-start" ${FS.m ? 'disabled' : ''}>Começar ${FS.q.length >= 10 ? 'torneio' : 'pelada'} agora</button></div>`;
   const st = S.futsal || {}; html += `<p class="muted">Seus números: ${st.g || 0} gols · ${st.w || 0} vitórias · ${st.t || 0} títulos</p>`;
   return { title: '⚽ Quadra de Futsal', html };
 };
@@ -9675,8 +9924,9 @@ function fsStart() {
   const champ = reals.length >= 10;
   // times: pela camisa; quem não tem camisa vai para o time com menos gente
   const byTeam = {}; for (const q of reals) if (q.tm) (byTeam[q.tm] = byTeam[q.tm] || []).push(q);
-  let teams = Object.keys(byTeam).sort((a, b) => byTeam[b].length - byTeam[a].length).slice(0, champ && reals.length >= 20 ? 4 : 2);
-  for (const t of FS_TEAMS) if (teams.length < 2 && !teams.includes(t.id)) teams.push(t.id);
+  const nT = champ ? clamp(Math.floor(reals.length / 5), 2, 4) : 2;
+  let teams = Object.keys(byTeam).sort((a, b) => byTeam[b].length - byTeam[a].length).slice(0, nT);
+  for (const t of FS_TEAMS) if (teams.length < nT && !teams.includes(t.id)) teams.push(t.id);
   const rosters = {}; teams.forEach(t => rosters[t] = (byTeam[t] || []).slice(0, 5));
   for (const q of reals) { if (teams.some(t => rosters[t].includes(q))) continue; const t = teams.filter(t => rosters[t].length < 5).sort((a, b) => rosters[a].length - rosters[b].length)[0]; if (t) rosters[t].push(q); }
   const pair = [teams[0], teams[1]], waiting = teams.slice(2);
@@ -9685,7 +9935,10 @@ function fsStart() {
   pair.forEach((t, ti) => { const r = rosters[t]; for (let i = 0; i < 5; i++) { const q = r[i]; roster.push(q ? { id: q.id, name: q.name, team: ti, gk: i === 4 && !q } : { id: 'n' + ti + i, name: NPC_NAMES[(ti * 5 + i) % NPC_NAMES.length], team: ti, gk: i === 0, npc: true }); } });
   // se o goleiro ficou com jogador real, deixa o primeiro figurante do time no gol; se o time é só de gente, o último vai pro gol
   for (const ti of [0, 1]) { const tr = roster.filter(r => r.team === ti); if (!tr.some(r => r.gk)) (tr.find(r => r.npc) || tr[tr.length - 1]).gk = true; }
-  const m = { t0: Date.now() + 4000, host: myId(), champ, tid: pair, tn: pair.map(t => FS_TEAMS.find(x => x.id === t).n), roster, sc: [0, 0], wait: waiting, stage: champ ? (waiting.length ? 'semi1' : 'final') : 'pelada', rosters: champ ? rosters : null };
+  // torneio: chaveamento com 2, 3 ou 4 times (semifinal e final); W0/W1 = vencedores das semis
+  const br = champ ? { ms: teams.length === 2 ? [[teams[0], teams[1], 'final']] : teams.length === 3 ? [[teams[0], teams[1], 'semi'], ['W0', teams[2], 'final']] : [[teams[0], teams[1], 'semi'], [teams[2], teams[3], 'semi'], ['W0', 'W1', 'final']], i: 0, w: [] } : null;
+  const m = { t0: Date.now() + 4000, host: myId(), champ, tid: pair, tn: pair.map(t => FS_TEAMS.find(x => x.id === t).n), roster, sc: [0, 0], wait: waiting, stage: champ ? br.ms[0][2] : 'pelada', rosters: champ ? rosters : null, br };
+  if (champ) { feed(`🏆 Torneio de futsal começou: ${teams.map(t => FS_TEAMS.find(x => x.id === t).n).join(', ')}!`); fsSend('fs_ann', { txt: `🏆 Torneio de futsal começou com ${teams.length} times! Quem ganhar leva $ 5.000 e a Medalha de Ouro.` }); }
   FS.q = FS.q.filter(q => !roster.some(r => r.id === q.id)); fsSend('fsq', { op: 'leave', id: myId() });
   fsSend('fs_start', m); fsBegin(m); closePanel();
 }
@@ -9714,6 +9967,17 @@ function sfxKick() { tone('sine', 140, 60, 0.08, 0.15); tone('triangle', 500, 30
 function onFsStart(m) { if (FS.m && FS.m.host && m.host !== myId()) return; fsBegin(m); }
 function onFsState(d) { const M = FS.m; if (!M || M.host) return; M.last = Date.now(); const b = FS.ball, [x, z] = QUADRA_POS; b.tx = x + d.b[0]; b.ty = d.b[1]; b.tz = z + d.b[2]; M.sc = d.sc; M.own = d.o || null; M.clock = d.t; M.ph = d.ph; M.half = d.hf; d.n.forEach((a, i) => { const n = FS.npcs[i]; if (n) { n.tx = x + a[0]; n.tz = z + a[1]; n.h = a[2]; n.v = a[3]; if (a[4] && a[4] !== n.act) { n.act = a[4]; n.actT = 0; } } }); }
 function onFsKick(d) { const M = FS.m; if (!M || !M.host) return; if (d.op) { fsDo(d.id, d.op); return; } const p = NET.peers[d.id], b = FS.ball; if (!p) return; if (Math.hypot(p.x - b.x, p.z - b.z) > 1.6) return; fsKick(p.x, p.z, d.dx, d.dz, d.pow, d.loft); }
+/* torneio automático: com 10+ jogadores reais na fila, o primeiro da fila (por id) abre o torneio em 20s */
+function fsAutoTick() {
+  const now = performance.now(); if ((FS.atT || 0) > now) return; FS.atT = now + 1000;
+  const n = onlineCount();
+  if (n >= 10 && !FS.m && (FS.annT || 0) < Date.now()) { FS.annT = Date.now() + 10 * 60000; toast(`⚽ ${n} pessoas online! Torneio de futsal liberado: vá na quadra e entre na fila (prêmio $ 5.000 + medalha).`, 'good'); }
+  const reals = FS.q.filter(q => q.id === myId() || NET.peers[q.id]);
+  if (FS.m || reals.length < 10) { if (FS.autoT) { FS.autoT = null; } return; }
+  const host = reals.map(q => q.id).sort()[0]; if (host !== myId()) return;
+  if (!FS.autoT) { FS.autoT = Date.now() + 20000; fsSend('fs_ann', { txt: '🏆 Fila completa! O torneio de futsal começa em 20 segundos.' }); toast('🏆 Fila completa! O torneio de futsal começa em 20 segundos.', 'good'); return; }
+  if (Date.now() >= FS.autoT) { FS.autoT = null; fsStart(); }
+}
 function onFsEnd(d) { if (FS.m && !FS.m.host) { fsResult(d); fsEnd(); } }
 function fsGoal(team) {
   try { const near = Math.hypot(QUADRA_POS[0] - P.x, QUADRA_POS[1] - P.z) < 70; if (near) { crowdRoar(4.5, 0.26); say('Goooooool! ' + pick(['Que golaço!', 'É do ' + FS.m.tn[team] + '!', 'Que pintura!']), { force: true, pitch: 1.0, rate: 0.95 }); } } catch (e) { }
@@ -9755,6 +10019,7 @@ function fsDo(id, op, dx, dz) {
   }
 }
 function updateFutsal(dt, t) {
+  try { fsAutoTick(); } catch (e) { }
   const b = FS.ball; if (!b) return; const [x0, z0] = QUADRA_POS, M = FS.m;
   const near = Math.hypot(x0 - P.x, z0 - P.z) < 80 && !city.interior && !city.shopIn;
   for (const c of FS.crowd) { c.g.visible = near; if (!near) continue; c.cheer = Math.max(0, c.cheer - dt); animSkater(c.g, { walk: true, v: 0, fallT: 0, emote: c.cheer > 0 ? 'cheer' : M && Math.sin(t + c.ph) > 0.7 ? 'wave' : null }, t + c.ph); c.g.position.y = c.by; }
@@ -9860,23 +10125,31 @@ function fsNpcAI(dt, t) {
 }
 function fsMyKick(dx, dz, pow, loft) { const M = FS.m; M.lastTouch = myId(); if (M.host) fsKick(P.x, P.z, dx, dz, pow, loft); else { fsSend('fs_k', { id: myId(), dx, dz, pow, loft }); sfxKick(); } }
 function fsFinish() {
-  const M = FS.m; const res = { sc: M.sc, tn: M.tn, tid: M.tid, champ: M.champ, stage: M.stage, wait: M.wait, rosters: M.rosters };
+  const M = FS.m, w = M.sc[0] > M.sc[1] ? 0 : M.sc[1] > M.sc[0] ? 1 : (Math.random() < 0.5 ? 0 : 1), pen = M.sc[0] === M.sc[1] && M.champ;
+  const res = { sc: M.sc, tn: M.tn, tid: M.tid, champ: M.champ, stage: M.stage, rosters: M.rosters, w, pen, br: M.br };
   fsSend('fs_end', res); fsResult(res);
-  // campeonato: semifinais e final em sequência
-  if (M.champ && M.wait && M.wait.length && M.stage === 'semi1') { const win = M.sc[0] >= M.sc[1] ? M.tid[0] : M.tid[1]; FS.champWin = [win]; const next = M.wait; fsEnd(); setTimeout(() => fsStartChamp(next, 'semi2', M.rosters), 6000); return; }
-  if (M.champ && M.stage === 'semi2') { const win = M.sc[0] >= M.sc[1] ? M.tid[0] : M.tid[1]; const f = [FS.champWin[0], win]; fsEnd(); setTimeout(() => fsStartChamp(f, 'final', M.rosters), 6000); return; }
+  // torneio: próxima partida do chaveamento
+  if (M.champ && M.br && M.br.i + 1 < M.br.ms.length) { const br = { ms: M.br.ms, i: M.br.i + 1, w: M.br.w.concat([M.tid[w]]) }; fsEnd(); setTimeout(() => fsStartChamp(br, M.rosters), 7000); return; }
   fsEnd();
 }
-function fsStartChamp(pair, stage, rosters) {
+function fsStartChamp(br, rosters) {
+  const mm = br.ms[br.i], pair = [mm[0], mm[1]].map(t => /^W\d$/.test(t) ? br.w[+t[1]] : t), stage = mm[2];
   const roster = []; const NPC_NAMES = ['Dentinho', 'Pezão', 'Tico', 'Neném', 'Russo', 'Baixinho', 'Gordo', 'Juninho', 'Careca', 'Chulapa'];
   pair.forEach((t, ti) => { const r = (rosters && rosters[t]) || []; for (let i = 0; i < 5; i++) { const q = r[i]; roster.push(q ? { id: q.id, name: q.name, team: ti } : { id: 'n' + ti + i, name: NPC_NAMES[(ti * 5 + i) % 10], team: ti, npc: true }); } });
   for (const ti of [0, 1]) { const tr = roster.filter(r => r.team === ti); (tr.find(r => r.npc) || tr[tr.length - 1]).gk = true; }
-  const m = { t0: Date.now() + 4000, host: myId(), champ: true, tid: pair, tn: pair.map(t => FS_TEAMS.find(x => x.id === t).n), roster, sc: [0, 0], wait: [], stage, rosters };
+  const m = { t0: Date.now() + 4000, host: myId(), champ: true, tid: pair, tn: pair.map(t => FS_TEAMS.find(x => x.id === t).n), roster, sc: [0, 0], wait: [], stage, rosters, br };
+  const ann = `${stage === 'final' ? '🏆 FINAL' : '⚽ Semifinal'}: ${m.tn[0]} x ${m.tn[1]}`; bigBanner(ann); fsSend('fs_ann', { txt: ann });
   fsSend('fs_start', m); fsBegin(m);
 }
 function fsResult(d) {
-  const M = FS.m, me = M && M.me, [a, bb] = d.sc; const txt = `${d.tn[0]} ${a} x ${bb} ${d.tn[1]}`; bigBanner(a === bb ? 'EMPATE · ' + txt : 'FIM DE JOGO · ' + txt); feed('⚽ ' + txt);
-  if (me) { const mine = me.team ? bb : a, their = me.team ? a : bb, win = mine > their; S.futsal = S.futsal || {}; if (win) S.futsal.w = (S.futsal.w || 0) + 1; const champ = d.champ && d.stage === 'final' && win; if (champ) { S.futsal.t = (S.futsal.t || 0) + 1; bigBanner('🏆 CAMPEÃO!'); celebrate && celebrate(); postFeed(`Fui campeão do futsal com o ${d.tn[me.team]}! 🏆`); } const prize = champ ? 2000 : win ? (d.champ ? 600 : 300) : mine === their ? 150 : 60; earn(prize); persist(); updateHUD(); toast(`${win ? 'Vitória!' : mine === their ? 'Empate.' : 'Derrota.'} +$ ${fmt(prize)}`, win ? 'good' : 'pink'); }
+  const M = FS.m, me = M && M.me, [a, bb] = d.sc, W = d.w != null ? d.w : a > bb ? 0 : bb > a ? 1 : -1; const txt = `${d.tn[0]} ${a} x ${bb} ${d.tn[1]}${d.pen ? ` (pênaltis: ${d.tn[W]})` : ''}`; bigBanner(W < 0 ? 'EMPATE · ' + txt : 'FIM DE JOGO · ' + txt); feed('⚽ ' + txt);
+  if (d.champ && d.stage === 'final' && W >= 0) { feed(`🏆 ${d.tn[W]} é o CAMPEÃO do torneio de futsal!`); FS.lastChamp = { n: d.tn[W], t: Date.now() }; }
+  if (me) {
+    const mine = me.team ? bb : a, their = me.team ? a : bb, win = W >= 0 ? W === me.team : false, draw = W < 0; S.futsal = S.futsal || {}; if (win) S.futsal.w = (S.futsal.w || 0) + 1;
+    const champ = d.champ && d.stage === 'final' && win, vice = d.champ && d.stage === 'final' && !win;
+    if (champ) { S.futsal.t = (S.futsal.t || 0) + 1; bigBanner('🏆 CAMPEÃO DO TORNEIO!'); celebrate && celebrate(); postFeed(`Fui campeão do torneio de futsal com o ${d.tn[me.team]}! 🏆`); if (!S.owned.includes('ac_med_fs')) { S.owned.push('ac_med_fs'); toast('🥇 Você ganhou a Medalha de Ouro do Futsal! (Perfil > Acessórios)', 'good'); } }
+    const prize = champ ? 5000 : vice ? 1500 : win ? (d.champ ? 800 : 300) : draw ? 150 : 60; earn(prize); persist(); updateHUD(); toast(`${champ ? '🏆 Campeão!' : vice ? '🥈 Vice-campeão.' : win ? 'Vitória!' : draw ? 'Empate.' : 'Derrota.'} +$ ${fmt(prize)}`, win ? 'good' : 'pink');
+  }
 }
 function fsEnd(silent) {
   for (const n of FS.npcs) city.scene.remove(n.g); FS.npcs = [];
@@ -10026,7 +10299,7 @@ function entFor(key) {
 }
 function entRemove(key) { const E = ENT[key]; if (!E) return; for (const s of E.guards) city.scene.remove(s.g); if (E.girls) for (const k of E.girls) city.scene.remove(k.g); delete ENT[key]; }
 function entGirls(E, on, skin, x, z) {
-  if (on && !E.girls) E.girls = GIRLS.map((G, i) => ({ G, g: girlMesh(G, skin), x: x + (i ? 1 : -1), z: z + 1, h: 0, v: 0, a: i * Math.PI, t: rand(0, 5), act: 'segue', actT: 0, talkT: rand(3, 8), y: 0, vy: 0 }));
+  if (on && !E.girls) E.girls = GIRLS.map((G, i) => ({ G, g: girlMesh(G, skin), x: x + (i ? 1 : -1), z: z + 1, h: 0, v: 0, a: i * Math.PI, t: rand(0, 5), act: 'segue', actT: 0, talkT: rand(3, 8), y: 0, vy: 0 })); if (E.girls) { E.girls[0].sis = E.girls[1]; E.girls[1].sis = E.girls[0]; }
   if (!on && E.girls) { for (const k of E.girls) city.scene.remove(k.g); E.girls = null; }
 }
 /* anda um personagem até (tx,tz) */
@@ -10054,9 +10327,11 @@ function updateEntourage(E, own, dt, t) {
     animSkater(s.g, { walk: true, v: s.v, fallT: 0, armR: s.block > 0 ? { rArmFwd: 1.4, rElbow: 0.15, rArmDown: 1.2 } : null, fp: s.v < 0.1 && s.block <= 0 ? { lArmFwd: 0.35, rArmFwd: 0.35, lElbow: 0.9, rElbow: 0.9, lArmDown: 1.15, rArmDown: 1.15 } : null }, t + s.side); tickBubble(s.g, dt);
   }
   // ---- filhas brincando em volta ----
+  const br = own.br, gvis = br ? mode === 'city' && (own.me || !own.hidden || !own.v) : vis;
   if (E.girls) for (const k of E.girls) {
-    k.g.visible = vis; if (!vis) { k.x = own.x; k.z = own.z; continue; }
+    k.g.visible = gvis; if (!gvis) { k.x = own.x; k.z = own.z; continue; }
     k.t += dt; k.actT -= dt; k.talkT -= dt;
+    if (br) { girlFreePlay(k, br, dt, t); continue; }
     if (k.actT <= 0) { k.act = pick(k.G.age > 4 ? ['segue', 'corre', 'corre', 'pula', 'danca', 'segue'] : ['segue', 'segue', 'pula', 'danca']); k.actT = rand(2.5, 5); k.a = rand(0, TAU); }
     const moving = own.v > 0.6, rad = k.G.age > 4 ? 1.9 : 1.2;
     let tx, tz, sp = k.G.spd;
@@ -10090,9 +10365,41 @@ function updateGirlsHome(dt, t) {
     tickBubble(k.g, dt);
   }
 }
+/* filhas liberadas para brincar sozinhas no parquinho ou na pista de skate */
+const GIRL_PLAY = { jasmim: ['Olha eu, papai!', 'Mais alto!', 'Helena, pega eu!', 'Vou no escorregador!', 'Uhuuu!', 'Ganhei!'], helena: ['Uiii!', 'De novo!', 'Hihihi!', 'Jasmim, espera!', 'Olha!', 'Bola!'] };
+function brincarSpot() {
+  if (typeof PARQ_POS !== 'undefined' && city.parq && Math.hypot(PARQ_POS[0] - P.x, PARQ_POS[1] - P.z) < 26) return { x: PARQ_POS[0], z: PARQ_POS[1], n: 'parquinho', r: 9 };
+  if (city.park && inPark(P.x, P.z, -8)) return { x: P.x, z: P.z, n: 'pista de skate', r: 6 };
+  return null;
+}
+function filhasBrincar() {
+  if (!isAdm()) return; S.filhas = S.filhas || {};
+  if (!S.filhas.comigo) { toast('👧 Primeiro busque a Jasmim e a Helena (botão Filhas).', 'pink'); return; }
+  if (S.filhas.br) { S.filhas.br = null; persist(); netTrack && netTrack(); toast('👧 As meninas estão voltando pra perto de você.', 'pink'); bubble(city.player, 'Meninas, vem cá! Vamos embora.', 2.5); renderPanel(); return; }
+  const sp = brincarSpot();
+  if (!sp) { toast('👧 Leve as meninas até um parquinho ou uma pista de skate pra liberar elas pra brincar.', 'pink'); return; }
+  S.filhas.br = [sp.x, sp.z, sp.r]; S.filhas.brN = sp.n; persist(); netTrack && netTrack();
+  bubble(city.player, 'Podem ir brincar, meninas!', 2.5); toast(`🛝 Jasmim e Helena foram brincar sozinhas no ${sp.n}. Toque em "Chamar as meninas" para elas voltarem.`, 'good'); renderPanel();
+}
+function girlFreePlay(k, br, dt, t) {
+  const [cx, cz, R] = br, r = R || 7;
+  if (k.actT <= 0 || !k.pt) { k.act = pick(k.G.age > 4 ? ['passeia', 'corre', 'pula', 'danca', 'passeia', 'pega'] : ['passeia', 'pula', 'danca', 'senta', 'passeia']); k.actT = rand(3, 6); const a = rand(0, TAU), d = rand(1, r); k.pt = [cx + Math.cos(a) * d, cz + Math.sin(a) * d]; }
+  if (Math.hypot(k.x - cx, k.z - cz) > 40) { k.x = cx + rand(-2, 2); k.z = cz + rand(-2, 2); }
+  let tx = k.pt[0], tz = k.pt[1], sp = k.G.spd;
+  if (k.act === 'corre') { k.a += dt * 1.2; tx = cx + Math.cos(k.a) * r * 0.7; tz = cz + Math.sin(k.a) * r * 0.7; sp *= 1.4; }
+  else if (k.act === 'pega') { const o = k.G.age > 4 ? k.sis : null; if (o) { tx = o.x; tz = o.z; sp *= 1.3; } }
+  else if (k.act === 'pula' || k.act === 'danca' || k.act === 'senta') { if (Math.hypot(k.x - tx, k.z - tz) < 0.4) { tx = k.x; tz = k.z; } }
+  stepTo(k, tx, tz, sp, dt);
+  if (k.act === 'pula' && k.v < 0.2 && k.y <= 0 && Math.random() < dt * 2.5) k.vy = 2.6;
+  k.vy -= 12 * dt; k.y = Math.max(0, k.y + k.vy * dt); if (k.y === 0) k.vy = 0;
+  k.g.position.set(k.x, groundH(k.x, k.z) + k.y, k.z); k.g.rotation.y = k.h;
+  const still = k.v < 0.2; animSkater(k.g, { walk: true, v: k.v * 1.3, fallT: 0, air: k.y > 0.05, emote: still && k.act === 'danca' ? 'dance' : still && k.act === 'senta' ? 'sit' : still && k.act === 'pula' && k.y < 0.05 ? 'cheer' : null }, t + k.G.age);
+  if (k.talkT <= 0) { k.talkT = rand(6, 12); if (Math.hypot(k.x - P.x, k.z - P.z) < 14) bubble(k.g, pick(GIRL_PLAY[k.G.id] || ['Hihi!']), 2.2); }
+  tickBubble(k.g, dt);
+}
 function familiaToggle() {
   if (!isAdm()) return; S.filhas = S.filhas || {};
-  if (S.filhas.comigo) { S.filhas.comigo = false; persist(); entGirls(entFor('me'), false); toast('🏠 Os seguranças levaram a Jasmim e a Helena para casa (mansão).', 'pink'); netTrack && netTrack(); return; }
+  if (S.filhas.comigo) { S.filhas.comigo = false; S.filhas.br = null; persist(); entGirls(entFor('me'), false); toast('🏠 Os seguranças levaram a Jasmim e a Helena para casa (mansão).', 'pink'); netTrack && netTrack(); return; }
   const H = city.girlsHome || girlsHomeSpot(), d = H ? Math.hypot(H.x - P.x, H.z - P.z) : 1e9;
   if (d < 14 || (city.shopIn && city.shopIn.kind === 'mansao4')) { S.filhas.comigo = true; persist(); if (city.girlsHome) { for (const k of city.girlsHome.list) city.scene.remove(k.g); city.girlsHome = null; } entGirls(entFor('me'), true, S.skin, P.x, P.z); toast('👧 Jasmim e Helena estão com você!', 'good'); bubble(city.player, 'Vamos passear, meninas!', 2.5); netTrack && netTrack(); }
   else { const sp = girlsHomeSpot(); if (sp) setGps(sp.x, sp.z, 'Mansão: buscar as meninas'); toast('👧 As meninas estão em casa, na mansão. Vá até lá buscar (GPS marcado).', 'pink'); }
@@ -10103,9 +10410,11 @@ function updateFamilia(dt, t) {
   const hb = $('hb-fam'), hs = $('hb-seg'), show = isAdm(); if (hb) { if (hb.hidden === show) hb.hidden = !show; if (show) { const tx = S.filhas && S.filhas.comigo ? 'Filhas ✓' : 'Filhas', l = hb.querySelector('.lbl'); if (l.textContent !== tx) l.textContent = tx; } } if (hs && hs.hidden === show) hs.hidden = !show;
   // eu sou o chefe
   if (isAdm()) {
+    const hbb = $('hb-brincar'), F = S.filhas || {}, sb = !!(F.comigo && (F.br || ((city.brT || 0) < performance.now() ? (city.brT = performance.now() + 400, city.brOk = !!brincarSpot()) : city.brOk))); if (hbb) { if (hbb.hidden === sb) hbb.hidden = !sb; const tx = F.br ? 'Voltar, filhas' : 'Brincar', l = hbb.querySelector('.lbl'); if (l.textContent !== tx) l.textContent = tx; }
+    if (F.br && Math.hypot(F.br[0] - P.x, F.br[1] - P.z) > 160) { F.br = null; persist(); netTrack && netTrack(); toast('🕶️ Um segurança trouxe a Jasmim e a Helena de volta pra perto de você.', 'pink'); }
     const E = entFor('me'), hidden = !!P.drive || !!P.ride || P.swim;
     if (!!(S.filhas && S.filhas.comigo) !== !!E.girls) entGirls(E, !!(S.filhas && S.filhas.comigo), S.skin, P.x, P.z);
-    updateEntourage(E, { me: true, x: P.x, z: P.z, h: P.h, v: Math.abs(P.v), hidden, seg: !S.segOff, m: S.segMode || 'perto', anc: S.segAnchor }, dt, t);
+    updateEntourage(E, { me: true, x: P.x, z: P.z, h: P.h, v: Math.abs(P.v), hidden, seg: !S.segOff, m: S.segMode || 'perto', anc: S.segAnchor, br: S.filhas && S.filhas.comigo ? S.filhas.br : null }, dt, t);
     // figurantes que chegam perto demais: o segurança entra na frente
     if (!S.segOff && !hidden && (S.segMode || 'perto') === 'perto') for (const o of city.peds) { const d = Math.hypot(o.x - P.x, o.z - P.z); if (d < 1.6 && !(o.fallT > 0)) { o.stopT = 2.5; o.flee = 1.5; const s = E.guards[0]; if (s.block <= 0) { s.block = 1.2; s.bx = (o.x + P.x) / 2; s.bz = (o.z + P.z) / 2; s.fh = Math.atan2(o.x - P.x, o.z - P.z); bubble(s.g, pick(['Afasta do chefe!', 'Aqui não, amigo.', 'Circulando!']), 2); } } }
   } else if (ENT.me) entRemove('me');
@@ -10114,7 +10423,7 @@ function updateFamilia(dt, t) {
   for (const id in NET.peers) {
     const p = NET.peers[id]; if (!p.adm || !p.t) continue; seen[id] = true;
     const E = entFor(id), d = p.t; if (!!d.fk !== !!E.girls) entGirls(E, !!d.fk, p.skin ?? SKINS[2], p.x, p.z);
-    updateEntourage(E, { x: p.x, z: p.z, h: p.h, v: d.v || 0, hidden: !!d.vh || !!d.rd || (d.rm || '') !== roomKey(), seg: p.seg !== 0, m: p.segm || 'perto', anc: p.sa }, dt, t);
+    updateEntourage(E, { x: p.x, z: p.z, h: p.h, v: d.v || 0, hidden: !!d.vh || !!d.rd || (d.rm || '') !== roomKey(), seg: p.seg !== 0, m: p.segm || 'perto', anc: p.sa, br: d.fk ? p.fb : null }, dt, t);
     // eu não posso chegar perto (a não ser liberado, esposa ou filha)
     if (p.seg !== 0 && (p.segm || 'perto') === 'perto' && !segAllowed(p) && !P.drive && !d.vh) {
       const dd = Math.hypot(P.x - p.x, P.z - p.z);
@@ -10129,6 +10438,7 @@ const PANEL_SEGURANCA = function () {
   const sm = S.segMode || 'perto';
   html += `<h4>Onde os seguranças ficam</h4><div class="seg" role="group"><button data-act="seg-mode" data-m="perto" aria-pressed="${sm === 'perto'}">Comigo (do lado)</button><button data-act="seg-mode" data-m="porta" aria-pressed="${sm === 'porta'}">Esperar aqui na porta</button><button data-act="seg-mode" data-m="longe" aria-pressed="${sm === 'longe'}">Se afastar um pouco</button></div><p class="muted">Quando você entra num lugar, eles esperam na porta sozinhos. "Comigo" barra quem chega perto; esperando na porta ou afastados, eles liberam a passagem.</p>`;
   html += `<div class="row"><button class="btn ${S.segOff ? '' : 'ghost'}" data-act="seg-toggle">${S.segOff ? '🕶️ Chamar os seguranças' : '🕶️ Dispensar os seguranças'}</button><button class="btn" data-act="familia">👧 ${S.filhas && S.filhas.comigo ? 'Mandar as meninas para casa' : 'Buscar as meninas'}</button></div>`;
+  if (S.filhas && S.filhas.comigo) html += `<div class="row"><button class="btn ${S.filhas.br ? 'ghost' : ''}" data-act="filhas-brincar">${S.filhas.br ? '🙋 Chamar as meninas de volta' : '🛝 Liberar as meninas pra brincar'}</button></div><p class="muted">${S.filhas.br ? `Elas estão brincando sozinhas no ${esc(S.filhas.brN || 'parquinho')}.` : 'Funciona no parquinho e na pista de skate: elas brincam sozinhas, longe do pai, até você chamar.'}</p>`;
   html += `<h4>Liberar pessoas para chegar perto</h4>`;
   html += near.length ? near.map(p => `<div class="card"><h4>${esc(p.name)}</h4><div class="row"><button class="btn sm ${lib.includes(p.id) ? 'ghost' : ''}" data-act="seg-lib" data-id="${p.id}">${lib.includes(p.id) ? '✅ Liberado (tocar para bloquear)' : '⛔ Bloqueado (tocar para liberar)'}</button></div></div>`).join('') : '<p class="muted">Ninguém por perto agora.</p>';
   return { title: '🕶️ Segurança e família', html };
@@ -10270,7 +10580,10 @@ function buildFamilyCity(sc) {
   try { const free = (city.lifeFree || []).slice(); const cine = free.shift(), parq = free.shift(); if (cine) { CINE_POS[0] = cine[0]; CINE_POS[1] = cine[1]; buildCinema(sc); } if (parq) { PARQ_POS[0] = parq[0]; PARQ_POS[1] = parq[1]; buildParque(sc); } } catch (e) { console.warn('cinema/parque', e); }
   city.girlsHome = null; city.cineG = null; city.inCine = null; for (const k in ENT) entRemove(k);
 }
+/* botão "Sair" que aparece em qualquer lugar fechado: cinema, loja/comércio ou casa */
+function sairLocal() { closePanel(); if (city.inCine) cineSair(); else if (city.shopIn) exitShop(); else if (city.interior) exitHome(); }
 function updateFamily27(dt, t) {
+  const hx = $('hb-sair'), inn = !!(city.inCine || city.shopIn || city.interior) && mode === 'city'; if (hx && hx.hidden === inn) hx.hidden = !inn;
   try { updateFamilia(dt, t); updateGirlsHome(dt, t); updatePinkRoom(dt, t); updateCinema(dt, t); updateParque(dt, t); } catch (e) { console.warn('família', e); }
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
@@ -10310,6 +10623,21 @@ const W_TRACK = 16, CENT = 0.3, LANES = [-6, -3, 0, 3, 6];
 const ITEM_INFO = { pedra: ['P', 'Pedra', 'Arremessa pra frente'], pau: ['|', 'Pedaço de pau', 'Derruba quem tá do lado'], turbo: ['»', 'Turbo', 'Velocidade extra'], oleo: ['O', 'Óleo', 'Deixa uma poça pra trás'] };
 
 /* pista urbana: vielas estreitas, esquinas fechadas, escadarias e muros/casas para escalar */
+/* mapas: cada país tem vários traçados com cenário próprio (antes era sempre a mesma pista) */
+const NIGHT_TH = { bg: 0x0a0f2a, fog: [0x121a40, 40, 240], night: true };
+const RACE_MAPS = {
+  br: [{ n: 'SP · Ladeira da Consolação' },
+    { n: 'Rio · Descida de Santa Teresa', c: { place: 'Rio de Janeiro · Descida de Santa Teresa', seed: 101, len: 1800, drop: 110, hill: 8, curve: 0.02, gap: 30 }, th: { bg: 0x7fc8f5, fog: [0x8fd0f5, 70, 300], ground: 0x3f7a2e, bld: [0xf2c94c, 0xe07a5f, 0x7fb3e0, 0xf6f1e7, 0x9bd1a8, 0xf28ca0], bldH: [6, 18], tree: 'palm', barrier: 0x1f6f4a, tram: true } },
+    { n: 'Salvador · Ladeira do Pelourinho', c: { place: 'Salvador · Ladeira do Pelourinho', seed: 131, len: 1600, drop: 85, hill: 7, curve: 0.017, gap: 32 }, th: { bg: 0xffc98a, fog: [0xffd2a0, 70, 300], ground: 0xa88a5a, bld: [0x4fc3ff, 0xffcf3a, 0xff7aa8, 0x9bd1a8, 0xffffff, 0xff7a1a], bldH: [7, 15], tree: 'palm', barrier: 0x1f4fbf } },
+    { n: 'SP · Paulista à noite', c: { place: 'São Paulo · Avenida Paulista à noite', seed: 151, len: 2000, drop: 55, hill: 5, curve: 0.012, gap: 32 }, th: Object.assign({ bld: [0x2b2f45, 0x3a3550, 0x242838, 0x343a52], bldH: [30, 80], tree: 'round', barrier: 0xffd23f, favela: false }, NIGHT_TH) }],
+  us: [{ n: 'LA · Venice Beach' }, { n: 'São Francisco · Lombard St.', c: { place: 'São Francisco · Lombard Street', seed: 211, len: 1700, drop: 140, hill: 9, curve: 0.022, gap: 30 }, th: { bg: 0xc8dff0, fog: [0xcfe2f0, 60, 280], ground: 0x5f8a4a, groundL: null, noLeft: false, bld: [0xf7d1cd, 0xc9e4de, 0xfaedcb, 0xc6def1, 0xdbcdf0], bldH: [8, 14], tree: 'round' } }],
+  jp: [{ n: 'Tóquio · Shibuya à noite' }, { n: 'Kyoto · Caminho dos Templos', c: { place: 'Kyoto · Caminho dos Templos', seed: 307, len: 1900, drop: 60, hill: 6, curve: 0.016, gap: 29 }, th: { night: false, bg: 0xf6d0e0, fog: [0xf6d6e4, 70, 300], ground: 0x6a8a4a, bld: [0x8a3a2a, 0x4a3a30, 0xe8d8c0, 0x6b4a3a], bldH: [6, 12], tree: 'sakura', torii: true, barrier: 0xc8102e } }],
+  fr: [{ n: 'Paris · Montmartre' }, { n: 'Paris · Champs-Élysées à noite', c: { place: 'Paris · Champs-Élysées à noite', seed: 409, len: 2300, drop: 40, hill: 4, curve: 0.012, gap: 27 }, th: Object.assign({ bldH: [18, 26] }, NIGHT_TH) }],
+  pt: [{ n: 'Lisboa · Alfama' }, { n: 'Porto · Ribeira', c: { place: 'Porto · Ribeira', seed: 503, len: 2200, drop: 100, hill: 8, curve: 0.02, gap: 25 }, th: { bg: 0xbfd8ea, fog: [0xc6dcee, 70, 300], bld: [0xe8dcc2, 0xd96a4a, 0x6a8ab5, 0xf2c94c, 0xf6f1e7], bldH: [10, 20], tram: false } }],
+};
+/* mapa escolhido no painel (ou sorteado) */
+function raceRoute(cid, rt) { const L = RACE_MAPS[cid] || [{}]; let i = rt; if (i == null || i < 0) { const sel = S.raceMap && S.raceMap[cid]; i = sel != null && sel >= 0 ? sel : Math.floor(Math.random() * L.length); } return Math.min(L.length - 1, Math.max(0, i | 0)); }
+function routeChips(c) { const L = RACE_MAPS[c.id]; if (!L || L.length < 2) return ''; const sel = S.raceMap && S.raceMap[c.id] != null ? S.raceMap[c.id] : -1; return `<div class="seg" role="group" aria-label="Mapa">${[['-1', '🎲 Sortear']].concat(L.map((r, i) => [String(i), r.n])).map(([v, n]) => `<button data-act="race-route" data-id="${c.id}" data-v="${v}" aria-pressed="${String(sel) === v}">${esc(n)}</button>`).join('')}</div>`; }
 function buildTrack(c) {
   const rng = mulberry32(c.seed), rf = mulberry32(c.seed * 7 + 1), N = c.len;
   // 1) plano de trechos especiais
@@ -10477,7 +10805,7 @@ function buildFeatures(sc, T, th, rng) {
 }
 
 function startRace(cid, opts = {}) {
-  const c = COUNTRIES.find(x => x.id === cid), th = THEMES[cid];
+  const ri = raceRoute(cid, opts.online ? (opts.online.rt ?? 0) : opts.rt), RT = (RACE_MAPS[cid] || [])[ri] || {}, c = Object.assign({}, COUNTRIES.find(x => x.id === cid), RT.c || {}), th = Object.assign({}, THEMES[cid], RT.th || {});
   if (!hasSkate()) return toast('Você precisa de um skate para correr.', 'bad');
   if (lvlLock(c.lvl)) return toast(`Precisa do nível ${c.lvl}.`, 'bad');
   if (S.coins < c.fee) return toast('Grana insuficiente para a inscrição.', 'bad');
@@ -11254,7 +11582,7 @@ const OLD_PANELS = {
     html += `<div class="note">${allies.length ? `Correm do seu lado: <b>${allies.map(id => esc(BOT[id].name)).join(', ')}</b>. Aliados não te atacam e derrubam rivais perto de você.` : 'Sem aliados. Monte uma crew ou ligue para um contato antes da corrida para ele correr do seu lado.'}</div>`;
     for (const c of COUNTRIES) {
       const lock = lvlLock(c.lvl), best = S.best[c.id];
-      html += `<div class="card ${lock ? 'locked' : ''}"><h4><span class="flag" style="background:linear-gradient(90deg,${c.flag[0]} 50%,${c.flag[1]} 50%)"></span>${esc(c.name)}</h4><div>${esc(c.place)}</div>
+      html += `<div class="card ${lock ? 'locked' : ''}"><h4><span class="flag" style="background:linear-gradient(90deg,${c.flag[0]} 50%,${c.flag[1]} 50%)"></span>${esc(c.name)}</h4><div>${esc(c.place)}</div>${lock ? '' : routeChips(c)}
       <div class="meta"><span>${(c.len / 1000).toFixed(1).replace('.', ',')} km</span><span>Desnível ${c.drop} m</span><span>Inscrição ${c.fee ? '$ ' + fmt(c.fee) : 'grátis'}</span></div>
       <div class="meta"><span class="coin">1º $ ${fmt(c.prize[0])}</span><span>2º $ ${fmt(c.prize[1])}</span><span>3º $ ${fmt(c.prize[2])}</span>${best ? `<span>Seu melhor: ${best}º</span>` : ''}</div>
       <div class="row">${lock ? `<span class="pill">Libera no nível ${c.lvl}</span>` : `<button class="btn" data-act="race" data-id="${c.id}" ${S.coins < c.fee || noSk ? 'disabled' : ''}>Correr contra bots</button><button class="btn tok" data-act="race-online" data-id="${c.id}" ${S.coins < c.fee || noSk || !NET.online ? 'disabled' : ''}>Correr online</button>`}</div></div>`;
@@ -11372,11 +11700,11 @@ function itemCard(it) {
   return `<div class="item-card r-${it.r} ${on ? 'is-on' : ''} ${isWear(it) ? 'has-thumb' : ''}">${sw}<div class="item-info"><b>${esc(it.name)}</b>${rarBadge(it)}${extra}</div><div class="item-actions">${act}</div></div>`;
 }
 function paintPrintSwatches() { setTimeout(() => { document.querySelectorAll('canvas[data-print]').forEach(c => { const g = c.getContext('2d'); drawDeck(g, c.width, c.height, 0x3a3f4a, c.dataset.print); }); document.querySelectorAll('canvas[data-pat]').forEach(c => patSwatch(c, c.dataset.pat, +c.dataset.col)); }, 0); }
-const ICONS = { 'cap:none': '∅', 'glasses:none': '∅', 'acc:none': '∅', 'weapon:none': '∅', 'cap:cap': '🧢', 'cap:flat': '🧢', 'cap:beanie': '🧶', 'cap:bandana': '🏴‍☠️', 'cap:bucket': '👒', 'cap:straw': '👒', 'cap:visor': '🕶', 'cap:crown': '👑', 'glasses:dark': '🕶', 'glasses:round': '👓', 'glasses:heart': '😍', 'glasses:sport': '🥽', 'glasses:neon': '🥽', 'glasses:aviator': '🕶', 'acc:backpack': '🎒', 'acc:chain': '📿', 'acc:phones': '🎧', 'acc:wings': '🪽', 'weapon:banana': '🍌', 'weapon:sling': '🎯', 'weapon:smoke': '💨', 'weapon:spray': '🎨', 'weapon:rocket': '🚀', shoes_chinelo: '🩴', shoes_sandal: '🩴', shoes_bota: '🥾' };
+const ICONS = { 'cap:none': '∅', 'glasses:none': '∅', 'acc:none': '∅', 'weapon:none': '∅', 'cap:cap': '🧢', 'cap:flat': '🧢', 'cap:beanie': '🧶', 'cap:bandana': '🏴‍☠️', 'cap:bucket': '👒', 'cap:straw': '👒', 'cap:visor': '🕶', 'cap:crown': '👑', 'glasses:dark': '🕶', 'glasses:round': '👓', 'glasses:heart': '😍', 'glasses:sport': '🥽', 'glasses:neon': '🥽', 'glasses:aviator': '🕶', 'acc:backpack': '🎒', 'acc:chain': '📿', 'acc:phones': '🎧', 'acc:wings': '🪽', 'acc:medal': '🥇', 'weapon:banana': '🍌', 'weapon:sling': '🎯', 'weapon:smoke': '💨', 'weapon:spray': '🎨', 'weapon:rocket': '🚀', shoes_chinelo: '🩴', shoes_sandal: '🩴', shoes_bota: '🥾' };
 const PANELS = {
   shop(kind) {
     city.lastShop = kind;
-    const conf = { roupas: ['Drip Store', ['shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'wrist', 'ear']], skate: ['Shape & Truck', ['skate', 'wheels', 'print']], celular: ['CelZap', ['phone']] }[kind];
+    const conf = { roupas: ['Drip Store', ['shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'wrist', 'ear', 'bolsa']], skate: ['Shape & Truck', ['skate', 'wheels', 'print']], celular: ['CelZap', ['phone']] }[kind];
     let html = `<p class="muted">Saldo: <b class="coin">$ ${fmt(S.coins)}</b> · <b class="tokc">${fmt(S.tokens)} T</b>. Raridade: <span class="rar" style="--rc:${RAR.comum.c}">Comum</span> <span class="rar" style="--rc:${RAR.raro.c}">Raro</span> <span class="rar" style="--rc:${RAR.lendario.c}">Lendário</span>. Itens lendários também saem em caixas, eventos e no ranking semanal.</p>`;
     if (kind === 'roupas') html += `<div class="note"><b>Peças simples</b> (comuns): compre com a grana de missões e trampos. <b>Raras e lendárias</b> (as mais procuradas): só com tokens, comprados com dinheiro real na Casa de Tokens.</div>`;
     if (kind === 'skate') html += `<div class="card"><h4>Oficina</h4><p>Monte seu skate: cor do shape, estampa, rodas, lixa e trucks.</p><div><button class="btn" data-act="open-oficina" ${hasSkate() ? '' : 'disabled'}>Abrir Oficina</button></div></div>`;
@@ -11452,7 +11780,7 @@ const PANELS = {
       const rm = evMult('raceMult');
       for (const c of COUNTRIES) {
         const lock = lvlLock(c.lvl), best = S.best[c.id];
-        html += `<div class="card ${lock ? 'locked' : ''}"><h4><span class="flag" style="background:linear-gradient(90deg,${c.flag[0]} 50%,${c.flag[1]} 50%)"></span>${esc(c.name)}</h4><div>${esc(c.place)}</div>
+        html += `<div class="card ${lock ? 'locked' : ''}"><h4><span class="flag" style="background:linear-gradient(90deg,${c.flag[0]} 50%,${c.flag[1]} 50%)"></span>${esc(c.name)}</h4><div>${esc(c.place)}</div>${lock ? '' : routeChips(c)}
         <div class="meta"><span>${(c.len / 1000).toFixed(1).replace('.', ',')} km</span><span>Desnível ${c.drop} m</span><span>Inscrição ${c.fee ? '$ ' + fmt(c.fee) : 'grátis'}</span></div>
         <div class="meta"><span class="coin">1º $ ${fmt(c.prize[0] * rm)}</span><span>2º $ ${fmt(c.prize[1] * rm)}</span><span>3º $ ${fmt(c.prize[2] * rm)}</span>${best ? `<span>Seu melhor: ${best}º</span>` : ''}</div>
         <div class="row">${lock ? `<span class="pill">Libera no nível ${c.lvl}</span>` : `<button class="btn" data-act="race" data-id="${c.id}" ${S.coins < c.fee || noSk ? 'disabled' : ''}>Correr contra bots</button><button class="btn tok" data-act="race-online" data-id="${c.id}" ${S.coins < c.fee || noSk || !NET.online ? 'disabled' : ''}>Correr online</button>`}</div></div>`;
@@ -11554,7 +11882,7 @@ const PANELS = {
       html += `<h3>Caixas</h3><div class="crates">${[['rara', 'Caixa Rara', 'peça comum ou $ 600'], ['lendaria', 'Caixa Lendária', 'peça comum ou $ 2.500 + 25 tokens']].map(([k, n, d]) => `<div class="crate c-${k}"><b>${n}</b><small>${d}</small><span class="big-num">${S.crates[k]}</span><button class="btn sm" data-act="crate" data-k="${k}" ${S.crates[k] ? '' : 'disabled'}>Abrir</button></div>`).join('')}</div>
       <p class="muted">Caixas não são vendidas: você ganha vencendo campeonatos de manobras e no ranking semanal.</p>
       ${cr ? `<div class="reveal" style="--rc:${RAR[cr.item ? cr.item.r : cr.rar].c}">${cr.item ? `<span>${RAR[cr.item.r].n}</span><b>${esc(cr.item.name)}</b><small>${SLOT_NAMES[cr.item.slot]}</small>` : `<span>Você já tem tudo dessa raridade</span><b>+$ ${fmt(cr.coins)}</b>`}</div>` : ''}
-      <h3>Seus itens (${S.owned.length})</h3>${['skate', 'wheels', 'print', 'shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'wrist', 'ear', 'weapon', 'gun'].map(sl => { const its = [...ITEMS, ...EXCL_ITEMS].filter(i => i.slot === sl && S.owned.includes(i.id)); return its.length ? `<h3>${SLOT_NAMES[sl]}</h3><div class="grid-items">${its.map(itemCard).join('')}</div>` : ''; }).join('')}`;
+      <h3>Seus itens (${S.owned.length})</h3>${['skate', 'wheels', 'print', 'shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'wrist', 'ear', 'bolsa', 'weapon', 'gun'].map(sl => { const its = [...ITEMS, ...EXCL_ITEMS].filter(i => i.slot === sl && S.owned.includes(i.id)); return its.length ? `<h3>${SLOT_NAMES[sl]}</h3><div class="grid-items">${its.map(itemCard).join('')}</div>` : ''; }).join('')}`;
       paintPrintSwatches();
     }
     return { title: S.name, html };
@@ -11788,7 +12116,7 @@ const PANELS = {
 ['tokens', 'crew', 'config', 'results'].forEach(k => PANELS[k] = OLD_PANELS[k]);
 
 /* ---------------- CELULAR ---------------- */
-Object.assign(PANELS, { pix: PANEL_PIX, tattoo: PANEL_TAT, turismo: PANEL_TUR, fm: PANEL_RADIO, seguranca: PANEL_SEGURANCA, cinema: PANEL_CINEMA, banco: PANEL_BANCO, casa: PANEL_CASA, domino: PANEL_DOMINO, ringue: PANEL_RINGUE, lutaloja: PANEL_LUTALOJA, futsal: PANEL_FUTSAL, fsloja: PANEL_FSLOJA });
+Object.assign(PANELS, { pix: PANEL_PIX, tattoo: PANEL_TAT, turismo: PANEL_TUR, fm: PANEL_RADIO, seguranca: PANEL_SEGURANCA, cinema: PANEL_CINEMA, banco: PANEL_BANCO, casa: PANEL_CASA, domino: PANEL_DOMINO, ringue: PANEL_RINGUE, lutaloja: PANEL_LUTALOJA, futsal: PANEL_FUTSAL, fsloja: PANEL_FSLOJA, skt: PANEL_SKT });
 const phoneState = { screen: 'home', contact: null, callT: 0 };
 function togglePhone(force) {
   const el = $('phone'); const show = force != null ? force : el.hidden;
@@ -11865,6 +12193,7 @@ function act(a, ds, el) {
     case 'equip': { const it = ITEM[ds.id]; S.equip[it.slot] = it.id; persist(); applyLook(city.player, myLook()); renderPanel(); sfx('ui'); netTrack(); break; }
     case 'mission-accept': { S.mission = city.offers[+ds.i]; city.offers = null; persist(); rebuildMissionObjs(); renderMissionBox(); closePanel(); toast(`Missão aceita: ${S.mission.title}`, 'good'); break; }
     case 'mission-abandon': S.mission = null; P.carry = null; persist(); rebuildMissionObjs(); renderMissionBox(); renderPanel(); break;
+    case 'race-route': { S.raceMap = S.raceMap || {}; S.raceMap[ds.id] = +ds.v; persist(); renderPanel(); break; }
     case 'race': case 'race-again': { $('panel').hidden = true; panelKind = null; startRace(ds.id); break; }
     case 'checkout': city.checkout = { id: ds.id, t: +ds.t, brl: ds.brl, method: 'pix' }; renderPanel(); setTimeout(() => { const c = $('checkout'); if (c) c.scrollIntoView({ behavior: 'smooth' }); }, 30); break;
     case 'pay-method': city.checkout.method = ds.m; renderPanel(); break;
@@ -11909,7 +12238,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
@@ -12131,8 +12460,8 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && NET
 
 /* aparência compacta enviada para os outros jogadores */
 const myNetLook = () => { const L = myNetLook0(); if (S.beachWear) Object.assign(L.e, beachEquip()); return L; };
-const myNetLook0 = () => ({ bd: S.body || null, w: handNow(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print, wrist: S.equip.wrist, ear: S.equip.ear, tats: S.tats || null, tn: S.name, hol: holsterNow() }, b: S.board });
-const myPresence = () => ({ lib: isAdm() ? (S.segLib || []) : null, seg: isAdm() && S.segOff ? 0 : 1, segm: isAdm() ? S.segMode || 'perto' : null, sa: isAdm() && S.segMode === 'porta' && S.segAnchor ? S.segAnchor.map(v => Math.round(v * 10) / 10) : null, id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', sp: S.spouse ? S.spouse.name : '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
+const myNetLook0 = () => ({ bd: S.body || null, w: handNow(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print, wrist: S.equip.wrist, ear: S.equip.ear, bolsa: S.equip.bolsa, tats: S.tats || null, tn: S.name, hol: holsterNow() }, b: S.board });
+const myPresence = () => ({ lib: isAdm() ? (S.segLib || []) : null, seg: isAdm() && S.segOff ? 0 : 1, segm: isAdm() ? S.segMode || 'perto' : null, fb: isAdm() && S.filhas && S.filhas.comigo && S.filhas.br ? S.filhas.br.map(v => Math.round(v * 10) / 10) : null, sa: isAdm() && S.segMode === 'porta' && S.segAnchor ? S.segAnchor.map(v => Math.round(v * 10) / 10) : null, id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', sp: S.spouse ? S.spouse.name : '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
 function netJoinPlaza() {
   if (!NET.user || NET.ch) return;
   const ch = NET.sb.channel('praca_' + cityId(), { config: { presence: { key: NET.user.id }, broadcast: { self: false } } });
@@ -12153,6 +12482,8 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'fs_st' }, ({ payload }) => onFsState(payload))
     .on('broadcast', { event: 'fs_k' }, ({ payload }) => onFsKick(payload))
     .on('broadcast', { event: 'fs_end' }, ({ payload }) => onFsEnd(payload))
+    .on('broadcast', { event: 'skt' }, ({ payload }) => onSkt(payload))
+    .on('broadcast', { event: 'fs_ann' }, ({ payload }) => { if (payload && payload.txt) toast(payload.txt, 'good'); })
     .on('broadcast', { event: 'socorrido' }, ({ payload }) => onRescued(payload))
     .on('broadcast', { event: 'assalto_ok' }, ({ payload }) => onRobOk(payload))
     .on('broadcast', { event: 'marca' }, ({ payload }) => renderMark(payload))
@@ -12201,7 +12532,7 @@ function onPresence(state) {
       p = NET.peers[st.id] = { wp: L.w || null, id: st.id, name: st.name, g, lookKey, x: 0, y: 0, z: 0, h: 0, t: null, seen: false };
       pushChat('Praça', `${st.name} entrou na praça`);
     }
-    p.job = st.job || ''; p.gang = st.gang || null; p.sp = st.sp || ''; p.lib = st.lib || []; p.seg = st.seg === 0 ? 0 : 1; p.segm = st.segm || 'perto'; p.sa = st.sa || null; p.skin = (st.look || {}).sk;
+    p.job = st.job || ''; p.gang = st.gang || null; p.sp = st.sp || ''; p.lib = st.lib || []; p.seg = st.seg === 0 ? 0 : 1; p.segm = st.segm || 'perto'; p.sa = st.sa || null; p.fb = st.fb || null; p.skin = (st.look || {}).sk;
     if (st.adm && !p.adm) { p.adm = 1; setTag(p.g, '👑 ' + st.name + ' · Chefe', '#ffd700'); toast(`👑 O chefe ${st.name} chegou na cidade! Respeito!`, 'pink'); }
   }
   for (const id in NET.peers) if (!seen[id]) { pushChat('Praça', `${NET.peers[id].name} saiu`); removePeer(id); }
@@ -12354,7 +12685,7 @@ function lobbyLeave() {
 }
 function lobbyStart() {
   if (!lobbyIsHost() || LOBBY.players.length < 2) return;
-  const payload = { rid: NET.user.id.slice(0, 8) + Date.now().toString(36), cid: LOBBY.cid, players: LOBBY.players.slice(0, 8).map(p => ({ id: p.id, name: p.name, look: p.look })) };
+  const payload = { rid: NET.user.id.slice(0, 8) + Date.now().toString(36), cid: LOBBY.cid, rt: raceRoute(LOBBY.cid), players: LOBBY.players.slice(0, 8).map(p => ({ id: p.id, name: p.name, look: p.look })) };
   LOBBY.ch.send({ type: 'broadcast', event: 'start', payload });
   lobbyOnStart(payload);
 }
