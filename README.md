@@ -358,3 +358,12 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
     - Tropa da facção (ou reforço da PM) andando com você, o bonde do assalto (as 3 Hilux e os 15, inclusive os snipers nas lajes), as viaturas da perseguição e a ambulância do SAMU com os socorristas.
     - Explosões do canhão do tanque.
     - Operação no morro: um dos jogadores online decide quem acerta quem e manda para os outros, então todo mundo vê o mesmo resultado (quem morre, morre para todos).
+
+### Build 2026.10.12-36
+  - 🍻 **Bares e Brega em todas as cidades**:
+    - Salvador não tinha a Rua do Comércio. Agora as 3 cidades têm Bar do Zé, Brega do Rolê, Sorveteria e Empréstimos, além do Boteco do Morro.
+    - Novo botão "🍻 Bares e Brega" no menu ☰ mostra a distância de cada lugar e marca o GPS até a porta.
+  - 🍺 **Bar**: música tocando, gente bebendo no balcão e nas mesas com garrafas, e alguns bêbados cambaleando e falando besteira.
+  - 💃 **Brega**:
+    - Palco com duas barras de pole dance e dançarinas de lingerie dançando.
+    - Bebidas nas mesinhas e no balcão, e batida de brega tocando.

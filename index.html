@@ -571,6 +571,7 @@ canvas.swatch{background:#333}
     <span id="h-hp" aria-label="Vida"><i></i><b>100%</b></span>
   </button>
   <div class="hud-tr collapsed" id="hud-tr">
+    <button class="hud-btn" id="hb-role" data-act="open-role" aria-label="Bares e brega"><span style="font-size:17px">🍻</span><span class="lbl">Bares e Brega</span></button>
     <button class="hud-btn" id="hb-med" data-act="open-meds" aria-label="Tomar remédio" hidden style="background:#1d4d33;border-color:#3ddc84"><span style="font-size:17px">💊</span><span class="lbl">Remédio</span></button>
     <button class="hud-btn" id="hb-tropa" data-act="tropa-liberar" aria-label="Liberar a tropa" hidden style="background:#15161a;border-color:#ffcf3a"><span style="font-size:17px">🫡</span><span class="lbl">Liberar tropa</span></button>
     <button class="hud-btn" id="hb-skate" data-act="skate-toggle" aria-label="Guardar ou pegar o skate" hidden><span style="font-size:17px">🛹</span><span class="lbl">Guardar skate</span></button>
@@ -688,7 +689,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-35';
+const BUILD = '2026.10.12-36';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -9707,6 +9708,7 @@ function staticLots() {
   for (const cx of [126, -126]) for (const cz of [-84, -42, 0, 42, 84]) cand.push([cx, cz]);
   for (const cz of [-126, 126]) for (const cx of [-84, -42, 0, 42, 84]) cand.push([cx, cz]);
   for (const c of [168, -168]) for (const o of [-84, -42, 0, 42, 84]) cand.push([c, o], [o, c]);
+  for (const c of [210, -210]) for (const o of [-84, -42, 0, 42, 84]) cand.push([c, o], [o, c]); // mais longe, para nenhuma cidade ficar sem o comércio
   const used = [BANK_POS, ARENA_POS, PRACA_POS, QUADRA_POS, VILA_POS].map(String), seen = new Set();
   const L = cand.filter(q => { const k = q + ''; if (seen.has(k) || used.includes(k)) return false; seen.add(k); return staticLotFree(q[0], q[1]); }).sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]) || a[0] - b[0] || a[1] - b[1]).slice(0, 6);
   for (const [x, z] of L) clearLot(x, z);
@@ -11253,7 +11255,8 @@ EXTRA_INT.bar = (h) => {
   // TV com o jogo
   const tv = canvasTex(256, 144, (c, w, hh) => { c.fillStyle = '#1e7a3a'; c.fillRect(0, 0, w, hh); c.strokeStyle = '#fff'; c.lineWidth = 3; c.strokeRect(10, 10, w - 20, hh - 20); c.beginPath(); c.moveTo(w / 2, 10); c.lineTo(w / 2, hh - 10); c.stroke(); c.beginPath(); c.arc(w / 2, hh / 2, 22, 0, TAU); c.stroke(); c.fillStyle = '#15161a'; c.fillRect(0, 0, 110, 26); c.fillStyle = '#fff'; c.font = 'bold 16px Arial'; c.fillText('FLA 1 x 0 VAS', 6, 19); });
   box(1.8, 1.05, 0.08, 0x111111, -W / 2 + 0.1, 2.3, 0, Math.PI / 2); add(new THREE.PlaneGeometry(1.7, 0.95), new THREE.MeshBasicMaterial({ map: tv }), -W / 2 + 0.16, 2.3, 0, Math.PI / 2);
-  for (const [x, z, n] of [[-5, -0.5, 2], [-5, 3, 1], [-1.5, 3.5, 2], [2, 0, 0]]) tableSet(h, x, z, 0xd8312f, n);
+  for (const [x, z, n] of [[-5, -0.5, 2], [-5, 3, 1], [-1.5, 3.5, 2], [2, 0, 2], [5, 4, 2]]) { tableSet(h, x, z, 0xd8312f, n); barBottles(h, x, z); }
+  barCrowd(h);
 };
 EXTRA_INT.brega = (h) => {
   cleanShopSeats(); const { box, add, D, W, spot, npc, it } = h;
@@ -11269,6 +11272,7 @@ EXTRA_INT.brega = (h) => {
   h.counter(D / 2 - 2.6, '🍹 Pedir uma bebida', lookOf({ shirt: 'shirt_pink', pants: 'pants_black', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), 'f'), 'Bartender');
   for (let i = 0; i < 4; i++) { const z = -2 + i * 1.6; box(0.9, 0.42, 1.4, 0xa62bd9, -W / 2 + 0.7, 0.21, z); box(0.25, 0.7, 1.4, 0xa62bd9, -W / 2 + 0.2, 0.55, z); shopSeat(h, -W / 2 + 0.8, z, Math.PI / 2, '🛋️ Sentar no sofá'); }
   spot('💃 Dançar na pista', 0, 0.5, () => { P.emote = { id: 'dance', t: 30 }; toast('💃 Mandando ver no brega!', 'pink'); });
+  bregaShow(h);
   const lt = new THREE.PointLight(0xff2a8a, 1.6, 18); lt.position.set(0, 3, -1); it.g.add(lt); it.disco = lt;
 };
 EXTRA_INT.emprestimo = (h) => {
@@ -11289,6 +11293,50 @@ function shopFolkTick(dt, t) {
   }
   if (it.floor) { const k = Math.floor(t * 3); it.floor.forEach((m, i) => m.emissiveIntensity = (i + k) % 3 === 0 ? 1.1 : 0.15); }
   if (it.disco) it.disco.color.setHSL((t * 0.2) % 1, 1, 0.55);
+  try { localSound(it, t); } catch (e) { }
+  for (const n of it.npcs) { const u = n.userData;
+    if (u.drunk) { u.ph = (u.ph || 0) + dt; const a = u.ph * 0.6 + u.seed; u.dx = Math.sin(a) * 1.6 + Math.sin(a * 2.3) * 0.4; u.dz = Math.cos(a * 0.8) * 1.1; n.position.set(u.bx + u.dx, 0, u.bz + u.dz); n.rotation.y = a + Math.PI / 2; n.rotation.z = Math.sin(u.ph * 3) * 0.12; animSkater(n, { walk: true, v: 1.1, fallT: 0 }, t + u.seed); if (Math.random() < dt * 0.15 && Math.hypot(n.position.x - P.x, n.position.z - P.z) < 8) bubble(n, pick(['Mais uma, Zé!', 'Tô de boa... hic!', 'Bota aquela música!', 'Eu te amo, cara!', 'Hic!']), 2.2); }
+    else if (u.drink) { animSkater(n, { walk: true, v: 0, fallT: 0, armR: (() => { const k = Math.max(0, Math.sin(t * 0.9 + u.seed)); return { rArmFwd: 0.8 + k * 0.7, rElbow: 1.9 + k * 0.5, headX: -k * 0.25 }; })() }, t + u.seed); }
+  }
+}
+/* bar: gente bebendo no balcão e nas mesas, alguns bêbados cambaleando; garrafas nas mesas */
+function barBottles(h, x, z) { for (let i = 0; i < 3; i++) h.add(CYL(0.04, 0.05, 0.26, 8), std([0x2e7a35, 0x7a4a28, 0xd8a24a][i % 3], 0.2, 0.1), x - 0.2 + i * 0.2, 0.9, z + (i % 2 ? 0.15 : -0.12)); h.add(CYL(0.035, 0.03, 0.12, 8), std(0xf2d27a, 0.1, 0.1), x + 0.25, 0.83, z + 0.2); }
+function barCrowd(h) {
+  const { D, W, npc } = h, rl = () => lookOf({ shirt: pick(ITEMS.filter(o => o.slot === 'shirt' && o.r === 'comum' && !o.uni && !o.beach)).id, pants: pick(['pants_jeans', 'sh_bermuda', 'pants_black']), shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), Math.random() < 0.45 ? 'f' : 'm');
+  // no balcão, bebendo em pé
+  for (let i = 0; i < 4; i++) { const n = npc(rl(), null, -2.4 + i * 1.6, -D / 2 + 3.3, Math.PI); n.userData.drink = true; n.userData.seed = i * 1.7; }
+  // bêbados cambaleando pelo bar
+  for (let i = 0; i < 3; i++) { const bx = -3 + i * 3, bz = 1 + (i % 2) * 1.5, n = npc(rl(), null, bx, bz, 0); Object.assign(n.userData, { drunk: true, bx: h.it.g.position.x + bx, bz: h.it.g.position.z + bz, seed: i * 2.1 }); }
+  // caixas de som
+  for (const x of [-W / 2 + 0.6, W / 2 - 0.6]) h.box(0.6, 1.1, 0.5, 0x15161a, x, 0.55, -D / 2 + 0.6);
+}
+/* brega: show das dançarinas no palco com pole dance, de lingerie; bebidas nas mesas e no balcão */
+ITEM.lg_sutia = I('shirt', 'lg_sutia', 'Lingerie (sutiã)', 0xb3001b, null, null, 'comum', { pat: 'plain', bra: true, uni: true }); ITEMS.push(ITEM.lg_sutia);
+ITEM.lg_sutia_preto = I('shirt', 'lg_sutia_preto', 'Lingerie preta (sutiã)', 0x111114, null, null, 'comum', { pat: 'plain', bra: true, uni: true }); ITEMS.push(ITEM.lg_sutia_preto);
+ITEM.lg_calcinha = I('pants', 'lg_calcinha', 'Lingerie (calcinha)', 0xb3001b, null, null, 'comum', { pat: 'plain', trunk: true, uni: true }); ITEMS.push(ITEM.lg_calcinha);
+ITEM.lg_calcinha_preta = I('pants', 'lg_calcinha_preta', 'Lingerie preta (calcinha)', 0x111114, null, null, 'comum', { pat: 'plain', trunk: true, uni: true }); ITEMS.push(ITEM.lg_calcinha_preta);
+function bregaShow(h) {
+  const { box, add, D, W, npc } = h, sx = W / 2 - 2.4;
+  box(3.6, 0.5, 5, 0x2a0f2e, sx, 0.25, 0.5); box(3.7, 0.06, 5.1, 0xff2a8a, sx, 0.52, 0.5);
+  for (const z of [-0.9, 1.9]) add(CYL(0.04, 0.04, 3, 10), std(0xe8e8e8, 0.15, 0.9), sx, 2, z);
+  for (let i = 0; i < 4; i++) {
+    const preta = i % 2, n = npc(lookOf({ shirt: preta ? 'lg_sutia_preto' : 'lg_sutia', pants: preta ? 'lg_calcinha_preta' : 'lg_calcinha', shoes: ITEM.sl_preto ? 'sl_preto' : 'shoes_basic', ear: ITEM.ea_argolao ? 'ea_argolao' : 'ea_none' }, pick(SKINS), pick(HAIRS), 'f', null, { hs: pick(FEM_HAIR_KEYS) }), null, sx + (i % 2 ? 0.7 : -0.7), -1.2 + i * 1.1, -Math.PI / 2);
+    n.position.y = 0.52; n.userData.dance = true; n.userData.ph = i * 1.3; n.userData.stage = true;
+  }
+  // bebidas: garrafas e copos nas mesinhas e no balcão
+  for (const [x, z] of [[-W / 2 + 2.2, -1.2], [-W / 2 + 2.2, 1.6], [2.2, 3.4]]) { box(0.7, 0.06, 0.7, 0x2a0f2e, x, 0.74, z); box(0.06, 0.72, 0.06, 0x111111, x, 0.37, z); barBottles(h, x, z); }
+  for (let i = 0; i < 10; i++) add(CYL(0.05, 0.06, 0.3, 8), std([0x2e7a35, 0xd8a24a, 0x9fd6ff, 0xb3262e][i % 4], 0.2, 0.1), -2.7 + i * 0.6, 1.25, D / 2 - 2.1);
+}
+/* som ambiente dentro do bar e do brega (batida gerada no próprio aparelho) */
+function localSound(it, t) {
+  if (!S.settings.sound || !(it.kind === 'bar' || it.kind === 'brega')) return; if (!audioCtx()) return;
+  const bpm = it.kind === 'brega' ? 128 : 96, step = 60 / bpm / 2, k = Math.floor(t / step); if (k === it.sndK) return; it.sndK = k;
+  const b = k % 8;
+  if (b % 2 === 0) tone('sine', 110, 42, 0.16, it.kind === 'brega' ? 0.22 : 0.14);
+  if (b % 2 === 1) noiseHit(0.04, 'highpass', 7000, 0.035);
+  if (b === 2 || b === 6) noiseHit(0.09, 'bandpass', 1800, 0.06);
+  const mel = it.kind === 'brega' ? [330, 392, 440, 392, 330, 294, 330, 262] : [220, 262, 294, 262, 196, 220, 247, 220];
+  if (b % 2 === 0) tone('triangle', mel[b], mel[b], 0.18, 0.035);
 }
 /* ---- quarteirão do comércio: 4 lojas com porta pra rua ---- */
 function buildComercio(sc) {
@@ -11322,6 +11370,9 @@ const MENUS = {
   brega: { t: '💃 Brega do Rolê', it: [['Água', 4, 2], ['Refrigerante', 7, 3], ['Drink sem álcool da casa', 15, 5], ['Porção de calabresa', 25, 12]] },
 };
 const PANELS28 = {};
+/* onde fica o rolê: bares, brega, sorveteria e boteco */
+function roleSpots() { return (city.xspots || []).filter(o => o.comercio).map(o => { const n = o.label.replace(/^🚪 Entrar: |^🍺 Entrar no /, ''); return { k: n, n, x: o.x, z: o.z, i: /Brega/.test(n) ? '💃' : /Sorvet/.test(n) ? '🍦' : /Empr/.test(n) ? '💼' : '🍺' }; }); }
+PANELS28.role = () => { const L = roleSpots(); return { title: '🍻 Bares e Brega', html: L.length ? `<p class="muted">Escolha e o GPS leva você até a porta.</p>${L.map(d => `<div class="row"><span>${d.i} <b>${esc(d.n)}</b> · ${Math.round(Math.hypot(d.x - P.x, d.z - P.z))} m</span><button class="btn sm" data-act="role-gps" data-k="${esc(d.k)}">📍 Ir</button></div>`).join('')}` : '<p class="muted">Nada por aqui nesta cidade.</p>' }; };
 /* =========================================================
    REMÉDIOS (farmácia) e SAMU para os figurantes
    - A vida só volta no hospital (consulta) ou tomando remédio comprado na farmácia
@@ -13729,7 +13780,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-filhos': openPanel('filhos'); break; case 'filho-criar': filhoCriar(); break; case 'filho-remover': filhoRemover(+ds.i); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'hud-menu': hudMenu(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'open-assalto': toggleRadio(false); openPanel('assalto'); break; case 'heist-go': heistStart(ds.id); break; case 'heist-city': heistOtherCity(ds.c); break; case 'heist-cancel': closePanel(); heistCancel(); break; case 'fuga-morro': fugaMorro(); break; case 'fuga-br': fugaBR(ds.c); break; case 'bonde-entrar': boardLead(); break; case 'heist-fugir': heistFugir(); break; case 'heist-tiro': heistTiro(); break; case 'tank-fire': tankFire(); break; case 'skate-toggle': skateToggle(); break; case 'tropa-liberar': tropaLiberar(); break; case 'open-garagem': openPanel('garagem'); break; case 'garagem-usar': garagemUsar(ds.id); break; case 'bonde-dispensar': bondeDispensar(); break; case 'bonde-ordem': bondeOrdem(ds.m); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-filhos': openPanel('filhos'); break; case 'filho-criar': filhoCriar(); break; case 'filho-remover': filhoRemover(+ds.i); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'hud-menu': hudMenu(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'open-assalto': toggleRadio(false); openPanel('assalto'); break; case 'heist-go': heistStart(ds.id); break; case 'heist-city': heistOtherCity(ds.c); break; case 'heist-cancel': closePanel(); heistCancel(); break; case 'fuga-morro': fugaMorro(); break; case 'fuga-br': fugaBR(ds.c); break; case 'bonde-entrar': boardLead(); break; case 'heist-fugir': heistFugir(); break; case 'heist-tiro': heistTiro(); break; case 'tank-fire': tankFire(); break; case 'skate-toggle': skateToggle(); break; case 'open-role': openPanel('role'); break; case 'role-gps': { const d = roleSpots().find(q => q.k === ds.k); if (d) { setGps(d.x, d.z, d.n); closePanel(); toast(`📍 GPS marcado: ${d.n}`, 'pink'); } break; } case 'tropa-liberar': tropaLiberar(); break; case 'open-garagem': openPanel('garagem'); break; case 'garagem-usar': garagemUsar(ds.id); break; case 'bonde-dispensar': bondeDispensar(); break; case 'bonde-ordem': bondeOrdem(ds.m); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
