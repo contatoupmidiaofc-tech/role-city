@@ -333,3 +333,21 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
     - Cada lado tem vida, e quem perder a vida primeiro morre.
   - 📻 **Rádio**: aberto, ele não cobre mais os botões de baixo. No celular deitado ele fica em cima, no meio da tela.
   - 🚗 **Botão Carros**: abre a lista de todos os seus veículos para escolher qual usar. Ele aparece estacionado do seu lado, sem precisar ir na Concessionária.
+
+### Build 2026.10.12-34
+  - ❤️ **Vida de verdade**:
+    - Tiro, soco, facada, atropelamento e queda tiram vida, e a vida não volta sozinha.
+    - Para recuperar, faça a consulta no Hospital ou compre remédio na Farmácia, que fica no Hospital: Analgésico +20%, Anti-inflamatório +40% e Kit de primeiros socorros +70%.
+    - Os remédios ficam guardados na bolsa. Quando você está machucado aparece o botão 💊 Remédio para tomar.
+    - Comida e bebida não curam mais.
+  - 🚑 **SAMU para quem morre**:
+    - Figurante, policial ou traficante que morre fica caído até a ambulância do SAMU chegar. Os socorristas descem com a maca e levam para o hospital, e depois de um tempo a pessoa volta.
+    - Jogador real que zera a vida continua caído até o SAMU levar.
+  - 🛣️ **BR**: as montanhas da serra não ficam mais em cima da pista.
+  - 🧱 **Paredes de verdade**:
+    - Pontos turísticos, pilares, torres, mastros, aeroporto e prédios soltos agora são sólidos e não dá mais para atravessar.
+    - No skate, caixote, ledge, a lateral das rampas e os corrimãos são obstáculos: batendo neles, você cai e perde um pouco de vida. Para subir, tem que pular (ollie) por cima e fazer a manobra lá em cima.
+  - 🛹 **Manobras por gesto**:
+    - Primeiro pule. No ar, deslize ↑ (360 Flip), ↓ (Varial Kickflip), ← (Heelflip) ou → (Pop Shove-it).
+    - Ou toque 1 vez (Kickflip), 2 vezes (Hardflip) ou 3 vezes (Impossible).
+    - No ar o dedo faz manobra e não gira a câmera.
