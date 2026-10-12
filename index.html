@@ -689,7 +689,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-36';
+const BUILD = '2026.10.12-37';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -3212,7 +3212,7 @@ function resetCity() {
   try { if (city.heist) heistCancel(true); } catch (e) { city.heist = null; }
   city.bonde = null; city.camOverride = null;
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
-  city.hospG = null; city.samu = null; city.samuNpc = null; city.deadNpcs = []; city.hospNpcs = []; city.hospIn = false; city.shopIn = null; city.squad = []; city.homePad = null; city.morros = {}; city.regFav = []; city.party = []; city.users = []; city.kids = []; city.kidBall = null; city.leds = []; city.soundSrc = []; city.policeLot = []; city.war = null; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null; city.outer = null; city.ocol = null; city.xspots = []; city.fire = null; city.raid = null; city.tatNpc = null;
+  city.hospG = null; city.samu = null; city.samuNpc = null; city.samuNpcs = []; city.deadNpcs = []; city.hospNpcs = []; city.hospIn = false; city.shopIn = null; city.squad = []; city.homePad = null; city.morros = {}; city.regFav = []; city.party = []; city.users = []; city.kids = []; city.kidBall = null; city.leds = []; city.soundSrc = []; city.policeLot = []; city.war = null; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null; city.outer = null; city.ocol = null; city.xspots = []; city.fire = null; city.raid = null; city.tatNpc = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -4808,6 +4808,7 @@ function startShift(id) {
   if (lvlLock(J.need)) return toast(`Libera no nível ${J.need}.`, 'bad');
   if (J.veh && !ownsKind(J.veh)) return toast(`Precisa ter ${J.veh === 'moto' ? 'uma moto' : 'um carro'} (Concessionária).`, 'bad');
   if (J.police && !S.policeOk) return toast('Primeiro passe na prova da Delegacia.', 'bad');
+  if (AREA_JOBS.includes(id) && certOk(id)) { const ar = (S.area || {})[id]; if (!ar) return openPanel('area', id); if (ar !== cityId()) return toast(`Sua área de trabalho é ${CITY_DEFS[ar].name}. Lá você trabalha como ${J.name}.`, 'bad'); }
   if (!certOk(id)) { toast(`Para trabalhar como ${J.name}, primeiro passe no teste.`, 'pink'); return startJobTest(id); }
   if (J.gang && !S.gang) return toast('Primeiro entre ou crie um grupo no QG da Comunidade (no morro).', 'bad');
   if (S.shift && S.shift !== id) endShift();
@@ -5206,7 +5207,7 @@ function updateWanted(dt) {
 }
 function getArrested(by) {
   if (city.arrestT > 0 || P.jailT > 0 || isAdm()) return; city.arrestT = 3;
-  const stars = Math.max(1, P.wanted || 1); jailPlayer(25 + 25 * stars, by);
+  S.lastCrimes = (P.crimes || []).slice(); jailPlayer(penaDe(P.crimes, P.wanted), by);
 }
 
 /* ---------- armas de fogo ---------- */
@@ -5305,7 +5306,7 @@ function answerQuiz(k) {
   const q = city.quiz; if (!q) return; const cur = q.qs[q.i]; if (+k === cur[2]) { q.ok++; sfx('coin'); } else sfx('hit');
   q.i++; if (q.i >= q.qs.length) {
     const pass = q.ok >= 7; city.quiz = null;
-    if (pass) { S.policeOk = true; persist(); toast(`Aprovado com ${q.ok}/10! Agora você pode trabalhar como Policial.`, 'good'); sfx('level'); postFeed('Passei na prova da Polícia!'); }
+    if (pass) { S.policeOk = true; persist(); toast(`Aprovado com ${q.ok}/10! Agora você pode trabalhar como Policial.`, 'good'); sfx('level'); postFeed('Passei na prova da Polícia!'); setTimeout(() => openPanel('area', 'policial'), 1200); }
     else { S.quizWait = Date.now() + 3 * 60000; persist(); toast(`Reprovado (${q.ok}/10). Estude e tente de novo em 3 minutos.`, 'bad'); }
   }
   renderPanel();
@@ -5835,7 +5836,7 @@ function releaseJail(paid) {
   fadeTo(() => { city.jail = false; const d = city.doors.find(d => d.kind === 'delegacia'); if (d) { P.x = d.x; P.z = d.z + 3; } else { P.x = 0; P.z = 10; } P.y = 0; city.zoom = 1; city.camSnap = true; toast(paid ? 'Fiança paga. Você está livre.' : 'Pena cumprida. Está livre!', 'good'); });
 }
 const bailCost = () => Math.round((P.jailT || 0) * 25);
-function renderJailBox() { const b = $('jail-box'); if (!b) return; b.hidden = !(P.jailT > 0); if (P.jailT > 0) b.innerHTML = `<div class="t">🔒 Preso</div><div class="d">Faltam ${Math.ceil(P.jailT)} s · <button class="btn sm" data-act="fianca" ${S.coins < bailCost() ? 'disabled' : ''}>Pagar fiança $ ${fmt(bailCost())}</button></div>`; }
+function renderJailBox() { const b = $('jail-box'); if (!b) return; b.hidden = !(P.jailT > 0); if (P.jailT > 0) { const tt = Math.ceil(P.jailT), m = Math.floor(tt / 60), sec = tt % 60; b.innerHTML = `<div class="t">🔒 Preso</div><div class="d">Faltam ${m}:${String(sec).padStart(2, '0')} · <button class="btn sm" data-act="fianca" ${S.coins < bailCost() ? 'disabled' : ''}>Fiança $ ${fmt(bailCost())}</button> <button class="btn tok sm" data-act="chave" ${(S.tokens || 0) < keyCost() ? 'disabled' : ''}>🔑 Chave ${keyCost()} T</button> <button class="btn ghost sm" data-act="open-adv">⚖️ Advogado</button></div>`; } }
 function updateJail(dt) {
   for (const p of city.prisoners || []) p.t -= dt; if (city.prisoners) { const before = city.prisoners.length; city.prisoners = city.prisoners.filter(p => p.t > 0); if (before !== city.prisoners.length) showPrisoners(); }
   if (!(P.jailT > 0)) return; P.jailT -= dt; if ((city.jailUi = (city.jailUi || 0) - dt) <= 0) { city.jailUi = 0.5; renderJailBox(); }
@@ -5920,7 +5921,7 @@ function applyShot(best, kind, G) {
   if (kind === 'squad') { best.fallT = 3; bubble(best.g, 'Ô! Sou do seu lado, chefe!', 2); return; }
   // vida dos figurantes (pedestres, policiais, traficantes, ladrões): cada tiro tira vida; com 0 eles caem baleados
   // cada tiro certeiro tira vida (barrinha em cima da cabeça); com a vida zerada, morre
-  if (npcDamage(best, dmg)) { feed(`💀 ${kind === 'cop' ? 'Policial' : kind === 'thug' ? 'Traficante' : 'Figurante'} morto`); if (kind === 'cop' && best.chase) best.chase = false; }
+  if (npcDamage(best, dmg)) { feed(`💀 ${kind === 'cop' ? 'Policial' : kind === 'thug' ? 'Traficante' : 'Figurante'} morto`); if (kind === 'cop' && best.chase) best.chase = false; if (S.shift !== 'policial' && kind !== 'robber') addWanted(2, 'homicídio'); }
   else if (kind === 'cop' || kind === 'thug') { if (best.g) bubble(best.g, pick(['Ai!', 'Tô ferido!', 'Revida!']), 1.5); if (kind === 'thug') best.hostT = Math.max(best.hostT || 0, 18); }
   else { best.fallT = G.knock + (kind === 'robber' ? 3 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2); }
   if (kind === 'robber') return;
@@ -6352,7 +6353,7 @@ function answerJob(k) {
   const z = city.jquiz; if (!z) return; const q = z.qs[z.i]; if (q.o[+k].ok) { z.ok++; sfx('coin'); } else sfx('hit'); z.i++;
   if (z.i >= z.qs.length) {
     const pass = z.ok >= 4, J = JOBS[z.id] || { name: 'Comerciante' }; city.jquiz = null;
-    if (pass) { S.certs = S.certs || {}; S.certs[z.id] = true; persist(); toast(`Aprovado no teste de ${J.name} (${z.ok}/5)!`, 'good'); sfx('level'); postFeed(`Passei no teste de ${J.name}!`); city.jdone = { id: z.id, ok: z.ok, pass }; }
+    if (pass) { S.certs = S.certs || {}; S.certs[z.id] = true; persist(); toast(`Aprovado no teste de ${J.name} (${z.ok}/5)!`, 'good'); sfx('level'); postFeed(`Passei no teste de ${J.name}!`); city.jdone = { id: z.id, ok: z.ok, pass }; if (AREA_JOBS.includes(z.id)) setTimeout(() => openPanel('area', z.id), 1500); }
     else { S.jwait = S.jwait || {}; S.jwait[z.id] = Date.now() + 2 * 60000; persist(); toast(`Reprovado (${z.ok}/5). Precisa de 4 acertos. Tente de novo em 2 minutos.`, 'bad'); city.jdone = { id: z.id, ok: z.ok, pass }; }
   }
   renderPanel();
@@ -6632,9 +6633,9 @@ function lockInCell(i) {
   if (!A || A.st !== 'algemado') return toast(c.who ? `Cela ${i + 1}: ${c.who} está preso aqui.` : `Cela ${i + 1} vazia. Algeme um suspeito e traga até aqui.`);
   if (c.who) return toast('Essa cela está ocupada. Use outra.', 'bad');
   const name = A.doc ? A.doc.name : A.name;
-  if (A.o) { A.o.held = { jailed: true, cellXZ: [c.x, c.z] }; city.jailedN = city.jailedN || []; city.jailedN.push({ o: A.o, name, t: 150 }); A.o.x = c.x; A.o.z = c.z; c.m = A.o.g; bubble(A.o.g, pick(['Vou sair rapidinho…', 'Isso é injustiça!', 'Me tira daqui!']), 3); }
+  if (A.o) { A.o.held = { jailed: true, cellXZ: [c.x, c.z] }; city.jailedN = city.jailedN || []; city.jailedN.push({ o: A.o, name, t: penaDe(abordCrimes(A), 1) }); A.o.x = c.x; A.o.z = c.z; c.m = A.o.g; bubble(A.o.g, pick(['Vou sair rapidinho…', 'Isso é injustiça!', 'Me tira daqui!']), 3); }
   else abordSend('cela');
-  c.who = name; c.tgt = 0; clank(); addPrisoner(name, 150); city.abord = null;
+  const pena = penaDe(abordCrimes(A), 1); c.who = name; c.tgt = 0; clank(); addPrisoner(name, pena); city.abord = null; toast(`⏱️ Pena: ${Math.round(pena / 60)} min (veja o Manual do Policial).`, 'pink');
   const crimes = abordCrimes(A).length, g = earn(jobPay('policial', 200 + crimes * 60)); addXP(45); S.stats.prisoes = (S.stats.prisoes || 0) + 1; persist();
   toast(`🔒 ${name} trancado na cela ${i + 1}! Ocorrência registrada. +$${fmt(g)}`, 'good'); sfx('coin');
   if (S.mission && S.mission.job === 'policial') { S.mission = null; nextJobTask(); }
@@ -8522,7 +8523,7 @@ function fireHelpSpot() {
    OPERAÇÃO POLICIAL NO MORRO: a PM chega de viatura, sobe o morro e os traficantes trocam tiro
    ========================================================= */
 const RAID_EVERY = 9 * 60 * 1000, RAID_DUR = 130;
-function raidSlot() { const n = Date.now(), s = Math.floor(n / RAID_EVERY), r = mulberry32(s * 53 + cityId().length * 11); return { s, el: (n - s * RAID_EVERY) / 1000 - 30, on: r() < 0.8 }; }
+function raidSlot() { if (city.raidForce && Date.now() - city.raidForce < (RAID_DUR + 10) * 1000) return { s: 'f' + city.raidForce, el: (Date.now() - city.raidForce) / 1000, on: true }; const n = Date.now(), s = Math.floor(n / RAID_EVERY), r = mulberry32(s * 53 + cityId().length * 11); return { s, el: (n - s * RAID_EVERY) / 1000 - 30, on: r() < 0.8 }; }
 function startRaid(sl) {
   const R = { s: sl.s, cops: [], cars: [], t: Math.max(0, sl.el) }, sc = city.scene, V = VEH.j_viatura || VEH.v_sedan;
   for (const [d, tt] of [[-14, -6], [-14, 6], [-20, 0]]) { const m = makeVehicleMesh(V), [x, z] = morroWorld(d, tt); m.position.set(x, 0, z); m.rotation.y = Math.atan2(...(() => { const [ax, az] = morroWorld(0, tt); return [ax - x, az - z]; })()); sc.add(m); R.cars.push(m); }
@@ -8588,7 +8589,7 @@ function raidShot(x, z, a, tgt, chance, dmg, near, gun, y) {
 function npcDamage(o, dmg, remote) {
   if (o.dead) return; if (!(o.hp > 0)) o.hp = 100; o.hp -= dmg;
   const y = (o.y != null ? o.y : groundH(o.x, o.z)); try { dmgPop(o.x, y + 2.1, o.z, dmg); } catch (e) { }
-  if (o.hp <= 0) { o.hp = 0; o.dead = true; o.deadAt = performance.now(); if (!o.crew && !o.squad && !(city.raid && city.raid.cops.includes(o))) (city.deadNpcs = city.deadNpcs || []).push(o); o.fallT = 1e9; o.raidDown = true; if (o.g) bubble(o.g, pick(['Aaai...', 'Fui...', 'Me pegaram...']), 2.5); if (o.path) o.path = null; o.patrol = null; }
+  if (o.hp <= 0) { o.hp = 0; o.dead = true; o.deadAt = performance.now(); (city.deadNpcs = city.deadNpcs || []).push(o); o.fallT = 1e9; o.raidDown = true; if (o.g) bubble(o.g, pick(['Aaai...', 'Fui...', 'Me pegaram...']), 2.5); if (o.path) o.path = null; o.patrol = null; }
   npcHpBar(o); if (!remote && !o.crew && !o.squad && !o.ghost) try { npcNetHit(o, dmg); } catch (e) { }
   return o.dead;
 }
@@ -9432,7 +9433,7 @@ async function takeCasa(key, modo, o = {}) {
   try {
     const { data, error } = await NET.sb.from('casas').insert({ cidade: cityId(), casa: key, modo, dono_nome: S.name, pago_ate: new Date(Date.now() + 3600e3).toISOString() }).select().single();
     if (error) { if (/duplicate|unique/i.test(error.message)) { city.casaRows[key] = city.casaRows[key] || { casa: key, dono: '?', dono_nome: 'outro jogador', modo: modo }; } if (!o.quiet) toast(/duplicate|unique/i.test(error.message) ? 'Alguém acabou de pegar essa casa.' : 'Não deu agora. Tente de novo.', 'bad'); return; }
-    if (o.tok) S.tokens -= c.tok; else S.coins -= price; S.casa = { key, cid: cityId(), modo, tier: c.tier, n: c.n, paid: gameDay() };
+    if (o.tok) S.tokens -= c.tok; else S.coins -= price; if (S.casa && S.casa.cid !== cityId()) { S.casasOutras = S.casasOutras || {}; S.casasOutras[S.casa.cid] = S.casa; toast(`🏠 Casa extra: você agora tem casa em ${CITY_DEFS[S.casa.cid].name} e em ${CITY_DEFS[cityId()].name}.`, 'pink'); } S.casa = { key, cid: cityId(), modo, tier: c.tier, n: c.n, paid: gameDay() };
     if (!isAdm()) S.home = { id: c.tier, own: modo === 'compra', casa: true };
     if (c.morro) { S.morador = S.morador || {}; S.morador[cityId()] = true; }
     persist(); updateHUD(); city.casaRows[key] = data; refreshCasaSigns(); sfx('level');
@@ -11196,7 +11197,7 @@ function skateToggle() {
   persist(); sfx('ui'); skateBtn(); toast(S.skateGuardado ? '🛹 Skate guardado. Você anda sem ele nas costas.' : '🛹 Pegou o skate!', 'pink');
 }
 function skateBtn() { const b = $('hb-skate'); if (!b) return; const on = hasSkate() && mode === 'city' && !P.drive; if (b.hidden === on) b.hidden = !on; const l = b.querySelector('.lbl'), tx = S.skateGuardado ? 'Pegar skate' : 'Guardar skate'; if (l && l.textContent !== tx) l.textContent = tx; }
-function hudMenuDot() { skateBtn(); tropaBtn(); medBtn(); try { liveTick(); } catch (e) { console.warn('ao vivo', e); } try { samuNpcTick(); } catch (e) { console.warn('samu figurantes', e); } const el = $('hud-tr'), d = el && el.querySelector('.hm-dot'); if (!d) return; const alert = ['hb-emp', 'hb-toque', 'hb-brincar', 'hb-casa', 'hb-rota'].some(id => $(id) && !$(id).hidden) && el.classList.contains('collapsed'); if (d.hidden === alert) d.hidden = !alert; }
+function hudMenuDot() { try { ruaWorkersTick(Math.min(0.1, (performance.now() - (city.rwT || performance.now())) / 1000), performance.now() / 1000); city.rwT = performance.now(); } catch (e) { console.warn('rua', e); } try { jobsTick(); } catch (e) { console.warn('profissões', e); } skateBtn(); tropaBtn(); medBtn(); try { city.xspots = (city.xspots || []).filter(x => !x.medic).concat(medicSpots()); } catch (e) { } try { liveTick(); } catch (e) { console.warn('ao vivo', e); } try { samuNpcTick(); } catch (e) { console.warn('samu figurantes', e); } const el = $('hud-tr'), d = el && el.querySelector('.hm-dot'); if (!d) return; const alert = ['hb-emp', 'hb-toque', 'hb-brincar', 'hb-casa', 'hb-rota'].some(id => $(id) && !$(id).hidden) && el.classList.contains('collapsed'); if (d.hidden === alert) d.hidden = !alert; }
 function updateRP28(dt, t) {
   try { meleeTick(dt); seatTick(); toqueTick(dt, t); } catch (e) { console.warn('rua', e); }
   try { hudMenuDot(); } catch (e) { }
@@ -11397,31 +11398,77 @@ PANELS28.remedios = () => {
   return { title: '💊 Remédios', html };
 };
 function medBtn() { const b = $('hb-med'); if (!b) return; const on = mode === 'city' && !P.down && P.hp < 100; if (b.hidden === on) b.hidden = !on; }
-/* SAMU dos figurantes: a ambulância vem, os socorristas colocam o corpo na maca e levam para o hospital */
+/* SAMU dos figurantes: a ambulância sai do Hospital, vai pelas ruas, os socorristas buscam todos os corpos
+   por perto (traficante, policial, morador, quem for) e ela volta pelas ruas para o Hospital.
+   Se tiver socorrista de verdade online na cidade, ele recebe o aviso primeiro e o SAMU automático espera. */
+function realMedicOnline() { return S.shift === 'socorrista' || Object.values(NET.peers || {}).some(p => p.job === 'socorrista'); }
 function samuNpcTick() {
   if (mode !== 'city' || city.interior || city.shopIn) return;
   const now = performance.now(), dt = Math.min(0.1, (now - (city.samuNT || now)) / 1000); city.samuNT = now;
-  const L = (city.deadNpcs = (city.deadNpcs || []).filter(o => o.dead && !o.taken));
+  const L = (city.deadNpcs = (city.deadNpcs || []).filter(o => o.dead && !o.taken && !o.claimed));
   // voltam do hospital depois de um tempo
-  city.hospNpcs = (city.hospNpcs || []).filter(o => { if (now < o.backAt) { if (o.g) o.g.scale.setScalar(0.0001); return true; } if (o.corpse) { city.scene.remove(o.g); return false; } o.dead = false; o.taken = false; o.fallT = 0; o.hp = 100; o.raidDown = false; if (o.g && o.sc0) o.g.scale.copy(o.sc0); npcHpBar(o); return false; });
-  let A = city.samuNpc;
-  if (!A && L.length) {
-    const o = L.find(q => now - q.deadAt > 8000); if (!o) return; const a = rand(0, TAU);
-    A = city.samuNpc = { o, m: ambulanceMesh(), x: o.x + Math.cos(a) * 60, z: o.z + Math.sin(a) * 60, st: 'vindo', t: 0 }; city.scene.add(A.m);
-    if (Math.hypot(o.x - P.x, o.z - P.z) < 80) toast('🚑 O SAMU está vindo buscar o ferido.', 'pink');
+  city.hospNpcs = (city.hospNpcs || []).filter(o => { if (now < o.backAt) { if (o.g) o.g.scale.setScalar(0.0001); return true; } if (o.corpse) { city.scene.remove(o.g); return false; } o.dead = false; o.taken = false; o.claimed = false; o.fallT = 0; o.hp = 100; o.raidDown = false; if (o.g && o.sc0) o.g.scale.copy(o.sc0); npcHpBar(o); return false; });
+  // aviso para o socorrista de verdade (eu)
+  if (S.shift === 'socorrista') for (const o of L) if (!o.alerted) { o.alerted = true; toast('🚑 Tem uma vítima para buscar! O GPS marca o local. Chegue perto e coloque na maca.', 'pink'); setGps(o.x, o.z, 'Vítima: buscar com a maca'); sfx('level'); }
+  const H = city.doors.find(d => d.kind === 'hospital') || { x: 0, z: 84 }, wait = realMedicOnline() ? 45000 : 8000;
+  city.samuNpcs = city.samuNpcs || [];
+  if (city.samuNpcs.length < 2) {
+    const o = L.find(q => now - q.deadAt > wait && !city.samuNpcs.some(A => A.list.includes(q)));
+    if (o) {
+      const tgt = nearestAddr(o.x, o.z), path = roadPath(H.x, H.z, tgt[0], tgt[1]), drive = path.slice(0, -1).concat([[tgt[0], tgt[1]]]);
+      const len = drive.reduce((sm, q, i) => i ? sm + Math.hypot(q[0] - drive[i - 1][0], q[1] - drive[i - 1][1]) : 0, 0);
+      const A = { o, list: L.filter(q => Math.hypot(q.x - o.x, q.z - o.z) < 22 && !city.samuNpcs.some(B => B.list.includes(q))), m: ambulanceMesh(), path: drive, len, d: 0, st: 'vindo', t: 0 };
+      for (const q of A.list) q.claimed = true; A.x = H.x; A.z = H.z; city.scene.add(A.m); city.samuNpcs.push(A);
+      if (Math.hypot(o.x - P.x, o.z - P.z) < 90) toast('🚑 O SAMU saiu do Hospital para buscar o corpo.', 'pink');
+    }
   }
-  if (!A) return; A.t += dt; const o = A.o, on = Math.floor(now / 180) % 2; if (A.m.userData.siren) { A.m.userData.siren[0].visible = !!on; A.m.userData.siren[1].visible = !on; }
-  if (A.st === 'vindo') {
-    const d = Math.hypot(o.x - A.x, o.z - A.z), a = Math.atan2(o.x - A.x, o.z - A.z);
-    if (d > 4.5) { const k = Math.min(1, 16 * dt / d); A.x += (o.x - A.x) * k; A.z += (o.z - A.z) * k; A.h = a; }
-    else { A.st = 'maca'; A.t = 0; A.medics = [0, 1].map(i => { const g = makeSkater(lookOf(Object.assign({}, UNIFORM.socorrista, { shoes: 'shoes_basic' }), pick(SKINS), pick(HAIRS), i ? 'f' : 'm'), 'SAMU', '#ff8a8a'); g.userData.ped = true; city.scene.add(g); return { g, x: A.x + (i ? 1 : -1), z: A.z }; }); }
-  } else if (A.st === 'maca') {
-    for (const [i, md] of A.medics.entries()) { const tx = (A.t < 3.5 ? o.x : A.x) + (i ? 0.7 : -0.7), tz = A.t < 3.5 ? o.z : A.z, d = Math.hypot(tx - md.x, tz - md.z), a = Math.atan2(tx - md.x, tz - md.z); if (d > 0.3) { md.x += Math.sin(a) * 3 * dt; md.z += Math.cos(a) * 3 * dt; } md.g.position.set(md.x, groundH(md.x, md.z), md.z); md.g.rotation.y = a; animSkater(md.g, { walk: true, v: d > 0.3 ? 3 : 0, fallT: 0 }, now / 1000 + i); }
-    if (A.t > 3.5 && !o.taken) { o.taken = true; o.backAt = now + 150000; if (o.g) { o.sc0 = o.g.scale.clone(); o.g.scale.setScalar(0.0001); } city.hospNpcs.push(o); if (A.medics[0]) bubble(A.medics[0].g, 'Vamos levar pro hospital!', 2); }
-    if (A.t > 6.5) { for (const md of A.medics) city.scene.remove(md.g); A.medics = []; A.st = 'indo'; A.t = 0; }
-  } else if (A.st === 'indo') { A.x += Math.sin(A.h + Math.PI) * 16 * dt; A.z += Math.cos(A.h + Math.PI) * 16 * dt; if (A.t > 6) { city.scene.remove(A.m); city.samuNpc = null; return; } }
-  A.m.position.set(A.x, groundH(A.x, A.z), A.z); A.m.rotation.y = A.st === 'indo' ? A.h + Math.PI : A.h || 0;
+  for (const A of city.samuNpcs.slice()) {
+    A.t += dt; const on = Math.floor(now / 180) % 2; if (A.m.userData.siren) { A.m.userData.siren[0].visible = !!on; A.m.userData.siren[1].visible = !on; }
+    if (A.st === 'vindo' || A.st === 'indo') {
+      A.d = Math.min(A.len, A.d + 15 * dt); const [x, z, h] = pathAt(A.st === 'vindo' ? A.path : A.back, A.d); A.x = x; A.z = z; A.h = h;
+      if (A.d >= A.len - 0.05) {
+        if (A.st === 'indo') { city.scene.remove(A.m); city.samuNpcs.splice(city.samuNpcs.indexOf(A), 1); continue; }
+        A.st = 'maca'; A.t = 0; A.k = 0;
+        A.medics = [0, 1].map(i => { const g = makeSkater(lookOf(Object.assign({}, UNIFORM.socorrista, { shoes: 'shoes_basic' }), pick(SKINS), pick(HAIRS), i ? 'f' : 'm'), 'SAMU', '#ff8a8a'); g.userData.ped = true; city.scene.add(g); return { g, x: A.x + (i ? 1 : -1), z: A.z }; });
+      }
+    } else if (A.st === 'maca') {
+      // um corpo por vez: vão até ele, colocam na maca e trazem para a ambulância
+      const o = A.list[A.k], back = !o || A.carry;
+      for (const [i, md] of A.medics.entries()) {
+        const tx = (back ? A.x : o.x) + (i ? 0.7 : -0.7), tz = back ? A.z : o.z, d = Math.hypot(tx - md.x, tz - md.z), a = Math.atan2(tx - md.x, tz - md.z);
+        if (d > 0.35) { const k = Math.min(1, 4 * dt / d); md.x += (tx - md.x) * k; md.z += (tz - md.z) * k; } md.g.position.set(md.x, groundH(md.x, md.z), md.z); md.g.rotation.y = a; animSkater(md.g, { walk: true, v: d > 0.35 ? 4 : 0, fallT: 0 }, now / 1000 + i);
+      }
+      const near = (x, z) => A.medics.every((md, i) => Math.hypot(md.x - (x + (i ? 0.7 : -0.7)), md.z - z) < 0.6);
+      if (o && !A.carry && near(o.x, o.z)) { A.carry = true; if (!o.taken) { o.taken = true; o.backAt = now + 150000; if (o.g) { o.sc0 = o.g.scale.clone(); o.g.scale.setScalar(0.0001); } city.hospNpcs.push(o); } bubble(A.medics[0].g, pick(['Pega pelos pés!', 'Na maca, devagar!', 'Vamos levar!']), 2); }
+      else if (A.carry && near(A.x, A.z)) { A.carry = false; A.k++; }
+      if (A.k >= A.list.length || A.t > 120) {
+        for (const md of A.medics) city.scene.remove(md.g); A.medics = [];
+        A.back = A.path.slice().reverse(); A.d = 0; A.st = 'indo';
+        for (const q of A.list) if (!q.taken) q.claimed = false;
+      }
+    }
+    A.m.position.set(A.x, groundH(A.x, A.z), A.z); A.m.rotation.y = A.h || 0;
+    if (A.m.userData.wheels && A.st !== 'maca') { const u = A.m.userData; u.spin = (u.spin || 0) + 15 * dt / 0.35; for (const w of u.wheels) w.children[0].rotation.x = u.spin; }
+  }
+  city.samuNpc = city.samuNpcs[0] || null; // (para a sincronização ao vivo)
 }
+/* socorrista de verdade: coloca o corpo na maca e entrega no Hospital */
+function medicPick(o) {
+  if (S.shift !== 'socorrista' || !o || !o.dead || o.taken) return; o.taken = true; o.backAt = performance.now() + 150000; if (o.g) { o.sc0 = o.g.scale.clone(); o.g.scale.setScalar(0.0001); } (city.hospNpcs = city.hospNpcs || []).push(o);
+  S.maca = (S.maca || 0) + 1; persist(); sfx('ui'); toast(`🚑 Vítima na maca (${S.maca}). Leve até o Hospital (GPS marcado).`, 'good');
+  const H = city.doors.find(d => d.kind === 'hospital'); if (H) setGps(H.x, H.z, 'Hospital: entregar as vítimas');
+  netSend('samu_take', { x: Math.round(o.x * 10) / 10, z: Math.round(o.z * 10) / 10 });
+}
+function medicDeliver() { const n = S.maca || 0; if (!n) return; S.maca = 0; const g = earn(jobPay('socorrista', 120 * n)); addXP(20 * n); persist(); updateHUD(); sfx('coin'); toast(`🏥 ${n} vítima${n > 1 ? 's' : ''} entregue${n > 1 ? 's' : ''} no Hospital. +$ ${fmt(g)}`, 'good'); }
+function onSamuTake(d) { if (!d || d.id === (NET.user && NET.user.id) || (d.rm || '') !== roomKey()) return; let o = null, bd = 6; for (const q of city.deadNpcs || []) { const k = Math.hypot(q.x - d.x, q.z - d.z); if (!q.taken && k < bd) { bd = k; o = q; } } if (!o) return; o.taken = true; o.backAt = performance.now() + 150000; if (o.g) { o.sc0 = o.g.scale.clone(); o.g.scale.setScalar(0.0001); } (city.hospNpcs = city.hospNpcs || []).push(o); }
+function medicSpots() {
+  if (S.shift !== 'socorrista' || mode !== 'city') return [];
+  const out = [], o = (city.deadNpcs || []).filter(q => q.dead && !q.taken).sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z))[0];
+  if (o) out.push({ medic: true, x: o.x, z: o.z, r: 2.6, label: '🚑 Colocar a vítima na maca', fn: () => medicPick(o) });
+  const H = city.doors.find(d => d.kind === 'hospital'); if (H && S.maca) out.push({ medic: true, x: H.x, z: H.z, r: 4, label: `🏥 Entregar ${S.maca} vítima(s) no Hospital`, fn: medicDeliver });
+  return out;
+}
+
 /* garagem: escolher qual veículo usar sem ir na concessionária */
 PANELS28.garagem = () => {
   const L = (S.vehicles || []).map(id => VEH[id]).filter(Boolean);
@@ -12036,7 +12083,7 @@ function autoColliders() {
   return n;
 }
 const _buildCity0 = buildCity;
-buildCity = function () { try { for (const id in LIVE.peers) delete LIVE.peers[id]; } catch (e) { } const r = _buildCity0.apply(this, arguments); city.corpses = []; clearTimeout(city.autoColT); city.autoColT = setTimeout(() => { try { autoColliders(); } catch (e) { console.warn('paredes', e); } }, 2600); return r; };
+buildCity = function () { try { for (const id in LIVE.peers) delete LIVE.peers[id]; } catch (e) { } try { casaDaCidade(); } catch (e) { } const r = _buildCity0.apply(this, arguments); city.corpses = []; setTimeout(() => { try { buildRuaWorkers(); } catch (e) { console.warn('garis', e); } }, 3200); clearTimeout(city.autoColT); city.autoColT = setTimeout(() => { try { autoColliders(); } catch (e) { console.warn('paredes', e); } }, 2600); return r; };
 /* =========================================================
    AO VIVO PARA TODOS: o que acontece com você aparece em tempo real para quem está online na mesma cidade
    - dano e morte dos figurantes, policiais e traficantes (e o SAMU vem buscar em todas as telas)
@@ -12075,7 +12122,7 @@ function liveGather() {
   if (H) { for (const o of H.crew || []) if (o.g && o.g.visible) P2.push([r(o.x), r(o.z), hh(o.h || 0), 'b', 0, 0]); for (const c of H.cars || []) C.push([r(c.x), r(c.z), hh(c.h || 0), 'h']); for (const p of H.cops || []) if (p.m.visible) C.push([r(p.m.position.x), r(p.m.position.z), hh(p.m.rotation.y), 'v']); }
   if (B) { for (const o of B.crew) P2.push([r(o.x), r(o.z), hh(o.h || 0), 'b', o.dead ? 1 : 0, o.y != null && !(o.path && o.path.length) ? r(o.y) : 0]); for (const c of B.cars) C.push([r(c.x), r(c.z), hh(c.h || 0), 'h']); }
   const S2 = city.samu; if (S2 && S2.m) { C.push([r(S2.x), r(S2.z), hh(S2.m.rotation.y), 'a']); for (const md of S2.medics || []) P2.push([r(md.x), r(md.z), hh(md.g.rotation.y), 'm', 0, 0]); }
-  const A = city.samuNpc; if (A && A.m) { C.push([r(A.x), r(A.z), hh(A.m.rotation.y), 'a']); for (const md of A.medics || []) P2.push([r(md.x), r(md.z), hh(md.g.rotation.y), 'm', 0, 0]); }
+  for (const A of city.samuNpcs || []) if (A && A.m) { C.push([r(A.x), r(A.z), hh(A.m.rotation.y), 'a']); for (const md of A.medics || []) P2.push([r(md.x), r(md.z), hh(md.g.rotation.y), 'm', 0, 0]); }
   return { p: P2.slice(0, 40), c: C.slice(0, 12) };
 }
 const LIVE = { peers: {} };
@@ -12108,6 +12155,216 @@ function liveTick() {
       q.x = lerp(q.x, v[0], 1 - Math.exp(-8 * dt)); q.z = lerp(q.z, v[1], 1 - Math.exp(-8 * dt)); q.g.position.set(q.x, groundH(q.x, q.z), q.z); q.g.rotation.y = v[2];
       const u = q.g.userData; if (u.siren) { const on = Math.floor(now / 180) % 2; u.siren[0].visible = !!on; u.siren[1].visible = !on; } if (v[3] === 'v') try { vehLightsTick(q.g, true, (Math.floor(t * 4) % 2) ? 1 : 2, t); } catch (e) { }
     });
+  }
+}
+/* =========================================================
+   PROFISSÕES DE VERDADE
+   - Salário por tempo de plantão (base nos salários reais do Brasil, na escala da grana do jogo)
+   - Policial e bombeiro escolhem a cidade (área) depois da prova
+   - Pena por crime (Manual do Policial); o preso cumpre o tempo, paga fiança, compra a chave ou chama advogado
+   - Advogado: o preso contrata e paga; o advogado defende; o delegado decide
+   - Delegado: eleito pelos policiais online da cidade; dá ordens ao batalhão, manda prender e soltar pelo nome
+   ========================================================= */
+// salário a cada 10 min de plantão (referência: salário mensal médio no Brasil ÷ ~40)
+const SALARIO = { catador: 50, entregador: 55, grafiteiro: 60, instrutor: 75, motoboy: 70, taxista: 85, socorrista: 100, bombeiro: 150, policial: 160, advogado: 175, medico: 370, delegado: 500, traficante: 0, comerciante: 90 };
+const SAL_REAL = { catador: 'R$ 2 mil', entregador: 'R$ 2,2 mil', grafiteiro: 'R$ 2,5 mil', instrutor: 'R$ 3 mil', motoboy: 'R$ 2,8 mil', taxista: 'R$ 3,5 mil', socorrista: 'R$ 4 mil', bombeiro: 'R$ 6 mil', policial: 'R$ 6,5 mil', advogado: 'R$ 7 mil', medico: 'R$ 15 mil', delegado: 'R$ 20 mil' };
+const AREA_JOBS = ['policial', 'bombeiro'];
+Object.assign(JOBS, { advogado: { name: 'Advogado', desc: 'Defenda presos: eles te contratam e pagam os honorários. Monte a defesa e convença o delegado a soltar.', base: 0, need: 3, icon: '⚖️' } });
+JOB_QUIZ.advogado = [['Todo preso tem direito a:', ['Advogado e ampla defesa', 'Nada', 'Só ficar calado', 'Só fiança']], ['Prisão em flagrante é quando:', ['O crime está acontecendo ou acabou de acontecer', 'Qualquer dia depois', 'Só de noite', 'Nunca']], ['Habeas corpus serve para:', ['Proteger a liberdade contra prisão ilegal', 'Prender alguém', 'Cobrar dívida', 'Casar']], ['Fiança é:', ['Um valor pago para responder em liberdade', 'Uma multa de trânsito', 'Um imposto', 'Um presente']], ['Sem provas, o suspeito:', ['Não pode ser condenado (na dúvida, a favor do réu)', 'Fica preso para sempre', 'É culpado', 'Paga em dobro']], ['O advogado precisa de registro na:', ['OAB', 'CNH', 'SUS', 'MEI']]];
+// pena (em minutos) por crime
+const PENAS = [[/homic/i, 'Homicídio', 12], [/assalto|roubo|banco/i, 'Roubo / assalto', 10], [/policial/i, 'Atacar policial', 8], [/tráfico|trafico|morro|encomenda/i, 'Tráfico de drogas', 8], [/mandado/i, 'Mandado de prisão', 6], [/atirou|pedestre|agress|soco|facada/i, 'Agressão / tentativa', 5], [/porte/i, 'Porte ilegal de arma', 4], [/disparo/i, 'Disparo em via pública', 3]];
+function penaDe(crimes, stars) { let m = 0; const seen = new Set(); for (const c of crimes || []) for (const [re, n, min] of PENAS) if (re.test(c) && !seen.has(n)) { seen.add(n); m += min; break; } if (!m) m = 2 + 2 * Math.max(1, stars || 1); return Math.min(20, m) * 60; }
+const keyCost = () => Math.max(5, Math.ceil((P.jailT || 0) / 60) * 6);
+function cityPolice() { const L = []; if (S.shift === 'policial' && NET.user) L.push({ id: NET.user.id, name: S.name, me: true }); for (const id in NET.peers || {}) { const p = NET.peers[id]; if (p.job === 'policial') L.push({ id, name: p.name }); } return L; }
+function jobsTick() {
+  if (mode !== 'city') return; const now = performance.now(), dt = Math.min(1, (now - (city.jobT || now)) / 1000); city.jobT = now;
+  // salário do plantão
+  if (S.shift) { S.salT = (S.salT || 0) + dt; if (S.salT >= 600) { S.salT = 0; const id = S.shift === 'policial' && iAmDelegado() ? 'delegado' : S.shift, v = SALARIO[id] || 0; if (v) { S.coins += v; persist(); updateHUD(); sfx('coin'); toast(`💼 Salário de ${id === 'delegado' ? 'Delegado' : JOBS[S.shift].name}: +$ ${fmt(v)}`, 'good'); } } }
+  // reenviar meu voto de tempos em tempos (quem entrou agora fica sabendo)
+  if (S.shift === 'policial' && S.voto && S.voto[cityId()] && now > (city.votoT || 0)) { city.votoT = now + 25000; netSend('voto', { c: cityId(), cand: S.voto[cityId()] }); }
+  // bots saem quando entram jogadores reais na profissão
+  if (now > (city.botT || 0)) { city.botT = now + 3000; botSwap(); }
+}
+/* ---- área (cidade) do policial e do bombeiro ---- */
+PANELS28.area = (j) => { j = j || 'policial'; const J = JOBS[j]; return { title: `📍 Área de trabalho · ${J.name}`, html: `<p>Escolha a cidade onde você vai trabalhar como ${J.name}. Você recebe a farda, a base e o salário de ${J.name} nessa cidade.</p><div class="row">${Object.keys(CITY_DEFS).map(c => `<button class="btn${(S.area || {})[j] === c ? ' ghost' : ''}" data-act="area-set" data-j="${j}" data-c="${c}">${esc(CITY_DEFS[c].name)}</button>`).join('')}</div><div class="row"><button class="btn ghost" data-act="open-manual" data-j="${j}">📘 Ler o manual</button></div>` }; };
+function areaSet(j, c) { if (!CITY_DEFS[c]) return; S.area = S.area || {}; S.area[j] = c; persist(); toast(`📍 Área de ${JOBS[j].name}: ${CITY_DEFS[c].name}. A farda já está no seu nome.`, 'good'); openPanel('manual', j); }
+/* ---- manuais para estudar ---- */
+PANELS28.manual = (j) => {
+  j = j || 'policial'; let html = '';
+  if (j === 'policial') html = `<div class="card"><h4>📘 Manual do Policial</h4><p><b>1. Ronda:</b> patrulhe a sua área e observe suspeitos.</p><p><b>2. Abordagem:</b> chegue perto e aperte Ação ("Parado! Polícia!"), peça o documento e consulte o sistema.</p><p><b>3. Mandado ou crime:</b> algeme, leve até a Delegacia, coloque na cela e tranque. A pena é calculada pela tabela abaixo.</p><p><b>4. O preso</b> pode cumprir o tempo, pagar fiança, comprar a chave (tokens) ou chamar advogado; quem decide a defesa é o Delegado.</p><p><b>5. Delegado:</b> é eleito pelos policiais online da cidade e manda no batalhão.</p></div><div class="card"><h4>⏱️ Tabela de penas</h4>${PENAS.map(([, n, m]) => `<div class="row"><span>${n}</span><b>${m} min</b></div>`).join('')}<p class="muted">Crimes somados, até 20 minutos no máximo.</p></div>`;
+  else if (j === 'bombeiro') html = `<div class="card"><h4>📘 Manual do Bombeiro (193)</h4><p><b>1.</b> Quando tocar o alarme, o GPS marca o prédio. Vá com o caminhão da corporação.</p><p><b>2.</b> Chegando, a equipe estaciona, sobe a escada Magirus e liga a mangueira.</p><p><b>3.</b> Fique perto do prédio e toque para jogar água até apagar 100%.</p><p><b>4.</b> Os bombeiros robôs da cidade seguem você; quando entram mais bombeiros de verdade, os robôs saem.</p><p><b>Fogo elétrico:</b> desligue a energia; <b>óleo:</b> abafe, nunca água.</p></div>`;
+  else if (j === 'advogado') html = `<div class="card"><h4>📘 Manual do Advogado</h4><p>O preso te contrata pelo botão ⚖️ Advogado e paga os honorários. Você monta a defesa respondendo 3 perguntas sobre o caso. Defesa boa = o delegado solta; defesa ruim = o preso continua.</p></div>`;
+  html += `<div class="card"><h4>💼 Salário</h4><p>${esc(JOBS[j] ? JOBS[j].name : j)}: <b>$ ${fmt(SALARIO[j] || 0)}</b> a cada 10 minutos de plantão (referência real: ${SAL_REAL[j] || '—'} por mês).</p></div>`;
+  return { title: '📘 Manual', html };
+};
+/* ---- advogado ---- */
+const ADV_NPC = [{ n: 'Dr. Silvio Moura', fee: 800, ok: 0.45 }, { n: 'Dra. Helena Prado', fee: 2500, ok: 0.75 }];
+PANELS28.advogados = () => {
+  if (!(P.jailT > 0)) return { title: '⚖️ Advogados', html: '<p class="muted">Você não está preso.</p>' };
+  const reais = Object.entries(NET.peers || {}).filter(([, p]) => p.job === 'advogado');
+  let html = `<p class="muted">Pena restante: ${Math.ceil(P.jailT / 60)} min. Contrate um advogado e pague os honorários; se a defesa convencer o delegado, você é solto.</p>`;
+  html += reais.length ? `<h4>Advogados online (jogadores)</h4>${reais.map(([id, p]) => `<div class="row"><span>⚖️ <b>${esc(p.name)}</b></span><button class="btn sm" data-act="adv-peer" data-id="${id}" ${S.coins < 1500 ? 'disabled' : ''}>Contratar ($ 1.500)</button></div>`).join('')}` : '<p class="muted">Nenhum advogado de verdade online agora.</p>';
+  html += `<h4>Escritórios da cidade</h4>${ADV_NPC.map((a, i) => `<div class="row"><span>⚖️ ${a.n} · chance ${Math.round(a.ok * 100)}%</span><button class="btn sm" data-act="adv-npc" data-i="${i}" ${S.coins < a.fee ? 'disabled' : ''}>$ ${fmt(a.fee)}</button></div>`).join('')}`;
+  if (city.advWait) html += `<div class="note">⏳ Aguardando ${esc(city.advWait.name)}…</div>`;
+  return { title: '⚖️ Advogados', html };
+};
+function advNpc(i) {
+  const a = ADV_NPC[i]; if (!a || !(P.jailT > 0) || S.coins < a.fee) return; S.coins -= a.fee; persist(); updateHUD(); closePanel(); toast(`⚖️ ${a.n} está apresentando a sua defesa ao delegado…`, 'pink');
+  setTimeout(() => { if (!(P.jailT > 0)) return; if (Math.random() < a.ok) { toast(`⚖️ ${a.n} convenceu o delegado. Você está livre!`, 'good'); releaseJail(false); } else toast(`⚖️ O delegado não aceitou a defesa de ${a.n}. Continue cumprindo a pena.`, 'bad'); }, 6000);
+}
+function advPeer(id) { const p = NET.peers[id]; if (!p || !(P.jailT > 0) || S.coins < 1500) return; city.advWait = { id, name: p.name }; netSend('adv', { op: 'req', to: id, name: S.name, crimes: (S.lastCrimes || []).slice(-4), pena: Math.ceil(P.jailT / 60), fee: 1500 }); toast(`⚖️ Pedido enviado para ${p.name}.`, 'pink'); renderPanel(); }
+const DEF_Q = [['Qual o primeiro pedido da defesa?', ['Que o cliente responda em liberdade (é primário)', 'Que fique preso mais tempo', 'Nada', 'Pedir desculpas ao policial']], ['Sobre as provas:', ['Mostrar que não há prova suficiente do crime', 'Concordar com tudo', 'Acusar o juiz', 'Ficar calado']], ['O cliente tem:', ['Endereço fixo e trabalho, não vai fugir', 'Passagem só por diversão', 'Ninguém conhece', 'Nada a declarar']], ['A abordagem foi:', ['Sem mandado e sem flagrante, então é ilegal', 'Perfeita', 'Com tiros para o alto', 'Feita pelo próprio cliente']]];
+function onAdv(d) {
+  if (!d || !NET.user || d.to !== NET.user.id) return;
+  if (d.op === 'req' && S.shift === 'advogado') { (city.advReqs = city.advReqs || []).push(Object.assign({ from: d.id }, d)); toast(`⚖️ ${d.name} quer te contratar ($ ${fmt(d.fee)}). Abra o painel de Defesa.`, 'pink'); sfx('level'); openPanel('defesa'); }
+  else if (d.op === 'req') netSend('adv', { op: 'nao', to: d.id, name: S.name });
+  else if (d.op === 'nao') { city.advWait = null; toast(`⚖️ ${d.name} não está atendendo agora.`, 'bad'); }
+  else if (d.op === 'ok' && P.jailT > 0 && S.coins >= d.fee) { S.coins -= d.fee; persist(); updateHUD(); if (NET.ch) NET.ch.send({ type: 'broadcast', event: 'pix', payload: { to: d.id, amt: d.fee, by: S.name } }); toast(`⚖️ ${d.name} aceitou o caso. Honorários pagos ($ ${fmt(d.fee)}). Ele está montando a defesa.`, 'pink'); }
+  else if (d.op === 'def') { const dlg = delegadoId(); if (dlg && NET.user && dlg === NET.user.id) { (city.dlgReqs = city.dlgReqs || []).push(d); toast(`⚖️ Defesa de ${d.cli} chegou (advogado ${d.adv}). Decida no painel do Delegado.`, 'pink'); sfx('level'); } }
+  else if (d.op === 'res') { city.advWait = null; if (d.ok && P.jailT > 0) { toast(`⚖️ O delegado aceitou a defesa. Você está livre!`, 'good'); releaseJail(false); } else if (P.jailT > 0) toast('⚖️ O delegado negou a defesa. Continue cumprindo a pena.', 'bad'); else if (S.shift === 'advogado') toast(d.ok ? '⚖️ Você ganhou o caso! Cliente solto.' : '⚖️ Você perdeu o caso.', d.ok ? 'good' : 'bad'); }
+}
+PANELS28.defesa = () => {
+  const R = city.advReqs || [], C = city.advCase;
+  if (C) { const q = C.qs[C.i]; if (!q) return { title: '⚖️ Defesa', html: '<p>Defesa enviada.</p>' }; return { title: `⚖️ Defesa de ${esc(C.cli)}`, html: `<p class="muted">Pergunta ${C.i + 1} de ${C.qs.length}. Crimes: ${esc((C.crimes || []).join(', ') || '—')} · pena ${C.pena} min.</p><div class="card"><h4>${esc(q.q)}</h4>${q.o.map((o, k) => `<button class="btn ghost" data-act="adv-q" data-k="${k}">${esc(o.t)}</button>`).join('')}</div>` }; }
+  return { title: '⚖️ Pedidos de defesa', html: R.length ? R.map(r => `<div class="card"><h4>${esc(r.name)} · pena ${r.pena} min</h4><p class="muted">${esc((r.crimes || []).join(', ') || 'sem crimes informados')}</p><button class="btn" data-act="adv-aceitar" data-id="${r.from}">Aceitar ($ ${fmt(r.fee)})</button></div>`).join('') : '<p class="muted">Nenhum pedido agora. Fique de plantão como Advogado.</p>' };
+};
+function advAceitar(id) { const r = (city.advReqs || []).find(q => q.from === id); if (!r) return; city.advReqs = city.advReqs.filter(q => q !== r); netSend('adv', { op: 'ok', to: id, name: S.name, fee: r.fee }); city.advCase = { cli: r.name, cliId: id, crimes: r.crimes, pena: r.pena, i: 0, ok: 0, qs: shuffle(DEF_Q.slice()).slice(0, 3).map(([q, o]) => ({ q, o: shuffle(o.map((t, i) => ({ t, ok: i === 0 }))) })) }; renderPanel(); }
+function advAnswer(k) {
+  const C = city.advCase; if (!C) return; if (C.qs[C.i].o[k].ok) C.ok++; C.i++;
+  if (C.i < C.qs.length) return renderPanel();
+  const score = C.ok, dlg = delegadoId(); city.advCase = null; closePanel();
+  if (dlg && dlg !== NET.user.id) { netSend('adv', { op: 'def', to: dlg, cli: C.cli, cliId: C.cliId, adv: S.name, advId: NET.user.id, score, crimes: C.crimes }); toast(`⚖️ Defesa (${score}/3) enviada ao Delegado.`, 'pink'); }
+  else { const ok = score >= 2 && Math.random() < 0.9; netSend('adv', { op: 'res', to: C.cliId, ok }); toast(ok ? `⚖️ O delegado aceitou a defesa (${score}/3)! Cliente solto.` : `⚖️ Defesa fraca (${score}/3). O delegado negou.`, ok ? 'good' : 'bad'); if (ok) { addXP(40); } }
+}
+/* ---- delegado: eleito pelos policiais online da cidade ---- */
+city.votos = city.votos || {};
+function onVoto(d) { if (!d || d.c !== cityId()) return; (city.votos = city.votos || {})[d.id] = d.cand; }
+function dlgVoto(cand) { S.voto = S.voto || {}; S.voto[cityId()] = cand; persist(); (city.votos = city.votos || {})[NET.user ? NET.user.id : 'eu'] = cand; netSend('voto', { c: cityId(), cand }); toast('🗳️ Voto registrado.', 'good'); renderPanel(); }
+function delegadoId() {
+  const L = cityPolice(); if (!L.length) return null; const ids = new Set(L.map(p => p.id)), cnt = {};
+  for (const v in city.votos || {}) if (ids.has(v) && ids.has(city.votos[v])) cnt[city.votos[v]] = (cnt[city.votos[v]] || 0) + 1;
+  return L.map(p => p.id).sort((a, b) => (cnt[b] || 0) - (cnt[a] || 0) || (a < b ? -1 : 1))[0];
+}
+const iAmDelegado = () => !!(NET.user && S.shift === 'policial' && delegadoId() === NET.user.id);
+function delegaciaExtras() {
+  let h = `<div class="card"><h4>📘 Manuais</h4><div class="row"><button class="btn ghost sm" data-act="open-manual" data-j="policial">Manual do Policial (penas)</button><button class="btn ghost sm" data-act="open-manual" data-j="advogado">Manual do Advogado</button></div></div>`;
+  const L = cityPolice(), dlg = delegadoId(), dn = (L.find(p => p.id === dlg) || {}).name;
+  h += `<div class="card"><h4>⭐ Delegado de ${esc(CITY_DEFS[cityId()].name)}</h4><p>${dn ? `Delegado atual: <b>${esc(dn)}</b>` : 'Sem policial de verdade online: o delegado é o robô da Delegacia.'}</p>${S.shift === 'policial' && L.length > 1 ? `<p class="muted">Vote em um policial (o mais votado é o delegado):</p><div class="chips">${L.map(p => `<button class="chip" data-act="dlg-voto" data-id="${p.id}">${esc(p.name)}${p.me ? ' (você)' : ''}</button>`).join('')}</div>` : ''}${iAmDelegado() ? '<button class="btn" data-act="open-delegado">⭐ Painel do Delegado</button>' : ''}</div>`;
+  return h;
+}
+PANELS28.delegado = () => {
+  if (!iAmDelegado()) return { title: '⭐ Delegado', html: '<p class="muted">Só o delegado eleito tem acesso.</p>' };
+  const R = city.dlgReqs || [];
+  let html = `<div class="card"><h4>🚓 Ordens ao batalhão</h4><div class="row"><button class="btn" data-act="dlg-ordem" data-o="batalhao">Chamar o batalhão</button><button class="btn ghost" data-act="dlg-ordem" data-o="ronda">Ronda em volta de mim</button><button class="btn ghost" data-act="dlg-ordem" data-o="morro">Operação no morro agora</button></div></div>`;
+  html += `<div class="card"><h4>📝 Prender ou soltar pelo nome</h4><input id="dlg-nome" maxlength="20" placeholder="Nome do jogador ou preso" style="width:100%;margin:6px 0"><div class="row"><button class="btn" data-act="dlg-nome" data-o="prender">🔗 Mandado de prisão</button><button class="btn ghost" data-act="dlg-nome" data-o="soltar">🔓 Alvará de soltura</button></div></div>`;
+  html += `<div class="card"><h4>⚖️ Defesas para julgar</h4>${R.length ? R.map((r, i) => `<div class="row"><span>${esc(r.cli)} · advogado ${esc(r.adv)} · defesa ${r.score}/3</span><button class="btn sm" data-act="dlg-ok" data-id="${i}" data-ok="1">Soltar</button><button class="btn ghost sm" data-act="dlg-ok" data-id="${i}" data-ok="0">Negar</button></div>`).join('') : '<p class="muted">Nenhuma.</p>'}</div>`;
+  html += `<div class="card"><h4>🔒 Presos</h4>${(city.prisoners || []).map(p => `<p>${esc(p.name)} · ${Math.ceil(p.t / 60)} min</p>`).join('') || '<p class="muted">Nenhum.</p>'}</div>`;
+  return { title: '⭐ Painel do Delegado', html };
+};
+function dlgDecide(i, ok) { const R = city.dlgReqs || [], r = R[+i]; if (!r) return; R.splice(+i, 1); netSend('adv', { op: 'res', to: r.cliId, ok }); netSend('adv', { op: 'res', to: r.advId, ok }); toast(ok ? `🔓 ${r.cli} solto.` : `🔒 Defesa de ${r.cli} negada.`, 'pink'); renderPanel(); }
+function dlgOrdem(o) {
+  if (!iAmDelegado()) return;
+  if (o === 'batalhao') { spawnSquad(); toast('🚓 Batalhão a caminho!', 'good'); }
+  else if (o === 'ronda') { if (!(city.squad || []).length) spawnSquad(); squadOrder('spread'); toast('🚓 Batalhão fazendo ronda em volta.', 'good'); }
+  else if (o === 'morro') { netSend('ordem', { o: 'morro', c: cityId(), by: S.name }); onOrdem({ o: 'morro', c: cityId(), by: S.name, id: 'eu' }); }
+  closePanel();
+}
+function dlgNome(o) { const el = document.getElementById('dlg-nome'), n = el && el.value.trim(); if (!n || !iAmDelegado()) return; netSend('ordem', { o, n, c: cityId(), by: S.name }); if (o === 'soltar') city.prisoners = (city.prisoners || []).filter(p => p.name.toLowerCase() !== n.toLowerCase()); toast(o === 'prender' ? `🔗 Mandado de prisão contra ${n} expedido.` : `🔓 Alvará de soltura para ${n}.`, 'good'); renderPanel(); }
+function onOrdem(d) {
+  if (!d || d.c !== cityId()) return;
+  if (d.o === 'morro') { city.raidForce = Date.now(); if (city.raid) { try { endRaid(); } catch (e) { } } toast(`🚨 O Delegado ${d.by} mandou operação no morro!`, 'bad'); }
+  else if (d.o === 'prender' && d.n && S.name.toLowerCase() === d.n.toLowerCase()) { P.wanted = 3; P.wantedCalm = 600; P.crimes = (P.crimes || []).concat('mandado de prisão'); toast(`🚨 O Delegado ${d.by} expediu mandado de prisão contra você!`, 'bad'); }
+  else if (d.o === 'soltar' && d.n) { city.prisoners = (city.prisoners || []).filter(p => p.name.toLowerCase() !== d.n.toLowerCase()); if (P.jailT > 0 && S.name.toLowerCase() === d.n.toLowerCase()) { toast(`🔓 Alvará de soltura do Delegado ${d.by}.`, 'good'); releaseJail(false); } }
+}
+/* bots saem quando jogadores de verdade entram na profissão (por cidade) */
+function botSwap() {
+  const cnt = {}; for (const id in NET.peers || {}) { const j = NET.peers[id].job; if (j) cnt[j] = (cnt[j] || 0) + 1; } if (S.shift) cnt[S.shift] = (cnt[S.shift] || 0) + 1;
+  const L = { policial: city.cops || [], bombeiro: (city.roles && city.roles.bombeiro) || [], catador: ((city.roles && city.roles.catador) || []).concat(city.garis || []), taxista: (city.roles && city.roles.taxista) || [], motoboy: (city.roles && city.roles.motoboy) || [] };
+  for (const k in L) { const arr = L[k], n = Math.min(arr.length - 1, (cnt[k] || 0)); arr.forEach((o, i) => { const off = i < n; if (off && !o.botOff) { o.botOff = true; o.off = true; if (o.g) o.g.visible = false; if (o.m) o.m.visible = false; } else if (!off && o.botOff) { o.botOff = false; o.off = false; if (o.g) o.g.visible = true; if (o.m) o.m.visible = true; } }); }
+}
+/* =========================================================
+   CASA POR CIDADE: cada casa é de uma cidade só; para ter em outra cidade, compra outra.
+   Ao trocar de cidade, a casa daquela cidade passa a ser a "sua casa" do momento.
+   ========================================================= */
+function casaDaCidade() {
+  const cid = cityId(), O = S.casasOutras || {}; if (!O[cid] || (S.casa && S.casa.cid === cid)) return;
+  if (S.casa) O[S.casa.cid] = S.casa; S.casa = O[cid]; delete O[cid]; S.casasOutras = O; persist();
+}
+/* =========================================================
+   BOMBEIROS: alarme para o bombeiro de verdade, caminhão com escada Magirus que sobe e jato d'água da mangueira
+   ========================================================= */
+const _updateCityFire0 = updateCityFire;
+updateCityFire = function (dt, t) { _updateCityFire0(dt, t); try { fireExtras(dt, t); } catch (e) { console.warn('escada', e); } };
+function fireExtras(dt, t) {
+  const F = city.fire; if (!F) return;
+  if (!F.alerted && S.shift === 'bombeiro') { F.alerted = true; setGps(F.addr[0], F.addr[1], 'Incêndio (193)'); toast('🚒 ALARME! Incêndio na cidade. GPS marcado: vá com o caminhão. A equipe robô segue você.', 'bad'); sfx('level'); }
+  if (!F.truck || F.st === 'fogo') return; const T = F.truck, u = T.userData;
+  if (!F.ladder) {
+    const lg = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: 0xd8d8d8, roughness: 0.4, metalness: 0.6 }); lg.position.set(0, (u.roof || 2.4) + 0.25, -1.6); T.add(lg);
+    const L = 9; for (const x of [-0.35, 0.35]) { const r = new THREE.Mesh(boxGeo(0.07, 0.07, L), m); r.position.set(x, 0, L / 2); lg.add(r); } for (let k = 0.5; k < L; k += 0.6) { const r = new THREE.Mesh(boxGeo(0.7, 0.05, 0.05), m); r.position.set(0, 0, k); lg.add(r); }
+    const tip = new THREE.Object3D(); tip.position.set(0, 0.2, L); lg.add(tip); F.ladder = { g: lg, tip, a: 0 };
+    const hose = new THREE.Mesh(CYL(0.05, 0.05, L, 6), new THREE.MeshStandardMaterial({ color: 0xc0392b })); hose.rotation.x = Math.PI / 2; hose.position.set(0.45, 0.1, L / 2); lg.add(hose);
+  }
+  const Lr = F.ladder; T.updateMatrixWorld(true);
+  // a escada gira para o lado do prédio e sobe
+  const tx = F.x - T.position.x, tz = F.z - T.position.z, want = Math.atan2(tx, tz) - T.rotation.y; Lr.g.rotation.order = 'YXZ';
+  Lr.g.rotation.y += (Math.atan2(Math.sin(want - Lr.g.rotation.y), Math.cos(want - Lr.g.rotation.y))) * Math.min(1, dt * 1.5);
+  Lr.a = Math.min(0.75, Lr.a + dt * 0.25); Lr.g.rotation.x = -Lr.a;
+  if (F.st === 'apagando' && Lr.a > 0.5 && Math.random() < dt * 30) {
+    const p0 = Lr.tip.getWorldPosition(new THREE.Vector3()), dx = F.x - p0.x, dz = F.z - p0.z, dy = Math.min(F.h, 18) * 0.7 - p0.y, d = Math.hypot(dx, dz) || 1;
+    const w = new THREE.Mesh(SPH(0.16, 6, 4), new THREE.MeshBasicMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.85 })); w.position.copy(p0); city.scene.add(w); const T2 = d / 16;
+    city.fx.push({ m: w, vx: dx / T2 + rand(-0.6, 0.6), vy: dy / T2 + 11 * T2 * 0.5, vz: dz / T2 + rand(-0.6, 0.6), life: T2, max: T2 });
+  }
+}
+/* =========================================================
+   TRABALHADORES DE RUA: garis varrendo as calçadas e carroceiros com burro nas áreas mais pobres
+   ========================================================= */
+function donkeyMesh() {
+  const g = new THREE.Group(), br = lam(0x7a6a5a), dk = lam(0x4a3a2e), u = g.userData; u.legs = [];
+  const body = new THREE.Mesh(boxGeo(0.55, 0.6, 1.3), br); body.position.y = 1.0; g.add(body);
+  const neck = new THREE.Mesh(boxGeo(0.3, 0.6, 0.35), br); neck.position.set(0, 1.35, 0.65); neck.rotation.x = 0.5; g.add(neck);
+  const head = new THREE.Mesh(boxGeo(0.28, 0.3, 0.6), br); head.position.set(0, 1.6, 0.95); g.add(head); const nose = new THREE.Mesh(boxGeo(0.26, 0.24, 0.18), lam(0xc9b8a4)); nose.position.set(0, 1.55, 1.27); g.add(nose);
+  for (const x of [-0.1, 0.1]) { const e = new THREE.Mesh(boxGeo(0.07, 0.38, 0.1), br); e.position.set(x, 1.9, 0.8); e.rotation.x = -0.3; g.add(e); }
+  const tail = new THREE.Mesh(boxGeo(0.06, 0.5, 0.06), dk); tail.position.set(0, 0.95, -0.7); tail.rotation.x = 0.3; g.add(tail); u.tail = tail;
+  for (const [x, z] of [[-0.18, 0.45], [0.18, 0.45], [-0.18, -0.45], [0.18, -0.45]]) { const lg = new THREE.Group(); lg.position.set(x, 0.75, z); g.add(lg); const m = new THREE.Mesh(boxGeo(0.12, 0.75, 0.12), dk); m.position.y = -0.37; lg.add(m); u.legs.push(lg); }
+  // carroça de madeira com sucata
+  const cart = new THREE.Group(); cart.position.set(0, 0, -2.2); g.add(cart);
+  const wd = lam(0x8a6a45); const bed = new THREE.Mesh(boxGeo(1.3, 0.1, 1.8), wd); bed.position.y = 0.75; cart.add(bed);
+  for (const [x, z, w, d] of [[-0.65, 0, 0.06, 1.8], [0.65, 0, 0.06, 1.8], [0, -0.9, 1.3, 0.06]]) { const s2 = new THREE.Mesh(boxGeo(w, 0.4, d), wd); s2.position.set(x, 0.95, z); cart.add(s2); }
+  for (const x of [-0.75, 0.75]) { const wh = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.06, 6, 14), dk); wh.rotation.y = Math.PI / 2; wh.position.set(x, 0.42, 0); cart.add(wh); }
+  for (const x of [-0.45, 0.45]) { const v = new THREE.Mesh(boxGeo(0.06, 0.06, 1.6), wd); v.position.set(x * 0.6, 0.85, 1.35); cart.add(v); }
+  for (let i = 0; i < 5; i++) { const j = new THREE.Mesh(boxGeo(rand(0.2, 0.5), rand(0.15, 0.4), rand(0.2, 0.5)), lam(pick([0x9aa3ad, 0xc9a26b, 0x2f6db5, 0x6d717a]))); j.position.set(rand(-0.4, 0.4), 0.95, rand(-0.6, 0.6)); cart.add(j); }
+  return g;
+}
+function buildRuaWorkers() {
+  if (mode !== 'city' || !city.scene) return; for (const o of (city.garis || []).concat(city.carroceiros || [])) { city.scene.remove(o.g); if (o.prop) city.scene.remove(o.prop); }
+  city.garis = []; city.carroceiros = [];
+  const look = i => lookOf(Object.assign({}, UNIFORM.catador || { shirt: 'uni_gari', pants: 'uni_gari_p' }, { shoes: 'shoes_basic', cap: 'cap_none' }), pick(SKINS), pick(HAIRS), i % 3 === 2 ? 'f' : 'm');
+  for (let i = 0; i < 5; i++) {
+    const vert = i % 2 === 0, L = pick(ROADS), off = (i % 4 < 2 ? 1 : -1) * 6.2, a = rand(-100, 100), g = makeSkater(look(i), 'Gari', '#ff7a1a'); g.userData.ped = true; city.scene.add(g);
+    const prop = new THREE.Group(), st = new THREE.Mesh(CYL(0.025, 0.025, 1.4, 6), lam(0x8a6a45)); st.rotation.x = 0.9; st.position.set(0, 0.7, 0.35); prop.add(st); const br = new THREE.Mesh(boxGeo(0.45, 0.08, 0.12), lam(0xffcf3a)); br.position.set(0, 0.06, 0.88); prop.add(br); city.scene.add(prop);
+    city.garis.push({ g, prop, vert, L: L + off, u: a, dir: Math.random() < 0.5 ? 1 : -1, ph: rand(0, 6), x: 0, z: 0, stopT: 0 });
+  }
+  const spots = []; if (city.morro) for (const t of [-30, 30]) spots.push({ path: [morroWorld(-7, -55), morroWorld(-7, 55)], t }); for (const F of (typeof regFav === 'function' ? regFav() : []).slice(0, 2)) spots.push({ path: [[F.x - 14, F.z + 15], [F.x + 14, F.z + 15]], t: 0 });
+  spots.slice(0, 3).forEach((S2, i) => { const d = donkeyMesh(); city.scene.add(d); const g = makeSkater(lookOf({ shirt: pick(['shirt_basic', 'rg_branca', 'shirt_black'].filter(x => ITEM[x])), pants: 'sh_bermuda', shoes: 'shoes_basic', cap: ITEM.cap_palha ? 'cap_palha' : 'cap_none' }, pick(SKINS), pick(HAIRS), 'm'), 'Carroceiro', '#c9a26b'); g.userData.ped = true; city.scene.add(g); city.carroceiros.push({ g, d, a: S2.path[0], b: S2.path[1], k: (S2.t + 55) / 110, dir: i % 2 ? -1 : 1, x: 0, z: 0, talkT: rand(5, 15) }); });
+}
+function ruaWorkersTick(dt, t) {
+  for (const o of city.garis || []) {
+    if (o.botOff) { o.g.visible = false; o.prop.visible = false; continue; }
+    o.stopT -= dt; const sweeping = o.stopT > 0; if (!sweeping) { o.u += o.dir * 1.1 * dt; if (Math.abs(o.u) > 100) o.dir *= -1; if (Math.random() < dt * 0.3) o.stopT = rand(2, 4); }
+    o.x = o.vert ? o.L : o.u; o.z = o.vert ? o.u : o.L; const h = o.vert ? (o.dir > 0 ? 0 : Math.PI) : (o.dir > 0 ? Math.PI / 2 : -Math.PI / 2);
+    const vis = Math.hypot(o.x - P.x, o.z - P.z) < 90 && !city.shopIn && !city.interior; o.g.visible = o.prop.visible = vis; if (!vis) continue;
+    o.g.position.set(o.x, groundH(o.x, o.z), o.z); o.g.rotation.y = h; animSkater(o.g, { walk: true, v: sweeping ? 0 : 1.1, fallT: 0, fp: { lArmFwd: 0.8, rArmFwd: 0.9, lElbow: 0.6, rElbow: 0.5 } }, t + o.ph);
+    o.prop.position.set(o.x, o.g.position.y, o.z); o.prop.rotation.y = h + (sweeping ? Math.sin(t * 6 + o.ph) * 0.5 : 0);
+  }
+  for (const o of city.carroceiros || []) {
+    o.k += o.dir * dt * 1.0 / Math.max(1, Math.hypot(o.b[0] - o.a[0], o.b[1] - o.a[1])); if (o.k > 1 || o.k < 0) { o.dir *= -1; o.k = clamp(o.k, 0, 1); }
+    const x = lerp(o.a[0], o.b[0], o.k), z = lerp(o.a[1], o.b[1], o.k), h = Math.atan2((o.b[0] - o.a[0]) * o.dir, (o.b[1] - o.a[1]) * o.dir);
+    const vis = Math.hypot(x - P.x, z - P.z) < 110 && !city.shopIn && !city.interior; o.d.visible = o.g.visible = vis; if (!vis) continue;
+    o.d.position.set(x, groundH(x, z), z); o.d.rotation.y = h; o.d.userData.legs.forEach((lg, i) => lg.rotation.x = Math.sin(t * 6 + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0)) * 0.45); o.d.userData.tail.rotation.z = Math.sin(t * 3) * 0.4;
+    const gx = x + Math.cos(h) * 0.9, gz = z - Math.sin(h) * 0.9; o.g.position.set(gx, groundH(gx, gz), gz); o.g.rotation.y = h; animSkater(o.g, { walk: true, v: 1.0, fallT: 0 }, t);
+    if ((o.talkT -= dt) <= 0) { o.talkT = rand(10, 20); if (Math.hypot(x - P.x, z - P.z) < 18) bubble(o.g, pick(['Olha o ferro-velho!', 'Compro sucata, garrafa, papelão!', 'Ê, burrinho, bora!', 'Bom dia, comunidade!']), 2.5); }
+    tickBubble(o.g, dt);
   }
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
@@ -13623,6 +13880,7 @@ const PANELS = {
     if (P.wanted) html += `<div class="note">Você está procurado ${'★'.repeat(P.wanted)}. Se entregar custa $ ${fmt(300 * P.wanted)} e limpa a ficha.</div><button class="btn" data-act="surrender" ${S.coins < 300 * P.wanted ? 'disabled' : ''}>Me entregar ($ ${fmt(300 * P.wanted)})</button>`;
     if (S.policeOk) html += `<div class="card"><h4>🚓 Você é Policial</h4><p>Comece o plantão na Agência de Empregos ou aqui mesmo.</p>${S.shift === 'policial' ? '<span class="pill on">Em plantão</span>' : '<button class="btn" data-act="shift-start" data-id="policial">Começar plantão</button>'}</div>`;
     else html += `<div class="card"><h4>📝 Prova para Policial</h4><p>10 perguntas sobre leis, trânsito e atendimento ao cidadão. Precisa acertar 7. Requisitos: nível 3, não estar em facção e não estar procurado.</p><button class="btn" data-act="quiz-start">Começar a prova</button></div>`;
+    html += delegaciaExtras();
     return { title: 'Delegacia', html };
   },
   faccao() {
@@ -13825,7 +14083,7 @@ function act(a, ds, el) {
     case 'radio': toggleRadio(); break;
     case 'radio-call': makeCall(); break;
     case 'radio-say': radioSend(ds.t); break;
-    case 'fianca': { const c = bailCost(); if (S.coins < c || !(P.jailT > 0)) break; S.coins -= c; persist(); updateHUD(); releaseJail(true); break; }
+    case 'open-adv': openPanel('advogados'); break; case 'area-set': areaSet(ds.j, ds.c); break; case 'open-manual': openPanel('manual', ds.j); break; case 'adv-npc': advNpc(+ds.i); break; case 'adv-peer': advPeer(ds.id); break; case 'adv-aceitar': advAceitar(ds.id); break; case 'adv-q': advAnswer(+ds.k); break; case 'dlg-voto': dlgVoto(ds.id); break; case 'dlg-ok': dlgDecide(ds.id, ds.ok === '1'); break; case 'dlg-ordem': dlgOrdem(ds.o); break; case 'dlg-nome': dlgNome(ds.o); break; case 'open-delegado': openPanel('delegado'); break; case 'chave': { const k = keyCost(); if ((S.tokens || 0) < k || !(P.jailT > 0)) break; S.tokens -= k; persist(); updateHUD(); toast('🔑 Comprou a chave da cela!', 'good'); releaseJail(true); break; } case 'fianca': { const c = bailCost(); if (S.coins < c || !(P.jailT > 0)) break; S.coins -= c; persist(); updateHUD(); releaseJail(true); break; }
     case 'morador': { if (S.coins < 500) break; S.coins -= 500; S.morador = S.morador || {}; S.morador[cityId()] = true; persist(); updateHUD(); toast(`Agora você é morador do ${MORRO_NAME[cityId()]}. Pode subir o morro!`, 'good'); sfx('level'); renderPanel(); break; }
     case 'gun-next': nextGun(); break;
     case 'quiz-ans': answerQuiz(ds.k); break;
@@ -14037,6 +14295,10 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'abord_doc' }, ({ payload }) => onAbordDoc(payload))
     .on('broadcast', { event: 'disparo' }, ({ payload }) => onDisparo(payload))
     .on('broadcast', { event: 'npc' }, ({ payload }) => onNpcNet(payload))
+    .on('broadcast', { event: 'samu_take' }, ({ payload }) => onSamuTake(payload))
+    .on('broadcast', { event: 'adv' }, ({ payload }) => onAdv(payload))
+    .on('broadcast', { event: 'voto' }, ({ payload }) => onVoto(payload))
+    .on('broadcast', { event: 'ordem' }, ({ payload }) => onOrdem(payload))
     .on('broadcast', { event: 'ent' }, ({ payload }) => onEntNet(payload))
     .on('broadcast', { event: 'boom' }, ({ payload }) => { if (payload && payload.id !== (NET.user && NET.user.id) && (payload.rm || '') === roomKey()) tankBoom(payload.x, payload.z, null, true); })
     .on('broadcast', { event: 'guerra' }, ({ payload }) => onGuerra(payload))

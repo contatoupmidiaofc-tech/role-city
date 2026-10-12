@@ -367,3 +367,29 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
   - 💃 **Brega**:
     - Palco com duas barras de pole dance e dançarinas de lingerie dançando.
     - Bebidas nas mesinhas e no balcão, e batida de brega tocando.
+
+### Build 2026.10.12-37
+  - 🚑 **SAMU de verdade**:
+    - Busca o corpo de todo mundo: traficante, policial, morador e quem mais morrer.
+    - A ambulância sai do Hospital e vai pelas ruas, sem atravessar parede. Os socorristas buscam com a maca os corpos que estão por perto, um de cada vez, e a ambulância volta pelas ruas para o Hospital. Podem sair até 2 ambulâncias ao mesmo tempo.
+    - Socorrista de verdade online: recebe o aviso com GPS, coloca a vítima na maca e entrega no Hospital (ganha por vítima). Enquanto ele estiver online, o SAMU robô espera 45 s para dar a vez a ele.
+  - 👮 **Polícia**:
+    - Depois da prova, o policial escolhe a área (SP, Rio ou Salvador) e só trabalha lá.
+    - Recebe o **Manual do Policial** com a tabela de penas: homicídio 12 min, roubo 10, atacar policial 8, tráfico 8, mandado 6, agressão 5, porte ilegal 4, disparo 3. Os crimes somam até 20 minutos.
+    - O preso vê o tempo que falta e pode pagar fiança, comprar a 🔑 chave com tokens ou chamar ⚖️ advogado.
+  - ⚖️ **Advogado (nova profissão)**:
+    - Tem teste para entrar.
+    - O preso contrata e paga os honorários. O advogado monta a defesa (3 perguntas) e o delegado decide. Sem advogado de verdade online, há 2 escritórios robôs com chances diferentes.
+  - ⭐ **Delegado**:
+    - Os policiais online da cidade votam, e o mais votado é o delegado. Se só tem um policial, é ele.
+    - Painel do Delegado: chamar o batalhão, ronda, operação no morro na hora, mandado de prisão e alvará de soltura pelo nome, e julgar as defesas dos advogados.
+  - 🚒 **Bombeiro**:
+    - Também escolhe a área.
+    - Quando pega fogo, recebe o alarme com GPS. O caminhão chega, a escada Magirus gira para o prédio e sobe, e a mangueira joga água.
+    - Tem Manual do Bombeiro.
+  - 🧹 **Rua**: garis varrendo as calçadas, e carroceiros com burro e carroça de sucata na entrada do morro e nas favelas.
+  - 💼 **Salários**:
+    - Pagos a cada 10 minutos de plantão, com base no salário médio real de cada profissão no Brasil, na escala da grana do jogo.
+    - Gari $50, Entregador $55, Grafiteiro $60, Motoboy $70, Instrutor $75, Taxista $85, Socorrista $100, Bombeiro $150, Policial $160, Advogado $175, Médico $370, Delegado $500.
+  - 🤖 **Robôs saem quando entram jogadores**: para cada jogador de verdade em plantão de policial, bombeiro, gari, taxista ou motoboy na cidade, um robô daquela profissão sai.
+  - 🏠 **Casa por cidade**: cada casa é de uma cidade só. Para ter em outra cidade, você compra outra. Ao viajar, a casa daquela cidade vira a sua casa.
