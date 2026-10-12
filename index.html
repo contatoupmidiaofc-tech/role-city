@@ -689,7 +689,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-38';
+const BUILD = '2026.10.12-39';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -3282,7 +3282,7 @@ function carWheel(r, w, alloy) {
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.5, r * 0.5, 0.02, 16), vmat('alloy')); disc.rotation.z = Math.PI / 2; disc.position.x = -w * 0.1; wg.add(disc);
   return wg;
 }
-function makeVehicleMesh(V) { if (V.tank) return makeTankMesh(V); if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.deco) vehDeco(m, V); if (V.kind === 'car' && V.deco !== 'paredao') { try { const u = m.userData, keep = new Set([].concat(u.siren || [])); mergeByMaterial(m, keep); } catch (e) { console.warn('juntar carro', e); } } return m; }
+function makeVehicleMesh(V) { if (V.tank) return makeTankMesh(V); if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.deco) vehDeco(m, V); if (V.kind === 'car' && V.deco !== 'paredao') { try { const u = m.userData, keep = new Set([].concat(u.siren || [])); mergeByMaterial(m, keep); mergeDeep(m, keep); } catch (e) { console.warn('juntar carro', e); } } return m; }
 function makeVehicleMesh0(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
   const paint = vmat('paint', V.color), add = (geo, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, P = g) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.set(rx, ry, rz); k.castShadow = true; k.receiveShadow = true; P.add(k); return k; };
@@ -3607,6 +3607,38 @@ function carGlassMat(M, color) {
   return (VMAT[key] = new THREE.MeshPhysicalMaterial({ map: carGlassTex(M, color), metalness: 0.35, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03 }));
 }
 /* junta as peças paradas de um grupo numa malha só por material (muito menos trabalho para o celular desenhar) */
+/* junta também as peças que ficam dentro de subgrupos (frisos, cromados, para-choques, lanternas…),
+   sem tocar no que o jogo mexe: tudo que está guardado no userData do veículo (rodas, sirene, faróis, portas) */
+function mergeDeep(root, skip) {
+  const prot = new Set(skip || []), mark = o => { if (o && o.isObject3D && !prot.has(o)) { prot.add(o); } };
+  const walk = (v, d) => { if (!v || d > 2) return; if (v.isObject3D) return mark(v); if (Array.isArray(v)) v.forEach(x => walk(x, d + 1)); else if (typeof v === 'object' && !v.isMaterial && !v.isTexture && !v.isBufferGeometry) for (const k in v) walk(v[k], d + 1); };
+  for (const k in root.userData) walk(root.userData[k], 0);
+  // dentro de cada roda: as peças que giram juntas (pneu, aro, raios, porcas) viram uma por material
+  for (const w of root.userData.wheels || []) { const sp = w.children && w.children[0]; if (sp && !sp.isMesh && sp.children.length > 1) try { mergeByMaterial(sp); } catch (e) { } }
+  root.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), buckets = new Map();
+  root.traverse(o => {
+    if (o === root || !o.isMesh || o.isSkinnedMesh || o.isInstancedMesh || !o.geometry || Array.isArray(o.material) || o.children.length || !o.visible || o.parent === root) return;
+    for (let q = o; q && q !== root; q = q.parent) if (prot.has(q) || q.name || !q.visible) return;
+    if (!buckets.has(o.material)) buckets.set(o.material, []); buckets.get(o.material).push(o);
+  });
+  // junta com o que já está direto no carro (mesmo material)
+  for (const o of root.children) if (o.isMesh && !o.isSkinnedMesh && !prot.has(o) && buckets.has(o.material) && !o.children.length && !Array.isArray(o.material)) buckets.get(o.material).push(o);
+  const M = new THREE.Matrix4(), N = new THREE.Matrix3(), v = new THREE.Vector3();
+  for (const [mat, list] of buckets) {
+    if (list.length < 2) continue;
+    const pos = [], nor = [], uv = [], col = [], needCol = !!mat.vertexColors; let cast = false, recv = false;
+    for (const o of list) {
+      M.multiplyMatrices(inv, o.matrixWorld); N.getNormalMatrix(M); let g = o.geometry; if (g.index) g = g.toNonIndexed(); if (!g.attributes.normal) g.computeVertexNormals();
+      const P2 = g.attributes.position, Nn = g.attributes.normal, U = g.attributes.uv, C = g.attributes.color;
+      for (let i = 0; i < P2.count; i++) { v.fromBufferAttribute(P2, i).applyMatrix4(M); pos.push(v.x, v.y, v.z); v.fromBufferAttribute(Nn, i).applyMatrix3(N).normalize(); nor.push(v.x, v.y, v.z); if (U) uv.push(U.getX(i), U.getY(i)); else uv.push(0, 0); if (needCol) { if (C) col.push(C.getX(i), C.getY(i), C.getZ(i)); else col.push(1, 1, 1); } }
+      cast = cast || o.castShadow; recv = recv || o.receiveShadow;
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); if (needCol) g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    const m = new THREE.Mesh(g, mat); m.castShadow = cast; m.receiveShadow = recv; root.add(m);
+    for (const o of list) o.parent.remove(o);
+  }
+  return root;
+}
 function mergeByMaterial(root, skip) {
   root.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), buckets = new Map(), rm = [];
   for (const o of root.children) {
@@ -12407,6 +12439,123 @@ function fxFree(o) {
     });
   } catch (e) { }
 }
+/* =========================================================
+   DESEMPENHO (fase 2): junta as peças paradas da cidade
+   As peças que não se mexem (caixas, postes, janelas, telhados, placas de madeira…) e usam o mesmo material
+   viram um bloco só por região: o celular desenha poucos blocos em vez de milhares de pecinhas.
+   A aparência é a mesma. As peças originais continuam no lugar (só não são desenhadas); se alguma
+   mudar (mexer, sumir, trocar de cor/material), o bloco daquela região é desfeito na hora.
+   ========================================================= */
+const BATCH = { cells: [], on: true, at: 0, bad: new WeakSet(), layer: 7 };
+// "aparência" do material: duas cópias com a mesma aparência podem ir no mesmo bloco
+function matSig(m) { const c = k => m[k] && m[k].isColor ? m[k].getHexString() : ''; return [m.type, c('color'), c('emissive'), m.emissiveIntensity, m.roughness, m.metalness, m.map ? m.map.uuid : '', m.side, m.flatShading ? 1 : 0, m.fog ? 1 : 0, m.opacity, m.alphaTest, m.toneMapped ? 1 : 0, m.depthWrite ? 1 : 0, m.depthTest ? 1 : 0, m.envMap ? m.envMap.uuid : '', m.normalMap ? m.normalMap.uuid : '', m.wireframe ? 1 : 0, m.polygonOffset ? m.polygonOffsetFactor : ''].join('|'); }
+function batchDyn() {
+  const dyn = new Set([city.player, city.myVeh && city.myVeh.m]);
+  for (const k of Object.keys(city)) { const L = city[k]; if (Array.isArray(L)) for (const o of L) { if (o && o.isObject3D) dyn.add(o); else if (o && typeof o === 'object') { for (const f of ['m', 'g', 'd', 'prop', 'veh', 'truck']) if (o[f] && o[f].isObject3D) dyn.add(o[f]); } } }
+  for (const k of ['heliParked', 'roofHeli', 'tankFx', 'pkg', 'kidBall', 'flagG', 'samu']) if (city[k] && city[k].isObject3D) dyn.add(city[k]);
+  if (city.raid) for (const m of city.raid.cars) dyn.add(m); if (city.fire) for (const m of [city.fire.truck]) if (m) dyn.add(m);
+  for (const f of city.flags || []) if (f.m) dyn.add(f.m);
+  return dyn;
+}
+function batchOk(o, dyn) {
+  if (!o.isMesh || o.isSkinnedMesh || o.isInstancedMesh || o.isSprite || BATCH.bad.has(o) || o.userData.noMerge) return false;
+  const g = o.geometry, m = o.material; if (!g || !g.attributes.position || Array.isArray(m) || !m || m.transparent || m.vertexColors || g.morphAttributes.position || o.morphTargetInfluences) return false;
+  if (g.attributes.position.count > 6000) return false;
+  for (let q = o; q; q = q.parent) { if (!q.visible) return false; const u = q.userData || {}; if (dyn.has(q) || u.ped || u.R || u.k || u.wheels || u.props || u.rotor || u.siren || u.lod != null || u.noMerge || u.bubble) return false; if (q === city.scene) break; }
+  const e = o.matrixWorld.elements; if (e[12] > 380) return false; // interiores
+  return true;
+}
+function batchBuild() {
+  if (mode !== 'city' || !city.scene || !BATCH.on) return; city.scene.updateMatrixWorld(true);
+  const dyn = batchDyn(), groups = new Map(), CS = 48;
+  city.scene.traverse(o => {
+    if (o.layers.mask !== 1 || !batchOk(o, dyn)) return;
+    const e = o.matrixWorld.elements, cx = Math.floor(e[12] / CS), cz = Math.floor(e[14] / CS), key = cx + ',' + cz + '|' + matSig(o.material) + '|' + (o.castShadow ? 1 : 0) + (o.receiveShadow ? 1 : 0) + '|' + (o.geometry.attributes.uv ? 1 : 0);
+    let G = groups.get(key); if (!G) groups.set(key, G = { m: o.material, cast: o.castShadow, recv: o.receiveShadow, uv: !!o.geometry.attributes.uv, list: [] }); G.list.push(o);
+  });
+  let made = 0, hidden = 0; const nm = new THREE.Matrix3();
+  for (const G of groups.values()) {
+    if (G.list.length < 2) continue;
+    let nv = 0, ni = 0; for (const o of G.list) { const g = o.geometry; nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+    const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = G.uv ? new Float32Array(nv * 2) : null, idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
+    let vo = 0, io = 0; const v = new THREE.Vector3();
+    for (const o of G.list) {
+      const g = o.geometry, P2 = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, mw = o.matrixWorld; nm.getNormalMatrix(mw);
+      for (let i = 0; i < P2.count; i++) { v.fromBufferAttribute(P2, i).applyMatrix4(mw); pos[(vo + i) * 3] = v.x; pos[(vo + i) * 3 + 1] = v.y; pos[(vo + i) * 3 + 2] = v.z; if (N) { v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor[(vo + i) * 3] = v.x; nor[(vo + i) * 3 + 1] = v.y; nor[(vo + i) * 3 + 2] = v.z; } if (uv) { uv[(vo + i) * 2] = U.getX(i); uv[(vo + i) * 2 + 1] = U.getY(i); } }
+      if (g.index) for (let i = 0; i < g.index.count; i++) idx[io++] = g.index.getX(i) + vo; else for (let i = 0; i < P2.count; i++) idx[io++] = i + vo;
+      vo += P2.count;
+    }
+    const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); bg.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); if (uv) bg.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); bg.setIndex(new THREE.BufferAttribute(idx, 1)); bg.computeBoundingSphere(); bg.computeBoundingBox();
+    const mesh = new THREE.Mesh(bg, G.m); mesh.castShadow = G.cast; mesh.receiveShadow = G.recv; mesh.matrixAutoUpdate = false; mesh.userData.batch = true; mesh.userData.noMerge = true; city.scene.add(mesh);
+    const src = G.list.map(o => ({ o, mat: o.material, sig: matSig(o.material), mw: o.matrixWorld.elements.slice() }));
+    for (const s2 of src) { s2.o.layers.set(BATCH.layer); hidden++; }
+    BATCH.cells.push({ mesh, src }); made++;
+  }
+  BATCH.stat = { blocks: made, pieces: hidden };
+}
+function batchUndo(C) { city.scene.remove(C.mesh); C.mesh.geometry.dispose(); for (const s2 of C.src) { s2.o.layers.set(0); BATCH.bad.add(s2.o); } }
+function batchClear() { for (const C of BATCH.cells) if (C.mesh.parent) { C.mesh.parent.remove(C.mesh); C.mesh.geometry.dispose(); } BATCH.cells = []; }
+/* confere se alguma peça mudou; se mudou, desfaz o bloco daquela região */
+function batchCheck() {
+  if (!BATCH.cells.length) return; const now = performance.now(); if (now < BATCH.at) return; BATCH.at = now + 700;
+  BATCH.cells = BATCH.cells.filter(C => {
+    for (const s2 of C.src) {
+      const o = s2.o; let ok = o.material === s2.mat && (o.material === C.mesh.material || matSig(o.material) === s2.sig);
+      if (ok) { let q = o; for (; q && q !== city.scene; q = q.parent) if (!q.visible) { ok = false; break; } if (q !== city.scene) ok = false; }
+      if (ok) { const e = o.matrixWorld.elements; for (let i = 12; i < 15; i++) if (Math.abs(e[i] - s2.mw[i]) > 1e-3) { ok = false; break; } if (ok) for (const i of [0, 2, 5, 8, 10]) if (Math.abs(e[i] - s2.mw[i]) > 1e-4) { ok = false; break; } }
+      if (!ok) { batchUndo(C); return false; }
+    }
+    return true;
+  });
+}
+/* placas e nomes distantes não são desenhados (as grandes de ponto turístico continuam) */
+const SPRC = { list: [], at: 0 };
+function spriteCull(cam) {
+  const now = performance.now(); if (now > SPRC.at) { SPRC.at = now + 2500; SPRC.list = []; city.scene.traverse(o => { if (o.isSprite && o.scale.x < 6 && !o.userData.keep) SPRC.list.push(o); }); }
+  const hid = [], cp = cam.position, far = charFar() * 0.9, v = CULL.v; if (city.shopIn || city.interior) return hid;
+  for (const o of SPRC.list) { if (!o.visible || !o.parent) continue; o.getWorldPosition(v); if (v.distanceTo(cp) > far) { o.visible = false; hid.push(o); } }
+  return hid;
+}
+/* carro longe vira uma versão simplificada (uma peça só); de perto volta o detalhado */
+const CARLOD = { roots: [], at: 0, mat: null, v: new THREE.Vector3() };
+function carProxy(root) {
+  const u = root.userData; if (u.proxy) return u.proxy;
+  const saveV = root.visible; root.visible = true; const q = root.quaternion.clone(), p0 = root.position.clone(), sc0 = root.scale.clone(), par = root.parent;
+  root.quaternion.identity(); root.position.set(0, 0, 0); root.scale.set(1, 1, 1); root.updateMatrixWorld(true);
+  const bb = new THREE.Box3(); root.traverse(m => { if (m.isMesh && m.visible && !m.userData.proxy && m.geometry) { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); bb.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld)); } });
+  root.quaternion.copy(q); root.position.copy(p0); root.scale.copy(sc0); root.visible = saveV; root.updateMatrixWorld(true);
+  if (bb.isEmpty()) return null; const S2 = bb.getSize(new THREE.Vector3()), C = bb.getCenter(new THREE.Vector3());
+  // cor da lataria: o material com mais vértices
+  let best = null, bn = 0; root.traverse(m => { if (m.isMesh && m.material && m.material.color && !m.material.transparent) { const n = m.geometry.attributes.position.count; if (n > bn) { bn = n; best = m.material; } } });
+  const paint = best ? best.color : new THREE.Color(0x888888), glass = new THREE.Color(0x1d2733), tire = new THREE.Color(0x111111);
+  const parts = [[S2.x, S2.y * 0.5, S2.z, C.x, bb.min.y + S2.y * 0.42, C.z, paint], [S2.x * 0.86, S2.y * 0.36, S2.z * 0.48, C.x, bb.min.y + S2.y * 0.8, C.z - S2.z * 0.04, glass]];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.push([0.25, S2.y * 0.36, S2.z * 0.17, C.x + sx * (S2.x / 2 - 0.1), bb.min.y + S2.y * 0.18, C.z + sz * S2.z * 0.31, tire]);
+  const pos = [], nor = [], col = [];
+  for (const [w, h, d, x, y, z, c] of parts) { const g = new THREE.BoxGeometry(w, h, d).toNonIndexed(); g.translate(x, y, z); const P2 = g.attributes.position, N = g.attributes.normal; for (let i = 0; i < P2.count; i++) { pos.push(P2.getX(i), P2.getY(i), P2.getZ(i)); nor.push(N.getX(i), N.getY(i), N.getZ(i)); col.push(c.r, c.g, c.b); } g.dispose(); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  CARLOD.mat = CARLOD.mat || shared(new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const m = new THREE.Mesh(g, CARLOD.mat); m.userData.proxy = true; m.userData.noMerge = true; m.castShadow = true; m.visible = false; root.add(m); u.proxy = m; return m;
+}
+function carLod(cam) {
+  const now = performance.now(); if (now > CARLOD.at) { CARLOD.at = now + 2000; const L = []; city.scene.traverse(o => { if (o.userData && o.userData.wheels && o.userData.wheels.length >= 4 && !o.userData.bike && o !== (P.drive && P.drive.m)) L.push(o); }); CARLOD.roots = L; }
+  const far = (S.settings.quality === 'baixa' ? 26 : 38), cp = cam.position, sw = [];
+  if (city.shopIn || city.interior) return sw;
+  for (const o of CARLOD.roots) {
+    if (!o.visible || !o.parent) continue; o.getWorldPosition(CARLOD.v); if (CARLOD.v.distanceTo(cp) < far) continue;
+    const px = carProxy(o); if (!px) continue; const kids = [];
+    for (const c of o.children) if (c !== px && c.visible && !(c.isSprite)) { c.visible = false; kids.push(c); }
+    px.visible = true; sw.push([o, px, kids]);
+  }
+  return sw;
+}
+const _safeRender1 = safeRender;
+safeRender = function (sc, cam) {
+  if (sc !== city.scene || mode !== 'city') return _safeRender1(sc, cam);
+  let hid = [], sw = []; try { batchCheck(); hid = spriteCull(cam); sw = carLod(cam); } catch (e) { }
+  try { _safeRender1(sc, cam); } finally { for (const o of hid) o.visible = true; for (const [, px, kids] of sw) { px.visible = false; for (const c of kids) c.visible = true; } }
+};
+const _buildCity1 = buildCity;
+buildCity = function () { try { batchClear(); } catch (e) { } const r = _buildCity1.apply(this, arguments); clearTimeout(BATCH.t); BATCH.t = setTimeout(() => { try { batchBuild(); } catch (e) { console.warn('blocos', e); } }, 5500); return r; };
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },

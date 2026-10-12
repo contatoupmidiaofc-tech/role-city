@@ -409,3 +409,12 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
     - Medido na praça: de 1,1 milhão para 315 mil triângulos por quadro (−72%), e o desenho ficou cerca de 30% mais rápido.
     - Medido no morro: de 1,37 milhão para 460 mil triângulos.
   - 🧹 **Memória**: o traço dos tiros, os números de dano, as explosões e os jatos d'água agora liberam a memória quando somem. Antes, cada tiro deixava lixo e o jogo ficava mais pesado quanto mais tempo se jogava.
+
+### Build 2026.10.12-39 (desempenho, fase 2)
+  - 🧱 **Peças paradas juntadas**: calçadas, postes, bancos, muros, enfeites e casas do morro que usam o mesmo material agora são desenhados de uma vez, em blocos de 48 m. Se alguma peça muda (porta abre, objeto some, cor muda), aquele bloco volta ao normal sozinho.
+  - 🚗 **Carro longe simplificado**: a mais de 38 m (26 m na qualidade baixa), os carros parados ou dos bots viram uma versão leve com a mesma cor, vidro e rodas. De perto, voltam a ser o modelo completo. O carro que você dirige nunca é trocado.
+  - 🏷️ **Placas e nomes distantes**: nomes e placas pequenas que estão longe, e quase ilegíveis, deixam de ser desenhados.
+  - 🛞 **Rodas**: as peças de cada roda foram juntadas.
+  - Medido na praça: de 1135 para 637 chamadas de desenho por quadro (−44%).
+  - Medido no morro: de 2259 para 1138 chamadas, e de 460 mil para 196 mil triângulos.
+  - A lógica do jogo não muda. Tudo isso só vale na hora de desenhar o quadro.
