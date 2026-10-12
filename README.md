@@ -321,3 +321,15 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
   - 🔫 **Bonde depois do assalto**: quando o bonde chega, abre o painel com duas ordens:
     - ⛰️ **Liberar pra subir o morro**: eles sobem pela escadaria e ficam espalhados nas vielas e ruas do morro.
     - 🔫 **Ficar na ativa**: um terço vira sniper em cima das lajes, vigiando a entrada; o resto faz a contenção nas ruas com armamento pesado, andando de um lado para o outro.
+
+### Build 2026.10.12-33
+  - 🫡 **Liberar a tropa**: quando a tropa vem proteger (por exemplo, depois de bater em alguém), aparece o botão "Liberar tropa". Eles voltam pro morro.
+  - 🎯 **Dano de verdade**:
+    - Cada tiro certeiro tira vida, com a barrinha de vida em cima da cabeça. Quando a vida zera, o policial (ou o traficante, ou o figurante) morre e fica caído.
+    - Só tira vida quando o tiro acerta. O tiro que erra passa raspando, e o traçante mostra isso.
+    - Os mortos voltam depois de uns 3 minutos.
+  - ⛰️ **Polícia subindo o morro**:
+    - Todos os traficantes que estão no morro trocam tiro com a PM: os do morro (que descem para a linha de tiro), o bonde (os snipers nas lajes atiram de longe) e a tropa da facção.
+    - Cada lado tem vida, e quem perder a vida primeiro morre.
+  - 📻 **Rádio**: aberto, ele não cobre mais os botões de baixo. No celular deitado ele fica em cima, no meio da tela.
+  - 🚗 **Botão Carros**: abre a lista de todos os seus veículos para escolher qual usar. Ele aparece estacionado do seu lado, sem precisar ir na Concessionária.

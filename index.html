@@ -177,6 +177,10 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #radio{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 180px);width:min(420px,calc(100vw - 24px));background:rgba(16,22,18,.95);border:2px solid #3ddc84;border-radius:14px;padding:8px;display:grid;gap:6px;pointer-events:auto;z-index:21}
 #radio .rhead{display:flex;justify-content:space-between;align-items:center;color:#3ddc84;font-family:var(--cond);text-transform:uppercase}
 #radio-log{max-height:150px;overflow:auto;font-size:14px;display:grid;gap:3px}
+/* o rádio aberto não pode cobrir os botões de baixo (controles) */
+#radio{max-height:calc(100vh - env(safe-area-inset-top,0px) - 180px - 210px);overflow:auto}
+@media (orientation:landscape) and (max-height:560px){#radio{left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 6px);width:min(420px,calc(100vw - 330px));min-width:240px;max-height:calc(100vh - 175px);padding:6px;gap:4px}#radio-log{max-height:64px;font-size:13px}#radio .chips .chip{padding:4px 8px;font-size:12px}#radio input{min-height:34px}}
+@media (orientation:portrait){#radio{max-height:calc(100vh - env(safe-area-inset-top,0px) - 180px - 250px)}#radio-log{max-height:96px}}
 #radio-log .me b{color:var(--wax)} #radio-log b{color:#3ddc84}
 #radio .chip.call{background:#c0392b;color:#fff;border-color:#ff8a8a}
 #radio .qrow{display:flex;gap:6px} #radio input{flex:1;min-height:40px;border-radius:10px;border:2px solid var(--line);background:var(--panel-2);color:var(--fg);padding:0 10px;font:inherit}
@@ -500,7 +504,7 @@ canvas.swatch{background:#333}
 #hb-menu{min-width:44px;justify-content:center;position:relative}
 #hb-menu .hm-ico{font-size:22px;line-height:1}
 #hb-menu .hm-dot{position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;background:#ff4f7b;box-shadow:0 0 0 2px #15161a}
-.hud-tr.collapsed > .hud-btn:not(#hb-menu):not(#hb-sair):not(#hb-bonde):not(#hb-fuga):not(#hb-tiro):not(#hb-canhao){display:none!important}
+.hud-tr.collapsed > .hud-btn:not(#hb-menu):not(#hb-sair):not(#hb-bonde):not(#hb-fuga):not(#hb-tiro):not(#hb-canhao):not(#hb-veh):not(#hb-tropa){display:none!important}
 .hud-tr:not(.collapsed) #hb-menu{background:#ffcf3a;color:#15161a}
 .fk label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:7px 0;font-size:14px}
 .fk input,.fk select{flex:1;max-width:62%;background:#1b1f27;color:#fff;border:1px solid #3a4150;border-radius:8px;padding:7px 9px;font:inherit}
@@ -567,13 +571,14 @@ canvas.swatch{background:#333}
     <span id="h-hp" aria-label="Vida"><i></i><b>100%</b></span>
   </button>
   <div class="hud-tr collapsed" id="hud-tr">
+    <button class="hud-btn" id="hb-tropa" data-act="tropa-liberar" aria-label="Liberar a tropa" hidden style="background:#15161a;border-color:#ffcf3a"><span style="font-size:17px">🫡</span><span class="lbl">Liberar tropa</span></button>
     <button class="hud-btn" id="hb-skate" data-act="skate-toggle" aria-label="Guardar ou pegar o skate" hidden><span style="font-size:17px">🛹</span><span class="lbl">Guardar skate</span></button>
     <button class="hud-btn" id="hb-menu" data-act="hud-menu" aria-label="Abrir as opções" aria-expanded="false"><span class="hm-ico">☰</span><i class="hm-dot" hidden></i></button>
     <button class="hud-btn" id="hb-sair" style="background:#d6304a;border-color:#ff7088" data-act="sair-local" aria-label="Sair deste lugar" hidden><span style="font-size:17px">🚪</span><span class="lbl">Sair</span></button>
     <button class="hud-btn" data-act="phone-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="lbl">Celular</span></button>
     <button class="hud-btn" data-act="open-social"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lbl">Social</span></button>
     <button class="hud-btn" data-act="open-crew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4.5"/></svg><span class="lbl">Crew</span></button>
-    <button class="hud-btn" id="hb-veh" data-act="veh-call" aria-label="Chamar veículo" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15l2-6h14l2 6v4H3z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="lbl">Carro</span></button>
+    <button class="hud-btn" id="hb-veh" data-act="open-garagem" aria-label="Escolher o carro" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15l2-6h14l2 6v4H3z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="lbl">Carros</span></button>
     <button class="hud-btn" id="hb-fam" data-act="familia" aria-label="Chamar as filhas" hidden><span style="font-size:17px">👧</span><span class="lbl">Filhas</span></button>
     <button class="hud-btn" id="hb-brincar" data-act="filhas-brincar" aria-label="Liberar as filhas pra brincar" hidden><span style="font-size:17px">🛝</span><span class="lbl">Brincar</span></button>
     <button class="hud-btn" id="hb-casa" data-act="casa-toggle" aria-label="Liberar ou fechar a casa" hidden><span style="font-size:17px">🔒</span><span class="lbl">Casa fechada</span></button>
@@ -682,7 +687,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-32';
+const BUILD = '2026.10.12-33';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -5115,8 +5120,8 @@ function updateRoles(dt, t) {
     if (o.role === 'traficante') {
       if (S.shift === 'policial' && !isAdm() && dP < 22 && !o.hostT) { o.hostT = 15; bubble(g, 'Sujou! Polícia!', 2); }
       if (hostile && o.hostT > 0 && dP < 38 && !P.drive && !city.interior && P.fallT <= 0 && (o.shotT -= dt) <= 0) {
-        o.shotT = rand(1.2, 2.4); gunFx(o.x, groundH(o.x, o.z) + 1.4, o.z, P.x, P.y + 1.2, P.z, o.gun); sfx('tiro');
-        if (Math.random() < 0.33) { hurt(22, 'tiro no morro'); P.fallT = Math.max(P.fallT, 1); P.v = 0; if (!P.down) toast(`Você foi atingido! Vida ${Math.round(P.hp)}%. Saia da linha de tiro.`, 'bad'); playerFell('tiro'); if (S.mission && S.mission.type === 'job_corre') failMission('derrubaram você e levaram a encomenda.'); }
+        o.shotT = rand(1.2, 2.4); const tHit = Math.random() < 0.33; gunFx(o.x, groundH(o.x, o.z) + 1.4, o.z, P.x + (tHit ? 0 : rand(-1.5, 1.5)), P.y + (tHit ? 1.2 : rand(0.2, 2.5)), P.z + (tHit ? 0 : rand(-1.5, 1.5)), o.gun); sfx('tiro');
+        if (tHit) { hurt(22, 'tiro no morro'); P.fallT = Math.max(P.fallT, 1); P.v = 0; if (!P.down) toast(`Você foi atingido! Vida ${Math.round(P.hp)}%. Saia da linha de tiro.`, 'bad'); playerFell('tiro'); if (S.mission && S.mission.type === 'job_corre') failMission('derrubaram você e levaram a encomenda.'); }
       }
       if (!hostile && dP < 4 && (o.talkCd -= dt) <= 0) { o.talkCd = 7; bubble(g, roleSay('traficante'), 2.5); }
     } else if (dP < 4 && (o.talkCd = (o.talkCd || 0) - dt) <= 0) { o.talkCd = 9; bubble(g, roleSay(o.role), 2.5); }
@@ -5165,7 +5170,7 @@ function shootGun(G) {
   const fx = Math.sin(P.h), fz = Math.cos(P.h), cone = G.cone || 0.9;
   let best = null, bd = G.rng, kind = null;
   const consider = (o, k) => { if (!o || o.off || o.fallT > 0) return; const dx = o.x - P.x, dz = o.z - P.z, d = Math.hypot(dx, dz); if (d < bd && d > 0.4 && (dx * fx + dz * fz) / d > cone) { bd = d; best = o; kind = k; } };
-  for (const o of city.bots) consider(o, 'bot'); for (const o of city.peds) consider(o, 'ped'); for (const o of city.cops || []) consider(o, 'cop'); for (const o of city.thugs || []) if (!(o.arrestedT > 0)) consider(o, 'thug'); for (const r of city.robbers || []) if (r.st !== 'preso') consider(r, 'robber');
+  for (const o of city.bots) consider(o, 'bot'); for (const o of city.peds) consider(o, 'ped'); for (const o of city.cops || []) consider(o, 'cop'); for (const o of city.thugs || []) if (!(o.arrestedT > 0)) consider(o, 'thug'); for (const r of city.robbers || []) if (r.st !== 'preso') consider(r, 'robber'); for (const c of (city.raid && city.raid.cops) || []) if (!c.dead) consider(c, 'cop');
   for (const id in NET.peers) { const p = NET.peers[id]; if (p.seen && !(p.t && p.t.vh)) consider({ x: p.x, z: p.z, p, fallT: 0 }, 'peer'); }
   // vira de frente para o alvo e o tiro sai do cano direto no peito dele
   if (best) { P.h = Math.atan2(best.x - P.x, best.z - P.z); city.player.rotation.y = P.h; }
@@ -5794,6 +5799,7 @@ function aimTargets() {
   for (const o of city.bots) if (!o.off) L.push([o, 'bot']); for (const o of city.peds) if (!o.off) L.push([o, 'ped']);
   for (const o of city.cops || []) if (!o.off) L.push([o, 'cop']); for (const o of city.thugs || []) if (!o.off && !(o.arrestedT > 0)) L.push([o, 'thug']);
   for (const r of city.robbers || []) if (r.st !== 'preso' && r.st !== 'gone') L.push([r, 'robber']);
+  for (const c of (city.raid && city.raid.cops) || []) if (!c.dead) L.push([c, 'cop']);
   for (const s of city.squad || []) L.push([s, 'squad']);
   for (const id in NET.peers) { const p = NET.peers[id]; if (p.seen && !(p.t && p.t.vh) && (!p.t || (p.t.rm || '') === roomKey())) L.push([{ x: p.x, z: p.z, y: p.y, p, fallT: 0 }, 'peer']); }
   return L;
@@ -5849,9 +5855,10 @@ function applyShot(best, kind, G) {
   }
   if (kind === 'squad') { best.fallT = 3; bubble(best.g, 'Ô! Sou do seu lado, chefe!', 2); return; }
   // vida dos figurantes (pedestres, policiais, traficantes, ladrões): cada tiro tira vida; com 0 eles caem baleados
-  if (!(best.hp > 0)) best.hp = 100; best.hp -= dmg; dmgPop(best.x, groundH(best.x, best.z) + 2.1, best.z, dmg);
-  if (best.hp <= 0) { best.fallT = 45; best.hp = 0; if (best.g) bubble(best.g, pick(['Fui baleado...', 'Chama o SAMU...', 'Aaai...']), 3); feed(`💀 ${kind === 'cop' ? 'Policial' : kind === 'thug' ? 'Traficante' : 'Figurante'} baleado`); }
-  else { best.fallT = G.knock + (kind === 'thug' ? 2 : kind === 'robber' ? 3 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2); }
+  // cada tiro certeiro tira vida (barrinha em cima da cabeça); com a vida zerada, morre
+  if (npcDamage(best, dmg)) { feed(`💀 ${kind === 'cop' ? 'Policial' : kind === 'thug' ? 'Traficante' : 'Figurante'} morto`); if (kind === 'cop' && best.chase) best.chase = false; }
+  else if (kind === 'cop' || kind === 'thug') { if (best.g) bubble(best.g, pick(['Ai!', 'Tô ferido!', 'Revida!']), 1.5); if (kind === 'thug') best.hostT = Math.max(best.hostT || 0, 18); }
+  else { best.fallT = G.knock + (kind === 'robber' ? 3 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2); }
   if (kind === 'robber') return;
   if (kind === 'cop') addWanted(2, 'atacou um policial');
   else if (kind === 'thug') { if (S.shift !== 'policial') addWanted(1, 'tiroteio no morro'); }
@@ -5954,6 +5961,7 @@ function squadThreats(s, want) {
   const L = [];
   if (s.side === 'faccao') { if (want !== 'robber') for (const c of city.cops || []) if (!c.off && !(c.fallT > 0) && (want === 'cop' || c.chase)) L.push(c); if (want !== 'cop') for (const r of city.robbers || []) if (r.st !== 'preso' && r.st !== 'gone' && !(r.fallT > 0) && (want === 'robber' || r.tgt === 'player' || s.st === 'attack')) L.push(r); if (!want) for (const o of city.thugs || []) if (o.hostT > 0 && !(o.fallT > 0) && !isAdm()) L.push(o); }
   else { for (const r of city.robbers || []) if (r.st !== 'preso' && r.st !== 'gone' && !(r.fallT > 0)) L.push(r); for (const o of city.thugs || []) if (o.hostT > 0 && !(o.fallT > 0)) L.push(o); }
+  if (s.side === 'faccao' && city.raid && want !== 'robber') for (const c of city.raid.cops) if (!c.dead && Math.hypot(c.x - s.x, c.z - s.z) < 55) L.push(c);
   const sh = city.fireT > 0 && city.lastShooter && NET.peers[city.lastShooter]; if (sh && sh.t && !sh.t.vh && !sh.t.dn) L.push({ x: sh.x, z: sh.z, peer: sh.id, g: sh.g });
   return L;
 }
@@ -5980,9 +5988,10 @@ function updateSquad(dt, t) {
       if (tg) {
         aim = true; s.h = Math.atan2(tg.x - s.x, tg.z - s.z);
         if ((s.shotT -= dt) <= 0 && td < 30) {
-          s.shotT = rand(0.9, 1.8); const y = groundH(s.x, s.z); gunFx(s.x + Math.sin(s.h) * 0.5, y + 1.4, s.z + Math.cos(s.h) * 0.5, tg.x, groundH(tg.x, tg.z) + 1.1, tg.z, s.gun); if (dP < 60) sfx('tiro');
-          if (Math.random() < 0.45 && tg.peer) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: tg.peer, by: (s.side === 'pm' ? 'Reforço da PM' : 'Tropa do ') + (isAdm() ? CHIEF : S.name), k: 1, dmg: 12 } }); dmgPop(tg.x, groundH(tg.x, tg.z) + 2.1, tg.z, 12); }
-          else if (Math.random() < 0.45) { tg.fallT = 6; if (tg.g) bubble(tg.g, pick(['Ai!', 'Recua!', 'Tô baleado!']), 2); if (tg.chase) tg.chase = false; if (tg.st === 'rob' || tg.st === 'go') { tg.st = 'flee'; tg.t = 0; } }
+          s.shotT = rand(0.9, 1.8); const y = groundH(s.x, s.z), sHit = Math.random() < 0.45; gunFx(s.x + Math.sin(s.h) * 0.5, y + 1.4, s.z + Math.cos(s.h) * 0.5, tg.x + (sHit ? 0 : rand(-1.4, 1.4)), groundH(tg.x, tg.z) + (sHit ? 1.1 : rand(0.1, 2.5)), tg.z + (sHit ? 0 : rand(-1.4, 1.4)), s.gun); if (dP < 60) sfx('tiro');
+          if (sHit && tg.peer) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: tg.peer, by: (s.side === 'pm' ? 'Reforço da PM' : 'Tropa do ') + (isAdm() ? CHIEF : S.name), k: 1, dmg: 12 } }); dmgPop(tg.x, groundH(tg.x, tg.z) + 2.1, tg.z, 12); }
+          else if (city.raid && city.raid.cops.includes(tg)) { if (sHit) npcDamage(tg, 20); }
+          else if (sHit) { if (tg.hp != null || tg.g) npcDamage(tg, 20); tg.fallT = Math.max(tg.fallT || 0, tg.dead ? 1e9 : 2); if (tg.g) bubble(tg.g, pick(['Ai!', 'Recua!', 'Tô baleado!']), 2); if (tg.chase) tg.chase = false; if (tg.st === 'rob' || tg.st === 'go') { tg.st = 'flee'; tg.t = 0; } }
         }
       }
       if (s.upT > 0) { s.upT -= dt; if (s.upShots > 0 && s.upT < 1.2 - (3 - s.upShots) * 0.25) { s.upShots--; const y = groundH(s.x, s.z); gunFx(s.x, y + 2.1, s.z, s.x + rand(-2, 2), y + 40, s.z + rand(-2, 2), s.gun); sfx('tiro'); } }
@@ -8453,38 +8462,79 @@ function raidSlot() { const n = Date.now(), s = Math.floor(n / RAID_EVERY), r = 
 function startRaid(sl) {
   const R = { s: sl.s, cops: [], cars: [], t: Math.max(0, sl.el) }, sc = city.scene, V = VEH.j_viatura || VEH.v_sedan;
   for (const [d, tt] of [[-14, -6], [-14, 6], [-20, 0]]) { const m = makeVehicleMesh(V), [x, z] = morroWorld(d, tt); m.position.set(x, 0, z); m.rotation.y = Math.atan2(...(() => { const [ax, az] = morroWorld(0, tt); return [ax - x, az - z]; })()); sc.add(m); R.cars.push(m); }
-  for (let i = 0; i < 7; i++) { const g = makeSkater(roleLook('policial', i), null); const tt = (i - 3) * 2.2, [x, z] = morroWorld(-10 - (i % 2) * 2, tt); g.position.set(x, groundH(x, z), z); sc.add(g); R.cops.push({ g, d: -10 - (i % 2) * 2, tt, hp: 3, shotT: rand(1, 3), fallT: 0, stop: rand(14, 34) }); }
+  for (let i = 0; i < 7; i++) { const g = makeSkater(roleLook('policial', i), null); const tt = (i - 3) * 2.2, [x, z] = morroWorld(-10 - (i % 2) * 2, tt); g.position.set(x, groundH(x, z), z); sc.add(g); R.cops.push({ g, d: -10 - (i % 2) * 2, tt, hp: 100, x, z, shotT: rand(1, 3), fallT: 0, stop: rand(14, 34) }); }
   city.raid = R;
   if (Math.hypot(...(() => { const [x, z] = morroWorld(10, 0); return [P.x - x, P.z - z]; })()) < 170) { toast('🚨 Operação policial no morro! A PM está subindo e o tiroteio começou.', 'bad'); feed('🚨 Operação da PM no morro'); }
 }
-function endRaid() { const R = city.raid; if (!R) return; for (const o of [...R.cops.map(c => c.g), ...R.cars]) if (o.parent) o.parent.remove(o); for (const o of city.thugs || []) { o.raidA = null; if (o.raidDown) { o.fallT = 0; o.raidDown = false; } } city.raid = null; }
+function endRaid() { const R = city.raid; if (!R) return; for (const o of [...R.cops.map(c => c.g), ...R.cars]) if (o.parent) o.parent.remove(o); for (const o of city.thugs || []) { o.raidA = null; if (o.raidDown) { o.fallT = 0; o.raidDown = false; o.dead = false; o.hp = 100; npcHpBar(o); } } city.raid = null; }
 function updateRaid(dt, t) {
   if (!city.morro) return; const sl = raidSlot(); let R = city.raid;
   if (R && (R.s !== sl.s || sl.el > RAID_DUR + 20)) { endRaid(); R = null; }
   if (!R && sl.on && sl.el > 0 && sl.el < RAID_DUR && !city.interior) startRaid(sl), R = city.raid;
-  if (!R) return; R.t += dt; const back = R.t > RAID_DUR - 25, on = Math.floor(t * 4) % 2;
+  if (city.deadNpcs && city.deadNpcs.length && !R) city.deadNpcs = city.deadNpcs.filter(o => { if (performance.now() - o.deadAt < 180000) return true; o.dead = false; o.fallT = 0; o.hp = 100; o.raidDown = false; npcHpBar(o); return false; });
+  if (!R) return; R.t += dt; const back = R.t > RAID_DUR - 25 || R.cops.every(c => c.dead), on = Math.floor(t * 4) % 2;
   for (const m of R.cars) { const u = m.userData; if (u.siren) { u.siren[0].visible = !!on; u.siren[1].visible = !on; } }
-  const thugs = (city.thugs || []).filter(o => !o.off && o.g && o.g.visible && inMorro(o.x, o.z, -4));
+  // todos os traficantes do morro entram na troca de tiro: os do morro, o bonde e a tropa da facção
+  const F = morroFighters();
   const near = Math.hypot(...(() => { const [x, z] = morroWorld(20, 0); return [P.x - x, P.z - z]; })()) < 120;
   for (const c of R.cops) {
-    const g = c.g; if (c.fallT > 0) { c.fallT -= dt; animSkater(g, { walk: true, v: 0, fallT: 1 }, t); continue; }
-    let tgt = null, bd = 60; for (const o of thugs) { if (o.fallT > 0) continue; const [x, z] = morroWorld(c.d, c.tt), k = Math.hypot(o.x - x, o.z - z); if (k < bd) { bd = k; tgt = o; } }
+    const g = c.g; if (c.dead) { animSkater(g, { walk: true, v: 0, fallT: 1 }, t); continue; }
+    const [x, z] = morroWorld(c.d, c.tt); c.x = x; c.z = z;
+    let tgt = null, bd = 60; for (const o of F) { const k = Math.hypot(o.x - x, o.z - z); if (k < bd) { bd = k; tgt = o; } }
+    const pT = !isAdm() && (S.shift === 'traficante' || S.gang) && !P.drive && !P.down && Math.hypot(P.x - x, P.z - z) < 30;
     const want = back ? -16 : c.stop, mv = (want - c.d), sp = back ? 3.4 : (tgt && bd < 30 ? 0.8 : 2.2);
     if (Math.abs(mv) > 0.2) c.d += Math.sign(mv) * Math.min(Math.abs(mv), sp * dt);
-    const [x, z] = morroWorld(c.d, c.tt); g.position.set(x, groundH(x, z), z);
+    g.position.set(x, groundH(x, z), z);
     const a = tgt && !back ? Math.atan2(tgt.x - x, tgt.z - z) : Math.atan2(...(() => { const [fx, fz] = morroWorld(c.d + (back ? -1 : 1), c.tt); return [fx - x, fz - z]; })());
-    g.rotation.y = a;
+    g.rotation.y = a; npcHpBar(c);
     animSkater(g, { walk: true, v: Math.abs(mv) > 0.2 ? sp : 0, fallT: 0, wpHold: 'fuzil', wpProp: tgt && !back ? 'fuzil' : null }, t + c.tt);
-    if (tgt && !back && bd < 45 && (c.shotT -= dt) <= 0) { c.shotT = rand(0.9, 2.2); const y0 = groundH(x, z) + 1.4; gunFx(x + Math.sin(a) * 0.6, y0, z + Math.cos(a) * 0.6, tgt.x + rand(-0.6, 0.6), groundH(tgt.x, tgt.z) + rand(0.6, 1.6), tgt.z + rand(-0.6, 0.6), 'fuzil'); if (near) sfx('tiro'); if (Math.random() < 0.12) { tgt.fallT = 30; tgt.raidDown = true; bubble(tgt.g, 'Fui atingido!', 2); } }
-    // traficante (jogador) no morro durante a operação: a PM atira nele também
-    if (!back && !isAdm() && (S.shift === 'traficante' || S.gang) && !P.drive && Math.hypot(P.x - x, P.z - z) < 26 && P.fallT <= 0 && (c.pShot = (c.pShot || rand(2, 4)) - dt) <= 0) { c.pShot = rand(2.5, 5); gunFx(x, groundH(x, z) + 1.4, z, P.x, P.y + 1.2, P.z, 'fuzil'); sfx('tiro'); if (Math.random() < 0.4) hurt(6, 'tiro da polícia'); }
+    if (tgt && !back && bd < 45 && (c.shotT -= dt) <= 0) { c.shotT = rand(0.9, 2.2); raidShot(x, z, a, tgt, 0.42 - bd * 0.004, 18, near, 'fuzil'); }
+    // jogador traficante no morro: a PM atira nele também (só machuca se acertar)
+    if (!back && pT && (c.pShot = (c.pShot || rand(2, 4)) - dt) <= 0) { c.pShot = rand(2.5, 5); const hit = Math.random() < 0.4; gunFx(x, groundH(x, z) + 1.4, z, P.x + (hit ? 0 : rand(-1.6, 1.6)), P.y + (hit ? 1.2 : rand(0.2, 2.4)), P.z + (hit ? 0 : rand(-1.6, 1.6)), 'fuzil'); sfx('tiro'); if (hit) hurt(8, 'tiro da polícia'); }
   }
-  for (const o of thugs) {
-    if (o.fallT > 0) continue; let tgt = null, bd = 50; for (const c of R.cops) { if (c.fallT > 0) continue; const k = Math.hypot(c.g.position.x - o.x, c.g.position.z - o.z); if (k < bd) { bd = k; tgt = c; } }
-    if (!tgt || back) { o.raidA = null; continue; }
-    o.raidA = Math.atan2(tgt.g.position.x - o.x, tgt.g.position.z - o.z);
-    if ((o.raidShot = (o.raidShot ?? rand(0.5, 2)) - dt) <= 0) { o.raidShot = rand(0.8, 2); const y0 = groundH(o.x, o.z) + 1.4; gunFx(o.x + Math.sin(o.raidA) * 0.6, y0, o.z + Math.cos(o.raidA) * 0.6, tgt.g.position.x + rand(-0.6, 0.6), tgt.g.position.y + rand(0.6, 1.6), tgt.g.position.z + rand(-0.6, 0.6), o.gun || 'pistola'); if (near) sfx('tiro'); if ((o.shoutT = (o.shoutT || 0) - dt * 8) <= 0) { o.shoutT = 12; bubble(o.g, pick(['Sujou! É a polícia!', 'Segura eles!', 'Aqui não, polícia!', 'Recua, recua!']), 2); } if (Math.random() < 0.06) { tgt.fallT = 18; } }
+  const cops = R.cops.filter(c => !c.dead);
+  for (const o of F) {
+    let tgt = null, bd = o.sniper ? 90 : 60; for (const c of cops) { const k = Math.hypot(c.x - o.x, c.z - o.z); if (k < bd) { bd = k; tgt = c; } }
+    if (!tgt || back) { if (o.thug) o.raidA = null; continue; }
+    const a = Math.atan2(tgt.x - o.x, tgt.z - o.z); if (o.thug) o.raidA = a; else if (o.crew) o.h = a;
+    // os do morro descem para a linha de tiro (sniper fica na laje)
+    if (o.thug && bd > 16) { const k = Math.min(1, 3.4 * dt / bd), nx = o.x + (tgt.x - o.x) * k, nz = o.z + (tgt.z - o.z) * k; if (inMorro(nx, nz, -4)) { o.x = nx; o.z = nz; } }
+    if (o.squad) continue; // a tropa atira pelo próprio código (mira na PM do morro)
+    if ((o.raidShot = (o.raidShot ?? rand(0.5, 2)) - dt) <= 0) {
+      o.raidShot = o.sniper ? rand(1.8, 3) : rand(0.8, 2);
+      raidShot(o.x, o.z, a, tgt, (o.sniper ? 0.7 : 0.45) - bd * 0.004, o.sniper ? 45 : o.heavy ? 24 : 18, near, o.gun || 'fuzil', o.y);
+      if (o.g && (o.shoutT = (o.shoutT || 0) - 1) <= 0) { o.shoutT = 8; bubble(o.g, pick(['Sujou! É a polícia!', 'Segura eles!', 'Aqui não, polícia!', 'Ninguém sobe!', 'Desce o fogo neles!']), 2); }
+    }
   }
+}
+/* quem defende o morro: traficantes do morro, o bonde (inclusive os snipers) e a tropa da facção */
+function morroFighters() {
+  const L = [];
+  for (const o of city.thugs || []) if (!o.off && !o.dead && !(o.fallT > 0) && o.g && inMorro(o.x, o.z, -4)) { o.thug = true; L.push(o); }
+  const B = city.bonde; if (B) for (const o of B.crew) if (!o.dead && inMorro(o.x, o.z, -6)) { o.crew = true; L.push(o); }
+  for (const s of city.squad || []) if (!s.dead && s.side === 'faccao' && !(s.fallT > 0) && s.st !== 'leave' && inMorro(s.x, s.z, -10)) { s.squad = true; L.push(s); }
+  return L;
+}
+/* um disparo na troca de tiro: o traçante vai no alvo quando acerta e passa raspando quando erra; só tira vida se acertar */
+function raidShot(x, z, a, tgt, chance, dmg, near, gun, y) {
+  const y0 = (y != null ? y : groundH(x, z)) + 1.4, ty = (tgt.y != null ? tgt.y : groundH(tgt.x, tgt.z)), hit = Math.random() < Math.max(0.12, chance);
+  gunFx(x + Math.sin(a) * 0.6, y0, z + Math.cos(a) * 0.6, tgt.x + (hit ? 0 : rand(-1.4, 1.4)), ty + (hit ? 1.2 : rand(0.1, 2.6)), tgt.z + (hit ? 0 : rand(-1.4, 1.4)), gun); if (near) sfx('tiro');
+  if (hit) npcDamage(tgt, dmg);
+}
+/* vida dos figurantes: cada tiro certeiro tira vida; com vida zerada, morre (fica caído) */
+function npcDamage(o, dmg) {
+  if (o.dead) return; if (!(o.hp > 0)) o.hp = 100; o.hp -= dmg;
+  const y = (o.y != null ? o.y : groundH(o.x, o.z)); try { dmgPop(o.x, y + 2.1, o.z, dmg); } catch (e) { }
+  if (o.hp <= 0) { o.hp = 0; o.dead = true; o.deadAt = performance.now(); if (!o.crew && !o.squad && !(city.raid && city.raid.cops.includes(o))) (city.deadNpcs = city.deadNpcs || []).push(o); o.fallT = 1e9; o.raidDown = true; if (o.g) bubble(o.g, pick(['Aaai...', 'Fui...', 'Me pegaram...']), 2.5); if (o.path) o.path = null; o.patrol = null; }
+  npcHpBar(o); return o.dead;
+}
+/* barrinha de vida em cima de quem está machucado */
+function npcHpBar(o) {
+  const g = o.g; if (!g) return; const hp = o.dead ? 0 : o.hp == null ? 100 : o.hp, show = hp < 100 && hp > 0;
+  if (!o.hpBar && !show) return;
+  if (!o.hpBar) { const c = document.createElement('canvas'); c.width = 64; c.height = 8; const tx = new THREE.CanvasTexture(c), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, depthTest: false, transparent: true })); sp.scale.set(0.8, 0.1, 1); sp.position.y = 2.3; sp.renderOrder = 4; g.add(sp); o.hpBar = { c, t: tx, sp, v: -1 }; }
+  o.hpBar.sp.visible = show;
+  if (show && o.hpBar.v !== hp) { o.hpBar.v = hp; const x = o.hpBar.c.getContext('2d'); x.fillStyle = '#111'; x.fillRect(0, 0, 64, 8); x.fillStyle = hp < 35 ? '#ff3b3b' : '#3ddc84'; x.fillRect(1, 1, 62 * hp / 100, 6); o.hpBar.t.needsUpdate = true; }
 }
 /* =========================================================
    CIDADE GRANDE: a cidade continua para fora do centro (bairros, avenidas e prédios),
@@ -11068,13 +11118,21 @@ function hudMenu(open) {
   if (o) { clearTimeout(hudMenu.t); hudMenu.t = setTimeout(() => hudMenu(false), 9000); }
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#hud-tr .hud-btn'); if (b && b.id !== 'hb-menu' && !$('hud-tr').classList.contains('collapsed')) setTimeout(() => hudMenu(false), 60); }, true);
+/* tropa que veio proteger: botão para liberar */
+function tropaLiberar() { const L = (city.squad || []).filter(s => !s.gone && s.st !== 'leave'); if (!L.length) return; squadOrder('leave'); toast('🫡 Tropa liberada. Eles voltam pro morro.', 'pink'); tropaBtn(); }
+function tropaBtn() { const b = $('hb-tropa'); if (!b) return; const on = mode === 'city' && (city.squad || []).some(s => !s.gone && s.st !== 'leave' && !s.dead); if (b.hidden === on) b.hidden = !on; }
+function garagemUsar(id) {
+  if (!VEH[id] || !(S.vehicles || []).includes(id) || mode !== 'city') return; if (P.drive) exitVehicle(true);
+  S.veh = id; persist(); spawnMyVehicle(); closePanel(); sfx('ui');
+  if (city.myVeh) toast(`${city.myVeh.V.name} estacionado do seu lado. Chegue perto e aperte ${IS_TOUCH ? 'Ação' : 'E'}.`, 'good'); netTrack && netTrack();
+}
 function skateToggle() {
   if (!hasSkate()) return toast('Você ainda não tem skate.', 'bad');
   S.skateGuardado = !S.skateGuardado; if (S.skateGuardado && P.onBoard) { P.onBoard = false; P.v *= 0.5; }
   persist(); sfx('ui'); skateBtn(); toast(S.skateGuardado ? '🛹 Skate guardado. Você anda sem ele nas costas.' : '🛹 Pegou o skate!', 'pink');
 }
 function skateBtn() { const b = $('hb-skate'); if (!b) return; const on = hasSkate() && mode === 'city' && !P.drive; if (b.hidden === on) b.hidden = !on; const l = b.querySelector('.lbl'), tx = S.skateGuardado ? 'Pegar skate' : 'Guardar skate'; if (l && l.textContent !== tx) l.textContent = tx; }
-function hudMenuDot() { skateBtn(); const el = $('hud-tr'), d = el && el.querySelector('.hm-dot'); if (!d) return; const alert = ['hb-emp', 'hb-toque', 'hb-brincar', 'hb-casa', 'hb-rota'].some(id => $(id) && !$(id).hidden) && el.classList.contains('collapsed'); if (d.hidden === alert) d.hidden = !alert; }
+function hudMenuDot() { skateBtn(); tropaBtn(); const el = $('hud-tr'), d = el && el.querySelector('.hm-dot'); if (!d) return; const alert = ['hb-emp', 'hb-toque', 'hb-brincar', 'hb-casa', 'hb-rota'].some(id => $(id) && !$(id).hidden) && el.classList.contains('collapsed'); if (d.hidden === alert) d.hidden = !alert; }
 function updateRP28(dt, t) {
   try { meleeTick(dt); seatTick(); toqueTick(dt, t); } catch (e) { console.warn('rua', e); }
   try { hudMenuDot(); } catch (e) { }
@@ -11202,6 +11260,13 @@ const MENUS = {
   brega: { t: '💃 Brega do Rolê', it: [['Água', 4, 2], ['Refrigerante', 7, 3], ['Drink sem álcool da casa', 15, 5], ['Porção de calabresa', 25, 12]] },
 };
 const PANELS28 = {};
+/* garagem: escolher qual veículo usar sem ir na concessionária */
+PANELS28.garagem = () => {
+  const L = (S.vehicles || []).map(id => VEH[id]).filter(Boolean);
+  if (!L.length) return { title: '🚗 Meus veículos', html: '<p class="muted">Você ainda não tem veículo. Compre na Concessionária.</p><div class="row"><button class="btn" data-act="gps-kind" data-k="concessionaria">GPS até a Concessionária</button></div>' };
+  const ic = v => v.tank ? '🪖' : v.bike ? '🚲' : v.kind === 'moto' ? '🏍️' : '🚗';
+  return { title: '🚗 Meus veículos', html: `<p class="muted">Escolha o automóvel e ele aparece estacionado do seu lado.</p><div class="grid-items">${L.map(v => `<div class="item-card r-${v.r || 'comum'} ${S.veh === v.id ? 'is-on' : ''}"><div class="swatch ico" style="--sw:${hex(v.color)}">${ic(v)}</div><div class="item-info"><b>${esc(v.name)}</b><small>até ${Math.round(v.top * 3.6)} km/h</small></div><div class="item-actions"><button class="btn sm" data-act="garagem-usar" data-id="${v.id}">${S.veh === v.id && city.myVeh && city.myVeh.V.id === v.id ? 'Chamar de novo' : 'Usar'}</button></div></div>`).join('')}</div>${myAir && myAir().length ? '<p class="muted">✈️ Aviões e helicópteros ficam no Hangar do aeroporto.</p>' : ''}` };
+};
 /* ---- filhos de quem casou: criar os personagens (até 4), igual às filhas do chefe ---- */
 const KID_OUTFITS = { f: [['Rosa e branco', { shirt: 'shirt_pink', pants: 'sh_white', shoes: 'shoes_white' }], ['Florido', { shirt: 'rg_branca', pants: 'sh_floral', shoes: 'shoes_white' }], ['Básico', { shirt: 'shirt_basic', pants: 'sh_bermuda', shoes: 'shoes_basic' }]], m: [['Básico', { shirt: 'shirt_basic', pants: 'sh_bermuda', shoes: 'shoes_basic' }], ['Branquinho', { shirt: 'rg_branca', pants: 'sh_white', shoes: 'shoes_white' }], ['Esporte', { shirt: 'shirt_basic', pants: 'sh_white', shoes: 'shoes_basic' }]] };
 const KID_HAIR = { f: Object.assign({ tranca: 'Tranças', coque: 'Coque' }, FEM_HAIR), m: { padrao: 'Curtinho', careca: 'Raspado', black: 'Black power', moicano: 'Moicano', dread: 'Dreads' } };
@@ -11534,6 +11599,7 @@ function bondeTick(t) {
   const hide = !!(city.interior || city.shopIn);
   for (const o of B.crew) {
     const vis = !hide && Math.hypot(o.x - P.x, o.z - P.z) < 150; o.g.visible = vis;
+    if (o.dead) { if (vis) { o.g.position.set(o.x, o.y != null ? o.y : groundH(o.x, o.z), o.z); animSkater(o.g, { walk: true, v: 0, fallT: 1 }, t); } continue; }
     let v = 0;
     if (o.path && o.path.length) { // andando até o posto (pela escadaria/viela)
       const [tx, tz] = o.path[0], dx = tx - o.x, dz = tz - o.z, d = Math.hypot(dx, dz), sp = o.run ? 5.2 : 3.4;
@@ -13447,7 +13513,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-filhos': openPanel('filhos'); break; case 'filho-criar': filhoCriar(); break; case 'filho-remover': filhoRemover(+ds.i); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'hud-menu': hudMenu(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'open-assalto': toggleRadio(false); openPanel('assalto'); break; case 'heist-go': heistStart(ds.id); break; case 'heist-city': heistOtherCity(ds.c); break; case 'heist-cancel': closePanel(); heistCancel(); break; case 'fuga-morro': fugaMorro(); break; case 'fuga-br': fugaBR(ds.c); break; case 'bonde-entrar': boardLead(); break; case 'heist-fugir': heistFugir(); break; case 'heist-tiro': heistTiro(); break; case 'tank-fire': tankFire(); break; case 'skate-toggle': skateToggle(); break; case 'bonde-dispensar': bondeDispensar(); break; case 'bonde-ordem': bondeOrdem(ds.m); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-filhos': openPanel('filhos'); break; case 'filho-criar': filhoCriar(); break; case 'filho-remover': filhoRemover(+ds.i); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'hud-menu': hudMenu(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'open-assalto': toggleRadio(false); openPanel('assalto'); break; case 'heist-go': heistStart(ds.id); break; case 'heist-city': heistOtherCity(ds.c); break; case 'heist-cancel': closePanel(); heistCancel(); break; case 'fuga-morro': fugaMorro(); break; case 'fuga-br': fugaBR(ds.c); break; case 'bonde-entrar': boardLead(); break; case 'heist-fugir': heistFugir(); break; case 'heist-tiro': heistTiro(); break; case 'tank-fire': tankFire(); break; case 'skate-toggle': skateToggle(); break; case 'tropa-liberar': tropaLiberar(); break; case 'open-garagem': openPanel('garagem'); break; case 'garagem-usar': garagemUsar(ds.id); break; case 'bonde-dispensar': bondeDispensar(); break; case 'bonde-ordem': bondeOrdem(ds.m); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
