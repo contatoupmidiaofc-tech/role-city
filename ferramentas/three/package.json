@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "description": "Gera lib/three-r186.min.js (three.js r186 + GLTFLoader + SkeletonUtils, com cores e luzes iguais às da r147). Uso: npm install && node build.mjs && cp three-r186.min.js ../../lib/",
+  "type": "module",
+  "dependencies": { "three": "0.186.1", "esbuild": "0.24.2" }
+}

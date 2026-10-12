@@ -35,3 +35,4 @@ jobs:
             README.md
             package.json
             _redirects
+            ferramentas/**

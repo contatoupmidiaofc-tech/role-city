@@ -418,3 +418,20 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
   - Medido na praça: de 1135 para 637 chamadas de desenho por quadro (−44%).
   - Medido no morro: de 2259 para 1138 chamadas, e de 460 mil para 196 mil triângulos.
   - A lógica do jogo não muda. Tudo isso só vale na hora de desenhar o quadro.
+
+### Build 2026.10.12-40 (desempenho, fase 3)
+  - 🧠 **Motor 3D atualizado**: three.js r147 → r186 (arquivo `lib/three-r186.min.js`, servido pelo próprio site).
+    - Cores, luzes e sombras foram ajustadas para ficar iguais às de antes. Comparação lado a lado: a mesma imagem, com diferença média menor que 0,5 de 255 na iluminação.
+    - Desenha cerca de 10% mais rápido e cria menos "programas de desenho" (menos engasgos quando algo aparece pela primeira vez).
+    - Aparelhos antigos, sem WebGL 2, continuam com a r147. Para forçar a versão antiga: `?three=147` no endereço.
+    - Como o arquivo é gerado: `ferramentas/three/` (ajustes de compatibilidade explicados no `build.mjs`).
+  - 📦 **Personagens 61% menores**: as texturas dos modelos passaram de PNG para JPEG de alta qualidade (2,7 MB → 1,07 MB cada, sem diferença visível). Conversor: `ferramentas/modelos_jpeg.py`.
+  - ⏩ **Carregamento por partes**:
+    - Os personagens começam a baixar já no menu, enquanto a pessoa digita o nome.
+    - As roupas dos figurantes são montadas aos poucos, de quem está mais perto para quem está mais longe. Quem está perto já aparece pronto no 1º quadro, e quem nunca chega perto não gasta nada. Na entrada: 42 roupas montadas em vez de 186.
+    - O agrupamento de peças da fase 2 agora é feito em pedaços pequenos por quadro, sem travar a tela.
+    - Pré-aquecimento dos programas de desenho em segundo plano nos aparelhos que compilam em paralelo.
+  - 💾 **Menos download repetido**:
+    - Modelos, animações e músicas só são baixados de novo quando mudam, e não mais a cada atualização do jogo.
+    - A checagem de versão nova lê só o começo da página (antes baixava a página inteira, 1,5 MB, a cada 5 minutos).
+    - O cache do celular guarda os arquivos pesados separados da página e apaga as versões velhas sozinho.

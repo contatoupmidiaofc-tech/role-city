@@ -683,20 +683,33 @@ canvas.swatch{background:#333}
 <!-- PHONE -->
 <div id="phone" hidden></div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
+<!-- motor 3D: three.js r186 (lib/, com as cores e luzes iguais às de antes) nos aparelhos com WebGL 2; nos antigos, ou com ?three=147 no endereço, a r147 de sempre -->
+<script>
+(function () {
+  var T147 = '<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"><\/script><script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"><\/script><script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"><\/script>';
+  var gl2 = false; try { var g = document.createElement('canvas').getContext('webgl2'); gl2 = !!g; var x = g && g.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); } catch (e) { }
+  if (/[?&]three=147/.test(location.search)) gl2 = false;
+  window.__T147 = T147; document.write(gl2 ? '<script src="lib/three-r186.min.js"><\/script>' : T147);
+})();
+</script>
+<script>if (!window.THREE) document.write(window.__T147); /* se a r186 não carregar, usa a r147 */</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-39';
+const BUILD = '2026.10.12-40';
+/* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
+const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
-  const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
+  // lê só o começo da página no servidor (a versão fica nas primeiras linhas) e cancela o resto do download
+  const head = r => { if (!r.ok) return ''; if (!r.body || !r.body.getReader) return r.text(); const rd = r.body.getReader(), dec = new TextDecoder(); let t = '';
+    const step = () => rd.read().then(({ done, value }) => { if (value) t += dec.decode(value, { stream: true }); if (done || /const BUILD = '[^']+'/.test(t) || t.length > 400000) { rd.cancel().catch(() => { }); return t; } return step(); }); return step(); };
+  const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(head).then(t => {
     const m = t.match(/const BUILD = '([^']+)'/); if (!m || m[1] === BUILD) return;
     const k = 'rc_reload_' + m[1]; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) { }
     if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.update())).catch(() => { });
-    if (window.caches) caches.keys().then(ks => ks.forEach(k2 => caches.delete(k2))).catch(() => { });
+    // apaga só a cópia da página; modelos, animações e bibliotecas continuam guardados (cada um tem a sua versão no endereço)
+    if (window.caches) caches.keys().then(ks => ks.forEach(k2 => { if (!/assets/.test(k2)) caches.delete(k2); })).catch(() => { });
     setTimeout(() => location.replace(location.pathname + '?v=' + m[1]), 400);
   }).catch(() => { });
   if (location.protocol.startsWith('http')) { addEventListener('load', go); setInterval(go, 5 * 60 * 1000); }
@@ -1206,7 +1219,7 @@ function applyQuality() {
   renderer.setPixelRatio(q.auto ? AQ.pr : Math.min(devicePixelRatio || 1, q.pr));
   renderer.shadowMap.enabled = q.shadows && !(q.auto && AQ.shOff);
   renderer.shadowMap.type = q.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
-  for (const L of [city.sun, R && R.sun]) if (L) { L.castShadow = q.shadows; L.shadow.mapSize.set(q.map, q.map); if (L.shadow.map) { L.shadow.map.dispose(); L.shadow.map = null; } }
+  for (const L of [city.sun, R && R.sun]) if (L) { L.castShadow = q.shadows; L.shadow.mapSize.set(q.map, q.map); if (L.shadow.map) { if (L.shadow.map.depthTexture) L.shadow.map.depthTexture.dispose(); L.shadow.map.dispose(); L.shadow.map = null; } }
   const an = q.pr >= 2 ? renderer.capabilities.getMaxAnisotropy() : 4;
   [city.scene, R && R.sc].forEach(sc => sc && sc.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; if (o.isSkinnedMesh && m.map) { m.map.anisotropy = an; m.map.needsUpdate = true; } }); }));
   if (city.sun) city.sun.castShadow = q.shadows && !(q.auto && AQ.shOff);
@@ -1845,7 +1858,7 @@ function trickPop(names, pts, extra) {
 
 /* ---------------- PERSONAGENS REALISTAS (modelos 3D com esqueleto) ---------------- */
 let MODELS = null;
-const MODEL_FILES = { f: 'modelos/rpm_f.glb', m: 'modelos/rpm_m.glb' };
+const MODEL_FILES = { f: `modelos/rpm_f.glb?v=${ASSET_V}`, m: `modelos/rpm_m.glb?v=${ASSET_V}` };
 function loadModels(onProgress) {
   if (!THREE.GLTFLoader || !THREE.SkeletonUtils) return Promise.resolve(null);
   const loader = new THREE.GLTFLoader(), prog = { f: 0, m: 0 };
@@ -1861,6 +1874,13 @@ function loadModels(onProgress) {
     .then(async list => { const M = {}; for (const [k, g] of list) { let nt = null; try { nt = await g.parser.getDependency('texture', 0); nt.flipY = false; } catch (e) { } M[k] = prepModel(k, g, nt); } return M; })
     .catch(e => { console.warn('Modelos 3D indisponíveis, usando personagens simples:', e); return null; });
 }
+/* carregamento por partes: os personagens começam a baixar já no menu (enquanto a pessoa digita o nome), e o Jogar só espera o que faltar */
+const PRE = { p: null, f: 0 };
+function preloadModels() {
+  if (!PRE.p) PRE.p = loadModels(f => { PRE.f = f; const b = $('loading-bar'); if (b) b.style.width = Math.round(f * 100) + '%'; });
+  return PRE.p;
+}
+addEventListener('load', () => setTimeout(() => { if (MODELS === null) { preloadModels(); loadMocap(); } }, 400));
 function prepModel(k, gltf, normalTex) {
   const scene = gltf.scene, info = { k, scene, mats: {} };
   scene.traverse(o => {
@@ -8956,7 +8976,7 @@ const MOCAP = { m: null, f: null };
 let mocapLoading = false;
 function loadMocap() {
   if (mocapLoading) return; mocapLoading = true;
-  for (const k of ['m', 'f']) fetch(`modelos/anim_${k}.bin?v=${BUILD}`).then(r => r.ok ? r.arrayBuffer() : null).then(b => { if (b) MOCAP[k] = parseMocap(b, k); }).catch(e => console.warn('mocap', e));
+  for (const k of ['m', 'f']) fetch(`modelos/anim_${k}.bin?v=${ASSET_V}`).then(r => r.ok ? r.arrayBuffer() : null).then(b => { if (b) MOCAP[k] = parseMocap(b, k); }).catch(e => console.warn('mocap', e));
 }
 function parseMocap(buf, k) {
   const dv = new DataView(buf), n = dv.getUint32(0, true), meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, n))), base = 4 + n;
@@ -9086,11 +9106,12 @@ function prepAtlasRPM(img, k) {
   for (let kk = 0; kk < 6; kk++) ref[kk] /= Math.max(1, cnt[kk]);
   return { rpm: true, c, d, cls, lum: clean, rawLum: lum, ref, skinRef, hairRef, w: W, h: H, cache: {} };
 }
-function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi) {
+function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi, defer) {
   const sh = look.shirt, pa = look.pants, so = look.shoes, sp = plainPat(sh) ? 'plain' : sh.pat, pp = plainPat(pa) ? 'plain' : pa.pat;
   const bare = so && (so.id === 'shoes_none' || so.barefoot);
   const key = [sh.color, sp, pa.color, pp, so ? so.color : 0, bare ? 1 : 0, look.skin, look.hair, bald ? 1 : 0, pantsMask ? pantsMask.nm : '', topMask ? topMask.nm : '', hi ? 'hi' : 'lo'].join('_');
   if (A.cache[key]) return A.cache[key];
+  if (defer) return null; // ainda não existe: quem chamou monta depois (por partes)
   const W = A.w, H = A.h, src = A.d.data, out = new ImageData(new Uint8ClampedArray(src), W, H), p = out.data;
   const rgbA = x => [(x >> 16 & 255), (x >> 8 & 255), (x & 255)];
   const skin = rgbA(look.skin), hair = rgbA(look.hair), cP = rgbA(pa.color), cS = rgbA(sh.color), cF = rgbA(so ? so.color : 0xeeeeee);
@@ -9143,8 +9164,10 @@ function applyRpmLook(u, look) {
   const bald = (look.body && look.body.hs) === 'careca';
   const pm = look.pants.trunk && M.trunkMask ? M.trunkMask : look.pants.long && !look.pants.baggy && M.longMask ? M.longMask : (look.pants.short || look.pants.baggy) ? M.legMask : null;
   const tm = look.shirt.nude ? (u.k === 'f' ? M.braMask : M.nudeMask) : look.shirt.bra ? M.braMask : look.shirt.tank ? M.tankMask : null;
-  const tex = rpmAtlasTex(M.atlas, look, pm, tm, bald, !!u.hiRes);
-  m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; }
+  // figurantes: se a roupa ainda não foi montada, entra na fila (os mais perto da câmera primeiro) e fica com a textura atual até lá
+  const tex = rpmAtlasTex(M.atlas, look, pm, tm, bald, !!u.hiRes, ATLASQ.on && !u.hiRes && !!m.map);
+  if (!tex) { u.atlasJob = [M.atlas, look, pm, tm, bald]; if (!u.atlasQ) { u.atlasQ = true; ATLASQ.list.push(u); } }
+  else { u.atlasJob = null; m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; } }
   if (M.normal) { const nn = look.shirt.nude ? 0.25 : 0.8; m.normalScale.set(nn, nn); }
   if (u.hairMat2) { const hs = (look.body && look.body.hs) || 'padrao'; u.hairMat2.visible = !['careca', 'moicano', 'black'].includes(hs) && !FEM_HAIR_KEYS.includes(hs); }
 }
@@ -9205,7 +9228,7 @@ function radioTick(vol) {
   const now = radioNow(); if (!now) return false;
   let a = FM.el; if (!a) { a = FM.el = new Audio(); a.preload = 'auto'; a.crossOrigin = 'anonymous'; }
   if (vol < 0.01) { if (!a.paused) a.pause(); a.volume = 0; return true; }
-  if (FM.cur !== now.i) { FM.cur = now.i; a.src = `musicas/${now.m.id}.mp3?v=${BUILD}`; a.currentTime = 0; FM.seekNeed = true; }
+  if (FM.cur !== now.i) { FM.cur = now.i; a.src = `musicas/${now.m.id}.mp3?v=${ASSET_V}`; a.currentTime = 0; FM.seekNeed = true; }
   if (a.paused) { FM.seekNeed = true; a.play().catch(() => { }); }
   if (a.readyState >= 1 && (FM.seekNeed || Math.abs(a.currentTime - now.pos) > 2.5)) { try { a.currentTime = now.pos; } catch (e) { } FM.seekNeed = false; }
   // volume alto: passa pelo amplificador do jogo (ganho até 3x com limitador para não distorcer)
@@ -12473,28 +12496,38 @@ function batchBuild() {
     const e = o.matrixWorld.elements, cx = Math.floor(e[12] / CS), cz = Math.floor(e[14] / CS), key = cx + ',' + cz + '|' + matSig(o.material) + '|' + (o.castShadow ? 1 : 0) + (o.receiveShadow ? 1 : 0) + '|' + (o.geometry.attributes.uv ? 1 : 0);
     let G = groups.get(key); if (!G) groups.set(key, G = { m: o.material, cast: o.castShadow, recv: o.receiveShadow, uv: !!o.geometry.attributes.uv, list: [] }); G.list.push(o);
   });
-  let made = 0, hidden = 0; const nm = new THREE.Matrix3();
-  for (const G of groups.values()) {
-    if (G.list.length < 2) continue;
-    let nv = 0, ni = 0; for (const o of G.list) { const g = o.geometry; nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
-    const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = G.uv ? new Float32Array(nv * 2) : null, idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
-    let vo = 0, io = 0; const v = new THREE.Vector3();
-    for (const o of G.list) {
-      const g = o.geometry, P2 = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, mw = o.matrixWorld; nm.getNormalMatrix(mw);
-      for (let i = 0; i < P2.count; i++) { v.fromBufferAttribute(P2, i).applyMatrix4(mw); pos[(vo + i) * 3] = v.x; pos[(vo + i) * 3 + 1] = v.y; pos[(vo + i) * 3 + 2] = v.z; if (N) { v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor[(vo + i) * 3] = v.x; nor[(vo + i) * 3 + 1] = v.y; nor[(vo + i) * 3 + 2] = v.z; } if (uv) { uv[(vo + i) * 2] = U.getX(i); uv[(vo + i) * 2 + 1] = U.getY(i); } }
-      if (g.index) for (let i = 0; i < g.index.count; i++) idx[io++] = g.index.getX(i) + vo; else for (let i = 0; i < P2.count; i++) idx[io++] = i + vo;
-      vo += P2.count;
-    }
-    const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); bg.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); if (uv) bg.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); bg.setIndex(new THREE.BufferAttribute(idx, 1)); bg.computeBoundingSphere(); bg.computeBoundingBox();
-    const mesh = new THREE.Mesh(bg, G.m); mesh.castShadow = G.cast; mesh.receiveShadow = G.recv; mesh.matrixAutoUpdate = false; mesh.userData.batch = true; mesh.userData.noMerge = true; city.scene.add(mesh);
-    const src = G.list.map(o => ({ o, mat: o.material, sig: matSig(o.material), mw: o.matrixWorld.elements.slice() }));
-    for (const s2 of src) { s2.o.layers.set(BATCH.layer); hidden++; }
-    BATCH.cells.push({ mesh, src }); made++;
+  // carregamento por partes: junta alguns blocos por quadro (até ~6 ms), em vez de travar tudo de uma vez
+  const sc = city.scene, todo = [...groups.values()].filter(G => G.list.length >= 2), job = BATCH.job = { i: 0 }; BATCH.stat = { blocks: 0, pieces: 0 };
+  const step = () => {
+    if (BATCH.job !== job || city.scene !== sc || !BATCH.on) return;
+    const t0 = performance.now();
+    while (job.i < todo.length && performance.now() - t0 < 6) { try { batchGroup(todo[job.i++]); } catch (e) { console.warn('bloco', e); } }
+    if (job.i < todo.length) setTimeout(step, 16); else BATCH.job = null;
+  };
+  step();
+}
+const _bnm = new THREE.Matrix3();
+function batchGroup(G) {
+  // confere de novo: entre um quadro e outro alguma peça pode ter mudado
+  G.list = G.list.filter(o => o.parent && o.visible && o.layers.mask === 1 && o.material === G.m && !BATCH.bad.has(o)); if (G.list.length < 2) return;
+  const nm = _bnm;
+  let nv = 0, ni = 0; for (const o of G.list) { const g = o.geometry; nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = G.uv ? new Float32Array(nv * 2) : null, idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
+  let vo = 0, io = 0; const v = new THREE.Vector3();
+  for (const o of G.list) {
+    const g = o.geometry, P2 = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, mw = o.matrixWorld; nm.getNormalMatrix(mw);
+    for (let i = 0; i < P2.count; i++) { v.fromBufferAttribute(P2, i).applyMatrix4(mw); pos[(vo + i) * 3] = v.x; pos[(vo + i) * 3 + 1] = v.y; pos[(vo + i) * 3 + 2] = v.z; if (N) { v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor[(vo + i) * 3] = v.x; nor[(vo + i) * 3 + 1] = v.y; nor[(vo + i) * 3 + 2] = v.z; } if (uv) { uv[(vo + i) * 2] = U.getX(i); uv[(vo + i) * 2 + 1] = U.getY(i); } }
+    if (g.index) for (let i = 0; i < g.index.count; i++) idx[io++] = g.index.getX(i) + vo; else for (let i = 0; i < P2.count; i++) idx[io++] = i + vo;
+    vo += P2.count;
   }
-  BATCH.stat = { blocks: made, pieces: hidden };
+  const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); bg.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); if (uv) bg.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); bg.setIndex(new THREE.BufferAttribute(idx, 1)); bg.computeBoundingSphere(); bg.computeBoundingBox();
+  const mesh = new THREE.Mesh(bg, G.m); mesh.castShadow = G.cast; mesh.receiveShadow = G.recv; mesh.matrixAutoUpdate = false; mesh.userData.batch = true; mesh.userData.noMerge = true; city.scene.add(mesh);
+  const src = G.list.map(o => ({ o, mat: o.material, sig: matSig(o.material), mw: o.matrixWorld.elements.slice() }));
+  for (const s2 of src) s2.o.layers.set(BATCH.layer);
+  BATCH.cells.push({ mesh, src }); BATCH.stat.blocks++; BATCH.stat.pieces += src.length;
 }
 function batchUndo(C) { city.scene.remove(C.mesh); C.mesh.geometry.dispose(); for (const s2 of C.src) { s2.o.layers.set(0); BATCH.bad.add(s2.o); } }
-function batchClear() { for (const C of BATCH.cells) if (C.mesh.parent) { C.mesh.parent.remove(C.mesh); C.mesh.geometry.dispose(); } BATCH.cells = []; }
+function batchClear() { BATCH.job = null; for (const C of BATCH.cells) if (C.mesh.parent) { C.mesh.parent.remove(C.mesh); C.mesh.geometry.dispose(); } BATCH.cells = []; }
 /* confere se alguma peça mudou; se mudou, desfaz o bloco daquela região */
 function batchCheck() {
   if (!BATCH.cells.length) return; const now = performance.now(); if (now < BATCH.at) return; BATCH.at = now + 700;
@@ -12554,8 +12587,35 @@ safeRender = function (sc, cam) {
   let hid = [], sw = []; try { batchCheck(); hid = spriteCull(cam); sw = carLod(cam); } catch (e) { }
   try { _safeRender1(sc, cam); } finally { for (const o of hid) o.visible = true; for (const [, px, kids] of sw) { px.visible = false; for (const c of kids) c.visible = true; } }
 };
+/* roupas dos figurantes por partes: monta algumas por quadro (até ~5 ms), só de quem está perto o bastante para ser visto */
+const ATLASQ = { on: true, list: [], v: new THREE.Vector3(), done: 0, flush: false };
+function atlasTick(cam, near, scene) {
+  // near: monta de uma vez todos até essa distância (usado na entrada, enquanto a tela de carregamento ainda está aberta)
+  const L = ATLASQ.list; if (!L.length || !MODELS) return; const cp = cam.position, far = near || charFar() + 15, t0 = performance.now(), cand = [];
+  for (let i = L.length - 1; i >= 0; i--) {
+    const u = L[i]; let o = u.body, sc = null; while (o) { if (o.isScene) sc = o; o = o.parent; }
+    if (!u.atlasJob || !sc || (sc !== city.scene && sc !== scene)) { u.atlasQ = false; L.splice(i, 1); continue; } // já resolvido, ou ficou numa cidade que já foi trocada
+    u.body.getWorldPosition(ATLASQ.v); const d = ATLASQ.v.distanceTo(cp); if (d < far) cand.push([d, u]);
+  }
+  cand.sort((a, b) => a[0] - b[0]);
+  for (const [, u] of cand) {
+    if (!near && performance.now() - t0 > 5) break;
+    const M = MODELS[u.k], m = M && u.mats[M.avatarMat], j = u.atlasJob; u.atlasJob = null; u.atlasQ = false; L.splice(L.indexOf(u), 1); if (!m || !j) continue;
+    const tex = rpmAtlasTex(j[0], j[1], j[2], j[3], j[4], false); m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; } ATLASQ.done++;
+  }
+}
+const _safeRender2 = safeRender;
+safeRender = function (sc, cam) { try { if (ATLASQ.flush && sc === city.scene) { ATLASQ.flush = false; sc.updateMatrixWorld(); atlasTick(cam, 20, sc); } else atlasTick(cam, 0, sc); } catch (e) { } return _safeRender2(sc, cam); };
 const _buildCity1 = buildCity;
-buildCity = function () { try { batchClear(); } catch (e) { } const r = _buildCity1.apply(this, arguments); clearTimeout(BATCH.t); BATCH.t = setTimeout(() => { try { batchBuild(); } catch (e) { console.warn('blocos', e); } }, 5500); return r; };
+buildCity = function () { try { batchClear(); } catch (e) { } const r = _buildCity1.apply(this, arguments); clearTimeout(BATCH.t); BATCH.t = setTimeout(() => { try { batchBuild(); } catch (e) { console.warn('blocos', e); } }, 5500); clearTimeout(WARM.t); warmShaders(); WARM.t = setTimeout(warmShaders, 2500); return r; };
+/* pré-aquecimento: prepara os "programas de desenho" de tudo que existe na cidade (inclusive o que ainda não apareceu na tela)
+   em segundo plano, para não engasgar na primeira vez que um carro, interior ou efeito aparece. Só na versão nova do motor. */
+const WARM = { t: 0, ms: 0, n: 0 }; // logo depois de montar a cidade (antes do 1º quadro) e de novo 2,5 s depois (comércios, morros e figurantes que chegam depois)
+function warmShaders() {
+  // só quando o aparelho compila em paralelo (KHR_parallel_shader_compile); sem isso, aquecer tudo de uma vez travaria a tela
+  if (!renderer.compileAsync || !city.scene || mode !== 'city' || !renderer.extensions.has('KHR_parallel_shader_compile')) return; const t0 = performance.now(), n0 = renderer.info.programs.length;
+  renderer.compileAsync(city.scene, camera).then(() => { WARM.ms = Math.round(performance.now() - t0); WARM.n = renderer.info.programs.length - n0; }).catch(() => { });
+}
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },
@@ -14794,8 +14854,8 @@ async function enterGame() {
   if (S.mission && S.mission.time != null) S.mission.time = Math.max(S.mission.time, 20);
   if (MODELS === null && !enterGame.tried) {
     enterGame.tried = true;
-    const ld = $('loading'); ld.hidden = false;
-    MODELS = await loadModels(f => { $('loading-bar').style.width = Math.round(f * 100) + '%'; });
+    const ld = $('loading'); ld.hidden = false; $('loading-bar').style.width = Math.round(PRE.f * 100) + '%';
+    MODELS = await preloadModels();
     loadMocap();
     ld.hidden = true;
   }
@@ -14807,6 +14867,7 @@ async function enterGame() {
   if (myC) { P.x = myC.ox + myC.fx * 1.5; P.z = myC.oz + myC.fz * 1.5; P.y = myC.y || 0; P.h = Math.atan2(myC.fx, myC.fz); setTimeout(() => toast(`Você acordou em casa (${myC.n}). Bom rolê!`, 'pink'), 1200); }
   else if (hd) { P.x = hd.x - 2.5; P.z = hd.z; P.h = -Math.PI / 2; setTimeout(() => toast('Você acordou em casa. Bom rolê!', 'pink'), 1200); }
   city.camYaw = P.h; camera.position.set(P.x - Math.sin(P.h) * 6, 4, P.z - Math.cos(P.h) * 6);
+  ATLASQ.flush = true; // roupas de quem está perto já prontas no 1º quadro
   P.onBoard = skateOut();
   if (S.shift && !S.mission) setTimeout(() => { if (S.shift && !S.mission) nextJobTask(); }, 1500);
   $('hb-veh').hidden = !S.vehicles.length; if (S.veh) spawnMyVehicle();
