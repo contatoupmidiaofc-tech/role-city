@@ -569,6 +569,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" id="hb-casa" data-act="casa-toggle" aria-label="Liberar ou fechar a casa" hidden><span style="font-size:17px">🔒</span><span class="lbl">Casa fechada</span></button>
     <button class="hud-btn" id="hb-toque" data-act="toque" aria-label="Dar o toque" hidden><span style="font-size:17px">🤜</span><span class="lbl">Dar o toque</span></button>
     <button class="hud-btn" id="hb-emp" data-act="open-empadm" aria-label="Pedidos de empréstimo" hidden><span style="font-size:17px">💼</span><span class="lbl">Empréstimos</span></button>
+    <button class="hud-btn" id="hb-bonde" data-act="bonde-entrar" aria-label="Entrar no bonde" hidden style="background:#15161a;border-color:#ffcf3a"><span style="font-size:17px">🚙</span><span class="lbl">Entrar no bonde</span></button>
     <button class="hud-btn" id="hb-seg" data-act="open-seg" aria-label="Seguranças" hidden><span style="font-size:17px">🕶️</span><span class="lbl">Seguranças</span></button>
     <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
     <button class="hud-btn" data-act="radio" aria-label="Rádio do grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8 15 3M9 13h6M9 17h3"/></svg><span class="lbl">Rádio</span></button>
@@ -610,7 +611,7 @@ canvas.swatch{background:#333}
 <div id="hurt"></div>
 <div id="crosshair" hidden><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 4v9M20 27v9M4 20h9M27 20h9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="20" cy="20" r="1.6" fill="currentColor"/></svg></div>
 <form id="radio" hidden><div class="rhead"><b id="radio-title">📻 Rádio</b><button class="btn ghost sm" type="button" data-act="radio">✕</button></div><div id="radio-log"></div>
-  <div class="chips"><button type="button" class="chip call" data-act="radio-call">🚨 Chamado (mandar localização)</button><button type="button" class="chip" data-act="radio-say" data-t="Segue eu">Segue eu</button><button type="button" class="chip" data-act="radio-say" data-t="Fica aí">Fica aí</button><button type="button" class="chip" data-act="radio-say" data-t="Protege eu">Protege</button><button type="button" class="chip" data-act="radio-say" data-t="Ataca">Ataca</button><button type="button" class="chip" data-act="radio-say" data-t="Atira pro alto">Pro alto</button><button type="button" class="chip" data-act="radio-say" data-t="Vai embora">Vai embora</button></div>
+  <div class="chips"><button type="button" class="chip call" data-act="radio-call">🚨 Chamado (mandar localização)</button><button type="button" class="chip call" id="radio-assalto" data-act="open-assalto" hidden>💰 Solicitar assalto</button><button type="button" class="chip" data-act="radio-say" data-t="Segue eu">Segue eu</button><button type="button" class="chip" data-act="radio-say" data-t="Fica aí">Fica aí</button><button type="button" class="chip" data-act="radio-say" data-t="Protege eu">Protege</button><button type="button" class="chip" data-act="radio-say" data-t="Ataca">Ataca</button><button type="button" class="chip" data-act="radio-say" data-t="Atira pro alto">Pro alto</button><button type="button" class="chip" data-act="radio-say" data-t="Vai embora">Vai embora</button></div>
   <div class="qrow"><input id="radio-in" maxlength="120" placeholder="Escreva a ordem (ex.: ataca a polícia, fica aí, segue eu)" autocomplete="off"><button class="btn sm" type="submit">Enviar</button></div></form>
 <div id="mic-rec" hidden><i></i><span id="mic-rec-t">Gravando… solte para enviar</span></div>
 <div id="btnedit" hidden><b>Arraste os botões e o joystick para onde preferir</b><button class="btn ghost sm" data-act="be-size" data-d="-0.1">Menor</button><button class="btn ghost sm" data-act="be-size" data-d="0.1">Maior</button><button class="btn ghost sm" data-act="be-mode">Ver botões do carro</button><button class="btn ghost sm" data-act="be-reset">Padrão</button><button class="btn ghost sm" data-act="be-cancel">Cancelar</button><button class="btn sm" data-act="be-save">Salvar</button></div>
@@ -3130,6 +3131,7 @@ function travelToOld(id, how) {
   }, 900);
 }
 function resetCity() {
+  try { if (city.heist) heistCancel(true); } catch (e) { city.heist = null; }
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
   city.hospG = null; city.samu = null; city.hospIn = false; city.shopIn = null; city.squad = []; city.homePad = null; city.morros = {}; city.regFav = []; city.party = []; city.users = []; city.kids = []; city.kidBall = null; city.leds = []; city.soundSrc = []; city.policeLot = []; city.war = null; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null; city.outer = null; city.ocol = null; city.xspots = []; city.fire = null; city.raid = null; city.tatNpc = null;
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
@@ -5849,7 +5851,7 @@ function renderRadio() {
   box.scrollTop = box.scrollHeight;
 }
 function toggleRadio(v) {
-  RADIO.open = v != null ? v : !RADIO.open; $('radio').hidden = !RADIO.open; if (RADIO.open) { radioSync(); renderRadio(); }
+  RADIO.open = v != null ? v : !RADIO.open; $('radio').hidden = !RADIO.open; if ($('radio-assalto')) $('radio-assalto').hidden = !isAdm(); if (RADIO.open) { radioSync(); renderRadio(); }
 }
 /* chamado: manda a localização para o grupo e a tropa vem proteger */
 function makeCall() {
@@ -7325,6 +7327,7 @@ function startTrip(dest, how) {
   if (how === 'bus') { if (S.coins < 150) return toast('Passagem de ônibus custa $ 150.', 'bad'); S.coins -= 150; }
   else if (how === 'voo') { const f = airFare(dest); if (S.coins < f) return toast(`A passagem de avião custa $ ${fmt(f)}.`, 'bad'); S.coins -= f; V = VEH.a_linha; air = true; }
   else if (how === 'veh') { V = VEH[S.veh]; if (!V) return; }
+  else if (how === 'bonde') { V = VEH.v_hilux_preta; }
   else { V = VEH[how]; if (!V || !myAir().includes(V)) return; air = true; }
   persist(); updateHUD(); closePanel(); camera.far = 2600; camera.updateProjectionMatrix();
   if (P.drive) exitVehicle(true); if (P.ride) endRide(true); if (P.aim) setAim(false); if (city.tour) { city.tour = null; city.tourSpots = null; }
@@ -7355,7 +7358,7 @@ function tripHudTick() {
 }
 function updateTrip(dt, t) {
   const T = TRIP; if (!T) return; T.t += dt;
-  if (T.phase === 'road') roadTick(dt, t);
+  if (T.phase === 'road') { roadTick(dt, t); if (T.heist) try { heistTripTick(dt, t); } catch (e) { console.warn('fuga br', e); } }
   else if (T.phase === 'path') pathTick(dt, t);
   else if (T.phase === 'cruise') cruiseTick(dt, t);
   if ((T.hudT = (T.hudT || 0) - dt) <= 0) { T.hudT = 0.25; tripHudTick(); }
@@ -7364,6 +7367,7 @@ function endTrip() {
   const T = TRIP; TRIP = null; mode = 'city'; tripHud(false); camera.far = 700; camera.updateProjectionMatrix(); $('hud').hidden = false; if (IS_TOUCH) $('touch').hidden = false;
   city.player.visible = true; if (NET.user) netJoinPlaza(); updateHUD(); sfx('level');
   toast(T.scenic ? '🛬 Fim do passeio aéreo!' : `Bem-vindo a ${CITY_DEFS[T.dest].name}!`, 'pink');
+  try { heistTripEnd(); } catch (e) { console.warn('assalto', e); }
 }
 /* troca a cidade (por baixo do fade) */
 function loadDestCity(dest) { S.cityId = dest; persist(); resetCity(); buildCity(); setTimeout(loadBiz, 700); setTimeout(loadMorros, 900); applyQuality(); rebuildMissionObjs(); renderMissionBox(); }
@@ -11002,6 +11006,7 @@ function updateRP28(dt, t) {
   try { interiorSeats(); } catch (e) { }
   try { policeHeliTick(dt, t); } catch (e) { console.warn('águia', e); }
   try { bankCrowdTick(dt, t); bankInsideTick(dt, t); shopFolkTick(dt, t); } catch (e) { console.warn('banco', e); }
+  try { heistTick(dt, t); } catch (e) { console.warn('assalto', e); }
   try { if ((city.empT || 0) < performance.now()) { city.empT = performance.now() + 1000; empTick(); } } catch (e) { console.warn('empréstimo', e); }
 }
 
@@ -11210,6 +11215,201 @@ PANELS28.emprestimo = function () {
   html += L.length ? '<h4>Seus empréstimos</h4>' + L.map(l => `<div class="card"><h4>$ ${fmt(l.valor)} em ${l.parcelas}x · devolve $ ${fmt(l.total)}</h4><p class="muted">${{ pendente: '⏳ Em análise com o Ajbz' + (l.ack ? ' (ele já recebeu)' : ' (vai chegar quando ele estiver online)'), aprovado: `✅ Aprovado · pago $ ${fmt(l.pago)} de $ ${fmt(l.total)}`, recusado: '❌ Recusado', pago: '✅ Quitado' }[l.st]}</p>${l.st === 'aprovado' ? `<div class="row"><button class="btn sm" data-act="emp-pagar" data-id="${l.id}">Pagar parcela ($ ${fmt(Math.min(l.total - l.pago, Math.ceil(l.total / l.parcelas)))})</button></div>` : ''}</div>`).join('') : '';
   return { title: '💼 Empréstimos AJBZ', html };
 };
+
+/* =========================================================
+   RP28c · ASSALTO DO BONDE: o chefe pede no rádio, chegam 3 Hilux pretas com 5 caras cada (15 no máximo),
+   eles dirigem até o alvo, 2 ficam na porta e o resto entra; reféns no chão; dinheiro, ouro e diamantes;
+   estrelas, viaturas e o Águia na cola; fuga para o morro ou pela BR.
+   ========================================================= */
+VEH.v_hilux_preta = Object.assign({}, VEH.v_pickup, { id: 'v_hilux_preta', name: 'Hilux Preta', color: 0x0d0e10, c: 180000, t: null, r: 'raro', top: 36, acc: 12, desc: 'A Hilux preta do bonde: 4x4, vidro escuro, 5 lugares.' });
+if (!VEHICLES.some(v => v.id === 'v_hilux_preta')) VEHICLES.push(VEH.v_hilux_preta);
+const BONDE_NOMES = ['Neguinho', 'Baiano', 'Gordinho', 'Magrão', 'Pretinho', 'Coringa', 'Sombra', 'Lobo', 'Tubarão', 'Peixe', 'Menor', 'Cabeça', 'Gringo', 'Russo', 'Biel'];
+const bondeLook = i => lookOf({ shirt: pick(['shirt_black', 'rg_preta', 'shirt_camo'].filter(x => ITEM[x])), pants: 'pants_black', shoes: 'shoes_black', cap: pick(['cap_black', 'cap_none'].filter(x => ITEM[x])), glasses: 'gl_dark', acc: 'ac_none' }, SKINS[(i * 5 + 1) % SKINS.length], HAIRS[0], 'm', null, { w: pick(['normal', 'forte']), h: 'medio', hs: pick(['careca', 'padrao']) });
+/* alvos: banco e lojas da cidade */
+function heistTargets() {
+  const L = [], [bx, bz] = BANK_POS;
+  L.push({ id: 'banco', n: '🏦 Banco Rolê', loot: 'banco', x: bx - 8.6, z: bz, enter: () => enterBank() });
+  for (const d of city.doors || []) { if (d.inside || !['roupas', 'skate', 'celular', 'concessionaria', 'tokens'].includes(d.kind)) continue; const len = Math.hypot(d.x, d.z) || 1; L.push({ id: d.kind, n: `🏪 ${d.label}`, loot: 'loja', x: d.x + d.x / len * 3, z: d.z + d.z / len * 3, enter: () => enterShop(d) }); }
+  for (const o of (city.xspots || []).filter(o => o.comercio).slice(0, 3)) L.push({ id: 'c' + L.length, n: '🏪 ' + o.label.replace(/^.*?(Entrar(:| no)?\s*)/, ''), loot: 'loja', x: o.x, z: o.z, enter: o.fn });
+  return L;
+}
+PANELS28.assalto = function () {
+  if (!isAdm()) return { title: '💰 Assalto', html: '<p class="muted">Só o chefe chama o bonde.</p>' };
+  const H = city.heist; if (H) return { title: '💰 Assalto em andamento', html: `<p>${esc(H.msg || 'O bonde está na rua.')}</p><div class="row"><button class="btn ghost" data-act="heist-cancel">Cancelar o assalto</button></div>` };
+  let html = `<p>Chame o bonde: <b>3 Hilux pretas com 5 caras cada (15 no total)</b>. Eles chegam dirigindo, você entra na Hilux da frente e eles levam até o alvo. Lá, 2 ficam na porta e o resto entra com você.</p><h4>Nesta cidade</h4>`;
+  html += heistTargets().map(t => `<div class="card"><h4>${esc(t.n)}</h4><p class="muted">${t.loot === 'banco' ? 'Dinheiro dos caixas, ouro e diamantes do cofre.' : 'Dinheiro do caixa e mercadoria.'}</p><div class="row"><button class="btn" data-act="heist-go" data-id="${t.id}">🚨 Mandar o bonde</button></div></div>`).join('');
+  const others = Object.keys(CITY_DEFS).filter(c => c !== cityId());
+  html += `<h4>Banco em outra cidade</h4><p class="muted">O bonde te pega e vocês vão pela BR. Lá vocês vão direto pro banco.</p><div class="row">${others.map(c => `<button class="btn ghost" data-act="heist-city" data-c="${c}">🛣️ Banco de ${esc(CITY_DEFS[c].name)}</button>`).join('')}</div>`;
+  return { title: '💰 Solicitar assalto', html };
+};
+/* ---- carros do bonde andando pelas ruas ---- */
+function pathLen(pts) { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return L; }
+function pathAt(pts, s) { for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i], l = Math.hypot(b[0] - a[0], b[1] - a[1]); if (s <= l || i === pts.length - 1) { const k = l ? clamp(s / l, 0, 1) : 0; return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, Math.atan2(b[0] - a[0], b[1] - a[1])]; } s -= l; } const p = pts[pts.length - 1]; return [p[0], p[1], 0]; }
+function convoyRoute(x0, z0, x1, z1) { const pts = roadPath(x0, z0, x1, z1); if (!pts || pts.length < 2) return [[x0, z0], [x1, z1]]; return [[x0, z0]].concat(pts, [[x1, z1]]); }
+function setConvoyPath(H, x1, z1) {
+  const lead = H.cars[0], pts = convoyRoute(lead.x, lead.z, x1, z1); H.path = pts; H.len = pathLen(pts); H.s = 0; H.done = false;
+}
+function convoyTick(H, dt, t) {
+  if (!H.path) return; const lead = H.cars[0];
+  const turn = (s) => { const a = pathAt(H.path, s), b = pathAt(H.path, s + 8); return Math.abs(Math.atan2(Math.sin(b[2] - a[2]), Math.cos(b[2] - a[2]))); };
+  const want = H.s > H.len - 25 ? 6 : turn(H.s) > 0.6 ? 9 : (H.fast ? 22 : 16);
+  H.v = lerp(H.v || 0, H.s >= H.len ? 0 : want, 1 - Math.exp(-1.6 * dt)); H.s = Math.min(H.len, H.s + H.v * dt);
+  H.cars.forEach((c, i) => {
+    const s = Math.max(0, H.s - i * 9), [x, z, h] = pathAt(H.path, s);
+    c.x = x; c.z = z; c.h += Math.atan2(Math.sin(h - c.h), Math.cos(h - c.h)) * Math.min(1, dt * 6);
+    c.m.position.set(x, groundH(x, z), z); c.m.rotation.y = c.h; const u = c.m.userData; u.spin = (u.spin || 0) + H.v * dt / 0.35; for (const w of u.wheels || []) w.children[0].rotation.x = u.spin;
+  });
+  if (H.s >= H.len - 0.5 && H.v < 0.6 && !H.done) { H.done = true; return true; }
+  return false;
+}
+/* ---- início ---- */
+function heistStart(tid) {
+  if (!isAdm()) return; if (city.heist) return toast('O bonde já está na rua.', 'bad');
+  const T = heistTargets().find(t => t.id === tid); if (!T) return; closePanel(); toggleRadio(false);
+  if (P.drive) exitVehicle(true);
+  const H = city.heist = { T, stage: 'chegando', cars: [], crew: [], stars: 0, loot: { cash: 0, ouro: 0, diam: 0 }, msg: 'O bonde está chegando.', t0: performance.now() };
+  // os carros nascem numa rua a uns 90 m e vêm até você
+  const a = P.h + Math.PI, sx = P.x + Math.sin(a) * 90, sz = P.z + Math.cos(a) * 90;
+  for (let i = 0; i < 3; i++) { const m = makeVehicleMesh(VEH.v_hilux_preta); city.scene.add(m); const c = { m, x: sx, z: sz, h: 0, crew: [] }; H.cars.push(c); for (let k = 0; k < 5; k++) { const n = H.crew.length, g = makeSkater(bondeLook(n), BONDE_NOMES[n % BONDE_NOMES.length], '#ffcf3a'); g.userData.ped = true; g.visible = false; city.scene.add(g); const o = { g, car: i, x: sx, z: sz, h: 0, st: 'car', i: n }; H.crew.push(o); c.crew.push(o); } }
+  setConvoyPath(H, P.x + Math.cos(P.h) * 3, P.z - Math.sin(P.h) * 3);
+  radioPush('Bonde', `Fechou, patrão! 3 Hilux e 15 cabeças a caminho. Alvo: ${T.n}.`); toast(`🚙🚙🚙 O bonde está chegando! Alvo: ${T.n}`, 'good'); hornBeep();
+}
+function hornBeep() { tone('square', 420, 420, 0.18, 0.06); tone('square', 420, 420, 0.18, 0.06, 0.25); }
+function heistCancel(silent) {
+  const H = city.heist; if (!H) return; for (const c of H.cars) city.scene.remove(c.m); for (const o of H.crew) city.scene.remove(o.g); for (const p of H.cops || []) city.scene.remove(p.m);
+  if (H.inCar) { city.player.visible = true; } city.heist = null; if ($('h-wanted')) { $('h-wanted').hidden = !P.wanted; }
+  const hb = $('hb-bonde'); if (hb) hb.hidden = true; if (!silent) toast('O bonde foi embora.', 'pink');
+}
+function boardLead() { const H = city.heist; if (!H) return; H.inCar = true; city.player.visible = false; P.onBoard = false; P.v = 0; toast('🚙 No bonde! Eles dirigem.', 'pink'); }
+function leaveCar() { const H = city.heist; if (!H || !H.inCar) return; H.inCar = false; city.player.visible = true; const c = H.cars[0]; P.x = c.x + Math.cos(c.h) * 2.2; P.z = c.z - Math.sin(c.h) * 2.2; P.y = groundH(P.x, P.z); }
+/* ---- dentro do alvo ---- */
+function heistInside() {
+  const H = city.heist, it = city.shopIn; if (!H || !it || H.insideDone) return; H.insideDone = true; H.stage = 'assalto'; H.stars = Math.max(H.stars, 2); H.alarmT = 0;
+  const inn = H.crew.filter(o => o.role !== 'porta'), cx = it.g.position.x, cz = it.g.position.z;
+  H.inCrew = inn.map((o, i) => { const g = makeSkater(bondeLook(o.i), BONDE_NOMES[o.i % BONDE_NOMES.length], '#ffcf3a'); g.userData.ped = true; city.scene.add(g); it.npcs.push(g); g.userData.bonde = true; const a = (i / inn.length) * TAU; const x = cx + Math.sin(a) * (it.W * 0.32), z = cz + Math.cos(a) * (it.D * 0.3); g.position.set(x, 0, z); g.rotation.y = Math.atan2(cx - x, cz - z); return g; });
+  setTimeout(() => { for (const g of H.inCrew.slice(0, 4)) bubble(g, pick(['TODO MUNDO NO CHÃO!', 'Perdeu, perdeu!', 'Ninguém se mexe!', 'Cabeça no chão!']), 2.5); scream(4, true); }, 300);
+  for (const q of it.queue || []) q.down = true;
+  for (const n of it.npcs) if (!n.userData.bonde && !n.userData.cust) n.userData.hands = true;
+  const loot = H.T.loot === 'banco', spot = (label, x, z, fn) => it.spots.push({ label, x: cx + x, z: cz + z, fn });
+  if (loot) {
+    spot('💰 Pegar o dinheiro dos caixas', 0, -it.D / 2 + 4.4, () => heistLoot('caixa'));
+    spot('🔓 Arrombar o cofre', it.W / 2 - 2.5, -it.D / 2 + 2.2, () => heistLoot('cofre'));
+  } else spot('💰 Esvaziar o caixa da loja', 0, -it.D / 2 + 3.6, () => heistLoot('loja'));
+  spot('🏃 Vazar com o bonde!', 0, it.D / 2 - 2, () => heistLeave());
+  toast('🚨 Alarme disparado! Pegue o dinheiro e vaze antes da polícia fechar a rua.', 'bad'); sirenFx();
+}
+function heistLoot(k) {
+  const H = city.heist; if (!H || H.stage !== 'assalto') return; H.took = H.took || {};
+  if (H.took[k]) return toast('Já foi limpo.', 'pink');
+  if (k === 'cofre') { if (H.cofreT) return; H.cofreT = performance.now(); toast('🔓 Arrombando o cofre... (5 s)', 'pink'); bubble(H.inCrew[0], 'Segura aí que eu abro!', 2.5); return; }
+  H.took[k] = true; const v = k === 'caixa' ? Math.round(rand(40, 70)) * 1000 : Math.round(rand(8, 22)) * 1000; H.loot.cash += v; sfx('coin'); toast(`💰 +$ ${fmt(v)} na mochila!`, 'good');
+}
+function cofreTick() {
+  const H = city.heist, it = city.shopIn; if (!H || !H.cofreT || H.took && H.took.cofre) return;
+  const k = (performance.now() - H.cofreT) / 5000; if (it && it.vault) it.vault.rotation.y = -Math.min(1, k) * 1.4;
+  if (k >= 1) { H.took.cofre = true; if (it && it.goldG) it.goldG.visible = true; const ouro = 8 + Math.floor(Math.random() * 6), diam = 3 + Math.floor(Math.random() * 5), cash = Math.round(rand(60, 120)) * 1000; H.loot.ouro += ouro; H.loot.diam += diam; H.loot.cash += cash; sfx('level'); toast(`🥇 Cofre aberto! ${ouro} barras de ouro, 💎 ${diam} diamantes e $ ${fmt(cash)}!`, 'good'); }
+}
+function heistLeave(already) {
+  const H = city.heist; if (!H) return; H.stage = 'saindo'; H.stars = Math.max(H.stars, 3); if (!already) exitShop();
+  setTimeout(() => { if (!city.heist) return; for (const o of H.crew) { o.st = 'car'; o.g.visible = false; } boardLead(); H.stage = 'fuga'; H.msg = 'Fuga! Escolha: morro ou BR.'; openPanel('fuga'); spawnChase(H); }, 1400);
+}
+PANELS28.fuga = function () {
+  const H = city.heist; if (!H) return { title: 'Fuga', html: '' };
+  const others = Object.keys(CITY_DEFS).filter(c => c !== cityId());
+  return { title: '🚨 Fuga!', html: `<p>Na mochila: <b>$ ${fmt(H.loot.cash)}</b> · 🥇 ${H.loot.ouro} barras de ouro · 💎 ${H.loot.diam} diamantes. A polícia está na cola (${'★'.repeat(H.stars)}).</p>
+    <div class="row"><button class="btn" data-act="fuga-morro">🏚️ Fugir pro morro (a polícia não sobe)</button></div><h4>Pela BR</h4><div class="row">${others.map(c => `<button class="btn ghost" data-act="fuga-br" data-c="${c}">🛣️ Fugir para ${esc(CITY_DEFS[c].name)}</button>`).join('')}</div>` };
+};
+function fugaMorro() {
+  const H = city.heist; if (!H) return; closePanel(); let tx, tz;
+  if (city.morro) { [tx, tz] = morroWorld(0, -6); } else { const F = regFav()[0]; if (F) { tx = F.x; tz = F.z; } else { tx = -P.x; tz = -P.z; } }
+  H.dest = 'morro'; H.fast = true; setConvoyPath(H, tx, tz); H.msg = 'Fugindo pro morro!'; radioPush('Bonde', 'Bora pro morro, lá a polícia não sobe!');
+}
+function fugaBR(c) {
+  const H = city.heist; if (!H) return; closePanel();
+  const loot = H.loot; S.pendingHeistLoot = loot; persist(); heistCancel(true);
+  city.player.visible = true; startTrip(c, 'bonde'); if (TRIP) { TRIP.heist = { stars: 4, cops: [], lost: false }; toast('🛣️ Fuga pela BR! Acelera que a polícia está atrás!', 'bad'); }
+}
+/* ---- polícia atrás do bonde na cidade ---- */
+function spawnChase(H) {
+  H.cops = [];
+  for (let i = 0; i < 3; i++) { const V = VEH[['j_viatura', 'j_viatura2', 'j_viatura3'][i]] || VEH.v_sedan, m = makeVehicleMesh(V); city.scene.add(m); H.cops.push({ m, V, lag: 30 + i * 11 }); }
+  sirenFx();
+}
+function chaseTick(H, dt, t) {
+  if (!H.cops || !H.path) return;
+  H.cops.forEach((p, i) => {
+    p.lag = Math.max(16 + i * 9, p.lag + (H.fast ? 0.6 : -0.4) * dt);
+    const s = H.s - 18 - p.lag; if (s < 0) { p.m.visible = false; return; } p.m.visible = true;
+    const [x, z, h] = pathAt(H.path, s); p.m.position.set(x, groundH(x, z), z); p.m.rotation.y = h;
+    try { vehLightsTick(p.m, true, (Math.floor(t * 4) % 2) ? 1 : 2, t); } catch (e) { }
+  });
+  if ((H.shotT = (H.shotT || 0) - dt) <= 0) { H.shotT = rand(0.25, 0.7); const c = pick(H.cars), p = pick(H.cops); if (c && p && p.m.visible) { const a = c.m.position, b = p.m.position; gunFx(a.x, 1.6, a.z, b.x + rand(-1, 1), 1.2, b.z + rand(-1, 1)); if (Math.hypot(a.x - P.x, a.z - P.z) < 60) tone('square', 180, 60, 0.1, 0.05); } }
+  if ((H.sirT = (H.sirT || 0) - dt) <= 0) { H.sirT = 1.1; sirenFx(); }
+}
+function sirenFx() { tone('sine', 700, 1050, 0.45, 0.04); tone('sine', 1050, 700, 0.45, 0.04, 0.45); }
+/* ---- tique principal ---- */
+function heistTick(dt, t) {
+  const H = city.heist, hb = $('hb-bonde');
+  if (!H) { if (hb && !hb.hidden) hb.hidden = true; return; }
+  // estrelas aparecem no HUD
+  const el = $('h-wanted'); if (el && H.stars > 0) { el.hidden = false; el.textContent = '★'.repeat(H.stars); }
+  if (H.stage === 'chegando') { if (convoyTick(H, dt, t)) { H.stage = 'embarque'; H.msg = 'Entre na Hilux da frente.'; radioPush('Bonde', 'Chegamos, patrão! Pode entrar na da frente.'); toast('🚙 O bonde chegou! Chegue perto da Hilux da frente e aperte "Entrar no bonde".', 'good'); hornBeep(); } }
+  else if (H.stage === 'embarque') { const c = H.cars[0], d = Math.hypot(c.x - P.x, c.z - P.z), show = d < 6 && !H.inCar; if (hb && hb.hidden === show) hb.hidden = !show; if (H.inCar) { H.stage = 'indo'; H.msg = 'Indo para ' + H.T.n; setConvoyPath(H, H.T.x, H.T.z); if (hb) hb.hidden = true; radioPush('Bonde', `Partiu ${H.T.n}! Todo mundo de touca.`); } }
+  else if (H.stage === 'indo') { if (convoyTick(H, dt, t)) { H.stage = 'chegou'; leaveCar(); heistArrive(H); } }
+  else if (H.stage === 'chegou') { heistCrewWalk(H, dt, t); }
+  else if (H.stage === 'assalto') { if (!city.shopIn && !H.leaving) { H.leaving = true; heistLeave(true); } cofreTick(); if ((H.alarmAt = H.alarmAt || performance.now() + 18000) < performance.now() && H.stars < 5) { H.alarmAt = performance.now() + 18000; H.stars++; toast(`🚨 A polícia está cercando! ${'★'.repeat(H.stars)}`, 'bad'); } heistInsideAnim(t); }
+  else if (H.stage === 'fuga') { const arr = convoyTick(H, dt, t); chaseTick(H, dt, t); if (arr && H.dest === 'morro') heistWin('Vocês subiram o morro. A polícia ficou lá embaixo!'); }
+  if (H.inCar) { const c = H.cars[0]; P.x = c.x; P.z = c.z; P.y = groundH(c.x, c.z); P.h = c.h; P.v = 0; city.player.visible = false; }
+}
+function heistArrive(H) {
+  const T = H.T; H.msg = 'Assalto em ' + T.n;
+  // todo mundo desce; 2 na porta, o resto vai pra porta e entra
+  H.crew.forEach((o, i) => { const c = H.cars[o.car]; o.x = c.x + Math.cos(c.h) * (1.8 + (i % 2)) + rand(-1, 1); o.z = c.z - Math.sin(c.h) * (1.8 + (i % 2)) + rand(-1, 1); o.g.visible = true; o.role = i < 2 ? 'porta' : 'entra'; o.st = 'anda'; });
+  radioPush('Bonde', 'Desce todo mundo! Dois na porta, o resto comigo!'); toast(`🚨 Chegamos em ${T.n}! O bonde entra com você.`, 'bad');
+  H.enterAt = performance.now() + 2200;
+}
+function heistCrewWalk(H, dt, t) {
+  const T = H.T;
+  H.crew.forEach((o, i) => {
+    if (!o.g.visible) return; const tx = o.role === 'porta' ? T.x + (i ? 1.6 : -1.6) * Math.cos(Math.atan2(T.x - P.x, T.z - P.z)) : T.x, tz = o.role === 'porta' ? T.z - (i ? 1.6 : -1.6) * Math.sin(Math.atan2(T.x - P.x, T.z - P.z)) : T.z;
+    const dx = tx - o.x, dz = tz - o.z, d = Math.hypot(dx, dz), sp = 4.5; let v = 0;
+    if (d > 0.4) { const k = Math.min(1, sp * dt / d); o.x += dx * k; o.z += dz * k; v = sp; o.h = Math.atan2(dx, dz); } else if (o.role === 'entra') o.g.visible = false; else o.h = Math.atan2(o.x - T.x, o.z - T.z) + Math.PI;
+    o.g.position.set(o.x, groundH(o.x, o.z), o.z); o.g.rotation.y = o.h; animSkater(o.g, { walk: true, v, fallT: 0, wpHold: o.i % 3 ? 'fuzil' : 'pistola' }, t + o.i);
+  });
+  if (performance.now() >= H.enterAt && !H.entered) { H.entered = true; H.stars = 1; T.enter(); }
+  if (H.entered && city.shopIn && !H.insideDone) heistInside();
+}
+function heistInsideAnim(t) {
+  const H = city.heist, it = city.shopIn; if (!it) return;
+  for (const g of H.inCrew || []) animSkater(g, { walk: true, v: 0, fallT: 0, wpHold: 'fuzil' }, t);
+  for (const n of it.npcs) if (n.userData.hands) animSkater(n, { walk: true, v: 0, fallT: 0, pose: 'maos' }, t);
+  // os dois da porta lá fora continuam parados (aparecem quando sair)
+}
+function heistWin(msg) {
+  const H = city.heist; if (!H) return; const L = H.loot; heistCancel(true); heistBank(L, msg);
+}
+function heistBank(L, msg) {
+  S.coins += L.cash; S.loot = S.loot || { ouro: 0, diam: 0 }; S.loot.ouro += L.ouro; S.loot.diam += L.diam; S.heists = (S.heists || 0) + 1; persist(); updateHUD();
+  bigBanner('💰 ASSALTO CONCLUÍDO!'); celebrate && celebrate(); sfx('level');
+  toast(`${msg} Lucro: $ ${fmt(L.cash)} · 🥇 ${L.ouro} ouro · 💎 ${L.diam} diamantes.`, 'good'); postFeed(`O bonde do Ajbz fez a limpa: $ ${fmt(L.cash)}, ${L.ouro} barras de ouro e ${L.diam} diamantes! 💰`);
+}
+/* ---- perseguição na BR (dentro da viagem) ---- */
+function heistTripTick(dt, t) {
+  const T = TRIP; if (!T || !T.heist || T.phase !== 'road') return; const Hh = T.heist;
+  if (!Hh.init) { Hh.init = true; T.tolls.forEach(tl => tl.paid = true); for (let i = 0; i < 2; i++) { const m = makeVehicleMesh(VEH.v_hilux_preta); T.sc.add(m); Hh.cops.push({ m, ally: true, off: 12 + i * 11, lane: i ? 0.8 : 3.2 }); } for (let i = 0; i < 3; i++) { const V = VEH[['j_viatura', 'j_viatura2', 'j_viatura3'][i]] || VEH.v_sedan, m = makeVehicleMesh(V); T.sc.add(m); Hh.cops.push({ m, off: -16 - i * 11, lane: [0.8, 3.2, 2][i] }); } toast('🚓 Viaturas na cola pela BR! Acelera (W / Acelerar)!', 'bad'); }
+  for (const c of Hh.cops) {
+    if (!c.ally && !Hh.lost) c.off += ((T.v > 55 ? -1.6 : T.v > 40 ? 0.2 : 1.4) + rand(-0.3, 0.3)) * dt * 4;
+    if (!c.ally && c.off > -9) c.off = -9;
+    const z = T.z + c.off, x = roadX(z) + c.lane, x2 = roadX(z + 2) + c.lane; c.m.position.set(x, 0, z); c.m.rotation.y = Math.atan2(x2 - x, 2);
+    if (!c.ally) try { vehLightsTick(c.m, true, (Math.floor(t * 4) % 2) ? 1 : 2, t); } catch (e) { }
+  }
+  const worst = Math.max(...Hh.cops.filter(c => !c.ally).map(c => c.off));
+  if (!Hh.lost && (worst < -160 || T.prog > 0.72)) { Hh.lost = true; for (const c of Hh.cops) if (!c.ally) T.sc.remove(c.m); Hh.cops = Hh.cops.filter(c => c.ally); toast('😎 Despistaram a polícia na BR!', 'good'); }
+  if (!Hh.lost && (Hh.sirT = (Hh.sirT || 0) - dt) <= 0) { Hh.sirT = 1.2; sirenFx(); }
+  if (!Hh.lost && (Hh.shotT = (Hh.shotT || 0) - dt) <= 0) { Hh.shotT = rand(0.3, 0.8); tone('square', 180, 60, 0.1, 0.04); }
+}
+function heistTripEnd() { if (S.pendingHeistLoot) { const L = S.pendingHeistLoot; S.pendingHeistLoot = null; setTimeout(() => heistBank(L, 'Fuga pela BR concluída!'), 1500); } if (S.pendingHeistCity) { const c = S.pendingHeistCity; S.pendingHeistCity = null; persist(); if (c === cityId()) setTimeout(() => heistStart('banco'), 4000); } }
+function heistOtherCity(c) { if (!isAdm()) return; closePanel(); S.pendingHeistCity = c; persist(); toast(`🛣️ O bonde vai pela BR até ${CITY_DEFS[c].name}. Chegando lá, vão direto pro banco.`, 'pink'); startTrip(c, 'bonde'); }
 
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
@@ -12879,7 +13079,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'open-assalto': toggleRadio(false); openPanel('assalto'); break; case 'heist-go': heistStart(ds.id); break; case 'heist-city': heistOtherCity(ds.c); break; case 'heist-cancel': closePanel(); heistCancel(); break; case 'fuga-morro': fugaMorro(); break; case 'fuga-br': fugaBR(ds.c); break; case 'bonde-entrar': boardLead(); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
@@ -13464,10 +13664,20 @@ async function enterGame() {
 }
 function updateEventChip() { const evs = activeEvents(); $('ev-chip').innerHTML = `<b>${esc(evs[0].name)}</b><span>${countdown(evs[0].ends)}${evs.length > 1 ? ` · +${evs.length - 1}` : ''}</span>`; $('ev-chip').style.setProperty('--ec', evs[0].color); }
 let last = performance.now();
+/* desenha a cena; se algum material ficou com textura inválida, conserta e segue (não trava o quadro) */
+const MAP_KEYS = ['map', 'alphaMap', 'normalMap', 'bumpMap', 'emissiveMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'lightMap', 'specularMap', 'displacementMap'];
+function safeRender(sc, cam) {
+  try { renderer.render(sc, cam); }
+  catch (e) {
+    let n = 0; sc.traverse(o => { if (!o.material) return; for (const m of [].concat(o.material)) for (const k of MAP_KEYS) { const t = m[k]; if (t && !(t.isTexture && t.matrix)) { m[k] = null; m.needsUpdate = true; n++; } } });
+    if (!n) sc.traverse(o => { if (o.isSprite && o.material && o.material.map && !o.material.map.image) { o.visible = false; n++; } });
+    if (!safeRender.warned) { safeRender.warned = true; console.warn('render consertado', n, e && e.message); }
+  }
+}
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; const t = now / 1000;
   try {
-    if (mode === 'city') { updateCity(dt, t); if (city.inCine) { camera.position.set(CINE_IN.x + 0.85, 3.4, CINE_IN.z + 6.5); camera.lookAt(CINE_IN.x, 3.6, CINE_IN.z - 10.8); } renderer.render(city.scene, camera); }
+    if (mode === 'city') { updateCity(dt, t); if (city.inCine) { camera.position.set(CINE_IN.x + 0.85, 3.4, CINE_IN.z + 6.5); camera.lookAt(CINE_IN.x, 3.6, CINE_IN.z - 10.8); } safeRender(city.scene, camera); }
     else if (mode === 'race' && R) { updateRace(dt, t); renderer.render(R.sc, camera); }
     else if (mode === 'trip' && TRIP) { updateTrip(dt, t); renderer.render(TRIP.sc || city.scene, camera); }
     else if (mode === 'replay' && RP) { updateReplay(dt, t); renderer.render(city.scene, camera); }
