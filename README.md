@@ -314,3 +314,10 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
     - Depois de casar na igreja aparece "👶 Ter filhos".
     - Você cria até 4 filhos: nome, menino ou menina, idade, roupa, cabelo e pele.
     - Eles funcionam igual às filhas do chefe: ficam em casa, andam com você, brincam no parque e aparecem para todos online.
+
+### Build 2026.10.12-32
+  - 🛹 **Guardar o skate**: no menu ☰ tem o botão "Guardar skate" / "Pegar skate". Guardado, o personagem anda sem o skate nas costas, e os outros jogadores também veem assim. Nos torneios e corridas de skate ele volta sozinho.
+  - ✈️ **Câmera do avião e do helicóptero**: voando, a câmera fica acima e atrás, olhando de cima para baixo para onde você vai. Não pega mais a aeronave por baixo quando ela sobe.
+  - 🔫 **Bonde depois do assalto**: quando o bonde chega, abre o painel com duas ordens:
+    - ⛰️ **Liberar pra subir o morro**: eles sobem pela escadaria e ficam espalhados nas vielas e ruas do morro.
+    - 🔫 **Ficar na ativa**: um terço vira sniper em cima das lajes, vigiando a entrada; o resto faz a contenção nas ruas com armamento pesado, andando de um lado para o outro.

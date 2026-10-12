@@ -567,6 +567,7 @@ canvas.swatch{background:#333}
     <span id="h-hp" aria-label="Vida"><i></i><b>100%</b></span>
   </button>
   <div class="hud-tr collapsed" id="hud-tr">
+    <button class="hud-btn" id="hb-skate" data-act="skate-toggle" aria-label="Guardar ou pegar o skate" hidden><span style="font-size:17px">🛹</span><span class="lbl">Guardar skate</span></button>
     <button class="hud-btn" id="hb-menu" data-act="hud-menu" aria-label="Abrir as opções" aria-expanded="false"><span class="hm-ico">☰</span><i class="hm-dot" hidden></i></button>
     <button class="hud-btn" id="hb-sair" style="background:#d6304a;border-color:#ff7088" data-act="sair-local" aria-label="Sair deste lugar" hidden><span style="font-size:17px">🚪</span><span class="lbl">Sair</span></button>
     <button class="hud-btn" data-act="phone-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="lbl">Celular</span></button>
@@ -681,7 +682,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-31';
+const BUILD = '2026.10.12-32';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -1055,6 +1056,7 @@ function lookOf(equip, skin, hair, gender, board, body) {
 }
 const botLook = b => lookOf(b.equip, b.skin, b.hair, b.gender);
 const hasSkate = () => !!(S.equip.skate && S.owned.includes(S.equip.skate));
+const skateOut = () => hasSkate() && !S.skateGuardado;
 const myLook = () => lookOf(Object.assign({ bag: S.shift === 'entregador' || S.shift === 'motoboy' }, S.equip, (typeof UNIFORM !== 'undefined' && UNIFORM[S.shift]) || {}, S.beachWear && typeof beachEquip === 'function' ? beachEquip() : {}, { tats: S.tats || null, tn: S.name, hol: typeof holsterNow === 'function' ? holsterNow() : null }), S.skin, S.hair, S.gender, S.board, S.body);
 const phoneTier = () => ITEM[S.equip.phone].tier;
 function boardStats(equip, attr) {
@@ -4035,9 +4037,10 @@ let camYaw = 0;
 function updateCity(dt, t) {
   const blocked = uiBlocking() || !!P.down || P.stopT > 0 || !!P.cuffBy;
   const ax = blocked || P.ride || P.sportLock ? { x: 0, y: 0 } : axis();
-  if (P.onBoard && !hasSkate()) P.onBoard = false;
+  if (P.onBoard && !skateOut()) P.onBoard = false;
   if (!blocked && tap('board')) {
-    if (!hasSkate()) toast('Você ainda não tem skate. Complete uma missão ou compre na Shape & Truck.', 'bad');
+    if (hasSkate() && S.skateGuardado) toast('🛹 Seu skate está guardado. Toque em ☰ e depois em "Pegar skate".', 'pink');
+    else if (!hasSkate()) toast('Você ainda não tem skate. Complete uma missão ou compre na Shape & Truck.', 'bad');
     else if (!P.air && P.fallT <= 0) { P.onBoard = !P.onBoard; P.emote = null; P.v *= 0.5; sfx('land'); feed(P.onBoard ? 'No skate' : 'A pé'); }
   }
   if (!blocked && tap('emote')) openPanel('social', 'emotes');
@@ -4136,7 +4139,7 @@ function updateCity(dt, t) {
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
-  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: hasSkate() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow(), wpProp: P.wpShowT > 0 ? handNow() : null, emote: P.emote && P.emote.id }, t);
+  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: skateOut() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow(), wpProp: P.wpShowT > 0 ? handNow() : null, emote: P.emote && P.emote.id }, t);
   if (!driving && !P.ride) beachPose(g); else g.rotation.x = 0;
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
@@ -4184,9 +4187,15 @@ function updateCity(dt, t) {
     const hh = lerp(1.75, P.drive ? 3.3 : P.onBoard ? 2.9 : 2.5, clamp((z - 0.35) / 0.65, 0, 1)), side = lerp(0.45, 0, clamp((z - 0.35) / 0.5, 0, 1));
     const by = P.drive && (P.drive.V.heli || P.drive.V.plane) ? P.y : gy + (P.y - gy) * 0.5, want = new THREE.Vector3(P.x - fx * cd + fz * side, Math.max(groundH(P.x - fx * cd, P.z - fz * cd) + 0.8, by + hh + city.camPitch * cd * 0.7), P.z - fz * cd - fx * side);
     if (city.interior || city.jail || city.hospIn || city.shopIn) want.y = Math.min(want.y, 2.75);
+    // pilotando no ar: câmera de cima para baixo, atrás do avião, olhando para onde ele vai
+    const flyCam = P.drive && (P.drive.V.heli || P.drive.V.plane) && P.y - gy > 3;
+    if (flyCam) want.y = P.y + 3 + cd * 0.42 + Math.max(0, city.camPitch) * cd * 0.7;
     camera.position.lerp(want, city.camSnap ? 1 : 1 - Math.exp(-5 * dt)); city.camSnap = false;
+    if (flyCam) { camera.position.y = Math.max(camera.position.y, P.y + 2 + cd * 0.3); camera.lookAt(P.x + fx * cd * 0.7, P.y - 1.5, P.z + fz * cd * 0.7); }
+    else {
     const ly = lerp(1.55, 1.25, clamp((z - 0.35) / 0.65, 0, 1));
     camera.lookAt(P.x + fx * 2.5 * z + fz * side * 0.5, by + ly, P.z + fz * 2.5 * z - fx * side * 0.5);
+    }
   }
   if (city.camOverride) try { city.camOverride(dt); } catch (e) { city.camOverride = null; }
   // luz de preenchimento suave vindo da câmera (rostos legíveis de dia e de noite)
@@ -4248,7 +4257,7 @@ function updateCity(dt, t) {
     if (tap('act')) interact(near); }
   } else if (!city.promptBusy) pr.hidden = true;
   if (IS_TOUCH && !btnEditing() && $('touch').classList.contains('driving') !== !!P.drive) { $('touch').classList.toggle('driving', !!P.drive); applyBtnLayout(); }
-  if (IS_TOUCH) { const show = !pr.hidden && !blocked; $('tb-act').hidden = !show; $('tb-act').classList.toggle('ready', show); $('tb-board').hidden = !hasSkate(); }
+  if (IS_TOUCH) { const show = !pr.hidden && !blocked; $('tb-act').hidden = !show; $('tb-act').classList.toggle('ready', show); $('tb-board').hidden = !skateOut(); }
   if (!blocked && tap('phone')) togglePhone();
   if (tap('esc')) { if (!$('panel').hidden) closePanel(); else if (!$('phone').hidden) togglePhone(false); }
   if (!$('phone').hidden && phoneState.screen === 'map') drawCityMap();
@@ -4396,7 +4405,7 @@ function checkWeek() {
 }
 function startContest() {
   if (SKT.run) return toast('Você está no torneio de skate.', 'bad');
-  if (!hasSkate()) return toast('Você precisa de um skate para competir.', 'bad');
+  if (!hasSkate()) return toast('Você precisa de um skate para competir.', 'bad'); S.skateGuardado = false;
   const dv = division(), fee = Math.round(60 * (dv.mult - 1));
   if (S.coins < fee) return toast('Grana insuficiente para a inscrição.', 'bad');
   S.coins -= fee; updateHUD(); $('panel').hidden = true; panelKind = null; togglePhone(false);
@@ -4568,7 +4577,7 @@ function farPoint(minD) {
 function genMission(type) {
   const lv = S.level, hard = clamp((lv - 1) / 8, 0, 1);
   const mult = (1 + 0.15 * (lv - 1)) * evMult('missionMult') * (1 + homeBonus());
-  const shops = shopsList(), sk = hasSkate(), spd = sk ? 8.5 : 5;
+  const shops = shopsList(), sk = skateOut(), spd = sk ? 8.5 : 5;
   const strangers = city.bots.filter(o => !S.contacts.includes(o.b.id)).length;
   if (type === 'conhecer' && strangers < 3) type = 'latinhas';
   if (!sk && ['manobras', 'manobra_x', 'combo', 'corrida'].includes(type)) type = pick(['entrega', 'latinhas', 'rota']);
@@ -4757,7 +4766,7 @@ function nextJobTask() {
   const lv = jobLv(id);
   if (['motoboy', 'taxista', 'catador', 'bombeiro', 'policial', 'traficante', 'socorrista', 'medico'].includes(id)) { S.mission = jobTaskNew(id, lv); persist(); rebuildMissionObjs(); renderMissionBox(); sfx('ui'); return; }
   if (id === 'entregador') {
-    const a = pick(city.kiosks), b = farPoint(45), dist = Math.hypot(a.x - P.x, a.z - P.z) + Math.hypot(b[0] - a.x, b[1] - a.z), sp = hasSkate() ? 8.5 : 5;
+    const a = pick(city.kiosks), b = farPoint(45), dist = Math.hypot(a.x - P.x, a.z - P.z) + Math.hypot(b[0] - a.x, b[1] - a.z), sp = skateOut() ? 8.5 : 5;
     const time = Math.round(dist / sp * 1.3 + 12);
     S.mission = { job: id, type: 'job_ent', title: `Pedido #${100 + Math.floor(Math.random() * 900)}`, a: [a.x, a.z], aL: a.label, b, bL: pick(['Rua das Flores', 'Av. Paulista', 'Beco do Rolê', 'Rua Augusta', 'Travessa da Praça', 'Rua do Grafite']) + ', ' + (10 + Math.floor(Math.random() * 900)), stage: 0, pay: jobPay(id, JOBS[id].base + dist * 0.35), time, timeMax: time };
   } else if (id === 'grafiteiro') {
@@ -4908,7 +4917,7 @@ function buildMorro(sc) {
     if (o.tank) tm.setMatrixAt(it++, M4.compose(V(x + 0.6, o.top + 0.65, z - 0.6), Q0, V(1, 1, 1)));
     city.colliders.push({ x0: x - sx / 2, x1: x + sx / 2, z0: z - sz / 2, z1: z + sz / 2, morro: true });
     city.mWalls.push({ x: fx + fwd[0] * 1.2, z: fz + fwd[1] * 1.2, wx: fx, wz: fz, nx: fwd[0], nz: fwd[1], y: gy });
-    city.mHouses.push([x, z, sx, sz, o.brick ? '#b5651d' : '#' + o.c.toString(16).padStart(6, '0')]);
+    city.mHouses.push([x, z, sx, sz, o.brick ? '#b5651d' : '#' + o.c.toString(16).padStart(6, '0'), o.top + 0.2, o.d, o.t]);
   });
   for (const m of [hB, hP, slab, tm]) { m.castShadow = true; m.receiveShadow = true; sc.add(m); }
   sc.add(win); sc.add(door);
@@ -9638,7 +9647,7 @@ function buildSktBooth(sc) {
 function sktSend(op, d) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'skt', payload: Object.assign({ op }, d || {}) }); }
 const sktReals = () => SKT.q.filter(q => q.id === myId() || NET.peers[q.id]);
 function sktJoin() {
-  if (!hasSkate()) return toast('Você precisa de um skate para o torneio (Shape & Truck).', 'bad');
+  if (!hasSkate()) return toast('Você precisa de um skate para o torneio (Shape & Truck).', 'bad'); S.skateGuardado = false;
   if (SKT.m) return toast('Já tem torneio rolando. Espere o próximo.', 'bad');
   if (SKT.q.some(q => q.id === myId())) return; const e = { id: myId(), name: S.name }; SKT.q.push(e); sktSend('join', { e }); toast('🛹 Inscrição feita! Com 5 inscritos o torneio começa.', 'good'); renderPanel();
 }
@@ -9670,7 +9679,7 @@ function sktBegin(m) {
   if (me) {
     SKT.run = { s: 0, f: 0, l: 0, best: 0 }; if (city.contest) { city.contest = null; }
     if (P.drive) exitVehicle(true);
-    fadeTo(() => { const [x, z] = parkWorld(8, 0); P.x = x; P.z = z; P.y = 0; P.v = 0; P.air = false; P.fallT = 0; P.onBoard = hasSkate(); P.emote = null; city.camSnap = true; });
+    fadeTo(() => { const [x, z] = parkWorld(8, 0); P.x = x; P.z = z; P.y = 0; P.v = 0; P.air = false; P.fallT = 0; P.onBoard = skateOut(); P.emote = null; city.camSnap = true; });
     $('contest-box').hidden = false; toast('🛹 Torneio em 6 segundos! Encadeie manobras nas rampas, sem cair.', 'pink');
   }
   bigBanner('🛹 TORNEIO DE SKATE');
@@ -11059,7 +11068,13 @@ function hudMenu(open) {
   if (o) { clearTimeout(hudMenu.t); hudMenu.t = setTimeout(() => hudMenu(false), 9000); }
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#hud-tr .hud-btn'); if (b && b.id !== 'hb-menu' && !$('hud-tr').classList.contains('collapsed')) setTimeout(() => hudMenu(false), 60); }, true);
-function hudMenuDot() { const el = $('hud-tr'), d = el && el.querySelector('.hm-dot'); if (!d) return; const alert = ['hb-emp', 'hb-toque', 'hb-brincar', 'hb-casa', 'hb-rota'].some(id => $(id) && !$(id).hidden) && el.classList.contains('collapsed'); if (d.hidden === alert) d.hidden = !alert; }
+function skateToggle() {
+  if (!hasSkate()) return toast('Você ainda não tem skate.', 'bad');
+  S.skateGuardado = !S.skateGuardado; if (S.skateGuardado && P.onBoard) { P.onBoard = false; P.v *= 0.5; }
+  persist(); sfx('ui'); skateBtn(); toast(S.skateGuardado ? '🛹 Skate guardado. Você anda sem ele nas costas.' : '🛹 Pegou o skate!', 'pink');
+}
+function skateBtn() { const b = $('hb-skate'); if (!b) return; const on = hasSkate() && mode === 'city' && !P.drive; if (b.hidden === on) b.hidden = !on; const l = b.querySelector('.lbl'), tx = S.skateGuardado ? 'Pegar skate' : 'Guardar skate'; if (l && l.textContent !== tx) l.textContent = tx; }
+function hudMenuDot() { skateBtn(); const el = $('hud-tr'), d = el && el.querySelector('.hm-dot'); if (!d) return; const alert = ['hb-emp', 'hb-toque', 'hb-brincar', 'hb-casa', 'hb-rota'].some(id => $(id) && !$(id).hidden) && el.classList.contains('collapsed'); if (d.hidden === alert) d.hidden = !alert; }
 function updateRP28(dt, t) {
   try { meleeTick(dt); seatTick(); toqueTick(dt, t); } catch (e) { console.warn('rua', e); }
   try { hudMenuDot(); } catch (e) { }
@@ -11335,7 +11350,7 @@ function heistTargets() {
 }
 PANELS28.assalto = function () {
   if (!isAdm()) return { title: '💰 Assalto', html: '<p class="muted">Só o chefe chama o bonde.</p>' };
-  if (city.bonde && !city.heist) return { title: '💰 Bonde de prontidão', html: `<p>O bonde está parado no morro com as 3 Hilux.</p><div class="row"><button class="btn" data-act="bonde-dispensar">Liberar o bonde</button></div>` };
+  if (city.bonde && !city.heist) { const m = city.bonde.mode; return { title: '💰 Bonde de prontidão', html: `<p>${m === 'ativa' ? '🔫 O bonde está <b>na ativa</b>: snipers em cima das lajes e o resto protegendo as ruas com armamento pesado.' : m === 'morro' ? '⛰️ O bonde subiu e está nas vielas e ruas do morro.' : 'O bonde está parado com as 3 Hilux, esperando ordem.'}</p><div class="row"><button class="btn${m === 'morro' ? ' ghost' : ''}" data-act="bonde-ordem" data-m="morro">⛰️ Liberar pra subir o morro</button><button class="btn${m === 'ativa' ? ' ghost' : ''}" data-act="bonde-ordem" data-m="ativa">🔫 Ficar na ativa</button></div><div class="row"><button class="btn ghost sm" data-act="bonde-dispensar">Dispensar o bonde</button></div>` }; }
   const H = city.heist; if (H) return { title: '💰 Assalto em andamento', html: `<p>${esc(H.msg || 'O bonde está na rua.')}</p><div class="row"><button class="btn ghost" data-act="heist-cancel">Cancelar o assalto</button></div>` };
   let html = `<p>Chame o bonde: <b>3 Hilux pretas com 5 caras cada (15 no total)</b>. Eles chegam dirigindo, você entra na Hilux da frente e eles levam até o alvo. Lá, 2 ficam na porta e o resto entra com você.</p><h4>Nesta cidade</h4>`;
   html += heistTargets().map(t => `<div class="card"><h4>${esc(t.n)}</h4><p class="muted">${t.loot === 'banco' ? 'Dinheiro dos caixas, ouro e diamantes do cofre.' : 'Dinheiro do caixa e mercadoria.'}</p><div class="row"><button class="btn" data-act="heist-go" data-id="${t.id}">🚨 Mandar o bonde</button></div></div>`).join('');
@@ -11512,11 +11527,64 @@ function heistWin(msg) {
   leaveCar(); city.bonde = { cars: H.cars, crew: H.crew, at: [c0.x, c0.z] }; city.heist = null; city.camOverride = null;
   for (const id of ['hb-fuga', 'hb-tiro']) if ($(id)) $(id).hidden = true;
   if ($('h-wanted')) $('h-wanted').hidden = !P.wanted;
-  heistBank(L, msg); radioPush('Bonde', 'Tamo em casa, patrão! O bonde fica aqui de prontidão.');
+  heistBank(L, msg); radioPush('Bonde', 'Tamo em casa, patrão! O bonde fica aqui de prontidão.'); setTimeout(() => { if (city.bonde && !city.bonde.mode && $('panel').hidden) openPanel('assalto'); }, 3500);
 }
 function bondeTick(t) {
-  const B = city.bonde; if (!B) return; const far = Math.hypot(B.at[0] - P.x, B.at[1] - P.z) > 110;
-  for (const o of B.crew) { o.g.visible = !far && !city.interior && !city.shopIn; if (!o.g.visible) continue; animSkater(o.g, { walk: true, v: 0, fallT: 0, wpHold: o.i % 3 ? 'fuzil' : 'pistola' }, t + o.i); if (Math.random() < 0.0015 && Math.hypot(o.x - P.x, o.z - P.z) < 20) bubble(o.g, pick(['Tamo junto, patrão!', 'Na atividade!', 'Ninguém sobe!', 'Bonde do Ajbz!']), 2.2); }
+  const B = city.bonde; if (!B) return; const dt = Math.min(0.1, (t - (B.lt || t)) || 0.016); B.lt = t;
+  const hide = !!(city.interior || city.shopIn);
+  for (const o of B.crew) {
+    const vis = !hide && Math.hypot(o.x - P.x, o.z - P.z) < 150; o.g.visible = vis;
+    let v = 0;
+    if (o.path && o.path.length) { // andando até o posto (pela escadaria/viela)
+      const [tx, tz] = o.path[0], dx = tx - o.x, dz = tz - o.z, d = Math.hypot(dx, dz), sp = o.run ? 5.2 : 3.4;
+      if (d < 0.5) { o.path.shift(); if (!o.path.length && o.roofY != null) { o.y = o.roofY; if (o.post) { o.x = o.post[0]; o.z = o.post[1]; } } }
+      else { const k = Math.min(1, sp * dt / d); o.x += dx * k; o.z += dz * k; o.h = Math.atan2(dx, dz); v = sp; }
+    } else if (o.patrol) { // ronda: vai e volta na rua
+      const [ax, az, bx, bz] = o.patrol, [tx, tz] = o.pi ? [bx, bz] : [ax, az], dx = tx - o.x, dz = tz - o.z, d = Math.hypot(dx, dz);
+      if (d < 0.6) { o.wait = (o.wait || 0) + dt; o.h += dt * 0.6 * Math.sin(t + o.i); if (o.wait > 3 + (o.i % 3)) { o.wait = 0; o.pi = !o.pi; } }
+      else { const k = Math.min(1, 1.6 * dt / d); o.x += dx * k; o.z += dz * k; o.h = Math.atan2(dx, dz); v = 1.6; }
+    } else if (o.sniper) o.h = o.look + Math.sin(t * 0.4 + o.i) * 0.7; // vigiando lá de cima
+    if (!vis) continue;
+    const y = o.y != null && !(o.path && o.path.length) ? o.y : groundH(o.x, o.z);
+    o.g.position.set(o.x, y, o.z); o.g.rotation.y = o.h;
+    animSkater(o.g, { walk: true, v, fallT: 0, wpHold: o.sniper || o.heavy ? 'fuzil' : o.i % 3 ? 'fuzil' : 'pistola', emote: o.sit && !v ? 'sit' : null }, t + o.i);
+    if (Math.random() < 0.0015 && Math.hypot(o.x - P.x, o.z - P.z) < 20) bubble(o.g, pick(o.sniper ? ['Visão limpa, patrão!', 'Tô de olho na pista!', 'Ninguém sobe!'] : ['Tamo junto, patrão!', 'Na atividade!', 'Ninguém sobe!', 'Bonde do Ajbz!']), 2.2);
+    tickBubble(o.g, dt);
+  }
+}
+/* ordens do chefe para o bonde: subir o morro (vielas e ruas) ou ficar na ativa (snipers nas lajes + armamento pesado nas ruas) */
+function bondeSpots() {
+  if (city.morro) {
+    const W = (d, t) => morroWorld(d, t), streets = [], roofs = [];
+    for (const d of [17.6, 35.2, 52.8, 70.4]) for (let t = -52; t <= 52; t += 13) if (Math.abs(t) > 5) streets.push([...W(d, t), d, t]);
+    for (const d of [8, 24, 44, 64, 84]) for (const t of [-2, 2]) streets.push([...W(d, t), d, t]);
+    for (const h of city.mHouses || []) if (h[5] != null) roofs.push(h);
+    return { streets, roofs, path: (d, t) => { const L = []; for (let k = 0; k <= d; k += 8) L.push(W(k, Math.sign(t || 1) * 1.6)); L.push(W(d, t)); return L; } };
+  }
+  const B = city.bonde, [cx, cz] = B.at, streets = [];
+  for (let i = 0; i < 16; i++) { const a = i / 16 * TAU, r = 10 + (i % 3) * 7; streets.push([cx + Math.sin(a) * r, cz + Math.cos(a) * r, 0, 0]); }
+  const roofs = (city.blds || []).filter(b => Math.hypot(b.x - cx, b.z - cz) < 60).map(b => [b.x, b.z, b.w, b.d, '', b.h + 0.1]);
+  return { streets, roofs, path: null };
+}
+function bondeOrdem(m) {
+  const B = city.bonde; if (!B || !isAdm()) return; B.mode = m; const S2 = bondeSpots(), st = shuffle(S2.streets.slice()), crew = B.crew;
+  const dir = city.morro ? (() => { const [x0, z0] = morroWorld(0, 0), [x1, z1] = morroWorld(-10, 0); return Math.atan2(x1 - x0, z1 - z0); })() : 0;
+  crew.forEach((o, i) => {
+    o.sniper = false; o.heavy = false; o.patrol = null; o.sit = false; o.y = null; o.roofY = null; o.post = null; o.run = m === 'ativa';
+    let tgt;
+    if (m === 'ativa' && i % 3 === 0 && S2.roofs.length) { // sniper na laje
+      const h = S2.roofs[(i * 7) % S2.roofs.length]; o.sniper = true; o.look = dir + rand(-0.5, 0.5); o.post = [h[0], h[1]]; o.roofY = h[5];
+      tgt = [h[0] + h[2] / 2 + 0.6, h[1]]; o.path = S2.path && h[6] != null ? S2.path(h[6], h[7]).concat([tgt, o.post]) : [tgt, o.post];
+      return;
+    }
+    const sp = st[i % st.length]; tgt = [sp[0], sp[1]];
+    if (m === 'ativa') { o.heavy = true; const a = rand(0, TAU); o.patrol = [sp[0], sp[1], sp[0] + Math.sin(a) * 6, sp[1] + Math.cos(a) * 6]; o.pi = false; }
+    else o.sit = i % 4 === 1;
+    o.path = S2.path && sp[2] ? S2.path(sp[2], sp[3]) : [tgt]; o.path.push(tgt);
+  });
+  closePanel(); sfx('ui'); hornBeep && hornBeep();
+  radioPush('Bonde', m === 'ativa' ? 'Fechou, patrão! Sniper nas lajes e o resto na contenção com o pesado.' : 'Demorou, patrão! Subindo o morro, a gente fica nas vielas.');
+  toast(m === 'ativa' ? '🔫 Bonde na ativa: snipers nas lajes e armamento pesado nas ruas do morro.' : '⛰️ O bonde subiu o morro e ficou nas vielas e ruas.', 'good');
 }
 function bondeDispensar() { const B = city.bonde; if (!B) return; for (const c of B.cars) city.scene.remove(c.m); for (const o of B.crew) city.scene.remove(o.g); city.bonde = null; closePanel(); toast('O bonde foi liberado.', 'pink'); }
 function heistBank(L, msg) {
@@ -11930,7 +11998,7 @@ function buildFeatures(sc, T, th, rng) {
 
 function startRace(cid, opts = {}) {
   const ri = raceRoute(cid, opts.online ? (opts.online.rt ?? 0) : opts.rt), RT = (RACE_MAPS[cid] || [])[ri] || {}, c = Object.assign({}, COUNTRIES.find(x => x.id === cid), RT.c || {}), th = Object.assign({}, THEMES[cid], RT.th || {});
-  if (!hasSkate()) return toast('Você precisa de um skate para correr.', 'bad');
+  if (!hasSkate()) return toast('Você precisa de um skate para correr.', 'bad'); S.skateGuardado = false;
   if (lvlLock(c.lvl)) return toast(`Precisa do nível ${c.lvl}.`, 'bad');
   if (S.coins < c.fee) return toast('Grana insuficiente para a inscrição.', 'bad');
   S.coins -= c.fee; S.stats.races++;
@@ -13379,7 +13447,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-filhos': openPanel('filhos'); break; case 'filho-criar': filhoCriar(); break; case 'filho-remover': filhoRemover(+ds.i); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'hud-menu': hudMenu(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'open-assalto': toggleRadio(false); openPanel('assalto'); break; case 'heist-go': heistStart(ds.id); break; case 'heist-city': heistOtherCity(ds.c); break; case 'heist-cancel': closePanel(); heistCancel(); break; case 'fuga-morro': fugaMorro(); break; case 'fuga-br': fugaBR(ds.c); break; case 'bonde-entrar': boardLead(); break; case 'heist-fugir': heistFugir(); break; case 'heist-tiro': heistTiro(); break; case 'tank-fire': tankFire(); break; case 'bonde-dispensar': bondeDispensar(); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-filhos': openPanel('filhos'); break; case 'filho-criar': filhoCriar(); break; case 'filho-remover': filhoRemover(+ds.i); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'hud-menu': hudMenu(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'open-assalto': toggleRadio(false); openPanel('assalto'); break; case 'heist-go': heistStart(ds.id); break; case 'heist-city': heistOtherCity(ds.c); break; case 'heist-cancel': closePanel(); heistCancel(); break; case 'fuga-morro': fugaMorro(); break; case 'fuga-br': fugaBR(ds.c); break; case 'bonde-entrar': boardLead(); break; case 'heist-fugir': heistFugir(); break; case 'heist-tiro': heistTiro(); break; case 'tank-fire': tankFire(); break; case 'skate-toggle': skateToggle(); break; case 'bonde-dispensar': bondeDispensar(); break; case 'bonde-ordem': bondeOrdem(ds.m); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
@@ -13769,7 +13837,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), fk: (isAdm() || hasKids()) && S.filhas && S.filhas.comigo ? 1 : 0, pv: myParked(), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, sg: S.skateGuardado ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), fk: (isAdm() || hasKids()) && S.filhas && S.filhas.comigo ? 1 : 0, pv: myParked(), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
@@ -13794,7 +13862,7 @@ function netTick(dt, t) {
       tickBubble(p.g, dt); continue;
     } else if (p.veh) { city.scene.remove(p.veh); p.veh = null; p.vehId = null; p.g.visible = true; }
     if (d.fp !== p.fpk) { p.fpk = d.fp; p.fpT = t; setGloves(p.g, d.fp && 'gjckbd'.includes(d.fp) ? 0xc8102e : null); }
-    animSkater(p.g, { fp: d.fp ? fpPose(d.fp, (t - (p.fpT || 0)) / 0.35) : null, armL: p.armL, armR: p.armR, pose: d.ps === 2 ? 'algema' : d.ps === 1 || d.ps === 4 ? 'maos' : d.ps === 3 ? 'nadar' : null, wpHold: p.wp || null, walk: !d.b, carry: !d.fp, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
+    animSkater(p.g, { fp: d.fp ? fpPose(d.fp, (t - (p.fpT || 0)) / 0.35) : null, armL: p.armL, armR: p.armR, pose: d.ps === 2 ? 'algema' : d.ps === 1 || d.ps === 4 ? 'maos' : d.ps === 3 ? 'nadar' : null, wpHold: p.wp || null, walk: !d.b, carry: !d.fp && !d.sg, v: d.v, air: !!d.a, fallT: d.f ? 1 : 0, emote: d.em || null, brot: d.a ? { x: d.r[0], y: d.r[1], z: d.r[2] } : null, pushing: d.b && d.v > 2 }, t);
     p.g.rotation.order = 'YXZ'; p.g.rotation.x = d.ps === 4 ? -Math.PI / 2 : 0; if (d.ps === 3) p.g.position.y -= 1.15; else if (d.ps === 4) p.g.position.y += 0.16;
     tickBubble(p.g, dt);
   }
@@ -13817,7 +13885,7 @@ const lobbyIsHost = () => !!(LOBBY.players.length && NET.user && LOBBY.players[0
 function lobbyJoin(cid) {
   if (!NET.online) return toast('Entre com uma conta e fique online para correr com outros jogadores.', 'bad');
   const c = COUNTRIES.find(x => x.id === cid);
-  if (!hasSkate()) return toast('Você precisa de um skate para correr.', 'bad');
+  if (!hasSkate()) return toast('Você precisa de um skate para correr.', 'bad'); S.skateGuardado = false;
   if (lvlLock(c.lvl)) return toast(`Precisa do nível ${c.lvl}.`, 'bad');
   if (S.coins < c.fee) return toast('Grana insuficiente para a inscrição.', 'bad');
   lobbyLeave();
@@ -13952,7 +14020,7 @@ async function enterGame() {
   if (myC) { P.x = myC.ox + myC.fx * 1.5; P.z = myC.oz + myC.fz * 1.5; P.y = myC.y || 0; P.h = Math.atan2(myC.fx, myC.fz); setTimeout(() => toast(`Você acordou em casa (${myC.n}). Bom rolê!`, 'pink'), 1200); }
   else if (hd) { P.x = hd.x - 2.5; P.z = hd.z; P.h = -Math.PI / 2; setTimeout(() => toast('Você acordou em casa. Bom rolê!', 'pink'), 1200); }
   city.camYaw = P.h; camera.position.set(P.x - Math.sin(P.h) * 6, 4, P.z - Math.cos(P.h) * 6);
-  P.onBoard = hasSkate();
+  P.onBoard = skateOut();
   if (S.shift && !S.mission) setTimeout(() => { if (S.shift && !S.mission) nextJobTask(); }, 1500);
   $('hb-veh').hidden = !S.vehicles.length; if (S.veh) spawnMyVehicle();
   setTimeout(() => toast(`Você está em ${CITY().name}. Viaje pela Rodoviária.`, 'pink'), 3400);
