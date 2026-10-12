@@ -402,3 +402,10 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
     - Gari $50, Entregador $55, Grafiteiro $60, Motoboy $70, Instrutor $75, Taxista $85, Socorrista $100, Bombeiro $150, Policial $160, Advogado $175, Médico $370, Delegado $500.
   - 🤖 **Robôs saem quando entram jogadores**: para cada jogador de verdade em plantão de policial, bombeiro, gari, taxista ou motoboy na cidade, um robô daquela profissão sai.
   - 🏠 **Casa por cidade**: cada casa é de uma cidade só. Para ter em outra cidade, você compra outra. Ao viajar, a casa daquela cidade vira a sua casa.
+
+### Build 2026.10.12-38 (desempenho, fase 1)
+  - ⚡ **Só desenha o personagem que aparece na tela**:
+    - Quem está atrás da câmera, ou longe e já sumindo na neblina, fica de fora do desenho e da sombra. A lógica do jogo continua igual: eles andam, falam e reagem normalmente.
+    - Medido na praça: de 1,1 milhão para 315 mil triângulos por quadro (−72%), e o desenho ficou cerca de 30% mais rápido.
+    - Medido no morro: de 1,37 milhão para 460 mil triângulos.
+  - 🧹 **Memória**: o traço dos tiros, os números de dano, as explosões e os jatos d'água agora liberam a memória quando somem. Antes, cada tiro deixava lixo e o jogo ficava mais pesado quanto mais tempo se jogava.

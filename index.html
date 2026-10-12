@@ -689,7 +689,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-37';
+const BUILD = '2026.10.12-38';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -1215,9 +1215,10 @@ function applyQuality() {
 }
 
 const geoCache = {};
-const boxGeo = (w, h, d) => { const k = w + '_' + h + '_' + d; return geoCache[k] || (geoCache[k] = new THREE.BoxGeometry(w, h, d)); };
+const boxGeo = (w, h, d) => { const k = w + '_' + h + '_' + d; return geoCache[k] || (geoCache[k] = shared(new THREE.BoxGeometry(w, h, d))); };
+function shared(o) { o.userData.shared = true; return o; }
 const matCache = {};
-const lam = c => matCache[c] || (matCache[c] = new THREE.MeshLambertMaterial({ color: c }));
+const lam = c => matCache[c] || (matCache[c] = shared(new THREE.MeshLambertMaterial({ color: c })));
 const WHEEL_GEO = new THREE.CylinderGeometry(0.03, 0.03, 0.034, 14);
 function canvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.anisotropy = 4; t.encoding = THREE.sRGBEncoding; return t; }
 
@@ -1264,10 +1265,10 @@ function nameTag(text, color) {
 
 /* ---------------- PERSONAGEM ---------------- */
 const STD = {};
-const std = (c, r = 0.85, m = 0) => { const k = c + '_' + r + '_' + m; return STD[k] || (STD[k] = new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m })); };
-const CAPG = (r, l) => { const k = 'cap' + r + '_' + l; return geoCache[k] || (geoCache[k] = new THREE.CapsuleGeometry(r, l, 6, 14)); };
-const SPH = (r, ws = 18, hs = 14, ts = 0, tl = Math.PI) => { const k = 'sph' + [r, ws, hs, ts, tl].join('_'); return geoCache[k] || (geoCache[k] = new THREE.SphereGeometry(r, ws, hs, 0, TAU, ts, tl)); };
-const CYL = (r1, r2, h, seg = 16, open = false, ts = 0, tl = TAU) => { const k = 'cyl' + [r1, r2, h, seg, open, ts, tl].join('_'); return geoCache[k] || (geoCache[k] = new THREE.CylinderGeometry(r1, r2, h, seg, 1, open, ts, tl)); };
+const std = (c, r = 0.85, m = 0) => { const k = c + '_' + r + '_' + m; return STD[k] || (STD[k] = shared(new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m }))); };
+const CAPG = (r, l) => { const k = 'cap' + r + '_' + l; return geoCache[k] || (geoCache[k] = shared(new THREE.CapsuleGeometry(r, l, 6, 14))); };
+const SPH = (r, ws = 18, hs = 14, ts = 0, tl = Math.PI) => { const k = 'sph' + [r, ws, hs, ts, tl].join('_'); return geoCache[k] || (geoCache[k] = shared(new THREE.SphereGeometry(r, ws, hs, 0, TAU, ts, tl))); };
+const CYL = (r1, r2, h, seg = 16, open = false, ts = 0, tl = TAU) => { const k = 'cyl' + [r1, r2, h, seg, open, ts, tl].join('_'); return geoCache[k] || (geoCache[k] = shared(new THREE.CylinderGeometry(r1, r2, h, seg, 1, open, ts, tl))); };
 let DECK_GEO = null;
 function deckGeo() {
   if (DECK_GEO) return DECK_GEO;
@@ -2229,7 +2230,7 @@ function updateCityFx(dt) {
     if (f.rocket) { if (f.life <= 0) { sfx('boom'); const p = f.m.position; for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(boxGeo(0.25, 0.25, 0.05), new THREE.MeshBasicMaterial({ color: pick([0xff4f7b, 0xffcf3a, 0x4fc3ff, 0x3ddc84, 0xa66bff]), transparent: true })); m.position.copy(p); city.scene.add(m); const a = Math.random() * TAU, e = Math.random() * Math.PI - Math.PI / 2, s = rand(4, 9); city.fx.push({ m, vx: Math.cos(a) * Math.cos(e) * s, vy: Math.sin(e) * s + 2, vz: Math.sin(a) * Math.cos(e) * s, life: 2.2, max: 2.2, conf: true }); } } }
     else { if (f.conf) { f.vy -= 6 * dt; f.m.rotation.x += dt * 8; f.m.rotation.y += dt * 6; } else f.m.scale.setScalar(1 + (f.max - f.life) * 0.5); f.m.material.opacity = Math.min(0.8, f.life / f.max * 1.4); }
   }
-  city.fx = city.fx.filter(f => { if (f.life <= 0) { city.scene.remove(f.m); return false; } return true; });
+  city.fx = city.fx.filter(f => { if (f.life <= 0) { city.scene.remove(f.m); fxFree(f.m); return false; } return true; });
   for (const b of city.bananas) { b.t -= dt; for (const o of city.bots) if (!(o.fallT > 0) && Math.hypot(o.x - b.x, o.z - b.z) < 1) { o.fallT = 1.6; bubble(o.g, 'Escorreguei na banana!', 3); b.t = 0; sfx('banana'); } }
   city.bananas = city.bananas.filter(b => { if (b.t <= 0) { city.scene.remove(b.m); return false; } return true; });
 }
@@ -12366,6 +12367,45 @@ function ruaWorkersTick(dt, t) {
     if ((o.talkT -= dt) <= 0) { o.talkT = rand(10, 20); if (Math.hypot(x - P.x, z - P.z) < 18) bubble(o.g, pick(['Olha o ferro-velho!', 'Compro sucata, garrafa, papelão!', 'Ê, burrinho, bora!', 'Bom dia, comunidade!']), 2.5); }
     tickBubble(o.g, dt);
   }
+}
+/* =========================================================
+   DESEMPENHO (fase 1)
+   - Só desenha o personagem que aparece na tela: quem está atrás da câmera ou longe (já sumindo na neblina)
+     fica escondido só na hora de desenhar (nada muda na lógica do jogo) e não entra na sombra.
+   - Efeitos temporários (traço do tiro, número de dano, explosão, água) liberam a memória ao sumir.
+   ========================================================= */
+const CULL = { roots: [], at: 0, fr: new THREE.Frustum(), m: new THREE.Matrix4(), s: new THREE.Sphere(), v: new THREE.Vector3(), n: 0, hid: 0 };
+function charFar() { const q = S && S.settings && S.settings.quality; return q === 'baixa' ? 55 : q === 'alta' ? 110 : q === 'ultra' ? 140 : AQ.shOff ? 60 : 80; }
+function cullRoots() {
+  const L = [], seen = new Set();
+  city.scene.traverse(o => { const u = o.userData; if (!u || !(u.R || u.k) || o === city.player) return; for (let q = o.parent; q; q = q.parent) if (seen.has(q)) return; seen.add(o); L.push(o); });
+  CULL.roots = L;
+}
+function drawCull(cam) {
+  const now = performance.now(); if (now > CULL.at) { CULL.at = now + 2000; cullRoots(); }
+  cam.updateMatrixWorld(); CULL.m.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); CULL.fr.setFromProjectionMatrix(CULL.m);
+  const far = charFar(), hid = [], cp = cam.position, inside = !!(city.shopIn || city.interior || city.jail || city.hospIn);
+  for (const o of CULL.roots) {
+    if (!o.visible || !o.parent) { o.userData.culled = false; continue; }
+    o.getWorldPosition(CULL.v); CULL.s.center.set(CULL.v.x, CULL.v.y + 1, CULL.v.z); CULL.s.radius = 2.4 * Math.max(0.5, o.scale.y || 1);
+    const d = CULL.s.center.distanceTo(cp), off = (!inside && d > far) || !CULL.fr.intersectsSphere(CULL.s);
+    o.userData.culled = off; if (off) { o.visible = false; hid.push(o); }
+  }
+  CULL.n = CULL.roots.length; CULL.hid = hid.length; return hid;
+}
+const _safeRender0 = safeRender;
+safeRender = function (sc, cam) {
+  if (sc !== city.scene || mode !== 'city') return _safeRender0(sc, cam);
+  let hid = []; try { hid = drawCull(cam); } catch (e) { }
+  try { _safeRender0(sc, cam); } finally { for (const o of hid) o.visible = true; }
+};
+function fxFree(o) {
+  try {
+    o.traverse(m => {
+      if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose();
+      for (const mt of [].concat(m.material || [])) { if (!mt || mt.userData.shared) continue; if (m.isSprite && mt.map) mt.map.dispose(); mt.dispose(); }
+    });
+  } catch (e) { }
 }
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
