@@ -351,3 +351,10 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
     - Primeiro pule. No ar, deslize ↑ (360 Flip), ↓ (Varial Kickflip), ← (Heelflip) ou → (Pop Shove-it).
     - Ou toque 1 vez (Kickflip), 2 vezes (Hardflip) ou 3 vezes (Impossible).
     - No ar o dedo faz manobra e não gira a câmera.
+
+### Build 2026.10.12-35
+  - 📡 **Tudo ao vivo para quem está online na mesma cidade**:
+    - Dano e morte de figurantes, policiais e traficantes: todo mundo vê a pessoa cair no mesmo lugar, com a barrinha de vida, e o SAMU vem buscar em todas as telas.
+    - Tropa da facção (ou reforço da PM) andando com você, o bonde do assalto (as 3 Hilux e os 15, inclusive os snipers nas lajes), as viaturas da perseguição e a ambulância do SAMU com os socorristas.
+    - Explosões do canhão do tanque.
+    - Operação no morro: um dos jogadores online decide quem acerta quem e manda para os outros, então todo mundo vê o mesmo resultado (quem morre, morre para todos).

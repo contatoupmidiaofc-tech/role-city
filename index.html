@@ -688,7 +688,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-34';
+const BUILD = '2026.10.12-35';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -8581,14 +8581,15 @@ function morroFighters() {
 function raidShot(x, z, a, tgt, chance, dmg, near, gun, y) {
   const y0 = (y != null ? y : groundH(x, z)) + 1.4, ty = (tgt.y != null ? tgt.y : groundH(tgt.x, tgt.z)), hit = Math.random() < Math.max(0.12, chance);
   gunFx(x + Math.sin(a) * 0.6, y0, z + Math.cos(a) * 0.6, tgt.x + (hit ? 0 : rand(-1.4, 1.4)), ty + (hit ? 1.2 : rand(0.1, 2.6)), tgt.z + (hit ? 0 : rand(-1.4, 1.4)), gun); if (near) sfx('tiro');
-  if (hit) npcDamage(tgt, dmg);
+  if (hit && (tgt.crew || tgt.squad || raidHost())) npcDamage(tgt, dmg);
 }
 /* vida dos figurantes: cada tiro certeiro tira vida; com vida zerada, morre (fica caído) */
-function npcDamage(o, dmg) {
+function npcDamage(o, dmg, remote) {
   if (o.dead) return; if (!(o.hp > 0)) o.hp = 100; o.hp -= dmg;
   const y = (o.y != null ? o.y : groundH(o.x, o.z)); try { dmgPop(o.x, y + 2.1, o.z, dmg); } catch (e) { }
   if (o.hp <= 0) { o.hp = 0; o.dead = true; o.deadAt = performance.now(); if (!o.crew && !o.squad && !(city.raid && city.raid.cops.includes(o))) (city.deadNpcs = city.deadNpcs || []).push(o); o.fallT = 1e9; o.raidDown = true; if (o.g) bubble(o.g, pick(['Aaai...', 'Fui...', 'Me pegaram...']), 2.5); if (o.path) o.path = null; o.patrol = null; }
-  npcHpBar(o); return o.dead;
+  npcHpBar(o); if (!remote && !o.crew && !o.squad && !o.ghost) try { npcNetHit(o, dmg); } catch (e) { }
+  return o.dead;
 }
 /* barrinha de vida em cima de quem está machucado */
 function npcHpBar(o) {
@@ -11193,7 +11194,7 @@ function skateToggle() {
   persist(); sfx('ui'); skateBtn(); toast(S.skateGuardado ? '🛹 Skate guardado. Você anda sem ele nas costas.' : '🛹 Pegou o skate!', 'pink');
 }
 function skateBtn() { const b = $('hb-skate'); if (!b) return; const on = hasSkate() && mode === 'city' && !P.drive; if (b.hidden === on) b.hidden = !on; const l = b.querySelector('.lbl'), tx = S.skateGuardado ? 'Pegar skate' : 'Guardar skate'; if (l && l.textContent !== tx) l.textContent = tx; }
-function hudMenuDot() { skateBtn(); tropaBtn(); medBtn(); try { samuNpcTick(); } catch (e) { console.warn('samu figurantes', e); } const el = $('hud-tr'), d = el && el.querySelector('.hm-dot'); if (!d) return; const alert = ['hb-emp', 'hb-toque', 'hb-brincar', 'hb-casa', 'hb-rota'].some(id => $(id) && !$(id).hidden) && el.classList.contains('collapsed'); if (d.hidden === alert) d.hidden = !alert; }
+function hudMenuDot() { skateBtn(); tropaBtn(); medBtn(); try { liveTick(); } catch (e) { console.warn('ao vivo', e); } try { samuNpcTick(); } catch (e) { console.warn('samu figurantes', e); } const el = $('hud-tr'), d = el && el.querySelector('.hm-dot'); if (!d) return; const alert = ['hb-emp', 'hb-toque', 'hb-brincar', 'hb-casa', 'hb-rota'].some(id => $(id) && !$(id).hidden) && el.classList.contains('collapsed'); if (d.hidden === alert) d.hidden = !alert; }
 function updateRP28(dt, t) {
   try { meleeTick(dt); seatTick(); toqueTick(dt, t); } catch (e) { console.warn('rua', e); }
   try { hudMenuDot(); } catch (e) { }
@@ -11351,7 +11352,7 @@ function samuNpcTick() {
   const now = performance.now(), dt = Math.min(0.1, (now - (city.samuNT || now)) / 1000); city.samuNT = now;
   const L = (city.deadNpcs = (city.deadNpcs || []).filter(o => o.dead && !o.taken));
   // voltam do hospital depois de um tempo
-  city.hospNpcs = (city.hospNpcs || []).filter(o => { if (now < o.backAt) { if (o.g) o.g.scale.setScalar(0.0001); return true; } o.dead = false; o.taken = false; o.fallT = 0; o.hp = 100; o.raidDown = false; if (o.g && o.sc0) o.g.scale.copy(o.sc0); npcHpBar(o); return false; });
+  city.hospNpcs = (city.hospNpcs || []).filter(o => { if (now < o.backAt) { if (o.g) o.g.scale.setScalar(0.0001); return true; } if (o.corpse) { city.scene.remove(o.g); return false; } o.dead = false; o.taken = false; o.fallT = 0; o.hp = 100; o.raidDown = false; if (o.g && o.sc0) o.g.scale.copy(o.sc0); npcHpBar(o); return false; });
   let A = city.samuNpc;
   if (!A && L.length) {
     const o = L.find(q => now - q.deadAt > 8000); if (!o) return; const a = rand(0, TAU);
@@ -11899,11 +11900,12 @@ function tankFire() {
   const dist = Math.hypot(hx - mz.x, hz - mz.z), T = Math.max(0.12, dist / 120); city.fx.push({ m: sh, vx: (hx - mz.x) / T, vy: (groundH(hx, hz) + 1 - mz.y) / T, vz: (hz - mz.z) / T, life: T, max: T });
   setTimeout(() => tankBoom(hx, hz, tgt), T * 1000);
 }
-function tankBoom(x, z, tgt) {
-  if (mode !== 'city') return; const y = groundH(x, z);
+function tankBoom(x, z, tgt, remote) {
+  if (mode !== 'city') return; const y = groundH(x, z); if (!remote) netSend('boom', { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10 });
   for (let i = 0; i < 18; i++) { const f = new THREE.Mesh(SPH(rand(0.3, 0.8), 8, 6), new THREE.MeshBasicMaterial({ color: pick([0xff6a00, 0xffb000, 0x3a3a3a, 0x555555]), transparent: true })); f.position.set(x, y + 0.8, z); city.scene.add(f); city.fx.push({ m: f, vx: rand(-6, 6), vy: rand(3, 10), vz: rand(-6, 6), life: rand(0.5, 1.1), max: 1.1 }); }
   try { dmgPop(x, y + 2.6, z, 'BUM!'); } catch (e) { } if (Math.hypot(x - P.x, z - P.z) < 60) { sfx('hit'); city.shake = Math.max(city.shake || 0, 0.6); }
-  for (const o of (city.peds || []).concat(city.bots || [])) if (Math.hypot(o.x - x, o.z - z) < 6 && !(o.fallT > 0)) { o.fallT = 2.5; try { scream(0, o.g.userData.k === 'f'); } catch (e) { } }
+  if (!remote) for (const o of (city.peds || []).concat(city.bots || [], city.cops || [], city.thugs || [])) if (!o.dead && Math.hypot(o.x - x, o.z - z) < 6) { npcDamage(o, Math.hypot(o.x - x, o.z - z) < 3.5 ? 150 : 60); try { scream(0, o.g.userData.k === 'f'); } catch (e) { } }
+  if (remote) return;
   city.tankBurn = city.tankBurn || [];
   for (const c of city.cars || []) if (c.m.visible && Math.hypot(c.m.position.x - x, c.m.position.z - z) < 5) { city.tankBurn.push({ c, t: 10, spd: c.spd }); c.spd = 0; c.m.visible = false; }
   const H = city.heist; if (H && H.cops) for (const p of H.cops) if (p.m.visible && Math.hypot(p.m.position.x - x, p.m.position.z - z) < 7) { p.lag += 120; p.hits = 9; toast('💥 Viatura explodida!', 'good'); }
@@ -11983,7 +11985,80 @@ function autoColliders() {
   return n;
 }
 const _buildCity0 = buildCity;
-buildCity = function () { const r = _buildCity0.apply(this, arguments); clearTimeout(city.autoColT); city.autoColT = setTimeout(() => { try { autoColliders(); } catch (e) { console.warn('paredes', e); } }, 2600); return r; };
+buildCity = function () { try { for (const id in LIVE.peers) delete LIVE.peers[id]; } catch (e) { } const r = _buildCity0.apply(this, arguments); city.corpses = []; clearTimeout(city.autoColT); city.autoColT = setTimeout(() => { try { autoColliders(); } catch (e) { console.warn('paredes', e); } }, 2600); return r; };
+/* =========================================================
+   AO VIVO PARA TODOS: o que acontece com você aparece em tempo real para quem está online na mesma cidade
+   - dano e morte dos figurantes, policiais e traficantes (e o SAMU vem buscar em todas as telas)
+   - tropa da facção, bonde do assalto (carros e os 15), viaturas da perseguição, ambulância do SAMU
+   - explosões do canhão do tanque
+   - operação no morro: um jogador decide os acertos e manda para os outros (todo mundo vê o mesmo resultado)
+   ========================================================= */
+function netSend(ev, payload) { if (!NET.ch || !NET.online || !NET.user) return; try { NET.ch.send({ type: 'broadcast', event: ev, payload: Object.assign({ id: NET.user.id, rm: roomKey() }, payload) }); } catch (e) { } }
+function raidHost() { if (!NET.user || !NET.online) return true; const me = NET.user.id; return Object.keys(NET.peers || {}).every(id => id > me); }
+const NPC_LISTS = () => ({ cop: city.cops || [], thug: city.thugs || [], ped: city.peds || [], bot: city.bots || [], robber: city.robbers || [] });
+function npcKind(o) { if (city.raid && city.raid.cops.includes(o)) return 'rc'; const L = NPC_LISTS(); for (const k in L) if (L[k].includes(o)) return k; return o.corpse ? null : null; }
+function npcNetHit(o, dmg) {
+  const k = npcKind(o); if (!k) return; const r = v => Math.round(v * 10) / 10;
+  netSend('npc', { k, i: k === 'rc' ? city.raid.cops.indexOf(o) : -1, x: r(o.x), z: r(o.z), d: Math.round(dmg), dead: o.dead ? 1 : 0, f: o.g && o.g.userData.k === 'f' ? 1 : 0 });
+}
+function onNpcNet(d) {
+  if (!d || !NET.user || d.id === NET.user.id || (d.rm || '') !== roomKey() || mode !== 'city') return;
+  let o = null;
+  if (d.k === 'rc') o = city.raid && city.raid.cops[d.i];
+  else { const L = NPC_LISTS()[d.k] || []; let bd = 7; for (const q of L) { if (q.dead || q.off) continue; const k = Math.hypot(q.x - d.x, q.z - d.z); if (k < bd) { bd = k; o = q; } } }
+  if (o && !o.dead) { npcDamage(o, d.d, true); if (d.dead && !o.dead) npcDamage(o, 999, true); return; }
+  if (d.dead && !o) liveCorpse(d); // aqui não tinha ninguém naquele lugar: aparece o corpo para todos verem
+}
+function liveCorpse(d) {
+  const role = d.k === 'cop' || d.k === 'rc' ? 'policial' : d.k === 'thug' ? 'traficante' : null;
+  const look = role ? roleLook(role, 0) : lookOf({ shirt: pick(['shirt_basic', 'shirt_black', 'shirt_pink'].filter(x => ITEM[x])), pants: 'pants_jeans', shoes: 'shoes_basic', cap: 'cap_none', glasses: 'gl_none', acc: 'ac_none' }, pick(SKINS), pick(HAIRS), d.f ? 'f' : 'm');
+  const g = makeSkater(look, null); g.userData.ped = true; city.scene.add(g); g.position.set(d.x, groundH(d.x, d.z), d.z);
+  const o = { g, x: d.x, z: d.z, hp: 0, dead: true, fallT: 1e9, deadAt: performance.now(), corpse: true };
+  (city.corpses = city.corpses || []).push(o); (city.deadNpcs = city.deadNpcs || []).push(o);
+}
+/* comitiva ao vivo: manda para os outros onde estão a sua tropa, o bonde, os carros e as viaturas */
+function liveGather() {
+  const P2 = [], C = [], r = v => Math.round(v * 10) / 10, hh = v => Math.round(((v % TAU) + TAU) % TAU * 100) / 100;
+  for (const s of city.squad || []) if (!s.gone) P2.push([r(s.x), r(s.z), hh(s.h || 0), s.side === 'pm' ? 'p' : 'f', (s.dead || s.fallT > 1e8 ? 1 : 0) | (s.fallT > 0 ? 0 : 0), 0]);
+  const H = city.heist, B = city.bonde;
+  if (H) { for (const o of H.crew || []) if (o.g && o.g.visible) P2.push([r(o.x), r(o.z), hh(o.h || 0), 'b', 0, 0]); for (const c of H.cars || []) C.push([r(c.x), r(c.z), hh(c.h || 0), 'h']); for (const p of H.cops || []) if (p.m.visible) C.push([r(p.m.position.x), r(p.m.position.z), hh(p.m.rotation.y), 'v']); }
+  if (B) { for (const o of B.crew) P2.push([r(o.x), r(o.z), hh(o.h || 0), 'b', o.dead ? 1 : 0, o.y != null && !(o.path && o.path.length) ? r(o.y) : 0]); for (const c of B.cars) C.push([r(c.x), r(c.z), hh(c.h || 0), 'h']); }
+  const S2 = city.samu; if (S2 && S2.m) { C.push([r(S2.x), r(S2.z), hh(S2.m.rotation.y), 'a']); for (const md of S2.medics || []) P2.push([r(md.x), r(md.z), hh(md.g.rotation.y), 'm', 0, 0]); }
+  const A = city.samuNpc; if (A && A.m) { C.push([r(A.x), r(A.z), hh(A.m.rotation.y), 'a']); for (const md of A.medics || []) P2.push([r(md.x), r(md.z), hh(md.g.rotation.y), 'm', 0, 0]); }
+  return { p: P2.slice(0, 40), c: C.slice(0, 12) };
+}
+const LIVE = { peers: {} };
+function onEntNet(d) { if (!d || !NET.user || d.id === NET.user.id || mode !== 'city') return; if ((d.rm || '') !== roomKey()) { liveDrop(d.id); return; } const L = LIVE.peers[d.id] || (LIVE.peers[d.id] = { ppl: [], cars: [] }); L.t = performance.now(); L.P = d.p || []; L.C = d.c || []; }
+function liveDrop(id) { const L = LIVE.peers[id]; if (!L) return; for (const q of L.ppl.concat(L.cars)) if (q && q.g) city.scene.remove(q.g); delete LIVE.peers[id]; }
+function liveLook(role, i) { return role === 'p' ? roleLook('policial', i) : role === 'm' ? lookOf(Object.assign({}, UNIFORM.socorrista, { shoes: 'shoes_basic' }), pick(SKINS), pick(HAIRS), i % 2 ? 'f' : 'm') : role === 'b' ? bondeLook(i) : roleLook('traficante', i); }
+function liveCarMesh(k) { return k === 'a' ? ambulanceMesh() : makeVehicleMesh(k === 'v' ? (VEH.j_viatura || VEH.v_sedan) : VEH.v_hilux_preta); }
+function liveTick() {
+  if (mode !== 'city') return; const now = performance.now(), t = now / 1000, dt = Math.min(0.1, (now - (LIVE.lt || now)) / 1000); LIVE.lt = now;
+  // envia ~3 vezes por segundo (e uma vez vazio para limpar na tela dos outros)
+  if (NET.ch && NET.online && now > (LIVE.sendAt || 0)) { LIVE.sendAt = now + 330; const G = liveGather(), any = G.p.length || G.c.length; if (any || LIVE.had) netSend('ent', G); LIVE.had = !!any; }
+  for (const corpse of city.corpses || []) if (!corpse.taken && corpse.g) animSkater(corpse.g, { walk: true, v: 0, fallT: 1 }, t);
+  city.corpses = (city.corpses || []).filter(o => !(o.taken && now > o.backAt));
+  for (const id in LIVE.peers) {
+    const L = LIVE.peers[id]; if (now - L.t > 4000 || !NET.peers[id]) { liveDrop(id); continue; }
+    // pessoas
+    while (L.ppl.length > L.P.length) { const q = L.ppl.pop(); city.scene.remove(q.g); }
+    L.P.forEach((v, i) => {
+      let q = L.ppl[i]; if (q && q.role !== v[3]) { city.scene.remove(q.g); q = null; }
+      if (!q) { const g = makeSkater(liveLook(v[3], i), v[3] === 'm' ? 'SAMU' : null); g.userData.ped = true; city.scene.add(g); q = L.ppl[i] = { g, role: v[3], x: v[0], z: v[1], h: v[2], y: v[5] || null, ghost: true }; }
+      const ox = q.x, oz = q.z; q.x = lerp(q.x, v[0], 1 - Math.exp(-8 * dt)); q.z = lerp(q.z, v[1], 1 - Math.exp(-8 * dt)); q.h = v[2]; const sp = Math.hypot(q.x - ox, q.z - oz) / Math.max(dt, 1e-3);
+      const y = v[5] ? v[5] : groundH(q.x, q.z); q.g.position.set(q.x, y, q.z); q.g.rotation.y = q.h;
+      animSkater(q.g, { walk: true, v: sp > 0.4 ? sp : 0, fallT: v[4] & 1 ? 1 : 0, wpHold: v[3] === 'm' ? null : v[3] === 'p' ? 'pistola' : 'fuzil' }, t + i);
+    });
+    // carros
+    while (L.cars.length > L.C.length) { const q = L.cars.pop(); city.scene.remove(q.g); }
+    L.C.forEach((v, i) => {
+      let q = L.cars[i]; if (q && q.k !== v[3]) { city.scene.remove(q.g); q = null; }
+      if (!q) { const g = liveCarMesh(v[3]); city.scene.add(g); q = L.cars[i] = { g, k: v[3], x: v[0], z: v[1] }; }
+      q.x = lerp(q.x, v[0], 1 - Math.exp(-8 * dt)); q.z = lerp(q.z, v[1], 1 - Math.exp(-8 * dt)); q.g.position.set(q.x, groundH(q.x, q.z), q.z); q.g.rotation.y = v[2];
+      const u = q.g.userData; if (u.siren) { const on = Math.floor(now / 180) % 2; u.siren[0].visible = !!on; u.siren[1].visible = !on; } if (v[3] === 'v') try { vehLightsTick(q.g, true, (Math.floor(t * 4) % 2) ? 1 : 2, t); } catch (e) { }
+    });
+  }
+}
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },
@@ -13910,6 +13985,9 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'abord' }, ({ payload }) => onAbord(payload))
     .on('broadcast', { event: 'abord_doc' }, ({ payload }) => onAbordDoc(payload))
     .on('broadcast', { event: 'disparo' }, ({ payload }) => onDisparo(payload))
+    .on('broadcast', { event: 'npc' }, ({ payload }) => onNpcNet(payload))
+    .on('broadcast', { event: 'ent' }, ({ payload }) => onEntNet(payload))
+    .on('broadcast', { event: 'boom' }, ({ payload }) => { if (payload && payload.id !== (NET.user && NET.user.id) && (payload.rm || '') === roomKey()) tankBoom(payload.x, payload.z, null, true); })
     .on('broadcast', { event: 'guerra' }, ({ payload }) => onGuerra(payload))
     .on('broadcast', { event: 'morro_oferta' }, ({ payload }) => onMorroOferta(payload))
     .on('broadcast', { event: 'morro_dono' }, ({ payload }) => onMorroDono(payload))
@@ -13966,7 +14044,7 @@ function peerParked(p, d) {
   if (!p.pveh || p.pvId !== pv[0]) { if (p.pveh) city.scene.remove(p.pveh); p.pveh = makeVehicleMesh(VEH[pv[0]]); p.pvId = pv[0]; city.scene.add(p.pveh); p.pveh.position.set(pv[1], pv[2], pv[3]); p.pveh.rotation.y = pv[4]; }
   const m = p.pveh; m.position.x += (pv[1] - m.position.x) * 0.5; m.position.y += (pv[2] - m.position.y) * 0.5; m.position.z += (pv[3] - m.position.z) * 0.5; m.rotation.y = pv[4]; m.visible = true;
 }
-function removePeer(id) { const p = NET.peers[id]; if (!p) return; city.scene.remove(p.g); if (p.veh) city.scene.remove(p.veh); if (p.pveh) city.scene.remove(p.pveh); delete NET.peers[id]; }
+function removePeer(id) { try { liveDrop(id); } catch (e) { } const p = NET.peers[id]; if (!p) return; city.scene.remove(p.g); if (p.veh) city.scene.remove(p.veh); if (p.pveh) city.scene.remove(p.pveh); delete NET.peers[id]; }
 function onPeerPos(d) {
   const p = NET.peers[d.id]; if (!p) return;
   p.t = d; if (!p.seen) { p.seen = true; p.x = d.x; p.y = d.y; p.z = d.z; p.h = d.h; p.g.visible = true; }
