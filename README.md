@@ -251,3 +251,10 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
     - Toda casa pode ser alugada ou comprada por jogadores reais. Se mora um figurante, ele se muda. O banco impede que duas pessoas peguem a mesma casa.
     - A Imobiliária lista as casas livres por tipo e marca no GPS a mais próxima.
     - Quem já morava no lote antigo ganha, sem pagar de novo, uma casa própria do mesmo padrão em outro endereço. O jogador acorda na porta da própria casa.
+- **Build 2026.10.12-29**
+  - 🚗 O carro chamado ou estacionado agora aparece em tempo real para todos os jogadores online por perto. Antes só aparecia para os outros enquanto alguém dirigia.
+  - 🏠 Casa aberta ou fechada:
+    - O botão 🔓/🔒 aparece perto da sua casa e dentro dela. Também está no painel da casa.
+    - Liberada: qualquer jogador online entra e todos se veem lá dentro.
+    - Fechada: ninguém entra, e quem estiver visitando sai na hora.
+    - Vale também para a mansão do ADM: os outros jogadores entram pela porta quando ela está liberada.
