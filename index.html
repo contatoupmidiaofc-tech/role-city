@@ -567,6 +567,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" id="hb-fam" data-act="familia" aria-label="Chamar as filhas" hidden><span style="font-size:17px">👧</span><span class="lbl">Filhas</span></button>
     <button class="hud-btn" id="hb-brincar" data-act="filhas-brincar" aria-label="Liberar as filhas pra brincar" hidden><span style="font-size:17px">🛝</span><span class="lbl">Brincar</span></button>
     <button class="hud-btn" id="hb-casa" data-act="casa-toggle" aria-label="Liberar ou fechar a casa" hidden><span style="font-size:17px">🔒</span><span class="lbl">Casa fechada</span></button>
+    <button class="hud-btn" id="hb-toque" data-act="toque" aria-label="Dar o toque" hidden><span style="font-size:17px">🤜</span><span class="lbl">Dar o toque</span></button>
     <button class="hud-btn" id="hb-seg" data-act="open-seg" aria-label="Seguranças" hidden><span style="font-size:17px">🕶️</span><span class="lbl">Seguranças</span></button>
     <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
     <button class="hud-btn" data-act="radio" aria-label="Rádio do grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8 15 3M9 13h6M9 17h3"/></svg><span class="lbl">Rádio</span></button>
@@ -1554,6 +1555,11 @@ function buildAcc(u, acc, bag) {
     const m = new THREE.MeshStandardMaterial({ color: acc.color, roughness: 0.25, metalness: 1 });
     mk(new THREE.TorusGeometry(0.085, 0.007, 6, 28), m, 0, 0.25, 0.0, 1.05, 1.3, 1, 1.2);
     mk(CYL(0.025, 0.025, 0.006, 12), m, 0, 0.15, 0.1, 1, 1, 1, Math.PI / 2 - 0.25);
+  } else if (kind === 'colete') {
+    const cid = typeof cityId === 'function' ? cityId() : 'sp', tm = new THREE.MeshStandardMaterial({ map: coleteTex(cid), roughness: 0.85 }), dk = std(0x1b1d22, 0.85);
+    mk(boxGeo(0.34, 0.36, 0.035), [dk, dk, dk, dk, tm, dk], 0, -0.06, 0.125); mk(boxGeo(0.34, 0.38, 0.035), [dk, dk, dk, dk, dk, tm], 0, -0.06, -0.125);
+    for (const sx of [1, -1]) { mk(boxGeo(0.05, 0.03, 0.26), dk, sx * 0.11, 0.13, 0); mk(boxGeo(0.035, 0.32, 0.23), dk, sx * 0.17, -0.07, 0); }
+    mk(boxGeo(0.05, 0.1, 0.03), std(0x111111, 0.4), -0.1, 0.03, 0.15); mk(CYL(0.006, 0.006, 0.08, 4), std(0x111111, 0.4), -0.1, 0.12, 0.15);
   } else if (kind === 'medal') {
     const gm = new THREE.MeshStandardMaterial({ color: 0xffd23f, roughness: 0.2, metalness: 1 }), rib = std(acc.sk ? 0x9b5cff : 0x1a8a3a, 0.7);
     for (const sx of [1, -1]) mk(boxGeo(0.03, 0.2, 0.006), rib, sx * 0.05, 0.16, 0.115, 1, 1, 1, -0.2, 0, sx * 0.35);
@@ -2158,6 +2164,7 @@ function showWeaponProp(u, kind) {
     if (kind === 'spray') { m(CYL(0.035, 0.035, 0.18, 12), 0xff4f7b, 0, 0.1, 0.03); m(CYL(0.015, 0.02, 0.04, 8), 0xffffff, 0, 0.21, 0.03); }
     else if (kind === 'banana') { const t = m(new THREE.TorusGeometry(0.09, 0.03, 6, 12, Math.PI), 0xffe14a, 0, 0.08, 0.04); t.rotation.z = Math.PI / 2; }
     else if (kind === 'sling') { m(boxGeo(0.025, 0.12, 0.025), 0x8a6a45, 0, 0.08, 0.03); m(boxGeo(0.02, 0.09, 0.02), 0x8a6a45, 0.035, 0.17, 0.03, 0, -0.4); m(boxGeo(0.02, 0.09, 0.02), 0x8a6a45, -0.035, 0.17, 0.03, 0, 0.4); m(boxGeo(0.1, 0.008, 0.008), 0xd9a520, 0, 0.21, 0.03); }
+    else if (kind === 'faca') { m(boxGeo(0.03, 0.1, 0.035), 0x2a1d14, 0, 0.05, 0.02); m(boxGeo(0.012, 0.2, 0.04), 0xd9dde2, 0, 0.19, 0.02, 0, 0, std(0xd9dde2, 0.15, 0.95)); }
     else if (kind === 'smoke') { m(SPH(0.055, 10, 8), 0x6d717a, 0, 0.08, 0.04); m(CYL(0.006, 0.006, 0.06, 4), 0xd9a520, 0, 0.15, 0.04); }
     else if (kind === 'rocket') { m(CYL(0.045, 0.045, 0.45, 12), 0xa66bff, 0, 0.12, 0.05, Math.PI / 2); m(new THREE.ConeGeometry(0.045, 0.1, 10), 0xffcf3a, 0, 0.12, 0.32, Math.PI / 2); }
     else if (kind === 'pistola' || kind === 'revolver' || kind === 'taser') { const c = kind === 'taser' ? 0xffcf3a : 0x22252b; m(boxGeo(0.035, 0.11, 0.04), c, 0, 0.06, 0.02, -0.25); m(boxGeo(0.035, 0.045, 0.18), c, 0, 0.13, 0.08); if (kind === 'revolver') m(CYL(0.03, 0.03, 0.05, 8), 0x6d717a, 0, 0.13, 0.03, Math.PI / 2); }
@@ -4045,6 +4052,7 @@ function updateCity(dt, t) {
     turnTo(9);
     P.v = lerp(P.v, mag > 0.12 ? maxV * mag : 0, 1 - Math.exp(-(mag > 0.12 ? 6 : 9) * dt));
     if (!blocked && !P.sport && tap('jump') && !P.air) { P.vy = 6; P.air = true; P.emote = null; }
+    if (!blocked && !P.sport && !P.sitAt && tap('punch')) meleeHit(myKnife());
   }
   else {
     const maxV = 14 * st.spd;
@@ -4931,7 +4939,7 @@ UNI_ITEMS.forEach(i => ITEM[i.id] = i);
 // roupa exclusiva do Ajbz (só a conta do chefe recebe)
 const EXCL_ITEMS = [I('shirt', 'shirt_ajbz', 'Jaqueta do Chefe AJBZ', 0x0e0e10, null, null, 'lendario', { pat: 'ajbz', src: 'Exclusiva do Ajbz' }), I('cap', 'cap_ajbz', 'Coroa do Chefe', 0xd4a017, null, null, 'lendario', { hat: 'crown', src: 'Exclusiva do Ajbz' }), I('pants', 'pants_ajbz', 'Calça do Chefe', 0x0e0e10, null, null, 'lendario', { pat: 'ajbz', src: 'Exclusiva do Ajbz' })];
 EXCL_ITEMS.forEach(i => ITEM[i.id] = i);
-const UNIFORM = { policial: { shirt: 'uni_pm', pants: 'uni_pm_p', cap: 'uni_pm_c' }, bombeiro: { shirt: 'uni_bomb', pants: 'uni_bomb_p', cap: 'uni_bomb_c' }, catador: { shirt: 'uni_gari', pants: 'uni_gari_p' }, motoboy: { shirt: 'uni_moto' } };
+const UNIFORM = { get policial() { return typeof pmUniform === 'function' ? pmUniform() : { shirt: 'uni_pm', pants: 'uni_pm_p', cap: 'uni_pm_c' }; }, bombeiro: { shirt: 'uni_bomb', pants: 'uni_bomb_p', cap: 'uni_bomb_c' }, catador: { shirt: 'uni_gari', pants: 'uni_gari_p' }, motoboy: { shirt: 'uni_moto' } };
 Object.assign(JOBS, {
   motoboy: { name: 'Motoboy', desc: 'Corre de entrega de moto: retire os pedidos e entregue pilotando a sua moto. Paga mais que a pé.', base: 85, need: 2, veh: 'moto', icon: '🏍️' },
   taxista: { name: 'Taxista', desc: 'Pegue passageiros que acenam na calçada e leve até o destino com o seu carro. Pare do lado deles para entrarem.', base: 120, need: 3, veh: 'car', icon: '🚕' },
@@ -4944,6 +4952,7 @@ Object.assign(JOBS, {
 });
 // armas de fogo: só com tokens (dinheiro real)
 const GUNS = [
+  I('gun', 'gun_faca', 'Faca', 0x9aa3ad, 60, null, 'comum', { gun: 'faca', dmg: 34, rng: 1.9, cd: 0.55, mag: 1, rel: 0, knock: 2, melee: true, desc: 'Arma branca: o botão Bater vira facada (-34 de vida).' }),
   I('gun', 'gun_none', 'Sem arma de fogo', 0x555555, 0, null, 'comum', { gun: 'none', desc: 'Mãos livres.' }),
   I('gun', 'gun_taser', 'Taser', 0xffcf3a, null, 80, 'raro', { dmg: 10, gun: 'taser', rng: 9, cd: 0.5, mag: 1, rel: 2.2, knock: 4, desc: '1 disparo por cartucho (recarga 2,2 s). Choque de perto: derruba por 4 s.' }),
   I('gun', 'gun_38', 'Revólver .38', 0x6d717a, null, 120, 'raro', { dmg: 35, gun: 'revolver', rng: 22, cd: 0.45, mag: 6, rel: 3.2, knock: 4, desc: 'Tambor de 6 tiros, recarga lenta (3,2 s).' }),
@@ -5113,6 +5122,7 @@ function gunFx(x0, y0, z0, x1, y1, z1, kind) {
   city.fx.push({ m: ln, vx: 0, vy: 0, vz: 0, life: 0.08, max: 0.08, line: true }, { m: fl, vx: 0, vy: 0, vz: 0, life: 0.07, max: 0.07 });
 }
 function shootGun(G) {
+  if (G && G.melee) return meleeHit(true);
   if ((P.wpCd || 0) > 0 || P.drive || P.ride || P.jailT > 0 || P.down) return;
   if (!aimOn() && drawGun()) return;
   if (!useRound(G)) return;
@@ -6093,7 +6103,7 @@ function exitShop() {
 let _tileT = null;
 function tileTex() { return _tileT || (_tileT = (() => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#d8d3c8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2; for (let k = 0; k <= w; k += 32) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })()); }
 function buildShopInterior(d) {
-  const k = d.kind, BT = k === 'biz' && d.biz ? (BIZ_TYPES[d.biz.tipo] || BIZ_TYPES.loja) : null, info = BT ? { color: BT.c, label: `${BT.i} ${d.biz.nome}`, css: '#' + BT.c.toString(16).padStart(6, '0') } : k.startsWith('mansao') ? { color: k === 'mansao4' ? 0xff8fc8 : 0xffc83d, label: MANSAO_FLOORS[+k.slice(6) - 1] || '👧 Quarto das meninas', css: k === 'mansao4' ? '#ff8fc8' : '#ffc83d' } : Object.values(SPECIAL).find(s => s.kind === k) || { color: 0xcccccc, label: d.label };
+  const k = d.kind, BT = k === 'biz' && d.biz ? (BIZ_TYPES[d.biz.tipo] || BIZ_TYPES.loja) : null, info = BT ? { color: BT.c, label: `${BT.i} ${d.biz.nome}`, css: '#' + BT.c.toString(16).padStart(6, '0') } : k.startsWith('mansao') ? { color: k === 'mansao4' ? 0xff8fc8 : 0xffc83d, label: MANSAO_FLOORS[+k.slice(6) - 1] || '👧 Quarto das meninas', css: k === 'mansao4' ? '#ff8fc8' : '#ffc83d' } : Object.values(SPECIAL).find(s => s.kind === k) || (typeof EXTRA_SHOPS !== 'undefined' && EXTRA_SHOPS[k]) || { color: 0xcccccc, label: d.label };
   const [W, D] = ROOM_SIZE[k] || [16, 12], H = k.startsWith('mansao') ? 4.2 : k === 'igreja' ? 7 : k === 'concessionaria' || k === 'bombeiros' ? 5 : 3.4;
   const g = new THREE.Group(), cx = SHOPIN.x, cz = SHOPIN.z; g.position.set(cx, 0, cz); city.scene.add(g);
   const it = { g, kind: k, door: d, W, D, spots: [], npcs: [] };
@@ -6122,7 +6132,8 @@ function buildShopInterior(d) {
     spot(label, 0, z + 1.4, () => doorPanel(k));
   };
   const C = pick, rnd = mulberry32(k.length * 97);
-  if (k === 'roupas') {
+  if (typeof EXTRA_INT !== 'undefined' && EXTRA_INT[k]) EXTRA_INT[k]({ add, box, solid, npc, spot, counter, col, W, D, H, it, k });
+  else if (k === 'roupas') {
     counter();
     for (const x of [-W / 2 + 2, W / 2 - 2]) for (const z of [-1.5, 2]) { box(0.05, 1.6, 2.6, 0x9aa3ad, x, 0.8, z, 0, 0.3, 0.8); box(0.05, 0.05, 2.6, 0xcfd3d8, x, 1.6, z, 0, 0.3, 0.8); for (let i = 0; i < 8; i++) box(0.5, 0.65, 0.04, [0xff4f7b, 0x4fc3ff, 0xffcf3a, 0x3ddc84, 0x15161a, 0xf4f2ec, 0xa66bff, 0xd8312f][(i + Math.floor(z)) & 7], x, 1.2, z - 1.15 + i * 0.32, Math.PI / 2); col(x, z, 0.6, 2.6); }
     const byS = s => ITEMS.filter(i => i.slot === s && i.r !== 'lendario');
@@ -8141,7 +8152,7 @@ const WEAR_FREE = ['shirt_none', 'wr_none', 'ea_none', 'bo_none'];
 function wearMigrate() { if (!S) return; for (const id of WEAR_FREE) if (!S.owned.includes(id)) S.owned.push(id); S.equip.wrist = S.equip.wrist || 'wr_none'; S.equip.ear = S.equip.ear || 'ea_none'; S.equip.bolsa = S.equip.bolsa || 'bo_none'; S.tats = S.tats || {}; }
 /* arma de fogo: fica no coldre na cintura; o botão da arma tira da cintura (e depois atira) */
 const handNow = () => { const k = myHandKind(); if (!k) return null; return myGun() && !(P.drawnT > 0) && !P.aim ? null : k; };
-const holsterNow = () => { const g = myGun(); return g && !(P.drawnT > 0) && !P.aim && !(P.jailT > 0) && ['pistola', 'revolver', 'taser'].includes(g.gun) ? g.gun : g && !(P.drawnT > 0) && !P.aim ? 'longa_' + g.gun : null; };
+const holsterNow = () => { const g = myGun(); if (g && g.melee) return null; return g && !(P.drawnT > 0) && !P.aim && !(P.jailT > 0) && ['pistola', 'revolver', 'taser'].includes(g.gun) ? g.gun : g && !(P.drawnT > 0) && !P.aim ? 'longa_' + g.gun : null; };
 function drawGun() { if (P.drawnT > 0) { P.drawnT = 20; return false; } P.drawnT = 20; P.wpCd = 0.3; tone('square', 300, 200, 0.05, 0.04); tone('square', 900, 1200, 0.03, 0.03, 0.08); feed('🔫 Arma na mão'); netTrack && netTrack(); return true; }
 /* ---------- peças presas aos ossos (bermuda larga, tatuagem, relógio, brinco, coldre) ---------- */
 function boneShell(bone, child, from, to, r0, r1, mat, open = true, seg = 14) {
@@ -9536,6 +9547,7 @@ function buildLife(sc) {
   try { buildQuadra(sc); } catch (e) { console.warn('quadra', e); }
   try { buildSktBooth(sc); } catch (e) { console.warn('torneio skate', e); }
   buildFamilyCity(sc);
+  try { buildRP28(sc); } catch (e) { console.warn('rp28', e); }
   setTimeout(loadCasas, 900);
 }
 /* =========================================================
@@ -9669,6 +9681,7 @@ function updateLife25(dt, t) {
   try { updateHandHold(); } catch (e) { console.warn('mãos dadas', e); }
   try { updateFight(dt, t); } catch (e) { console.warn('luta', e); }
   try { updateFutsal(dt, t); } catch (e) { console.warn('futsal', e); }
+  updateRP28(dt, t);
   try { if ((SKT.aT || 0) < performance.now()) { SKT.aT = performance.now() + 1000; sktAutoTick(); } updateSkt(dt, t); } catch (e) { console.warn('torneio skate', e); }
 }
 
@@ -10708,6 +10721,255 @@ function updateFamily27(dt, t) {
   const hx = $('hb-sair'), inn = !!(city.inCine || city.shopIn || city.interior) && mode === 'city'; if (hx && hx.hidden === inn) hx.hidden = !inn;
   try { updateFamilia(dt, t); updateGirlsHome(dt, t); updatePinkRoom(dt, t); updateCinema(dt, t); updateParque(dt, t); } catch (e) { console.warn('família', e); }
 }
+/* =========================================================
+   RP28 · vida na rua: bater e faca, dar o toque, sentar, PM de verdade, helicóptero Águia,
+   banco por dentro com movimento
+   ========================================================= */
+// ---------- bater (soco) e faca: funciona andando pela cidade ----------
+function meleeTargets() {
+  const L = [];
+  for (const [arr, k] of [[city.peds, 'ped'], [city.cops, 'cop'], [city.thugs, 'thug'], [city.robbers, 'robber'], [city.bots, 'bot']]) for (const o of arr || []) if (o && !o.off && !(o.fallT > 0)) L.push([o, k, o.x, o.z]);
+  for (const id in NET.peers) { const p = NET.peers[id]; if (p.t && (p.t.rm || '') === roomKey()) L.push([{ p }, 'peer', p.x, p.z]); }
+  return L;
+}
+function meleeHit(knife) {
+  if ((P.meleeCd || 0) > 0 || P.drive || P.ride || P.down || P.jailT > 0) return;
+  P.meleeCd = knife ? 0.55 : 0.4; P.meleeT = 0.28; P.meleeK = knife ? 'c' : (P.meleeAlt = !P.meleeAlt) ? 'j' : 'c'; P.emote = null;
+  tone('triangle', 220, 120, 0.06, 0.05);
+  const fx = Math.sin(P.h), fz = Math.cos(P.h); let best = null, bd = knife ? 1.9 : 1.7;
+  for (const T of meleeTargets()) { const dx = T[2] - P.x, dz = T[3] - P.z, d = Math.hypot(dx, dz); if (d < bd && d > 0.2 && (dx * fx + dz * fz) / d > 0.35) { bd = d; best = T; } }
+  if (!best) return;
+  const [o, kind] = best;
+  setTimeout(() => {
+    sfx('hit'); if (knife) noiseHit(0.08, 'highpass', 3200, 0.08);
+    const G = { dmg: knife ? 34 : 12, knock: knife ? 2 : 1.2 };
+    if (kind === 'bot') { o.fallT = G.knock + 0.6; bubble(o.g, pick(['Ai!', 'Qual foi?!', 'Para, mano!']), 2); return; }
+    applyShot(o, kind, G);
+    if (kind === 'peer') toast(`${knife ? '🔪 Facada' : '👊 Soco'} em ${o.p.name} (-${G.dmg})`);
+  }, 120);
+}
+function meleeTick(dt) {
+  P.meleeCd = (P.meleeCd || 0) - dt;
+  if (P.meleeT > 0) { P.meleeT -= dt; if (!P.sport) { P.fpc = P.meleeK; P.fp = fpPose(P.meleeK, 1 - P.meleeT / 0.28); } if (P.meleeT <= 0 && !P.sport) { P.fp = null; P.fpc = 0; } }
+}
+const myKnife = () => S.equip && S.equip.gun === 'gun_faca' && S.owned.includes('gun_faca');
+
+// ---------- dar o toque (o chefe e os traficantes) ----------
+const TOQUE_POSE = k => { const s = Math.sin(Math.min(1, k) * Math.PI); return { rArmFwd: 0.4 + s * 1.0, rElbow: 0.5 - s * 0.3, rArmDown: 1.25 - s * 0.35, lArmDown: 1.3, headX: 0.05, twist: 0.15 * s }; };
+function toqueTarget() {
+  if (!isAdm() || P.drive || P.ride) return null; let best = null, bd = 3.2;
+  const L = [].concat(city.thugs || [], (city.roles && city.roles.traficante) || [], city.squad || [], city.vielaSit || []);
+  for (const o of L) { if (!o || o.off || !o.g || o.fallT > 0) continue; const d = Math.hypot(o.x - P.x, o.z - P.z); if (d < bd) { bd = d; best = o; } }
+  return best;
+}
+function darToque() {
+  const o = toqueTarget(); if (!o) return toast('Chegue perto de um dos meninos para dar o toque.', 'pink');
+  city.toque = { o, t: 0 }; P.h = Math.atan2(o.x - P.x, o.z - P.z); o.h = P.h + Math.PI; P.v = 0;
+  bubble(city.player, pick(['Tamo junto!', 'Firmeza, meu mano!', 'É nós!']), 2);
+  setTimeout(() => o.g && bubble(o.g, pick(['Tamo junto, patrão! 🤜🤛', 'Salve, chefe! É o tudo 2!', 'Firmeza total, Ajbz!', 'Respeito, patrão!']), 2.5), 450);
+  tone('square', 520, 520, 0.05, 0.05, 0.5); noiseHit(0.05, 'bandpass', 1800, 0.12);
+}
+function toqueTick(dt, t) {
+  const hb = $('hb-toque'), tg = isAdm() && mode === 'city' ? toqueTarget() : null, show = !!tg; if (hb && hb.hidden === show) hb.hidden = !show;
+  const T = city.toque; if (!T) return; T.t += dt; const k = T.t / 1.3, o = T.o;
+  if (k >= 1 || !o.g) { city.toque = null; if (!P.sport && !(P.meleeT > 0)) { P.fp = null; P.fpc = 0; } return; }
+  P.fp = Object.assign({}, GUARD, TOQUE_POSE(k), { lThigh: 0, rThigh: 0, lKnee: 0, rKnee: 0, lean: 0 }); P.fpc = 0;
+  o.h = Math.atan2(P.x - o.x, P.z - o.z); o.g.rotation.y = o.h;
+  animSkater(o.g, { walk: true, v: 0, fallT: 0, fp: Object.assign({ lThigh: 0, rThigh: 0, lKnee: 0, rKnee: 0 }, TOQUE_POSE(k)) }, t);
+}
+
+// ---------- sentar: bancos de praça e de rua, cadeiras nas vielas, sofás e cadeiras dos comércios ----------
+function benchMesh(sc, x, z, h, wood = 0x8a5a32) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = h; sc.add(g);
+  const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  const W = lam(wood), F = std(0x2a2d34, 0.5, 0.6);
+  for (let i = 0; i < 3; i++) add(boxGeo(1.8, 0.05, 0.13), W, 0, 0.45, -0.15 + i * 0.15);
+  for (let i = 0; i < 2; i++) add(boxGeo(1.8, 0.12, 0.04), W, 0, 0.66 + i * 0.16, -0.27);
+  for (const sx of [-0.8, 0.8]) { add(boxGeo(0.06, 0.45, 0.4), F, sx, 0.22, -0.05); add(boxGeo(0.06, 0.5, 0.05), F, sx, 0.7, -0.27); }
+  city.colliders.push({ x0: x - 0.6, x1: x + 0.6, z0: z - 0.6, z1: z + 0.6, seat: true });
+  return g;
+}
+function chairMesh(sc, x, z, h, c = 0xf4f4f0) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = h; sc.add(g); const m = lam(c);
+  const add = (geo, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = true; g.add(o); return o; };
+  add(boxGeo(0.46, 0.05, 0.44), 0, 0.44, 0); add(boxGeo(0.46, 0.45, 0.05), 0, 0.68, -0.2);
+  for (const sx of [-0.2, 0.2]) for (const sz of [-0.18, 0.18]) add(boxGeo(0.04, 0.44, 0.04), sx, 0.22, sz);
+  return g;
+}
+/* assento: x, z, h (para onde a pessoa olha), y do assento */
+function addSeat(x, z, h, y = 0.45, label = '🪑 Sentar') {
+  city.seats = city.seats || []; const s = { x, z, h, y, label }; city.seats.push(s);
+  city.xspots.push({ seat: true, x: x + Math.sin(h) * 0.7, z: z + Math.cos(h) * 0.7, r: 1.3, ok: () => !P.sitAt && !P.drive && !s.npc, label, fn: () => sitDown(s) });
+  return s;
+}
+function sitDown(s) { P.sitAt = s; P.onBoard = false; P.v = 0; P.emote = { id: 'sit', t: 9999 }; toast('🪑 Sentado. Mexa o joystick para levantar.', 'pink'); }
+function standUp() { const s = P.sitAt; if (!s) return; P.sitAt = null; P.emote = null; P.x = s.x + Math.sin(s.h) * 0.8; P.z = s.z + Math.cos(s.h) * 0.8; P.y = s.y > 0.5 ? s.y - 0.45 : 0; }
+const SIT_DY = 0.25; // altura do quadril sentado em relação ao assento
+function seatTick() {
+  const s = P.sitAt; if (!s) return;
+  const ax = uiBlocking() ? { x: 0, y: 0 } : axis();
+  if (Math.hypot(ax.x, ax.y) > 0.35 || P.drive || mode !== 'city') return standUp();
+  P.x = s.x; P.z = s.z; P.h = s.h; P.y = s.y + SIT_DY - 0.45; P.v = 0; if (!P.emote || P.emote.id !== 'sit') P.emote = { id: 'sit', t: 9999 };
+}
+/* figurantes sentados (bancos e cadeiras da viela) */
+function sitNpc(sc, s, look, tag, kind) {
+  const g = look ? makeSkater(look, tag || null, '#ffcf3a') : MODELS ? makeRealPed(Math.random() < 0.5) : makePed({ shirt: 0x4fc3ff, pants: 0x2f4f86, skin: pick(SKINS), hair: pick(HAIRS) }); g.userData.ped = true; g.userData.lod = true; sc.add(g);
+  const o = { g, x: s.x, z: s.z, h: s.h, seat: s, kind, ph: rand(0, 9) }; s.npc = o; return o;
+}
+function sitNpcTick(o, t) {
+  if (o.fallT > 0) { o.fallT -= 1 / 60; animSkater(o.g, { walk: true, v: 0, fallT: 1 }, t); return; }
+  if (city.toque && city.toque.o === o) return;
+  o.g.position.set(o.seat.x, o.seat.y + SIT_DY - 0.45, o.seat.z); o.g.rotation.y = o.h;
+  if (Math.hypot(o.x - P.x, o.z - P.z) < 45) animSkater(o.g, { walk: true, v: 0, fallT: 0, emote: 'sit' }, t + o.ph);
+}
+function buildSeats(sc) {
+  city.seats = []; city.sitNpcs = []; city.vielaSit = [];
+  const put = (x, z, h, npcChance) => { benchMesh(sc, x, z, h); const s1 = addSeat(x + Math.cos(h) * 0.45, z - Math.sin(h) * 0.45, h), s2 = addSeat(x - Math.cos(h) * 0.45, z + Math.sin(h) * 0.45, h); if (Math.random() < npcChance) city.sitNpcs.push(sitNpc(sc, s1, null)); };
+  // praça central (círculo do ROLÊ CITY)
+  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + 0.3, r = 15.5; put(Math.sin(a) * r, Math.cos(a) * r, a + Math.PI, 0.35); }
+  // praça do dominó e parquinho
+  if (typeof PRACA_POS !== 'undefined') for (const [dx, dz, h] of [[-9, -9, Math.PI / 4], [9, -9, -Math.PI / 4], [-9, 9, Math.PI * 0.75], [9, 9, -Math.PI * 0.75]]) put(PRACA_POS[0] + dx, PRACA_POS[1] + dz, h, 0.4);
+  if (typeof PARQ_POS !== 'undefined' && city.parq) for (const dx of [-12, 12]) put(PARQ_POS[0] + dx, PARQ_POS[1] + 12, Math.PI, 0.5);
+  // calçadas da cidade: bancos virados para a rua nas esquinas dos quarteirões
+  for (const bx of [-84, -42, 0, 42, 84]) for (const bz of [-84, -42, 42, 84]) { if ((bx + bz) % 84 !== 0) continue; const x = bx + 11, z = bz - 15.5; if (collide(x, z, 1)) continue; put(x, z, Math.PI, 0.25); }
+  // vielas do morro: cadeiras de plástico na porta, com os meninos sentados
+  const W = (city.mWalls || []).filter((w, i) => i % 9 === 3).slice(0, 12);
+  for (const w of W) {
+    const x = w.x + w.nx * 0.4, z = w.z + w.nz * 0.4, h = Math.atan2(w.nx, w.nz); chairMesh(sc, x, z, h, pick([0xf4f4f0, 0x2f6db5, 0xd8312f, 0x3ddc84]));
+    const s = { x, z, h, y: (w.y || groundH(x, z)) + 0.45, label: '🪑 Sentar' }; s.y = groundH(x, z) + 0.45;
+    const o = sitNpc(sc, s, roleLook('traficante', Math.floor(Math.random() * 9)), null, 'thug'); o.morro = true; city.vielaSit.push(o); city.sitNpcs.push(o);
+    if (Math.random() < 0.5) { const x2 = x + Math.cos(h) * 0.7, z2 = z - Math.sin(h) * 0.7; chairMesh(sc, x2, z2, h, 0xf4f4f0); city.seats.push({ x: x2, z: z2, h, y: groundH(x2, z2) + 0.45 }); const s2 = city.seats[city.seats.length - 1]; city.xspots.push({ seat: true, x: x2 + Math.sin(h) * 0.7, z: z2 + Math.cos(h) * 0.7, r: 1.2, ok: () => !P.sitAt && !s2.npc, label: '🪑 Sentar com os meninos', fn: () => sitDown(s2) }); }
+  }
+}
+function interiorSeats() {
+  const it = city.interior; if (!it || it.seatsAdded) return; it.seatsAdded = true;
+  const gx = it.g.position.x, gz = it.g.position.z, sz = it.D / 2 - 3.1;
+  for (const dx of [-0.5, 0.5]) { const s = { x: gx + dx, z: gz + sz - 0.05, h: Math.PI, y: 0.45, label: '🛋️ Sentar no sofá' }; city.seats.push(s); city.xspots.push({ seat: true, inside: true, x: s.x, z: s.z - 0.9, r: 1.1, ok: () => !P.sitAt && city.interior === it, label: s.label, fn: () => sitDown(s) }); }
+}
+
+// ---------- PM com farda de verdade (muda por estado) ----------
+const PM_CITY = {
+  sp: { shirt: 0x7d8a99, pants: 0x5e6a78, cap: 0x15161a, n: 'PMESP', vest: '#1b1d22' },
+  rj: { shirt: 0x2d4370, pants: 0x1c2a48, cap: 0x15161a, n: 'PMERJ', vest: '#14182a' },
+  ssa: { shirt: 0xa3936a, pants: 0x7b6d4c, cap: 0x2a2a2a, n: 'PMBA', vest: '#1c1d1a' },
+};
+const PM_WEAR = [];
+for (const cid in PM_CITY) { const C = PM_CITY[cid]; PM_WEAR.push(I('shirt', 'pm_' + cid, `Farda ${C.n}`, C.shirt, 0, null, 'comum', { pat: 'plain', uni: true }), I('pants', 'pm_' + cid + '_p', `Calça ${C.n}`, C.pants, 0, null, 'comum', { pat: 'plain', uni: true })); }
+PM_WEAR.push(I('acc', 'ac_colete_pm', 'Colete da PM', 0x1b1d22, 0, null, 'comum', { ak: 'colete', uni: true }));
+PM_WEAR.forEach(i => { EXCL_ITEMS.push(i); ITEM[i.id] = i; });
+const pmUniform = () => { const cid = cityId ? cityId() : 'sp', k = PM_CITY[cid] ? cid : 'sp'; return { shirt: 'pm_' + k, pants: 'pm_' + k + '_p', cap: 'uni_pm_c', acc: 'ac_colete_pm' }; };
+let _coleteT = {};
+function coleteTex(cid) {
+  const C = PM_CITY[cid] || PM_CITY.sp; return _coleteT[cid] || (_coleteT[cid] = canvasTex(256, 192, (c, w, h) => {
+    c.fillStyle = C.vest; c.fillRect(0, 0, w, h); c.strokeStyle = 'rgba(255,255,255,.12)'; for (let y = 10; y < h; y += 14) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
+    c.fillStyle = '#e8e8e8'; c.font = 'bold 34px Arial'; c.textAlign = 'center'; c.fillText('POLÍCIA', w / 2, 78); c.font = 'bold 22px Arial'; c.fillText(C.n, w / 2, 110);
+    c.fillStyle = '#c9a227'; c.beginPath(); c.arc(w / 2, 150, 16, 0, TAU); c.fill(); c.fillStyle = C.vest; c.font = 'bold 16px Arial'; c.fillText('★', w / 2, 156);
+  }));
+}
+
+// ---------- helicóptero da polícia (Águia) fazendo ronda ----------
+function buildPoliceHeli(sc) {
+  const V = { id: 'h_pm', heli: true, kind: 'heli', name: 'Águia PM', color: 0x1f2f4f, sc: 1, top: 34 };
+  const m = makeAnyHeli(V); sc.add(m); m.position.set(0, 70, 0);
+  const sp = textSprite('🚁 ÁGUIA · PM', { bg: '#1f2f4f', fg: '#fff', size: 36, scale: [3.6, 0.6, 1] }); sp.position.set(0, 3, 0); m.add(sp);
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(9, 70, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff6c8, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide })); beam.position.y = -35; beam.visible = false; m.add(beam);
+  city.polHeli = { m, a: Math.random() * TAU, beam, x: 0, z: 0, y: 70, h: 0 };
+}
+function policeHeliTick(dt, t) {
+  const H = city.polHeli; if (!H) return; const u = H.m.userData;
+  const hunt = (P.wanted > 0 || (city.heist && city.heist.stars > 0)) && !city.interior && !city.shopIn;
+  let tx, tz, ty;
+  if (hunt) { tx = P.x - Math.sin(t * 0.3) * 18; tz = P.z - Math.cos(t * 0.3) * 18; ty = 38; }
+  else { H.a += dt * 0.06; const R = 160; tx = Math.sin(H.a) * R; tz = Math.cos(H.a) * R; ty = 72; }
+  const dx = tx - H.x, dz = tz - H.z, d = Math.hypot(dx, dz), sp = hunt ? 26 : 14;
+  if (d > 0.5) { const k = Math.min(1, sp * dt / d); H.x += dx * k; H.z += dz * k; H.h += Math.atan2(Math.sin(Math.atan2(dx, dz) - H.h), Math.cos(Math.atan2(dx, dz) - H.h)) * Math.min(1, dt * 1.5); }
+  H.y += (ty - H.y) * Math.min(1, dt * 0.6);
+  H.m.position.set(H.x, H.y, H.z); H.m.rotation.y = H.h; H.m.rotation.x = Math.min(0.2, d / 120);
+  if (u.rotor) u.rotor.rotation.y += dt * 28; if (u.trotor) u.trotor.rotation.x += dt * 40;
+  H.beam.visible = hunt; if (hunt) { H.beam.lookAt && H.beam.rotation.set(0, 0, 0); }
+  const dP = Math.hypot(H.x - P.x, H.z - P.z);
+  if (dP < 140 && (H.thT = (H.thT || 0) - dt) <= 0) { H.thT = 0.12; if (audioCtx()) try { noiseHit(0.08, 'lowpass', 160, 0.05 * Math.max(0.1, 1 - dP / 140), 1, 60); } catch (e) { } }
+  if (hunt && (H.sayT = (H.sayT || 0) - dt) <= 0) { H.sayT = 9; toast('🚁 Águia: "Atenção, suspeito localizado! Viaturas, acompanhem!"', 'bad'); }
+}
+
+// ---------- banco por dentro, com fila e movimento na porta ----------
+const EXTRA_SHOPS = { banco: { kind: 'banco', label: 'Banco Rolê', color: 0x1f3a6b, css: '#1f3a6b' } };
+Object.assign(ROOM_SIZE, { banco: [22, 16] });
+const EXTRA_INT = {};
+EXTRA_INT.banco = (h) => {
+  const { add, box, solid, npc, spot, W, D, it } = h;
+  // balcão com 4 caixas (guichês) e vidro
+  for (let i = 0; i < 4; i++) { const x = -6 + i * 4; solid(3.2, 1.1, 0.9, 0x3a2a1c, x, 0.55, -D / 2 + 3); box(3.2, 1, 0.05, new THREE.MeshStandardMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.35, roughness: 0.05 }), x, 1.6, -D / 2 + 3.4); const n = npc(lookOf({ shirt: 'shirt_basic', pants: 'pants_black', shoes: 'shoes_black', acc: 'ac_none' }, pick(SKINS), pick(HAIRS), i % 2 ? 'f' : 'm'), `Caixa ${i + 1}`, x, -D / 2 + 2.2, 0); n.userData.teller = true; spot(`🏦 Caixa ${i + 1}: conta, depósito e saque`, x, -D / 2 + 4.3, () => openPanel('banco')); }
+  // cofre no fundo (porta redonda de aço)
+  const vx = W / 2 - 2.5, vz = -D / 2 + 0.25; const door = add(new THREE.CylinderGeometry(1.4, 1.4, 0.3, 28), std(0x9aa3ad, 0.25, 0.9), vx, 1.6, vz + 0.2, 0, Math.PI / 2); it.vault = door;
+  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; add(CYL(0.05, 0.05, 0.5, 6), std(0xcfd3d8, 0.2, 0.9), vx + Math.cos(a) * 0.45, 1.6 + Math.sin(a) * 0.45, vz + 0.42, 0, Math.PI / 2); }
+  // ouro e diamantes atrás do cofre (aparecem no assalto)
+  const gold = new THREE.Group(); gold.position.set(vx, 0, vz + 1.2); it.g.add(gold); gold.visible = false; it.goldG = gold;
+  for (let i = 0; i < 12; i++) { const b = new THREE.Mesh(boxGeo(0.3, 0.12, 0.15), std(0xffc83d, 0.25, 1)); b.position.set(-0.5 + (i % 4) * 0.33, 0.95 + Math.floor(i / 4) * 0.13, 0); gold.add(b); }
+  for (let i = 0; i < 6; i++) { const dm = new THREE.Mesh(new THREE.OctahedronGeometry(0.08), new THREE.MeshStandardMaterial({ color: 0xbfe8ff, roughness: 0, metalness: 0.4, emissive: 0x335577 })); dm.position.set(-0.4 + i * 0.16, 1.45, 0.1); gold.add(dm); }
+  box(1.6, 0.9, 0.6, 0x3a2a1c, vx, 0.45, vz + 1.2);
+  // espera: cadeiras e totem de senha
+  for (let i = 0; i < 6; i++) { const x = -W / 2 + 2 + (i % 3) * 0.9, z = 1.5 + Math.floor(i / 3) * 1.6; box(0.7, 0.45, 0.7, 0x2f6db5, x, 0.22, z); box(0.7, 0.5, 0.1, 0x2f6db5, x, 0.65, z + 0.32); }
+  box(0.5, 1.4, 0.4, 0x1f3a6b, -2, 0.7, 2.8); box(0.42, 0.3, 0.05, 0x9fd6ff, -2, 1.25, 2.58);
+  // segurança na porta
+  const seg = npc(lookOf({ shirt: 'shirt_black', pants: 'pants_black', shoes: 'shoes_black', cap: 'cap_none', glasses: 'gl_dark' }, pick(SKINS), HAIRS[0], 'm'), 'Segurança', W / 2 - 2.5, D / 2 - 2, -Math.PI / 2); seg.userData.guard = true;
+  // fila de clientes que anda
+  it.queue = []; for (let i = 0; i < 7; i++) { const look = lookOf({ shirt: pick(ITEMS.filter(x => x.slot === 'shirt' && x.r === 'comum' && !x.dress)).id, pants: 'pants_jeans', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), Math.random() < 0.5 ? 'f' : 'm'); const n = npc(look, null, 0, 0, 0); n.userData.cust = true; it.queue.push({ g: n, i, st: 'fila', t: rand(0, 6), x: 0, z: 0 }); }
+};
+function bankInsideTick(dt, t) {
+  const it = city.shopIn; if (!it || it.kind !== 'banco' || !it.queue) return;
+  const cx = it.g.position.x, cz = it.g.position.z, D = it.D;
+  for (const q of it.queue) {
+    const g = q.g; if (q.down) { g.position.set(q.x, 0, q.z); animSkater(g, { walk: true, v: 0, fallT: 1 }, t); continue; }
+    q.t -= dt; let tx, tz;
+    if (q.st === 'fila') { const slot = it.queue.filter(o => o.st === 'fila').indexOf(q); tx = cx - 2 + 0.0; tz = cz - D / 2 + 5.4 + slot * 0.9; if (slot === 0 && q.t <= 0) { q.st = 'caixa'; q.k = Math.floor(Math.random() * 4); q.t = rand(4, 8); } }
+    else if (q.st === 'caixa') { tx = cx - 6 + q.k * 4; tz = cz - D / 2 + 4.2; if (q.t <= 0) { q.st = 'sai'; q.t = rand(3, 6); } }
+    else { tx = cx + 0; tz = cz + D / 2 - 0.6; if (Math.hypot(q.x - tx, q.z - tz) < 0.6) { q.st = 'fila'; q.t = rand(2, 6); q.x = cx + rand(-1, 1); q.z = cz + D / 2 - 1; } }
+    const dx = tx - q.x, dz = tz - q.z, d = Math.hypot(dx, dz), sp = 1.4; let v = 0;
+    if (d > 0.15) { const k = Math.min(1, sp * dt / d); q.x += dx * k; q.z += dz * k; v = sp; g.rotation.y = Math.atan2(dx, dz); } else if (q.st === 'caixa') g.rotation.y = Math.PI;
+    if (!q.x && !q.z) { q.x = cx + rand(-3, 3); q.z = cz + rand(0, 4); }
+    g.position.set(q.x, 0, q.z); animSkater(g, { walk: true, v, fallT: 0 }, t + q.i);
+  }
+}
+/* gente entrando e saindo do banco lá fora */
+function buildBankCrowd(sc) {
+  city.bankCrowd = []; const [bx, bz] = BANK_POS;
+  for (let i = 0; i < 8; i++) {
+    const g = MODELS ? makeRealPed(Math.random() < 0.5) : makePed({ shirt: 0x4fc3ff, pants: 0x2f4f86, skin: pick(SKINS), hair: pick(HAIRS) }); g.userData.ped = true; sc.add(g);
+    const a = rand(-1.2, 1.2), r = rand(14, 26), o = { g, st: i % 2 ? 'vem' : 'vai', home: [bx - 8 - Math.cos(a) * r, bz + Math.sin(a) * r * 1.5], x: 0, z: 0, t: rand(0, 4), ph: rand(0, 9) };
+    o.x = i % 2 ? o.home[0] : bx - 7.2; o.z = i % 2 ? o.home[1] : bz + rand(-1.5, 1.5); city.bankCrowd.push(o);
+  }
+}
+function bankCrowdTick(dt, t) {
+  const L = city.bankCrowd; if (!L || !L.length) return; const [bx, bz] = BANK_POS, far = Math.hypot(bx - P.x, bz - P.z) > 90 || city.interior || city.shopIn;
+  for (const o of L) {
+    o.g.visible = !far && !o.inside; if (far) continue;
+    if (o.inside) { o.t -= dt; if (o.t <= 0) { o.inside = false; o.st = 'vai'; o.x = bx - 6.6; o.z = bz + rand(-1.2, 1.2); } continue; }
+    const tx = o.st === 'vem' ? bx - 6.6 : o.home[0], tz = o.st === 'vem' ? bz + rand(-0.2, 0.2) : o.home[1], dx = tx - o.x, dz = tz - o.z, d = Math.hypot(dx, dz);
+    if (d < 0.5) { if (o.st === 'vem') { o.inside = true; o.t = rand(5, 14); } else { o.st = 'vem'; const a = rand(-1.2, 1.2), r = rand(14, 26); o.home = [bx - 8 - Math.cos(a) * r, bz + Math.sin(a) * r * 1.5]; } continue; }
+    const sp = 1.35, k = Math.min(1, sp * dt / d); o.x += dx * k; o.z += dz * k; o.g.position.set(o.x, groundH(o.x, o.z), o.z); o.g.rotation.y = Math.atan2(dx, dz);
+    animSkater(o.g, { walk: true, v: sp, fallT: 0 }, t + o.ph);
+  }
+}
+function enterBank() {
+  const [x, z] = BANK_POS; enterShop({ kind: 'banco', label: 'Banco Rolê', x: x - 6, z, out: [x - 8.6, z, -Math.PI / 2] });
+}
+
+// ---------- montagem e atualização ----------
+function buildRP28(sc) {
+  try { buildSeats(sc); } catch (e) { console.warn('assentos', e); }
+  try { buildPoliceHeli(sc); } catch (e) { console.warn('águia', e); }
+  try { buildBankCrowd(sc); } catch (e) { console.warn('banco gente', e); }
+  try { const [x, z] = BANK_POS; city.xspots = city.xspots.filter(o => !(o.bank && o.r === 3.2)); city.xspots.push({ bank: true, x: x - 8.4, z, r: 3.2, label: '🚪 Entrar no Banco Rolê (caixas, conta e cartão)', fn: enterBank }); } catch (e) { }
+}
+function updateRP28(dt, t) {
+  try { meleeTick(dt); seatTick(); toqueTick(dt, t); } catch (e) { console.warn('rua', e); }
+  try { for (const o of city.sitNpcs || []) sitNpcTick(o, t); } catch (e) { }
+  try { interiorSeats(); } catch (e) { }
+  try { policeHeliTick(dt, t); } catch (e) { console.warn('águia', e); }
+  try { bankCrowdTick(dt, t); bankInsideTick(dt, t); } catch (e) { console.warn('banco', e); }
+}
+
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
   { id: 'quarto', name: 'Quarto na Pensão', rent: 50, buy: null, tok: null, bonus: 0.05, desc: 'Cama, armário e janela pra rua. Você nasce aqui ao entrar no jogo.' },
@@ -11824,7 +12086,7 @@ function itemCard(it) {
   return `<div class="item-card r-${it.r} ${on ? 'is-on' : ''} ${isWear(it) ? 'has-thumb' : ''}">${sw}<div class="item-info"><b>${esc(it.name)}</b>${rarBadge(it)}${extra}</div><div class="item-actions">${act}</div></div>`;
 }
 function paintPrintSwatches() { setTimeout(() => { document.querySelectorAll('canvas[data-print]').forEach(c => { const g = c.getContext('2d'); drawDeck(g, c.width, c.height, 0x3a3f4a, c.dataset.print); }); document.querySelectorAll('canvas[data-pat]').forEach(c => patSwatch(c, c.dataset.pat, +c.dataset.col)); }, 0); }
-const ICONS = { 'cap:none': '∅', 'glasses:none': '∅', 'acc:none': '∅', 'weapon:none': '∅', 'cap:cap': '🧢', 'cap:flat': '🧢', 'cap:beanie': '🧶', 'cap:bandana': '🏴‍☠️', 'cap:bucket': '👒', 'cap:straw': '👒', 'cap:visor': '🕶', 'cap:crown': '👑', 'glasses:dark': '🕶', 'glasses:round': '👓', 'glasses:heart': '😍', 'glasses:sport': '🥽', 'glasses:neon': '🥽', 'glasses:aviator': '🕶', 'acc:backpack': '🎒', 'acc:chain': '📿', 'acc:phones': '🎧', 'acc:wings': '🪽', 'acc:medal': '🥇', 'weapon:banana': '🍌', 'weapon:sling': '🎯', 'weapon:smoke': '💨', 'weapon:spray': '🎨', 'weapon:rocket': '🚀', shoes_chinelo: '🩴', shoes_sandal: '🩴', shoes_bota: '🥾' };
+const ICONS = { 'cap:none': '∅', 'glasses:none': '∅', 'acc:none': '∅', 'weapon:none': '∅', 'cap:cap': '🧢', 'cap:flat': '🧢', 'cap:beanie': '🧶', 'cap:bandana': '🏴‍☠️', 'cap:bucket': '👒', 'cap:straw': '👒', 'cap:visor': '🕶', 'cap:crown': '👑', 'glasses:dark': '🕶', 'glasses:round': '👓', 'glasses:heart': '😍', 'glasses:sport': '🥽', 'glasses:neon': '🥽', 'glasses:aviator': '🕶', 'acc:backpack': '🎒', 'acc:chain': '📿', 'acc:phones': '🎧', 'acc:wings': '🪽', 'acc:medal': '🥇', 'acc:colete': '🦺', 'weapon:banana': '🍌', 'weapon:sling': '🎯', 'weapon:smoke': '💨', 'weapon:spray': '🎨', 'weapon:rocket': '🚀', shoes_chinelo: '🩴', shoes_sandal: '🩴', shoes_bota: '🥾' };
 const PANELS = {
   shop(kind) {
     city.lastShop = kind;
@@ -12376,7 +12638,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
