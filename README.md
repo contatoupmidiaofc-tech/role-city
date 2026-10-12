@@ -258,3 +258,39 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
     - Liberada: qualquer jogador online entra e todos se veem lá dentro.
     - Fechada: ninguém entra, e quem estiver visitando sai na hora.
     - Vale também para a mansão do ADM: os outros jogadores entram pela porta quando ela está liberada.
+- **Build 2026.10.12-30**
+  - 💰 **Assalto do bonde** (só o ADM):
+    - No 📻 Rádio, toque em "Solicitar assalto" e escolha o alvo: o Banco Rolê, as lojas, ou o banco de outra cidade (nesse caso vão pela BR).
+    - Chegam 3 Hilux pretas com 5 caras cada (15 no total). Você entra na da frente e eles dirigem até o alvo.
+    - Lá, todo mundo desce: 2 ficam na porta e o resto entra com você. Os reféns deitam no chão e os funcionários ficam de mãos para cima.
+    - No banco: dinheiro dos caixas e o cofre arrombado, com barras de ouro e diamantes.
+    - As estrelas sobem com o tempo lá dentro. Na fuga, viaturas vêm atrás, tem troca de tiros e o helicóptero Águia acompanha.
+    - Para escapar: subir o morro (a polícia não sobe) ou fugir pela BR, acelerando para despistar as viaturas.
+    - A Hilux Preta também está à venda na concessionária.
+  - 🚓 **Polícia**:
+    - Farda nova em cada estado (PMESP cinza, PMERJ azul, PMBA cáqui), com colete escrito POLÍCIA, boina e coturno.
+    - O helicóptero Águia faz ronda no céu e persegue com holofote quem está procurado.
+  - 👊 **Na rua**:
+    - O botão Bater funciona andando (soco). Com a Faca equipada (Arsenal, slot de arma), o golpe vira facada.
+    - Dá para acertar figurantes, policiais, traficantes e jogadores.
+  - 🤜 **Dar o toque**: perto dos meninos do morro, o chefe tem o botão para o cumprimento de faccionado.
+  - 🪑 **Sentar**:
+    - Bancos na praça central, na praça do dominó, no parquinho e nas calçadas, alguns com figurantes sentados.
+    - Cadeiras de plástico nas vielas do morro, com os meninos sentados.
+    - Sofá de casa e cadeiras e sofás dos comércios.
+  - 🏦 **Banco por dentro**: dá para entrar no Banco Rolê. Tem 4 caixas, fila que anda, segurança, cofre, e gente entrando e saindo na porta nas 3 cidades.
+  - 🏪 **Rua do Comércio** em cada cidade:
+    - Sorveteria (cardápio e mesas).
+    - Bar do Zé (balcão, sinuca com aposta, TV com futebol).
+    - Brega do Rolê (pista colorida, DJ, galera dançando, botão de dançar).
+    - Empréstimos AJBZ.
+    - Também um Boteco no morro.
+  - 💼 **Empréstimos AJBZ a 40%**:
+    - Na loja, a pessoa preenche valor, parcelas e proposta, e o pedido vai com o documento (RG, CPF, profissão, renda).
+    - O chefe recebe em "💼 Empréstimos", vê se é 👤 JOGADOR REAL ou 🎭 FIGURANTE, e aprova ou recusa.
+    - Aprovado, a pessoa recebe o dinheiro e paga as parcelas para o chefe. Os figurantes também pagam as parcelas sozinhos.
+    - Funciona pela conexão em tempo real: o pedido chega quando os dois estiverem online na mesma cidade.
+  - ✈️ **Aviões**:
+    - No Hangar, "Pilotar eu mesmo" coloca o avião na cabeceira da pista. Você acelera, passa de 25 m/s e decola.
+    - Voando de avião ou helicóptero, o botão 🧭 Rota desenha anéis dourados no céu até o corredor aéreo da cidade escolhida. Passando pelo corredor, a viagem começa.
+  - 🏘️ Os lotes das casas novas, do cinema, do parquinho e do comércio agora são sempre os mesmos para todos os jogadores. Antes podiam mudar de um aparelho para outro.

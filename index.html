@@ -570,6 +570,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" id="hb-toque" data-act="toque" aria-label="Dar o toque" hidden><span style="font-size:17px">🤜</span><span class="lbl">Dar o toque</span></button>
     <button class="hud-btn" id="hb-emp" data-act="open-empadm" aria-label="Pedidos de empréstimo" hidden><span style="font-size:17px">💼</span><span class="lbl">Empréstimos</span></button>
     <button class="hud-btn" id="hb-bonde" data-act="bonde-entrar" aria-label="Entrar no bonde" hidden style="background:#15161a;border-color:#ffcf3a"><span style="font-size:17px">🚙</span><span class="lbl">Entrar no bonde</span></button>
+    <button class="hud-btn" id="hb-rota" data-act="open-rota" aria-label="Rota aérea" hidden><span style="font-size:17px">🧭</span><span class="lbl">Rota</span></button>
     <button class="hud-btn" id="hb-seg" data-act="open-seg" aria-label="Seguranças" hidden><span style="font-size:17px">🕶️</span><span class="lbl">Seguranças</span></button>
     <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
     <button class="hud-btn" data-act="radio" aria-label="Rádio do grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8 15 3M9 13h6M9 17h3"/></svg><span class="lbl">Rádio</span></button>
@@ -668,7 +669,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-29';
+const BUILD = '2026.10.12-30';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -3676,7 +3677,7 @@ function enterVehicle() {
 function exitVehicle(silent) {
   const d = P.drive; if (!d) return;
   city.myVeh.x = P.x; city.myVeh.z = P.z; city.myVeh.h = P.h;
-  if (d.V.heli) { if (!silent && P.y - groundH(P.x, P.z) > 0.8) return toast('Pouse antes de sair (segure Descer).', 'bad'); heliLabels(false); heliCtl(false); }
+  if (d.V.heli || d.V.plane) { if (!silent && (P.y - groundH(P.x, P.z) > 0.8 || (d.V.plane && P.v > 4))) return toast(d.V.plane ? 'Pouse e pare o avião antes de sair.' : 'Pouse antes de sair (segure Descer).', 'bad'); heliLabels(false); heliCtl(false); }
   vehLightsTick(d.m, 0, 0, 0); P.drive = null; P.v = 0; city.player.visible = true;
   let x = P.x + Math.cos(P.h) * 1.8, z = P.z - Math.sin(P.h) * 1.8; if (collide(x, z, 0.5)) { x = P.x - Math.cos(P.h) * 1.8; z = P.z + Math.sin(P.h) * 1.8; }
   P.x = x; P.z = z; P.y = groundH(x, z); if (!silent) sfx('ui');
@@ -3685,6 +3686,7 @@ function exitVehicle(silent) {
 function updateDriving(dt, ax, blocked) {
   const d = P.drive, V = d.V, moto = V.kind === 'moto';
   if (V.heli) return updateFlying(dt, ax, blocked);
+  if (V.plane) return updateFlyingPlane(dt, ax, blocked);
   const thr = blocked ? 0 : ax.y, st = blocked ? 0 : ax.x;
   if (thr > 0.1) P.v += V.acc * thr * dt * (1 - Math.max(0, P.v) / V.top);
   else if (thr < -0.1) P.v -= (P.v > 0.5 ? 20 : V.acc * 0.4) * -thr * dt;
@@ -4093,7 +4095,7 @@ function updateCity(dt, t) {
   if (!P.grind) skateSurf(dt, ox, oz, driving);
   if (P.onBoard && !P.air && P.v > 5 && inRamp(P.x, P.z)) { P.vy = (6.5 + P.v * 0.3) * st.pop; P.air = true; P.airT = 0; sfx('jump'); }
   const gy = groundH(P.x, P.z);
-  if (!P.air && !P.grind && !(P.drive && P.drive.V.heli)) P.y = gy;
+  if (!P.air && !P.grind && !(P.drive && (P.drive.V.heli || P.drive.V.plane))) P.y = gy;
   if (P.air) {
     P.vy -= 22 * dt; P.y += P.vy * dt; P.airT += dt;
     stepTrick(P, dt);
@@ -4164,9 +4166,9 @@ function updateCity(dt, t) {
     if (sinceDrag > 3) city.camPitch *= 1 - Math.exp(-1.5 * dt);
     const fx = Math.sin(city.camYaw), fz = Math.cos(city.camYaw), z = city.zoom;
     let cd = (P.drive ? P.drive.m.userData.camD : P.onBoard ? 5.6 : 4.4) * z;
-    while (cd > 0.9 && !(P.drive && P.drive.V.heli) && (collide(P.x - fx * cd, P.z - fz * cd, 0.4) || !inRoomXZ(P.x - fx * cd, P.z - fz * cd))) cd -= 0.3;
+    while (cd > 0.9 && !(P.drive && (P.drive.V.heli || P.drive.V.plane)) && (collide(P.x - fx * cd, P.z - fz * cd, 0.4) || !inRoomXZ(P.x - fx * cd, P.z - fz * cd))) cd -= 0.3;
     const hh = lerp(1.75, P.drive ? 3.3 : P.onBoard ? 2.9 : 2.5, clamp((z - 0.35) / 0.65, 0, 1)), side = lerp(0.45, 0, clamp((z - 0.35) / 0.5, 0, 1));
-    const by = P.drive && P.drive.V.heli ? P.y : gy + (P.y - gy) * 0.5, want = new THREE.Vector3(P.x - fx * cd + fz * side, Math.max(groundH(P.x - fx * cd, P.z - fz * cd) + 0.8, by + hh + city.camPitch * cd * 0.7), P.z - fz * cd - fx * side);
+    const by = P.drive && (P.drive.V.heli || P.drive.V.plane) ? P.y : gy + (P.y - gy) * 0.5, want = new THREE.Vector3(P.x - fx * cd + fz * side, Math.max(groundH(P.x - fx * cd, P.z - fz * cd) + 0.8, by + hh + city.camPitch * cd * 0.7), P.z - fz * cd - fx * side);
     if (city.interior || city.jail || city.hospIn || city.shopIn) want.y = Math.min(want.y, 2.75);
     camera.position.lerp(want, city.camSnap ? 1 : 1 - Math.exp(-5 * dt)); city.camSnap = false;
     const ly = lerp(1.55, 1.25, clamp((z - 0.35) / 0.65, 0, 1));
@@ -4210,7 +4212,7 @@ function updateCity(dt, t) {
   const pr = $('prompt');
   if (near && !blocked && !city.contest) {
     const key = IS_TOUCH ? 'Ação' : 'E';
-    if (near.type === 'exitveh') { pr.textContent = `${key} · Sair ${P.drive.V.heli ? 'do helicóptero (pousado)' : P.drive.V.kind === 'car' ? 'do carro' : P.drive.V.bike ? 'da bike' : 'da moto'}`; pr.hidden = false; if (tap('act')) exitVehicle(); }
+    if (near.type === 'exitveh') { pr.textContent = `${key} · Sair ${P.drive.V.heli ? 'do helicóptero (pousado)' : P.drive.V.plane ? 'do avião (parado na pista)' : P.drive.V.kind === 'car' ? 'do carro' : P.drive.V.bike ? 'da bike' : 'da moto'}`; pr.hidden = false; if (tap('act')) exitVehicle(); }
     else if (near.type === 'assalto') { pr.textContent = `${key} · Assaltar`; pr.hidden = false; if (tap('act')) robNpc(near.o); }
     else if (near.type === 'assaltoP') { pr.textContent = `${key} · Assaltar ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'assalto', payload: { id: NET.user.id, to: near.p.id, by: S.name } }); addWanted(2, 'assalto à mão armada'); } }
     else if (near.type === 'lotveh') { pr.textContent = `${key} · 🚓 Pegar: ${city.policeLot[near.i].V.name}`; pr.hidden = false; if (tap('act')) takeLotVeh(near.i); }
@@ -7200,7 +7202,7 @@ function updateFlying(dt, ax, blocked) {
   const air = P.y - gnd > 0.5;
   P.v = lerp(P.v, air ? thr * V_HELI_MAX : 0, 1 - Math.exp(-1.1 * dt));
   if (air || Math.abs(st) > 0) P.h -= st * (air ? 1.3 : 0.5) * dt;
-  const nx = clamp(P.x + Math.sin(P.h) * P.v * dt, -450, 450), nz = clamp(P.z + Math.cos(P.h) * P.v * dt, -450, 450);
+  const RB = city.skyRoute ? 900 : 450, nx = clamp(P.x + Math.sin(P.h) * P.v * dt, -RB, RB), nz = clamp(P.z + Math.cos(P.h) * P.v * dt, -RB, RB);
   if (air) { P.x = nx; P.z = nz; }
   m.rotation.order = 'YXZ'; m.position.set(P.x, P.y, P.z); m.rotation.y = P.h;
   m.rotation.x = lerp(m.rotation.x, (P.v / V_HELI_MAX) * 0.22, 1 - Math.exp(-3 * dt)); m.rotation.z = lerp(m.rotation.z, air ? -st * 0.25 : 0, 1 - Math.exp(-3 * dt));
@@ -11007,6 +11009,7 @@ function updateRP28(dt, t) {
   try { policeHeliTick(dt, t); } catch (e) { console.warn('águia', e); }
   try { bankCrowdTick(dt, t); bankInsideTick(dt, t); shopFolkTick(dt, t); } catch (e) { console.warn('banco', e); }
   try { heistTick(dt, t); } catch (e) { console.warn('assalto', e); }
+  try { skyRouteTick(dt, t); } catch (e) { console.warn('rota', e); }
   try { if ((city.empT || 0) < performance.now()) { city.empT = performance.now() + 1000; empTick(); } } catch (e) { console.warn('empréstimo', e); }
 }
 
@@ -11410,6 +11413,69 @@ function heistTripTick(dt, t) {
 }
 function heistTripEnd() { if (S.pendingHeistLoot) { const L = S.pendingHeistLoot; S.pendingHeistLoot = null; setTimeout(() => heistBank(L, 'Fuga pela BR concluída!'), 1500); } if (S.pendingHeistCity) { const c = S.pendingHeistCity; S.pendingHeistCity = null; persist(); if (c === cityId()) setTimeout(() => heistStart('banco'), 4000); } }
 function heistOtherCity(c) { if (!isAdm()) return; closePanel(); S.pendingHeistCity = c; persist(); toast(`🛣️ O bonde vai pela BR até ${CITY_DEFS[c].name}. Chegando lá, vão direto pro banco.`, 'pink'); startTrip(c, 'bonde'); }
+
+/* =========================================================
+   RP28d · AVIÕES PILOTÁVEIS e ROTA NO CÉU: decola da pista, voa sobre a cidade e
+   segue os anéis no céu até o corredor aéreo da outra cidade.
+   ========================================================= */
+function flyPlaneHere(id) {
+  const V = VEH[id], A = city.airport; if (!V || !V.plane || !A) return; closePanel();
+  if (!city.tour || city.tour.id !== 'aero') { toast('✈️ Vá até o aeroporto: o avião fica na cabeceira da pista.', 'pink'); return goAirport(); }
+  if (P.drive) exitVehicle(true); spawnMyVehicle(V); const mv = city.myVeh, x = A.rx, z = -112; mv.x = x; mv.z = z; mv.h = 0; mv.m.position.set(x, 0.06, z); mv.m.rotation.set(0, 0, 0);
+  P.x = x + 6; P.z = z; P.y = 0.06;
+  toast(`✈️ ${V.name} na cabeceira da pista. Chegue perto e aperte Ação para pilotar.`, 'pink');
+}
+function updateFlyingPlane(dt, ax, blocked) {
+  const d = P.drive, V = d.V, m = d.m, u = m.userData, HI = HELI_IN;
+  if (!d.lbl) { d.lbl = true; heliLabels(true); toast(IS_TOUCH ? '✈️ Frente acelera · Subir/Descer no manche · ◀ ▶ vira. Velocidade acima de 25 para decolar.' : '✈️ W acelera · S freia · Espaço sobe · Shift desce · A/D vira. Passe de 25 m/s para decolar.', 'pink'); }
+  const thr = blocked ? 0 : clamp(ax.y + (HI.fwd ? 1 : 0) - (HI.back ? 1 : 0), -1, 1), st = blocked ? 0 : clamp(ax.x + (HI.right ? 1 : 0) - (HI.left ? 1 : 0), -1, 1), H = input.held, B = input.hold;
+  const up = !blocked && (H.Space || H.KeyR || B.blinkR || B.jump || HI.up) ? 1 : 0, dn = !blocked && (H.ShiftLeft || H.ShiftRight || H.KeyQ || H.KeyF || B.blinkL || HI.down) ? 1 : 0;
+  const top = Math.min(80, (V.top || 50) * 0.75), gnd = groundH(P.x, P.z), air = P.y - gnd > 0.6;
+  P.v = clamp(P.v + (thr > 0 ? thr * 9 : thr * 14) * dt - (air ? 0 : 1.5) * dt, 0, top);
+  const lift = clamp((P.v - 18) / 14, 0, 1);
+  d.vy = lerp(d.vy || 0, air ? (up - dn) * 12 * lift - (P.v < 20 ? 7 : 0) : (up && lift > 0.4 ? 6 : 0), 1 - Math.exp(-2 * dt));
+  P.y = clamp(P.y + d.vy * dt, gnd, 260); if (P.y <= gnd + 0.001) { d.vy = Math.max(0, d.vy); if (air) { P.v *= 0.7; toast('🛬 Pouso!', 'pink'); } }
+  P.h -= st * (air ? 0.7 : 0.35 * clamp(P.v / 8, 0, 1)) * dt;
+  if (air && city.tour) { city.tour = null; city.tourSpots = null; city.zoom = 1.6; }
+  const R = city.skyRoute ? 900 : 700;
+  P.x = clamp(P.x + Math.sin(P.h) * P.v * dt, -R, R); P.z = clamp(P.z + Math.cos(P.h) * P.v * dt, -R, R);
+  m.rotation.order = 'YXZ'; m.position.set(P.x, P.y, P.z); m.rotation.y = P.h;
+  m.rotation.x = lerp(m.rotation.x, -clamp(d.vy / 25, -0.4, 0.4), 1 - Math.exp(-3 * dt)); m.rotation.z = lerp(m.rotation.z, air ? -st * 0.55 : 0, 1 - Math.exp(-2.5 * dt));
+  for (const pr of u.props || []) pr.rotation.z += dt * (8 + P.v * 1.5);
+  if ((d.engT = (d.engT || 0) - dt) <= 0) { d.engT = 0.09; if (audioCtx()) try { noiseHit(0.08, 'bandpass', 220 + P.v * 6, 0.04, 1.2); } catch (e) { } }
+  city.myVeh.x = P.x; city.myVeh.z = P.z; city.myVeh.h = P.h;
+}
+/* rota aérea: anéis dourados no céu até o corredor da outra cidade */
+const CITY_GEO = { sp: [-46.63, -23.55], rj: [-43.2, -22.9], ssa: [-38.5, -12.97] };
+function skyRouteTo(dest) {
+  const a = CITY_GEO[cityId()], b = CITY_GEO[dest]; if (!a || !b) return; closePanel();
+  skyRouteClear(); const dx = b[0] - a[0], dz = -(b[1] - a[1]), L = Math.hypot(dx, dz) || 1, gx = dx / L * 760, gz = dz / L * 760;
+  const rings = [], n = 10, sx = P.x, sz = P.z, sy = Math.max(P.y, 40);
+  for (let i = 1; i <= n; i++) {
+    const k = i / n, x = sx + (gx - sx) * k, z = sz + (gz - sz) * k, y = sy + (95 - sy) * Math.min(1, k * 1.5);
+    const r = new THREE.Mesh(new THREE.TorusGeometry(i === n ? 16 : 10, 0.6, 8, 32), new THREE.MeshBasicMaterial({ color: i === n ? 0x3ddc84 : 0xffd23f, transparent: true, opacity: 0.85, fog: false }));
+    r.position.set(x, y, z); r.rotation.y = Math.atan2(gx - sx, gz - sz); city.scene.add(r); rings.push(r);
+  }
+  const lbl = textSprite(`✈️ CORREDOR AÉREO · ${CITY_DEFS[dest].name.toUpperCase()}`, { bg: '#1e5b3a', fg: '#fff', size: 40, scale: [18, 2, 1], fog: false }); lbl.position.set(gx, 118, gz); city.scene.add(lbl); rings.push(lbl);
+  city.skyRoute = { dest, rings, gx, gz, next: 0 }; toast(`🧭 Rota para ${CITY_DEFS[dest].name}: siga os anéis dourados no céu até o corredor verde.`, 'good');
+}
+function skyRouteClear() { const R = city.skyRoute; if (!R) return; for (const r of R.rings) city.scene.remove(r); city.skyRoute = null; }
+function skyRouteTick(dt, t) {
+  const R = city.skyRoute, hb = $('hb-rota'), flying = P.drive && (P.drive.V.heli || P.drive.V.plane) && mode === 'city';
+  if (hb && hb.hidden === !!flying) hb.hidden = !flying;
+  if (!R) return; if (!flying) { if (!P.drive) skyRouteClear(); return; }
+  R.rings.forEach((r, i) => { if (r.isMesh) { r.material.opacity = i === R.next ? 0.95 : 0.45; r.rotation.z += dt * 0.6; } });
+  const cur = R.rings[R.next]; if (cur && cur.isMesh && cur.position.distanceTo(new THREE.Vector3(P.x, P.y, P.z)) < (R.next === R.rings.length - 2 ? 20 : 14)) { R.next++; tone('sine', 880, 1320, 0.15, 0.06); }
+  if (Math.hypot(P.x - R.gx, P.z - R.gz) < 40 && !R.going) {
+    R.going = true; const V = P.drive.V, mine = myAir(), useV = mine.includes(V) ? V : (V.heli ? mine.find(v => v.heli) : mine.find(v => v.plane)) || mine[0];
+    toast(`✈️ Entrando no corredor aéreo para ${CITY_DEFS[R.dest].name}!`, 'good'); const dest = R.dest; skyRouteClear();
+    if (useV) setTimeout(() => startTrip(dest, useV.id), 400); else toast('Você precisa de uma aeronave sua para viajar.', 'bad');
+  }
+}
+PANELS28.rotaAerea = function () {
+  const others = Object.keys(CITY_DEFS).filter(c => c !== cityId());
+  return { title: '🧭 Rota aérea', html: `<p>Escolha a cidade: aparece um caminho de anéis dourados no céu. Siga até o corredor verde e a viagem começa voando.</p><div class="row">${others.map(c => `<button class="btn" data-act="sky-route" data-c="${c}">✈️ ${esc(CITY_DEFS[c].name)}</button>`).join('')}</div>${city.skyRoute ? '<div class="row"><button class="btn ghost" data-act="sky-clear">Apagar rota</button></div>' : ''}` };
+};
 
 /* ---------------- MORADIA (Imobiliária) ---------------- */
 const HOMES = [
@@ -12880,7 +12946,7 @@ const PANELS = {
       html += `<p class="muted">${esc(AIRPORT[cur].name)} · voos para as outras cidades passando por cima das cidades e das nuvens.</p>`;
       html += dests.map(id => `<div class="card"><h4>✈️ ${esc(CITY_DEFS[id].name)}</h4><p class="muted">${fmt(routeOf(cur, id)[1])} km de voo</p><div class="row"><button class="btn" data-act="trip" data-id="${id}" data-how="voo" ${S.coins < airFare(id) ? 'disabled' : ''}>Voo comercial $ ${fmt(airFare(id))}</button>${mine.map(V => `<button class="btn ghost" data-act="trip" data-id="${id}" data-how="${V.id}">${V.heli ? '🚁' : '🛩️'} Ir no meu ${esc(V.name.split(' (')[0])}</button>`).join('')}</div></div>`).join('');
     }
-    if (mine.length) html += `<h3>Minhas aeronaves</h3>` + mine.map(V => `<div class="card"><h4>${V.heli ? '🚁' : '🛩️'} ${esc(V.name)}</h4><div class="row">${V.heli ? `<button class="btn" data-act="air-fly" data-id="${V.id}">Pilotar livre</button>` : ''}<button class="btn ghost" data-act="air-tour" data-id="${V.id}">Passeio aéreo sobre a cidade</button></div></div>`).join('');
+    if (mine.length) html += `<h3>Minhas aeronaves</h3>` + mine.map(V => `<div class="card"><h4>${V.heli ? '🚁' : '🛩️'} ${esc(V.name)}</h4><div class="row">${V.heli ? `<button class="btn" data-act="air-fly" data-id="${V.id}">Pilotar livre</button>` : `<button class="btn" data-act="plane-fly" data-id="${V.id}">✈️ Pilotar eu mesmo</button>`}<button class="btn ghost" data-act="air-tour" data-id="${V.id}">Passeio aéreo sobre a cidade</button></div></div>`).join('');
     else html += `<div class="note">Você ainda não tem avião nem helicóptero. Compre no Hangar AJBZ.</div><button class="btn" data-act="open-hangar">Abrir o Hangar AJBZ</button>`;
     return { title: arg === 'heli' ? '🚁 Heliponto' : '🛫 Embarque', html };
   },
@@ -13088,6 +13154,7 @@ function act(a, ds, el) {
     case 'trip': startTrip(ds.id, ds.how); break;
     case 'air-buy': buyAircraft(ds.id, ds.cur); break;
     case 'air-fly': flyHeliHere(ds.id); break;
+    case 'plane-fly': flyPlaneHere(ds.id); break; case 'open-rota': openPanel('rotaAerea'); break; case 'sky-route': skyRouteTo(ds.c); break; case 'sky-clear': skyRouteClear(); closePanel(); break;
     case 'air-tour': sightseeing(ds.id); break;
     case 'open-hangar': openPanel('hangar'); break;
     case 'go-airport': goAirport(); break;
