@@ -1,0 +1,7 @@
+# Cloudflare Pages: esconde arquivos internos do repositório (manda de volta para o jogo).
+# A HostGator não usa este arquivo (a Action não envia ele por FTP).
+/README.md / 302
+/package.json / 302
+/.htaccess / 302
+/.gitignore / 302
+/.github/* / 302

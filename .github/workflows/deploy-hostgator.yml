@@ -34,3 +34,4 @@ jobs:
             .github/**
             README.md
             package.json
+            _redirects

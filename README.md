@@ -14,6 +14,15 @@ Cada push na `main` publica o jogo pela Action `Deploy HostGator` (FTP), usando 
 
 Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator.com.br/role-city/`
 
+## Publicação no Cloudflare Pages (em teste)
+
+O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo `main`, sem framework, sem comando de build, saída na raiz). Cada push na `main` publica sozinho em `https://role-city.pages.dev`, ao mesmo tempo que a HostGator.
+
+- O arquivo `_redirects` só vale no Cloudflare: manda `README.md`, `package.json`, `.htaccess`, `.gitignore` e `.github/` de volta para o jogo, para não ficarem à mostra. A Action da HostGator não envia esse arquivo.
+- O `.htaccess` só vale na HostGator. No Cloudflare a página já é sempre revalidada.
+- Supabase (`ndcahlwnkynphfilvenw`): `https://role-city.pages.dev/**` está em Authentication → URL Configuration → Redirect URLs, para o e-mail de confirmação de conta voltar ao endereço novo. O Site URL continua na HostGator até a migração ser confirmada.
+- A HostGator continua no ar até o Cloudflare ser aprovado.
+
 ## Personagens 3D
 
 - `modelos/Michelle.glb` (skatista feminina) e `modelos/readyplayer.me.glb` (masculino) vêm dos exemplos do three.js. A Michelle é um personagem Mixamo (Adobe); o masculino é um avatar Ready Player Me.
