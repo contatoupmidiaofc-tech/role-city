@@ -241,3 +241,13 @@ Endereço do jogo: `https://upmidiaoficial1789521775000.1370262.meusitehostgator
   - 🥊 Luta mais rápida: anda mais rápido, gingado na guarda, golpes mais curtos, esquiva com o direcional (para os lados, para trás ou abaixando) e combos (jab+jab = gancho, esquiva+direto = uppercut, chute colado = joelhada). O figurante circula, esquiva e contra-ataca.
   - 🛹 Corridas com vários mapas por país, escolhidos no painel ou sorteados. Brasil: SP Consolação, Rio Santa Teresa, Salvador Pelourinho e Paulista à noite; também São Francisco, Kyoto, Champs-Élysées e Porto.
   - 🛹 Torneio de Skate nas pistas de SP, Rio e Salvador: inscrição na barraca roxa, começa com 5 inscritos (ou completa com figurantes). São 75s de sessão; cada queda tira 150 pts e quem acerta mais ganha bônus. Prêmios: 1º $ 3.000 + Medalha de Ouro do Skate, 2º $ 1.000, 3º $ 500.
+- **Build 2026.10.12-28**
+  - 🗺️ HUD mais limpo: o minimapa e o quadro de nível, dinheiro e vida ficaram menores, e os chips do canto esquerdo estão mais compactos.
+  - 🎮 Em Configurações > "Tamanho dos botões" dá para diminuir ou aumentar os controles (60% a 150%) e os botões do topo (60% a 140%).
+  - 💇 Cabelos femininos: solto longo, solto ondulado, solto com franja, chanel, cacheado volumoso, rabo alto, maria-chiquinha, trança de lado, coque alto e coque baixo. As figurantes também usam.
+  - 🏠 Cada casa tem um endereço único:
+    - O lote da mansão do ADM é só do chefe. Os outros jogadores veem a "Mansão do chefe · particular" e não moram lá.
+    - Novos imóveis em cada cidade: 2 condomínios com 4 mansões cada (Alto da Colina e Jardim Imperial) e a Vila Nova (6 casas), além da Vila Residencial e das casas do morro.
+    - Toda casa pode ser alugada ou comprada por jogadores reais. Se mora um figurante, ele se muda. O banco impede que duas pessoas peguem a mesma casa.
+    - A Imobiliária lista as casas livres por tipo e marca no GPS a mais próxima.
+    - Quem já morava no lote antigo ganha, sem pagar de novo, uma casa própria do mesmo padrão em outro endereço. O jogador acorda na porta da própria casa.

@@ -330,6 +330,7 @@ table.res tr.ally td:nth-child(2){color:var(--ok)}
 .online-chip.off{border-color:var(--line);color:var(--muted)}
 #hud-map{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 10px);width:150px;height:150px;border-radius:18px;border:3px solid var(--fg);background:#10141c;box-shadow:4px 4px 0 var(--sticker);cursor:pointer}
 .profile{left:180px}
+.hud-tr{transform:scale(var(--hs,1));transform-origin:top right}
 .ev-chip{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 170px);width:150px;display:grid;gap:1px;text-align:left;background:rgba(21,22,26,.88);border:2px solid var(--ec,var(--wax));border-radius:10px;padding:5px 8px;font-family:var(--cond)}
 .ev-chip b{font-size:14px;color:var(--ec,var(--wax));text-transform:uppercase;letter-spacing:.03em;line-height:1.1}
 .ev-chip span{font-size:12px;color:var(--muted)}
@@ -474,6 +475,27 @@ canvas.swatch{background:#333}
 #big-banner.on{animation:bban2 2.4s ease-out forwards!important}
 @keyframes bban2{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.toast{animation:none}}
+/* HUD compacto: mapa, perfil (nível, dinheiro e vida) e chips menores para a tela ficar limpa */
+#hud-map{width:116px;height:116px;border-radius:14px;border-width:2px;box-shadow:3px 3px 0 var(--sticker)}
+.profile{left:140px;padding:5px 8px;gap:3px;min-width:150px}
+.profile .nm{font-size:12px}.money{font-size:14px;gap:9px}#h-hp{height:11px;margin-top:2px}#h-hp b{font-size:9px;line-height:11px}
+.ev-chip{top:calc(env(safe-area-inset-top,0px) + 132px);width:116px;padding:3px 6px}
+.clock-chip{top:calc(env(safe-area-inset-top,0px) + 176px);font-size:12px;padding:1px 8px}
+.online-chip{top:calc(env(safe-area-inset-top,0px) + 200px);width:116px;font-size:12px;padding:2px 6px}
+#contest-box{top:calc(env(safe-area-inset-top,0px) + 226px)}
+@media (max-height:450px),(max-width:640px){
+  #hud-map{width:78px;height:78px;border-radius:11px}
+  .profile{left:94px;padding:3px 6px;gap:2px;min-width:118px}
+  .profile .nm{font-size:10px;gap:5px}.lvl{font-size:10px;padding:0 4px}.xpbar{height:3px}
+  .money{font-size:12px;gap:6px}.money .plus{transform:scale(.8)}#h-hp{height:9px}#h-hp b{font-size:8px;line-height:9px;padding-left:4px}
+  .ev-chip{top:calc(env(safe-area-inset-top,0px) + 92px);width:78px;padding:2px 5px;border-width:1px}
+  .ev-chip b{font-size:10px}.ev-chip *{font-size:10px}
+  .clock-chip{top:calc(env(safe-area-inset-top,0px) + 140px);font-size:10px;padding:0 6px;border-width:1px}
+  .online-chip{top:calc(env(safe-area-inset-top,0px) + 160px);width:78px;font-size:10px;padding:1px 5px;border-width:1px}
+  #contest-box{top:calc(env(safe-area-inset-top,0px) + 184px)}
+  .ev-chip{line-height:1.1}
+  .hud-btn{min-height:34px;padding:0 8px;font-size:12px;border-width:1px}
+}
 </style>
 </head>
 <body>
@@ -642,7 +664,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-27';
+const BUILD = '2026.10.12-28';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
 (function checkUpdate() {
   const go = () => fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(t => {
@@ -1370,6 +1392,10 @@ const HAIR = { front: 0.2, back: 0.5, side: 0, off: 0.035 };
 /* corpo: peso, altura e estilo de cabelo */
 const BODY_W = { magro: 0.86, normal: 1, forte: 1.13, gordo: 1.32 }, BODY_H = { baixinho: 0.9, medio: 1, alto: 1.09 };
 const HAIR_STYLES = { padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano', dread: 'Dreads', tranca: 'Tranças', rabo: 'Rabo de cavalo', coque: 'Coque' };
+/* cabelos femininos: soltos, amarrados e penteados */
+const FEM_HAIR = { solto: 'Solto longo', ondas: 'Solto ondulado', franja: 'Solto com franja', chanel: 'Chanel (curtinho)', cacheado: 'Cacheado volumoso', rabo_alto: 'Rabo alto', maria: 'Maria-chiquinha', tranca_lat: 'Trança de lado', coque_alto: 'Coque alto', padrao: 'Coque baixo' };
+Object.assign(HAIR_STYLES, FEM_HAIR, { padrao: 'Padrão' });
+const FEM_HAIR_KEYS = Object.keys(FEM_HAIR).filter(k => k !== 'padrao');
 const _v1 = new THREE.Vector3();
 function applyBody(u, look) {
   const b = look.body || {}, w = BODY_W[b.w] || 1, h = BODY_H[b.h] || 1;
@@ -1381,6 +1407,26 @@ function applyBody(u, look) {
   set('Spine', w, 1, 1 + (w - 1) * 1.1); set('Neck', 1 / w, 1, 1 / (1 + (w - 1) * 1.1)); set('LeftShoulder', 1 / w, 1, 1 / (1 + (w - 1) * 1.1)); set('RightShoulder', 1 / w, 1, 1 / (1 + (w - 1) * 1.1));
   set('LeftUpLeg', lw, 1, lw); set('RightUpLeg', lw, 1, lw); set('LeftFoot', 1 / lw, 1, 1 / lw); set('RightFoot', 1 / lw, 1, 1 / lw);
   buildHairStyle(u, b.hs || 'padrao', look);
+}
+/* cabelo feminino em volta da cabeça (espaço do osso da cabeça; c = centro do crânio) */
+function femHair(hs, mk, y0, RP) {
+  const cy = y0 - 0.03, cz = RP ? -0.035 : -0.02, R = RP ? 0.108 : 0.13;
+  // calota no couro cabeludo: inclinada para trás (a frente para na linha do cabelo, atrás desce até a nuca)
+  mk(SPH(R, 22, 12, 0, TAU, 0, Math.PI * 0.5), 0, cy, cz, -0.85, 0, 0, 1.06, 1.0, 1.12);
+  const curtain = (L, r0, r1, arc, wave = 0, dy = 0) => {
+    arc = Math.min(arc, Math.PI * 0.98); const geo = new THREE.CylinderGeometry(r0, r1, L, 26, 10, true, Math.PI - arc / 2, arc), ps = geo.attributes.position;
+    for (let i = 0; i < ps.count; i++) { const yy = ps.getY(i), t = (L / 2 - yy) / L, k = 1 + (wave ? Math.sin(t * 18) * wave * t : 0), sideK = Math.abs(ps.getX(i)) / (r1 || 1); ps.setX(i, ps.getX(i) * k * (1 - t * 0.12)); ps.setZ(i, ps.getZ(i) * k * (1 - t * 0.28)); ps.setY(i, yy + sideK * sideK * 0.07 * t); }
+    geo.computeVertexNormals(); const m = mk(geo, 0, cy - L / 2 + 0.01 + dy, cz - 0.03); m.material.side = THREE.DoubleSide; return m;
+  };
+  const locks = (L, w = 0.026) => { for (const s of [1, -1]) mk(boxGeo(w, L, 0.03), s * (R * 0.98), cy - L / 2 + 0.02, cz + 0.01, 0.05, 0, s * 0.08); };
+  if (hs === 'solto' || hs === 'franja') { curtain(0.36, R * 1.0, R * 1.08, Math.PI * 0.9); locks(0.22); if (hs === 'franja') mk(boxGeo(0.15, 0.035, 0.03), 0, cy + R * 0.72, cz + R * 0.88, 0.7, 0, 0); }
+  else if (hs === 'ondas') { curtain(0.32, R * 1.02, R * 1.16, Math.PI * 0.9, 0.05); locks(0.2, 0.034); }
+  else if (hs === 'chanel') { curtain(0.14, R * 1.04, R * 1.12, Math.PI * 0.98); }
+  else if (hs === 'cacheado') { for (let i = 0; i < 26; i++) { const a = Math.PI * 0.45 + (i / 25) * Math.PI * 1.1, h = (i % 3) * 0.05; mk(SPH(0.045, 9, 7), Math.sin(a) * R * 1.08, cy - h + Math.cos(i) * 0.02, cz + Math.cos(a) * R * 1.08); } mk(SPH(R * 1.2, 14, 10, 0, TAU, 0, Math.PI * 0.5), 0, cy + 0.01, cz - 0.02, -0.5); }
+  else if (hs === 'rabo_alto') { mk(SPH(0.03, 8, 6), 0, cy + R * 0.75, cz - R * 0.6); mk(CAPG(0.03, 0.22), 0, cy + R * 0.25, cz - R * 1.15, 0.45); }
+  else if (hs === 'maria') { for (const s of [1, -1]) { mk(SPH(0.026, 8, 6), s * R * 0.8, cy + 0.02, cz - R * 0.45); mk(CAPG(0.026, 0.16), s * R * 1.05, cy - 0.07, cz - R * 0.5, 0.15, 0, s * 0.35); } }
+  else if (hs === 'tranca_lat') { for (let i = 0; i < 9; i++) mk(SPH(0.027 - i * 0.0012, 8, 6), R * 0.85 + i * 0.004, cy - 0.04 - i * 0.034, cz - R * 0.35 + i * 0.022); }
+  else if (hs === 'coque_alto') { mk(SPH(0.058, 12, 10), 0, cy + R * 0.98, cz - R * 0.25); mk(new THREE.TorusGeometry(0.04, 0.008, 6, 14), 0, cy + R * 0.92, cz - R * 0.22, Math.PI / 2 - 0.3); }
 }
 function buildHairStyle(u, hs, look) {
   const hatOn = u.hairG && !u.hairG.visible;
@@ -1398,6 +1444,7 @@ function buildHairStyle(u, hs, look) {
   else if (hs === 'dread' || hs === 'tranca') { const n = hs === 'dread' ? 14 : 2; for (let i = 0; i < n; i++) { const a = hs === 'dread' ? Math.PI * 0.35 + i / (n - 1) * Math.PI * 1.3 : Math.PI * (0.8 + i * 0.4); const rr = RP ? 0.085 : 0.1, x = Math.sin(a) * rr, z = Math.cos(a) * rr - (RP ? 0.03 : 0.02); mk(CAPG(hs === 'dread' ? (RP ? 0.008 : 0.014) : (RP ? 0.014 : 0.022), hs === 'dread' ? 0.2 : 0.3), x, y0 - (hs === 'dread' ? (RP ? 0.1 : 0.06) : (RP ? 0.15 : 0.12)), z, Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25); } }
   else if (hs === 'rabo') mk(CAPG(0.035, 0.18), 0, y0 - 0.06, -0.14, 0.5);
   else if (hs === 'coque') mk(SPH(0.065, 12, 10), 0, y0 + 0.05, -0.09);
+  else if (FEM_HAIR_KEYS.includes(hs)) femHair(hs, mk, y0, RP);
   g.visible = !hatOn;
 }
 /* ---- chapéus, óculos, acessórios e mochila de entrega (coordenadas no espaço da cabeça / do peito) ---- */
@@ -2306,8 +2353,9 @@ const BTN_PORTRAIT = { 'tb-rel': [210, 240], 'tb-aim': [150, 236], 'tb-gsw': [88
 const btnOrient = () => innerWidth < innerHeight ? 'port' : 'land';
 const btnEditing = () => $('touch').classList.contains('editing');
 function btnCfg() { const st = S.settings; st.btnPos = st.btnPos || { port: {}, land: {} }; st.joyPos = st.joyPos || {}; return st; }
+function applyHudScale() { const h = $('hud'); if (h && S) h.style.setProperty('--hs', (S.settings && S.settings.hudScale) || 1); }
 function applyBtnLayout() {
-  if (!S) return;
+  if (!S) return; applyHudScale();
   const st = btnCfg(), o = btnOrient(), pos = st.btnPos[o] || {}, W = innerWidth, H = innerHeight, T = $('touch');
   T.style.setProperty('--bs', st.btnScale || 1);
   for (const id of BTN_IDS) {
@@ -2705,7 +2753,7 @@ function buildHome0() {
   const col = (x, z, w, d) => city.colliders.push({ x0: cx + x - w / 2, x1: cx + x + w / 2, z0: cz + z - d / 2, z1: cz + z + d / 2, home: true });
   const box = (w, h, d, c, x, y, z, ry = 0) => { const m = new THREE.Mesh(boxGeo(w, h, d), lam(c)); m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; g.add(m); return m; };
   const roof = (w, d, h, c, x, y, z) => { const m = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.75, h, 4), lam(c)); m.position.set(x, y + h / 2, z); m.rotation.y = Math.PI / 4; m.scale.set(w / Math.max(w, d), 1, d / Math.max(w, d)); m.castShadow = true; g.add(m); };
-  const H = S.home ? S.home.id : null;
+  const ADM = isAdm(), H = ADM ? (S.home ? S.home.id : null) : 'mansao';
   // porta virada para a rua do oeste (x menor)
   const door = [-13.2, 0];
   if (!H) {
@@ -2725,8 +2773,9 @@ function buildHome0() {
     const pool = new THREE.Mesh(boxGeo(7, 0.1, 4), new THREE.MeshStandardMaterial({ color: 0x2fb6e8, roughness: 0.05, metalness: 0.2, emissive: 0x0a3a50 })); pool.position.set(5, 0.08, 6); g.add(pool); box(7.6, 0.25, 0.3, 0xffffff, 5, 0.12, 4); box(7.6, 0.25, 0.3, 0xffffff, 5, 0.12, 8);
     const bowl = new THREE.Mesh(new THREE.TorusGeometry(3.4, 1.2, 8, 24, Math.PI), lam(0xb3ac9e)); bowl.rotation.x = Math.PI / 2; bowl.position.set(-5, 0.1, 7); g.add(bowl);
     city.ramps.push({ x0: cx - 9.5, x1: cx - 7.6, z0: cz + 5, z1: cz + 9, home: true }, { x0: cx - 2.4, x1: cx - 0.5, z0: cz + 5, z1: cz + 9, home: true });
-    const s = textSprite('MANSÃO ' + S.name.toUpperCase(), { bg: '#ffcf3a', fg: '#15161a', size: 44, scale: [6, 1.1, 1] }); s.position.set(2, 12.5, -5); g.add(s);
+    const s = textSprite(ADM ? 'MANSÃO ' + S.name.toUpperCase() : 'MANSÃO DO ' + String(CHIEF).toUpperCase() + ' · PARTICULAR', { bg: '#ffcf3a', fg: '#15161a', size: 44, scale: [6, 1.1, 1] }); s.position.set(2, 12.5, -5); g.add(s);
   }
+  if (!ADM) { g.traverse(o => { if (o.isMesh) o.castShadow = true; }); return; } // a mansão do chefe é só dele: ninguém mais mora nesse lote
   // porta de verdade, com dobradiça (abre ao entrar)
   { const wx = { quarto: -7.13, kitnet: -7.13, casa: -6.13, mansao: -6.13 }[H], wz = { quarto: 0, kitnet: 1.5, casa: -2, mansao: -5 }[H];
     const piv = new THREE.Group(); piv.position.set(wx, 0, wz - 0.6); g.add(piv);
@@ -2768,7 +2817,7 @@ function makeRealPed(f) {
   for (const s of ['shirt', 'pants', 'shoes']) eq[s] = pick(byS(s)).id;
   if (f) { if (Math.random() < 0.35) eq.shirt = pick(byS('shirt').filter(i => i.dress)).id; if (Math.random() < 0.4) eq.bolsa = pick(byS('bolsa').filter(i => i.bk !== 'none')).id; if (Math.random() < 0.5) eq.ear = pick(byS('ear').filter(i => i.ek !== 'none')).id; if (Math.random() < 0.3) eq.shoes = pick(byS('shoes').filter(i => i.heel)).id; }
   eq.cap = Math.random() < 0.7 ? 'cap_none' : pick(byS('cap')).id; eq.glasses = Math.random() < 0.75 ? 'gl_none' : pick(byS('glasses')).id; eq.acc = Math.random() < 0.8 ? 'ac_none' : 'ac_backpack';
-  const g = makeSkater(lookOf(eq, pick(SKINS), pick(HAIRS), f ? 'f' : 'm'), null); g.userData.ped = true; return g;
+  const g = makeSkater(lookOf(eq, pick(SKINS), pick(HAIRS), f ? 'f' : 'm', null, f && Math.random() < 0.7 ? { hs: pick(FEM_HAIR_KEYS) } : null), null); g.userData.ped = true; return g;
 }
 function animPed(u, ph, amp, down) {
   const s = Math.sin(ph) * amp;
@@ -4926,8 +4975,9 @@ function useRound(G) {
   P.ammo[G.id] = n - 1; if (n - 1 <= 0) setTimeout(() => reloadGun(G), 250); return true;
 }
 function bodyButtons(cur) {
+  const gen = S && mode !== 'menu' ? S.gender : selGender, hsList = gen === 'f' ? Object.assign({}, FEM_HAIR, { black: 'Black power', tranca: 'Tranças', dread: 'Dreads', careca: 'Careca' }) : { padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano', dread: 'Dreads', tranca: 'Tranças', rabo: 'Rabo de cavalo', coque: 'Coque' };
   const seg = (k, list) => Object.entries(list).map(([v, n]) => `<button type="button" data-act="body-sel" data-k="${k}" data-v="${v}" aria-pressed="${cur[k] === v}">${n}</button>`).join('');
-  return { hs: seg('hs', HAIR_STYLES), w: seg('w', { magro: 'Magro', normal: 'Normal', forte: 'Forte', gordo: 'Gordo' }), h: seg('h', { baixinho: 'Baixinho', medio: 'Médio', alto: 'Alto' }) };
+  return { hs: seg('hs', hsList), w: seg('w', { magro: 'Magro', normal: 'Normal', forte: 'Forte', gordo: 'Gordo' }), h: seg('h', { baixinho: 'Baixinho', medio: 'Médio', alto: 'Alto' }) };
 }
 function renderBodySel() { const b = bodyButtons(selBody); if ($('b-hs')) { $('b-hs').innerHTML = b.hs; $('b-w').innerHTML = b.w; $('b-h').innerHTML = b.h; } }
 function nextGun() {
@@ -7533,7 +7583,7 @@ function sightseeing(id) {
 const myHeli = () => isAdm() ? VEH.v_heli : (S.aircraft || []).map(id => VEH[id]).find(V => V && V.heli) || null;
 const HELI_IN = {};
 function buildHome() {
-  buildHome0(); city.homePad = null; try { goldHome(); } catch (e) { console.warn('goldHome', e); }
+  buildHome0(); city.homePad = null; if (!isAdm()) return; try { goldHome(); } catch (e) { console.warn('goldHome', e); }
   const g = city.homeG, V = myHeli(); if (!g || !S.home || !V) return;
   const [cx, cz] = HOME_LOT, top = 13.3, gold = goldM();
   const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
@@ -8893,7 +8943,7 @@ function applyRpmLook(u, look) {
   const tex = rpmAtlasTex(M.atlas, look, pm, tm, bald, !!u.hiRes);
   m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; }
   if (M.normal) { const nn = look.shirt.nude ? 0.25 : 0.8; m.normalScale.set(nn, nn); }
-  if (u.hairMat2) { const hs = (look.body && look.body.hs) || 'padrao'; u.hairMat2.visible = !['careca', 'moicano', 'black'].includes(hs); }
+  if (u.hairMat2) { const hs = (look.body && look.body.hs) || 'padrao'; u.hairMat2.visible = !['careca', 'moicano', 'black'].includes(hs) && !FEM_HAIR_KEYS.includes(hs); }
 }
 /* posição 3D de cada pixel da camiseta (para desenhar peito, abdômen e costas quando está sem camisa) */
 function rpmTorsoDetail(info, mesh, scene) {
@@ -9098,10 +9148,27 @@ function casaInfo(key) {
 function buildCasas(sc) {
   city.casas = {}; city.casaSigns = {}; city.casaRows = city.casaRows || {};
   // ---- Vila Residencial: 6 casas com quintal ----
-  const [vx, vz] = VILA_POS, cols = [0xf2c94c, 0x9bd1a8, 0xf6f1e7, 0x7fb3e0, 0xf28ca0, 0xe8a87c];
+  vilaLot(sc, VILA_POS, 'v', 'Vila Residencial', 101);
+  // ---- lotes livres: condomínio de mansões e a Vila Nova (cada casa tem endereço próprio) ----
+  const opk = new Set(((city.outer && city.outer.parks) || []).map(q => q + '')), free = (city.lifeFree || []).slice(2).filter(q => !opk.has(q + '')); // só lotes fixos: todo mundo vê a mesma casa no mesmo endereço
+  if (free[0]) mansaoLot(sc, free[0], 'x', 'Condomínio Alto da Colina', 1);
+  if (free[1]) vilaLot(sc, free[1], 'w', 'Vila Nova', 201);
+  if (free[2]) mansaoLot(sc, free[2], 'y', 'Condomínio Jardim Imperial', 5);
+  // ---- casas do morro (todas com morador; qualquer uma pode ser alugada ou comprada) ----
+  (city.mWalls || []).forEach((w, i) => {
+    const key = 'm' + i, r = hash01(cityId() + key), st = r < 0.06 ? 'aluga' : r < 0.11 ? 'vende' : 'morador';
+    city.casas[key] = { key, n: `Casa nº ${i + 1} · ${MORRO_NAME[cityId()] || 'Morro'}`, tier: 'kitnet', x: w.wx + w.nx * 0.2, z: w.wz + w.nz * 0.2, ox: w.x, oz: w.z, fx: w.nx, fz: w.nz, y: w.y, st, rent: 60, buy: 8000, mor: MORADOR_NOMES[Math.floor(hash01(key + 'n') * MORADOR_NOMES.length)], morro: true };
+  });
+  refreshCasaSigns();
+  const L = LANDMARKS[cityId()]; if (L && !L.some(l => l[2] === 'Vila Residencial')) L.push([VILA_POS[0], VILA_POS[1], 'Vila Residencial']);
+  if (L && free[0] && !L.some(l => l[2] === 'Condomínio Alto da Colina')) L.push([free[0][0], free[0][1], 'Condomínio Alto da Colina']);
+  if (L && free[1] && !L.some(l => l[2] === 'Vila Nova')) L.push([free[1][0], free[1][1], 'Vila Nova']);
+}
+function vilaLot(sc, pos, pre, nome, base) {
+  const [vx, vz] = pos, cols = [0xf2c94c, 0x9bd1a8, 0xf6f1e7, 0x7fb3e0, 0xf28ca0, 0xe8a87c];
   let n = 0;
   for (const side of [-1, 1]) for (const dz of [-10.5, 0, 10.5]) {
-    const hx = vx + side * 8, hz = vz + dz, key = 'v' + n, num = 101 + n, g = new THREE.Group(); g.position.set(hx, 0, hz); g.rotation.y = side < 0 ? -Math.PI / 2 : Math.PI / 2; sc.add(g);
+    const hx = vx + side * 8, hz = vz + dz, key = pre + n, num = base + n, g = new THREE.Group(); g.position.set(hx, 0, hz); g.rotation.y = side < 0 ? -Math.PI / 2 : Math.PI / 2; sc.add(g);
     const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
     add(boxGeo(9.6, 0.06, 15), lam(0x5f9a45), 0, 0.03, 0);
     add(boxGeo(7, 3.4, 6.4), lam(cols[n]), 0, 1.7, -1.6);
@@ -9113,30 +9180,47 @@ function buildCasas(sc) {
     g.updateMatrixWorld(true); const cl = new THREE.Box3().setFromObject(g.children[1]); city.colliders.push({ x0: cl.min.x, x1: cl.max.x, z0: cl.min.z, z1: cl.max.z });
     const fw = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), g.rotation.y), dx = hx + fw.x * 1.62, dz2 = hz + fw.z * 1.62;
     const r = hash01(cityId() + key), st = n === 1 || n === 4 ? 'aluga' : n === 2 || n === 3 ? 'vende' : 'morador';
-    city.casas[key] = { key, n: `Casa nº ${num} · Vila Residencial`, tier: 'casa', x: dx, z: dz2, ox: dx + fw.x * 2.2, oz: dz2 + fw.z * 2.2, fx: fw.x, fz: fw.z, y: 0, st, rent: 220, buy: 45000, mor: MORADOR_NOMES[Math.floor(r * MORADOR_NOMES.length)], vila: true };
+    city.casas[key] = { key, n: `Casa nº ${num} · ${nome}`, tier: 'casa', x: dx, z: dz2, ox: dx + fw.x * 2.2, oz: dz2 + fw.z * 2.2, fx: fw.x, fz: fw.z, y: 0, st, rent: 220, buy: 45000, mor: MORADOR_NOMES[Math.floor(r * MORADOR_NOMES.length)], vila: true };
     n++;
   }
-  // ---- casas do morro (todas com morador; ~1 em 9 para alugar ou vender) ----
-  (city.mWalls || []).forEach((w, i) => {
-    const key = 'm' + i, r = hash01(cityId() + key), st = r < 0.06 ? 'aluga' : r < 0.11 ? 'vende' : 'morador';
-    city.casas[key] = { key, n: `Casa nº ${i + 1} · ${MORRO_NAME[cityId()] || 'Morro'}`, tier: 'kitnet', x: w.wx + w.nx * 0.2, z: w.wz + w.nz * 0.2, ox: w.x, oz: w.z, fx: w.nx, fz: w.nz, y: w.y, st, rent: 60, buy: 8000, mor: MORADOR_NOMES[Math.floor(hash01(key + 'n') * MORADOR_NOMES.length)], morro: true };
-  });
-  refreshCasaSigns();
-  const L = LANDMARKS[cityId()]; if (L && !L.some(l => l[2] === 'Vila Residencial')) L.push([vx, vz, 'Vila Residencial']);
+}
+/* condomínio com 4 mansões (piscina, garagem e muro), cada uma com endereço próprio */
+function mansaoLot(sc, pos, pre, nome, base) {
+  const [vx, vz] = pos, cols = [0xf6f1e7, 0xe8e2d6, 0xf2efe6, 0xdcd6ca]; let n = 0;
+  for (const side of [-1, 1]) for (const dz of [-8.6, 8.6]) {
+    const hx = vx + side * 8.6, hz = vz + dz, key = pre + n, num = base + n, g = new THREE.Group(); g.position.set(hx, 0, hz); g.rotation.y = side < 0 ? -Math.PI / 2 : Math.PI / 2; sc.add(g);
+    const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+    add(boxGeo(16.6, 0.06, 16.6), lam(0x4f8a3a), 0, 0.03, 0);
+    add(boxGeo(11, 4.2, 7), lam(cols[n % 4]), 0, 2.1, -3.6); add(boxGeo(7.5, 3.4, 6), lam(0xffffff), -1.2, 5.9, -3.9); add(boxGeo(11.4, 0.3, 7.4), lam(0x3b3e46), 0, 4.3, -3.6); add(boxGeo(7.9, 0.3, 6.4), lam(0x3b3e46), -1.2, 7.7, -3.9);
+    for (const wx of [-3.6, -1.2, 1.2, 3.6]) add(boxGeo(1.4, 1.6, 0.1), std(0x9fd3f0, 0.1, 0.5), wx, 2.6, -0.06);
+    for (const wx of [-3.6, -1.2, 1.2]) add(boxGeo(1.4, 1.8, 0.1), std(0x9fd3f0, 0.1, 0.5), wx, 6.0, -0.86);
+    add(boxGeo(1.4, 2.5, 0.14), lam(0x5a3a22), 4.4, 1.25, -0.05);
+    const pool = add(boxGeo(6, 0.12, 3.2), new THREE.MeshStandardMaterial({ color: 0x2fb6e8, roughness: 0.05, metalness: 0.2, emissive: 0x0a3a50 }), -2.4, 0.09, 3.4); pool.castShadow = false;
+    add(boxGeo(6.6, 0.18, 0.3), lam(0xffffff), -2.4, 0.1, 1.7); add(boxGeo(6.6, 0.18, 0.3), lam(0xffffff), -2.4, 0.1, 5.1);
+    for (const px of [-7.9, 7.9]) add(boxGeo(0.3, 1.6, 16), lam(0xd9d2c3), px, 0.8, 0);
+    add(boxGeo(5.6, 1.6, 0.3), lam(0xd9d2c3), -5.1, 0.8, 7.9); add(boxGeo(5.6, 1.6, 0.3), lam(0xd9d2c3), 5.1, 0.8, 7.9);
+    add(CYL(0.12, 0.12, 2.6, 6), lam(0x4a3a2a), 6.6, 1.3, 4.8); add(SPH(1.2, 10, 8), lam(0x3f7a2e), 6.6, 3, 4.8);
+    const numS = textSprite(`Nº ${num}`, { bg: '#15161a', fg: '#ffd76a', size: 40, scale: [1.3, 0.45, 1] }); numS.position.set(4.4, 3.0, 0.15); g.add(numS);
+    g.updateMatrixWorld(true); const cl = new THREE.Box3().setFromObject(g.children[1]); city.colliders.push({ x0: cl.min.x, x1: cl.max.x, z0: cl.min.z, z1: cl.max.z });
+    const fw = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), g.rotation.y), rt = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), g.rotation.y);
+    const dx = hx + rt.x * 4.4 + fw.x * 0.1, dz2 = hz + rt.z * 4.4 + fw.z * 0.1, r = hash01(cityId() + key);
+    city.casas[key] = { key, n: `Mansão nº ${num} · ${nome}`, tier: 'mansao', x: dx, z: dz2, ox: dx + fw.x * 2.2, oz: dz2 + fw.z * 2.2, fx: fw.x, fz: fw.z, y: 0, st: n % 2 ? 'aluga' : 'vende', rent: 1500, buy: 250000, tok: 900, mor: MORADOR_NOMES[Math.floor(r * MORADOR_NOMES.length)], vila: true, mans: true };
+    n++;
+  }
 }
 function casaLabel(c) {
   const r = city.casaRows[c.key];
   if (r) return r.dono === (NET.user && NET.user.id) ? `🏠 Minha casa (${c.n}) · entrar` : `🏠 ${c.n} · casa de ${r.dono_nome}`;
-  return c.st === 'aluga' ? `🏠 ${c.n} · ALUGA-SE $ ${fmt(c.rent)}/dia` : `🏠 ${c.n} · VENDE-SE $ ${fmt(c.buy)}`;
+  return `🏠 ${c.n} · alugar $ ${fmt(c.rent)}/dia ou comprar $ ${fmt(c.buy)}`;
 }
 function refreshCasaSigns() {
   const sc = city.scene; if (!sc || !city.casas) return;
   for (const k in city.casaSigns) sc.remove(city.casaSigns[k]); city.casaSigns = {};
   city.xspots = (city.xspots || []).filter(o => !o.casa);
   for (const k in city.casas) {
-    const c = city.casas[k], r = city.casaRows[k]; if (c.st === 'morador' && !r) continue;
+    const c = city.casas[k], r = city.casaRows[k]; if (c.st === 'morador' && !r && !c.vila) { city.xspots.push({ casa: k, x: c.ox, z: c.oz, r: 1.8, label: () => casaLabel(c), fn: () => openPanel('casa', k) }); continue; }
     const mine = r && NET.user && r.dono === NET.user.id;
-    const txt = r ? (mine ? '🏠 MINHA CASA' : `🏠 ${r.dono_nome}`) : c.st === 'aluga' ? `ALUGA-SE · $ ${fmt(c.rent)}/dia` : `VENDE-SE · $ ${fmt(c.buy)}`;
+    const txt = r ? (mine ? '🏠 MINHA CASA' : `🏠 ${r.dono_nome}`) : c.mans ? `MANSÃO DISPONÍVEL · $ ${fmt(c.buy)}` : c.st === 'aluga' ? `ALUGA-SE · $ ${fmt(c.rent)}/dia` : c.st === 'vende' ? `VENDE-SE · $ ${fmt(c.buy)}` : 'ALUGA OU VENDE';
     const s = textSprite(txt, { bg: r ? '#15161a' : c.st === 'aluga' ? '#00bcd4' : '#ffcf3a', fg: r ? '#ffd76a' : '#15161a', size: 44, scale: [c.vila ? 5 : 3.2, c.vila ? 1 : 0.65, 1] });
     s.position.set(c.x + c.fx * 0.3, c.y + (c.vila ? 3.4 : 2.6), c.z + c.fz * 0.3); sc.add(s); city.casaSigns[k] = s;
     city.xspots.push({ casa: k, x: c.ox, z: c.oz, r: c.vila ? 2.4 : 1.8, label: () => casaLabel(c), fn: () => { const rr = city.casaRows[k]; if (rr && NET.user && rr.dono === NET.user.id) enterCasa(c); else openPanel('casa', k); } });
@@ -9149,7 +9233,9 @@ async function loadCasas() {
     const now = Date.now();
     for (const r of data) { if (r.modo === 'aluguel' && new Date(r.pago_ate).getTime() < now - 2 * 3600e3) continue; city.casaRows[r.casa] = r; }
     // minha casa ainda é minha?
-    if (S.casa && S.casa.cid === cid && (!city.casaRows[S.casa.key] || city.casaRows[S.casa.key].dono !== NET.user.id)) { toast('Você perdeu a casa (aluguel vencido).', 'bad'); S.casa = null; persist(); }
+    if (S.casa && S.casa.cid === cid && (!city.casaRows[S.casa.key] || city.casaRows[S.casa.key].dono !== NET.user.id)) { toast('Você perdeu a casa (aluguel vencido).', 'bad'); S.casa = null; if (S.home && S.home.casa) S.home = null; persist(); }
+    if (!isAdm() && S.casa && S.casa.cid === cid && city.casaRows[S.casa.key] && !(S.home && S.home.casa)) { S.home = { id: S.casa.tier, own: S.casa.modo === 'compra', casa: true }; persist(); }
+    casaMigrate();
     refreshCasaSigns();
   } catch (e) { }
 }
@@ -9159,19 +9245,29 @@ function onCasaNet(d) {
   refreshCasaSigns(); if (panelKind === 'casa') renderPanel();
 }
 function onCasaPg(d) { if (!isAdm() || !d) return; toast(`🏠 ${d.who} ${d.modo === 'compra' ? 'comprou' : 'pagou o aluguel de'} ${d.casa}: +$ ${fmt(d.amt)} para o chefe`, 'good'); S.coins += d.amt; persist(); updateHUD(); }
-async function takeCasa(key, modo) {
+/* quem morava no lote antigo (todo mundo no mesmo lugar) ganha um endereço próprio do mesmo padrão, sem pagar de novo */
+function casaMigrate() {
+  if (isAdm() || !NET.user || !S.home || S.home.casa || (S.casa && S.casa.cid === cityId()) || city.migDone) return; city.migDone = true;
+  const tier = S.home.id === 'quarto' ? 'kitnet' : S.home.id, list = Object.values(city.casas || {}).filter(c => c.tier === tier && !city.casaRows[c.key]);
+  list.sort((a, b) => (a.st === 'morador') - (b.st === 'morador') || hash01(NET.user.id + a.key) - hash01(NET.user.id + b.key));
+  (async () => { for (const c of list.slice(0, 6)) { if (city.casaRows[c.key]) continue; await takeCasa(c.key, S.home.own ? 'compra' : 'aluguel', { free: true, quiet: true }); if (S.casa && S.casa.key === c.key) { toast(`🏠 Sua casa agora tem endereço próprio: ${c.n}. Toque no GPS da Imobiliária para ir até lá.`, 'good'); return; } } })();
+}
+async function takeCasa(key, modo, o = {}) {
   const c = city.casas[key]; if (!c) return;
   if (!NET.user || !NET.sb) return toast('Entre com sua conta para alugar ou comprar uma casa.', 'bad');
   if (city.casaRows[key]) return toast('Essa casa já tem dono.', 'bad');
   if (S.casa && S.casa.cid === cityId()) return toast('Você já tem uma casa nesta cidade. Entregue a outra primeiro.', 'bad');
-  const price = modo === 'compra' ? c.buy : c.rent; if (S.coins < price) return toast(`Precisa de $ ${fmt(price)}.`, 'bad');
+  const price = o.free ? 0 : modo === 'compra' ? c.buy : c.rent;
+  if (o.tok) { if ((S.tokens || 0) < c.tok) { toast('Tokens insuficientes.', 'bad'); return openPanel('tokens'); } }
+  else if (S.coins < price) return toast(`Precisa de $ ${fmt(price)}.`, 'bad');
   try {
     const { data, error } = await NET.sb.from('casas').insert({ cidade: cityId(), casa: key, modo, dono_nome: S.name, pago_ate: new Date(Date.now() + 3600e3).toISOString() }).select().single();
-    if (error) return toast(/duplicate|unique/i.test(error.message) ? 'Alguém acabou de pegar essa casa.' : 'Não deu agora. Tente de novo.', 'bad');
-    S.coins -= price; S.casa = { key, cid: cityId(), modo, tier: c.tier, n: c.n, paid: gameDay() };
+    if (error) { if (/duplicate|unique/i.test(error.message)) { city.casaRows[key] = city.casaRows[key] || { casa: key, dono: '?', dono_nome: 'outro jogador', modo: modo }; } if (!o.quiet) toast(/duplicate|unique/i.test(error.message) ? 'Alguém acabou de pegar essa casa.' : 'Não deu agora. Tente de novo.', 'bad'); return; }
+    if (o.tok) S.tokens -= c.tok; else S.coins -= price; S.casa = { key, cid: cityId(), modo, tier: c.tier, n: c.n, paid: gameDay() };
+    if (!isAdm()) S.home = { id: c.tier, own: modo === 'compra', casa: true };
     if (c.morro) { S.morador = S.morador || {}; S.morador[cityId()] = true; }
     persist(); updateHUD(); city.casaRows[key] = data; refreshCasaSigns(); sfx('level');
-    if (NET.ch) { NET.ch.send({ type: 'broadcast', event: 'casa', payload: { cid: cityId(), key, op: 'set', row: data } }); NET.ch.send({ type: 'broadcast', event: 'casa_pg', payload: { amt: price, who: S.name, casa: c.n, modo } }); }
+    if (NET.ch) { NET.ch.send({ type: 'broadcast', event: 'casa', payload: { cid: cityId(), key, op: 'set', row: data } }); if (price) NET.ch.send({ type: 'broadcast', event: 'casa_pg', payload: { amt: price, who: S.name, casa: c.n, modo } }); }
     toast(modo === 'compra' ? `🏠 Casa própria! ${c.n} agora é sua.` : `🏠 Você alugou ${c.n}. O aluguel ($ ${fmt(c.rent)}) é cobrado a cada dia do jogo.`, 'pink');
     if (c.morro) toast(`Agora você é morador do ${MORRO_NAME[cityId()]}.`, 'good');
     postFeed(modo === 'compra' ? `Comprei a ${c.n}!` : `Aluguei a ${c.n}!`); renderPanel();
@@ -9181,7 +9277,7 @@ async function dropCasa() {
   const sc = S.casa; if (!sc) return;
   try { await NET.sb.from('casas').delete().eq('cidade', sc.cid).eq('casa', sc.key); } catch (e) { }
   if (sc.cid === cityId()) { delete city.casaRows[sc.key]; refreshCasaSigns(); if (NET.ch) NET.ch.send({ type: 'broadcast', event: 'casa', payload: { cid: sc.cid, key: sc.key, op: 'del' } }); }
-  S.casa = null; persist(); toast('Você entregou a casa.'); renderPanel();
+  S.casa = null; if (S.home && S.home.casa) S.home = null; persist(); toast('Você entregou a casa.'); renderPanel();
 }
 /* aluguel diário (vai para o chefe) */
 function casaDaily() {
@@ -9212,11 +9308,11 @@ const PANEL_CASA = function (key) {
   let html = `<p><b>${esc(c.n)}</b></p><p class="muted">Dono do imóvel: <b>${esc(CHIEF)} (ADM)</b>. Aluguel e venda vão para o chefe.</p>`;
   if (mine) html += `<div class="note">Esta casa é sua (${r.modo === 'compra' ? 'comprada' : 'alugada'}).</div><div class="row"><button class="btn" data-act="casa-in" data-k="${key}">Entrar em casa</button><button class="btn ghost" data-act="casa-drop">Entregar a casa</button></div>`;
   else if (r) html += `<div class="note">Mora aqui: <b>${esc(r.dono_nome)}</b> (${r.modo === 'compra' ? 'casa própria' : 'aluguel'}).</div>`;
-  else if (c.st === 'morador') html += `<div class="note">Mora aqui: <b>${esc(c.mor)}</b>.</div>`;
   else {
-    html += `<div class="note">${c.st === 'aluga' ? `ALUGA-SE: <b>$ ${fmt(c.rent)}</b> por dia do jogo (cobrado automaticamente).` : `VENDE-SE: <b>$ ${fmt(c.buy)}</b> (é sua para sempre).`}</div>`;
-    html += `<p class="muted">${c.morro ? 'Casa no morro: quem mora aqui vira morador e pode subir o morro.' : 'Casa com quintal na Vila Residencial.'} Dentro tem cama, sofá, TV e cozinha.</p>`;
-    html += `<div class="row">${c.st === 'aluga' ? `<button class="btn" data-act="casa-take" data-k="${key}" data-m="aluguel">Alugar ($ ${fmt(c.rent)})</button>` : `<button class="btn" data-act="casa-take" data-k="${key}" data-m="compra">Comprar ($ ${fmt(c.buy)})</button>`}</div>`;
+    if (c.st === 'morador') html += `<div class="note">Hoje mora aqui o figurante <b>${esc(c.mor)}</b>. Se você alugar ou comprar, ele se muda e a casa fica só sua.</div>`;
+    html += `<div class="note">ALUGUEL: <b>$ ${fmt(c.rent)}</b> por dia do jogo (cobrado automaticamente) · COMPRA: <b>$ ${fmt(c.buy)}</b>${c.tok ? ` ou <b>${fmt(c.tok)} T</b>` : ''} (é sua para sempre).</div>`;
+    html += `<p class="muted">${c.morro ? 'Casa no morro: quem mora aqui vira morador e pode subir o morro.' : c.mans ? 'Mansão com piscina, dois andares e muro.' : 'Casa com quintal.'} Cada casa tem um morador só: ninguém divide endereço. Dentro tem cama, sofá, TV e cozinha.</p>`;
+    html += `<div class="row"><button class="btn" data-act="casa-take" data-k="${key}" data-m="aluguel">Alugar ($ ${fmt(c.rent)})</button><button class="btn" data-act="casa-take" data-k="${key}" data-m="compra">Comprar ($ ${fmt(c.buy)})</button>${c.tok ? `<button class="btn tok" data-act="casa-take" data-k="${key}" data-m="compra" data-tok="1">${fmt(c.tok)} T</button>` : ''}<button class="btn ghost" data-act="casa-gps" data-k="${key}">📍 GPS</button></div>`;
     if (S.casa && S.casa.cid === cityId()) html += `<p class="muted">Você já tem a ${esc(S.casa.n)}. Entregue ela antes de pegar outra.</p>`;
   }
   return { title: '🏠 Casa', html };
@@ -10596,7 +10692,7 @@ const HOMES = [
 const DAYLEN = 60 * 60 * 1000; // um dia do jogo = 1 hora real: uns 40 minutos de dia claro e 20 de noite
 const gameDay = () => Math.floor(Date.now() / DAYLEN);
 function chargeRent() {
-  const h = S.home; if (!h || h.own) return;
+  const h = S.home; if (!h || h.own || h.casa) return;
   const H = HOMES.find(x => x.id === h.id), d = gameDay();
   if (h.paid >= d) return;
   h.paid = d;
@@ -11638,6 +11734,8 @@ const OLD_PANELS = {
       <p class="muted"><b>Automática (recomendada):</b> o jogo mede a fluidez e ajusta sozinho a resolução e as sombras para ficar sempre liso, no máximo de qualidade que o seu aparelho aguenta. A média é boa aparência sem pesar no celular. Use a baixa se o jogo engasgar. A Ultra usa a resolução máxima da tela e sombras finas, ideal para ver os rostos de perto (pede um aparelho bom).</p>
       <h3>Som</h3><div class="seg"><button data-act="sound" data-on="1" aria-pressed="${S.settings.sound}">Ligado</button><button data-act="sound" data-on="0" aria-pressed="${!S.settings.sound}">Desligado</button></div>
       <h3>Baixar no celular</h3><p class="muted">${isStandalone() ? 'O jogo já está instalado como app neste aparelho.' : 'Instale o Rolê City na tela inicial: abre em tela cheia, como um aplicativo.'}</p>${isStandalone() ? '' : '<button class="btn" data-act="install-app">📲 Baixar o jogo no celular</button>'}
+      <h3>Tamanho dos botões</h3><div class="row"><span>Controles (andar, pular, ação…)</span><button class="btn ghost sm" data-act="be-size" data-d="-0.1" aria-label="Diminuir controles">−</button><b>${Math.round((S.settings.btnScale || 1) * 100)}%</b><button class="btn ghost sm" data-act="be-size" data-d="0.1" aria-label="Aumentar controles">+</button></div>
+      <div class="row"><span>Botões do topo (celular, social…)</span><button class="btn ghost sm" data-act="hud-size" data-d="-0.1" aria-label="Diminuir botões do topo">−</button><b>${Math.round((S.settings.hudScale || 1) * 100)}%</b><button class="btn ghost sm" data-act="hud-size" data-d="0.1" aria-label="Aumentar botões do topo">+</button></div><p class="muted">Para mudar os controles de lugar, use "Editar botões".</p>
       <h3>Vozes dos figurantes</h3><div class="seg"><button data-act="vozes-set" data-on="1" aria-pressed="${S.settings.vozes !== false}">Falando</button><button data-act="vozes-set" data-on="0" aria-pressed="${S.settings.vozes === false}">Mudos</button></div><p class="muted">Os figurantes falam com a voz do próprio celular (traficante dando "Salve, Ajbz!", torcida, grito de atropelado...).</p>
       <h3>Áudios dos jogadores</h3><div class="seg"><button data-act="voice-set" data-on="1" aria-pressed="${S.settings.voice !== false}">Ouvir</button><button data-act="voice-set" data-on="0" aria-pressed="${S.settings.voice === false}">Silenciar</button></div><p class="muted">Segure o botão Áudio (ou a tecla B), fale e solte: todo mundo na mesma cidade ouve, mais alto quem está perto.</p>
       <h3>Controle do carro e da moto</h3><div class="seg"><button data-act="drive-ctl" data-v="botoes" aria-pressed="${S.settings.driveCtl !== 'joystick'}">Botões ◀ ▶ e ré</button><button data-act="drive-ctl" data-v="joystick" aria-pressed="${S.settings.driveCtl === 'joystick'}">Joystick</button></div>
@@ -11749,6 +11847,20 @@ const PANELS = {
     return { title: 'Agência de Empregos', html };
   },
   imobiliaria() {
+    if (!isAdm()) {
+      const all = Object.values(city.casas || {}), rows = city.casaRows || {}, myC = S.casa && S.casa.cid === cityId() && city.casas[S.casa.key];
+      let html = `<p class="muted">Todas as casas da cidade são do ${esc(CHIEF)} (ADM) e estão para alugar ou vender para quem joga de verdade. <b>Cada casa tem um endereço só seu</b>: ninguém divide casa, e a mansão do chefe é particular. O aluguel é cobrado a cada dia do jogo.</p>`;
+      if (myC) html += `<div class="note">Você mora em: <b>${esc(myC.n)}</b> (${S.casa.modo === 'compra' ? 'casa própria' : 'alugada'}). <button class="btn ghost sm" data-act="casa-gps" data-k="${myC.key}">📍 Ir para casa</button> <button class="btn ghost sm" data-act="casa-drop">Entregar</button></div>`;
+      else if (S.casa) html += `<div class="note">Sua casa fica em outra cidade: <b>${esc(S.casa.n)}</b>.</div>`;
+      for (const [tier, nm, desc] of [['kitnet', 'Casas no morro', 'Simples, perto da comunidade. Quem mora vira morador do morro.'], ['casa', 'Casas com quintal (Vila Residencial e Vila Nova)', 'Quintal, cerca branca e garagem.'], ['mansao', 'Mansões nos condomínios', 'Dois andares, piscina e muro. Compra com grana ou tokens.']]) {
+        const L = all.filter(c => c.tier === tier), livres = L.filter(c => !rows[c.key]), H = HOMES.find(h => h.id === tier), ex = livres.find(c => c.st !== 'morador') || livres[0];
+        if (!L.length) continue;
+        const near = ex ? livres.slice().sort((a, b) => Math.hypot(a.ox - P.x, a.oz - P.z) - Math.hypot(b.ox - P.x, b.oz - P.z))[0] : null;
+        html += `<div class="card"><h4>${esc(nm)}</h4><p>${esc(desc)}</p><div class="meta"><span>${livres.length} livres de ${L.length}</span><span>Bônus +${Math.round((H ? H.bonus : 0.1) * 100)}%</span>${ex ? `<span>Aluguel $ ${fmt(ex.rent)}/dia</span><span class="coin">Compra $ ${fmt(ex.buy)}</span>${ex.tok ? `<span class="tokc">ou ${fmt(ex.tok)} T</span>` : ''}` : ''}</div>
+          <div class="row">${near ? `<button class="btn sm" data-act="casa-gps" data-k="${near.key}">📍 GPS até a livre mais perto</button><button class="btn ghost sm" data-act="open-casa" data-k="${near.key}">Ver ${esc(near.n)}</button>` : '<span class="pill">Todas ocupadas</span>'}</div></div>`;
+      }
+      return { title: 'Imobiliária', html };
+    }
     const cur = S.home && HOMES.find(h => h.id === S.home.id);
     let html = `<p class="muted">Alugue ou compre um lugar para morar. O aluguel é cobrado a cada dia do jogo (24 minutos de jogo). Comprando, não paga mais nada. Sua casa aparece no lote da esquina nordeste da cidade e dá bônus de grana e XP.</p>`;
     if (cur) html += `<div class="note">Você mora em: <b>${esc(cur.name)}</b> (${S.home.own ? 'casa própria' : `alugada · $ ${fmt(cur.rent)} por dia`}). <button class="btn ghost sm" data-act="home-leave">${S.home.own ? 'Vender por metade do preço' : 'Entregar a chave'}</button></div>`;
@@ -12238,7 +12350,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m); break; case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;
@@ -12298,7 +12410,8 @@ function act(a, ds, el) {
     case 'drive-ctl': S.settings.driveCtl = ds.v; persist(); applyDriveCtl(); renderPanel(); break;
     case 'install-app': installApp(); break;
     case 'voice-set': S.settings.voice = ds.on === '1'; persist(); renderPanel(); break;
-    case 'be-size': { const st = btnCfg(); st.btnScale = clamp(Math.round(((st.btnScale || 1) + +ds.d) * 10) / 10, 0.7, 1.5); applyBtnLayout(); toast(`Tamanho dos botões: ${Math.round(st.btnScale * 100)}%`); break; }
+    case 'be-size': { const st = btnCfg(); st.btnScale = clamp(Math.round(((st.btnScale || 1) + +ds.d) * 10) / 10, 0.6, 1.5); applyBtnLayout(); persist(); toast(`Tamanho dos controles: ${Math.round(st.btnScale * 100)}%`); if (panelKind) renderPanel(); break; }
+    case 'hud-size': { const st = S.settings; st.hudScale = clamp(Math.round(((st.hudScale || 1) + +ds.d) * 10) / 10, 0.6, 1.4); applyHudScale(); persist(); toast(`Botões do topo: ${Math.round(st.hudScale * 100)}%`); if (panelKind) renderPanel(); break; }
     case 'be-mode': { const T = $('touch'), dr = !T.classList.contains('driving'); T.classList.toggle('driving', dr); el.textContent = dr ? 'Ver botões a pé' : 'Ver botões do carro'; applyBtnLayout(); break; }
     case 'be-reset': { const st = btnCfg(), o = btnOrient(); st.btnPos[o] = {}; delete st.joyPos[o]; st.btnScale = 1; applyBtnLayout(); toast('Botões no lugar padrão.'); break; }
     case 'be-save': btnEditEnd(true); break;
@@ -12352,7 +12465,7 @@ function act(a, ds, el) {
     case 'crate': openCrate(ds.k); renderPanel(); break;
     case 'rp-speed': RP.speed = +ds.v; renderReplaySpeed(); break;
     case 'rp-exit': stopReplay(); break;
-    case 'gender': selGender = ds.g; document.querySelectorAll('#genders button').forEach(b => b.setAttribute('aria-pressed', b.dataset.g === selGender)); break;
+    case 'gender': selGender = ds.g; document.querySelectorAll('#genders button').forEach(b => b.setAttribute('aria-pressed', b.dataset.g === selGender)); renderBodySel(); break;
     case 'logout': (async () => { await netSignOut(); location.reload(); })(); break;
     case 'open-online': if (mode === 'city') openPanel('social', 'amigos'); break;
     case 'menu-continue': if (needLogin()) enterGame(); break;
@@ -12793,7 +12906,9 @@ async function enterGame() {
   if (IS_TOUCH) { $('touch').hidden = false; $('tb-item-l').textContent = 'Truque'; }
   applyDriveCtl();
   buildCity(); setTimeout(loadBiz, 700); setTimeout(loadMorros, 900); applyQuality(); updateHUD(); rebuildMissionObjs(); renderMissionBox();
-  const hd = homeDoor(); if (hd) { P.x = hd.x - 2.5; P.z = hd.z; P.h = -Math.PI / 2; setTimeout(() => toast('Você acordou em casa. Bom rolê!', 'pink'), 1200); }
+  const hd = homeDoor(), myC = !isAdm() && S.casa && S.casa.cid === cityId() && city.casas && city.casas[S.casa.key];
+  if (myC) { P.x = myC.ox + myC.fx * 1.5; P.z = myC.oz + myC.fz * 1.5; P.y = myC.y || 0; P.h = Math.atan2(myC.fx, myC.fz); setTimeout(() => toast(`Você acordou em casa (${myC.n}). Bom rolê!`, 'pink'), 1200); }
+  else if (hd) { P.x = hd.x - 2.5; P.z = hd.z; P.h = -Math.PI / 2; setTimeout(() => toast('Você acordou em casa. Bom rolê!', 'pink'), 1200); }
   city.camYaw = P.h; camera.position.set(P.x - Math.sin(P.h) * 6, 4, P.z - Math.cos(P.h) * 6);
   P.onBoard = hasSkate();
   if (S.shift && !S.mission) setTimeout(() => { if (S.shift && !S.mission) nextJobTask(); }, 1500);
