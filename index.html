@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Rolê City">
 <link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-180.png">
+<link rel="apple-touch-icon" href="icons/apple-180.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=VT323&display=swap">
@@ -565,7 +565,7 @@ canvas.swatch{background:#333}
   <div class="sky-l b" id="sky-b"></div><div class="sky-l" id="sky-a"></div>
   <div class="ground"></div><div class="board"></div>
   <div class="in-wrap">
-    <div style="position:relative"><img class="in-logo" src="marca/logo.png?v=1" alt="Rolê City"><div class="shine"></div></div>
+    <div style="position:relative"><img class="in-logo" src="marca/logo.webp?v=2" alt="Rolê City"><div class="shine"></div></div>
     <div class="in-load" id="in-load"><div class="in-bar"><i id="in-bar"></i></div><div class="in-tip" id="in-tip">Carregando a cidade…</div></div>
     <button class="tap" id="in-tap" hidden>TOQUE PARA COMEÇAR</button>
     <div class="sheet" id="in-sheet" hidden>
@@ -582,7 +582,7 @@ canvas.swatch{background:#333}
 <!-- MENU -->
 <div id="menu">
   <div class="menu-card">
-    <h1 class="logo"><img src="marca/logo.png?v=1" alt="Rolê City" style="display:block;width:min(400px,78vw);margin:0 auto"><small>skate, rolê e campeonatos pelo mundo</small></h1>
+    <h1 class="logo"><img src="marca/logo.webp?v=2" alt="Rolê City" style="display:block;width:min(400px,78vw);margin:0 auto"><small>skate, rolê e campeonatos pelo mundo</small></h1>
     <button class="btn install-btn" data-act="install-app" hidden>📲 Baixar o jogo no celular</button>
     <div class="menu-box" id="install-help" hidden></div>
     <div class="menu-box" id="acc-box">
@@ -762,7 +762,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.13-41';
+const BUILD = '2026.10.13-42';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
