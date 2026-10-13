@@ -472,3 +472,9 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
   - 💎 Raras e lendárias só com tokens: raras de 30 a 60 T e lendárias de 80 a 150 T. As comuns saem com a grana do jogo.
   - Tênis agora mostram a estampa (listras, xadrez etc.) no corpo novo.
   - Vitrine da loja: a miniatura mostra a roupa montada (antes podia aparecer o boneco sem a roupa).
+
+### Build 2026.10.13-47 (jogo mais leve de novo)
+  - 🐢➡️⚡ A build -45 tinha deixado o jogo mais pesado e com imagem pior. Havia duas causas:
+    - **3 luzes reservadas** ficavam na cidade o tempo todo (apagadas, mas o celular calculava as 3 em cada pixel). Agora as salas clareiam só com uma luz de céu reservada, que quase não pesa. Fogo e baile voltaram a usar a luz própria.
+    - A **sombra "transparente"** continuava sendo calculada, e a qualidade automática compensava baixando a resolução. Voltou a desligar a sombra de verdade quando o celular aperta. Ela só religa uma vez e nunca dentro de casas ou lojas, para não travar na entrada.
+  - Medido: o quadro na praça voltou de 26 ms para 20 ms, o mesmo da build -44. Entrar em casas e lojas continua sem tela preta.

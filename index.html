@@ -769,7 +769,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.13-46';
+const BUILD = '2026.10.13-47';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1267,7 +1267,7 @@ function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.asp
 addEventListener('resize', resize); resize();
 const QUALITY = { auto: { pr: 1.5, shadows: true, fog: 1, map: 1024, auto: true }, baixa: { pr: 0.75, shadows: false, fog: 0.75, map: 512 }, media: { pr: 1.5, shadows: true, fog: 1, map: 1024 }, alta: { pr: 2, shadows: true, fog: 1.3, map: 2048, soft: true }, ultra: { pr: 3, shadows: true, fog: 1.5, map: 4096, soft: true } };
 /* qualidade automática: mede a fluidez a cada segundo e ajusta a resolução e as sombras para não travar */
-const AQ = { pr: Math.min(devicePixelRatio || 1, 1.5), n: 0, t0: 0, lo: 0, hi: 0, shOff: false, fps: 0, fr: 0 };
+const AQ = { pr: Math.min(devicePixelRatio || 1, 1.5), n: 0, t0: 0, lo: 0, hi: 0, shOff: false, fps: 0, fr: 0, shBack: 0, shWait: 0 };
 function autoQualityTick(now) {
   AQ.fr++;
   // sombras atualizam um quadro sim, outro não no modo automático (metade do custo, ninguém percebe)
@@ -1281,16 +1281,14 @@ function autoQualityTick(now) {
       else if (AQ.pr > 0.61) { AQ.pr = Math.max(0.6, AQ.pr - 0.1); set(); } } }
   else if (fps > 55) { AQ.lo = 0; if (++AQ.hi >= 6) { AQ.hi = 0;
       if (AQ.pr < 0.99) { AQ.pr = Math.min(1, AQ.pr + 0.1); set(); }
-      else if (AQ.shOff) { AQ.shOff = false; applyShadows(true); }
+      else if (AQ.shOff && AQ.shBack < 1 && !city.interior && !city.shopIn && !city.inCine && ++AQ.shWait >= 4) { AQ.shOff = false; AQ.shWait = 0; AQ.shBack++; applyShadows(true); } // religa no máximo 1 vez e nunca dentro de salas (cada troca refaz os gráficos)
       else if (AQ.pr < cap - 0.01) { AQ.pr = Math.min(cap, AQ.pr + 0.1); set(); } } }
   else { AQ.lo = 0; AQ.hi = Math.max(0, AQ.hi - 1); }
   if (panelKind === 'config' && (AQ.uiT = (AQ.uiT || 0) + 1) % 2 === 0) { const el2 = $('aq-info'); if (el2) el2.textContent = aqInfo(); }
 }
 const aqInfo = () => `Agora: ${Math.round(AQ.fps)} quadros por segundo · resolução ${AQ.pr.toFixed(1)}x · sombras ${AQ.shOff ? 'desligadas' : 'ligadas'}`;
-// three novo: em vez de desligar as sombras (o que obriga a refazer os gráficos de tudo e trava a tela), só deixa a sombra transparente e para de desenhá-la
-const SH_SOFT = (() => { try { return 'intensity' in new THREE.DirectionalLight().shadow; } catch (e) { return false; } })();
+const SH_SOFT = false; // sombra transparente ainda custa no celular: desligar de verdade é mais leve
 function applyShadows(on) {
-  if (SH_SOFT && renderer.shadowMap.enabled && city.sun && city.sun.castShadow) { city.sun.shadow.intensity = on ? 1 : 0; return; }
   renderer.shadowMap.enabled = on; if (city.sun) city.sun.castShadow = on;
   [city.scene, R && R.sc].forEach(sc => sc && sc.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; }); }));
 }
@@ -4046,8 +4044,8 @@ function buildInterior(hid) {
   col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
   const ceil = add(new THREE.PlaneGeometry(W, D), std(0xf6f6f2, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
   const lampM = new THREE.MeshBasicMaterial({ color: 0xfff4d8 }); add(CYL(0.35, 0.35, 0.06, 16), lampM, 0, H - 0.04, 0);
-  const light = poolPoint(0xfff0d8, 1.4, Math.max(W, D) * 1.6, 1.6); light.position.set(0, H - 0.4, 0); g.add(light);
-  const amb = poolHemi(0xfff6ea, 0x6a5a48, 0.35); amb.position.set(0, H, 0); g.add(amb);
+  const light = roomFill(); light.position.set(0, H - 0.4, 0); g.add(light);
+  const amb = poolHemi(0xfff6ea, 0x6a5a48, 1.05); amb.position.set(0, H, 0); g.add(amb);
   // janelas com vista (claras de dia, escuras à noite)
   it.winM = new THREE.MeshBasicMaterial({ color: 0xbfe3ff });
   for (const x of [-W / 4, W / 4]) { add(new THREE.PlaneGeometry(1.4, 1.1), it.winM, x, 1.7, -D / 2 + 0.02); box(1.55, 0.08, 0.08, 0xffffff, x, 1.15, -D / 2 + 0.05); box(1.55, 0.08, 0.08, 0xffffff, x, 2.25, -D / 2 + 0.05); box(0.06, 1.1, 0.06, 0xffffff, x, 1.7, -D / 2 + 0.05); }
@@ -5570,7 +5568,7 @@ function jobObjsNew(m) {
   if (m.type === 'job_fogo') {
     const [x, z, h] = m.fire, fireT = canvasTex(64, 128, (g, w, hh) => { const gr = g.createLinearGradient(0, hh, 0, 0); gr.addColorStop(0, 'rgba(255,240,120,1)'); gr.addColorStop(0.4, 'rgba(255,120,20,.9)'); gr.addColorStop(1, 'rgba(255,40,0,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(w / 2, 0); g.quadraticCurveTo(w, hh * 0.6, w / 2, hh); g.quadraticCurveTo(0, hh * 0.6, w / 2, 0); g.fill(); });
     for (let i = 0; i < 14; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: fireT, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.position.set(x + rand(-5, 5), rand(2, Math.min(h, 18)), z + rand(-5, 5)); s.scale.set(3, 5, 1); s.userData.fire = rand(0, 6); city.scene.add(s); city.mObjs.push(s); }
-    const lt = poolPoint(0xff7a1a, 2, 30); lt.position.set(x, 6, z); lt.userData.fireL = true; city.scene.add(lt); city.mObjs.push(lt);
+    const lt = new THREE.PointLight(0xff7a1a, 2, 30); lt.position.set(x, 6, z); lt.userData.fireL = true; city.scene.add(lt); city.mObjs.push(lt);
   }
   if (m.type === 'job_taxi' && m.stage === 0) {
     const g = MODELS ? makeRealPed(Math.random() < 0.5) : makePed({ shirt: 0x4fc3ff, pants: 0x2f4f86, skin: pick(SKINS), hair: pick(HAIRS) }); g.position.set(m.a[0], 0, m.a[1]); g.userData.pax = true; city.scene.add(g); city.mObjs.push(g); bubble(g, 'Táxi! Táxi!', 30);
@@ -6369,7 +6367,7 @@ function buildShopInterior(d) {
   col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
   const ceil = add(new THREE.PlaneGeometry(W, D), std(0xf4f4f2, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
   for (const x of [-W / 4, W / 4]) for (const z of [-D / 4, D / 4]) add(boxGeo(1.2, 0.05, 0.3), new THREE.MeshBasicMaterial({ color: 0xfffbea }), x, H - 0.03, z);
-  const lt = poolPoint(0xfff4e0, 1.4, Math.max(W, D) * 1.8, 1.5); lt.position.set(0, H - 0.4, 0); g.add(lt); g.add(poolHemi(0xffffff, 0x7a6a5a, 0.5));
+  const lt = roomFill(); lt.position.set(0, H - 0.4, 0); g.add(lt); g.add(poolHemi(0xffffff, 0x7a6a5a, 1.2));
   box(1.6, 2.4, 0.1, 0x6b4a2f, 0, 1.2, D / 2 - 0.06); // porta
   const sign = textSprite(info.label.toUpperCase(), { bg: info.css || '#15161a', fg: '#15161a', size: 54, scale: [Math.min(W * 0.5, 7), 0.9, 1] }); sign.position.set(0, H - 0.8, -D / 2 + 0.12); g.add(sign);
   spot('Sair', 0, D / 2 - 0.9, exitShop);
@@ -6971,7 +6969,7 @@ function mansaoDecor(it, n, h) {
   for (const x of [-W / 2 + 0.1, W / 2 - 0.1]) box(0.1, 0.2, D, gold, x, 4.1, 0); for (const z of [-D / 2 + 0.1, D / 2 - 0.1]) box(W, 0.2, 0.1, gold, 0, 4.1, z);
   // lustre de cristal
   const ch = new THREE.Group(); ch.add(new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.06, 8, 32), gold)); for (let k = 0; k < 16; k++) { const a = k / 16 * TAU, c = new THREE.Mesh(SPH(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xfff6d8 })); c.position.set(Math.cos(a) * 0.9, -0.15, Math.sin(a) * 0.9); ch.add(c); } ch.children[0].rotation.x = Math.PI / 2; ch.position.set(0, 3.6, 0); it.g.add(ch);
-  const lt = poolPoint(0xffe7b0, 0.9, 26, 1.6); lt.position.set(0, 3.3, 0); it.g.add(lt);
+  const lt = roomFill(); lt.position.set(0, 3.3, 0); it.g.add(lt);
   // elevador
   box(1.8, 2.6, 0.12, gold, W / 2 - 2.4, 1.3, D / 2 - 0.08); box(0.04, 2.5, 0.14, 0x15161a, W / 2 - 2.4, 1.3, D / 2 - 0.1);
   const el = textSprite('🛗 ELEVADOR', { bg: '#15161a', fg: '#ffd700', size: 40, scale: [1.6, 0.36, 1] }); el.position.set(W / 2 - 2.4, 2.95, D / 2 - 0.2); it.g.add(el);
@@ -8749,7 +8747,7 @@ function startCityFire(sl) {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: T, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.position.set(px, y, pz); s.scale.set(3.5, 5.5, 1); s.userData.ph = rand(0, 6); city.scene.add(s); F.fx.push(s); }
   F.h = b.h;
   F.smoke = []; for (let i = 0; i < 10; i++) { const m = new THREE.Mesh(SPH(1.6, 8, 6), new THREE.MeshLambertMaterial({ color: 0x3a3a3a, transparent: true, opacity: 0.55, depthWrite: false })); m.position.set(b.x + rand(-3, 3), F.h + rand(0, 14), b.z + rand(-3, 3)); m.userData.ph = rand(0, 1); city.scene.add(m); F.smoke.push(m); }
-  F.light = poolPoint(0xff7a1a, 2.2, 36); F.light.position.set(b.x, 6, b.z); city.scene.add(F.light);
+  F.light = new THREE.PointLight(0xff7a1a, 2.2, 36); F.light.position.set(b.x, 6, b.z); city.scene.add(F.light);
   F.addr = nearestAddr(b.x, b.z);
   const base = city.doors.find(d => d.kind === 'bombeiros') || { x: 0, z: 0 };
   F.path = roadPath(base.x, base.z, F.addr[0], F.addr[1]); F.base = base;
@@ -11556,7 +11554,7 @@ EXTRA_INT.brega = (h) => {
   for (let i = 0; i < 4; i++) { const z = -2 + i * 1.6; box(0.9, 0.42, 1.4, 0xa62bd9, -W / 2 + 0.7, 0.21, z); box(0.25, 0.7, 1.4, 0xa62bd9, -W / 2 + 0.2, 0.55, z); shopSeat(h, -W / 2 + 0.8, z, Math.PI / 2, '🛋️ Sentar no sofá'); }
   spot('💃 Dançar na pista', 0, 0.5, () => { P.emote = { id: 'dance', t: 30 }; toast('💃 Mandando ver no brega!', 'pink'); });
   bregaShow(h);
-  const lt = poolPoint(0xff2a8a, 1.6, 18); lt.position.set(0, 3, -1); it.g.add(lt); it.disco = lt;
+  const lt = new THREE.PointLight(0xff2a8a, 1.6, 18); lt.position.set(0, 3, -1); it.g.add(lt); it.disco = lt;
 };
 EXTRA_INT.emprestimo = (h) => {
   cleanShopSeats(); const { box, add, D, W } = h;
@@ -12831,14 +12829,15 @@ function atlasTick(cam, near, scene) {
   }
 }
 
-/* luzes reservadas: casas, comércios e incêndios usam luzes que já existem na cidade (desligadas quando livres).
+/* luz reservada: casas e comércios usam uma luz de céu que já existe na cidade (desligada quando livre; quase não pesa).
    Assim o número de luzes nunca muda e o jogo não precisa recompilar os gráficos de tudo ao entrar/sair (era a tela preta). */
 const LPOOL = { p: [], h: [], sc: null };
 function lightPoolInit(sc) {
   LPOOL.sc = sc; LPOOL.p = []; LPOOL.h = [];
-  for (let i = 0; i < 3; i++) { const l = new THREE.PointLight(0xffffff, 0, 1, 2); l.userData.pool = 1; l.userData.free = true; l.position.set(0, -50, 0); sc.add(l); LPOOL.p.push(l); }
   const hl = new THREE.HemisphereLight(0xffffff, 0x000000, 0); hl.userData.pool = 1; hl.userData.free = true; sc.add(hl); LPOOL.h.push(hl);
 }
+// luz de ambiente das salas: sem luz pontual (cada luz pontual pesa em todos os pixels da cidade, mesmo apagada); a sala clareia pela luz de céu reservada
+function roomFill() { const o = new THREE.Object3D(); o.color = new THREE.Color(); o.intensity = 0; return o; }
 function poolPoint(color, intensity, distance = 0, decay = 2) {
   const l = LPOOL.p.find(x => x.userData.free && x.parent === LPOOL.sc && LPOOL.sc === city.scene);
   if (!l) return new THREE.PointLight(color, intensity, distance, decay);
