@@ -7,7 +7,7 @@ Links para usar:
 Imagens prontas na pasta `marca/`:
 - `logo.png`: logomarca com fundo transparente
 - `og.jpg`: capa 1200×630
-- `print-praca.jpg`, `print-morro.jpg`, `print-rua.jpg`, `print-noite.jpg`: imagens do jogo
+- `print-perto.jpg`, `print-praca.jpg`, `print-morro.jpg`, `print-rua.jpg`, `print-noite.jpg`: imagens do jogo com o personagem Ajbz
 - `icons/icon-512.png`: foto de perfil
 
 ---
