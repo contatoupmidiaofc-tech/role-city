@@ -43,6 +43,52 @@ input{font:inherit}
 .pill{display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:99px;background:var(--panel-2);font-family:var(--cond);font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:.04em;color:var(--muted)}
 .pill.on{background:rgba(61,220,132,.16);color:var(--ok)}
 
+
+/* ---------- ABERTURA (estilo jogo de celular): logo animada, carregamento, toque para começar e login ---------- */
+#intro{position:fixed;inset:0;z-index:58;overflow:hidden;display:grid;place-items:center;color:#fff;font-family:var(--cond);
+  background:linear-gradient(180deg,#1a1036 0%,#4a1a55 38%,#c2335f 66%,#ff8a2a 86%,#ffcf3a 100%);transition:opacity .6s}
+#intro.out{opacity:0;pointer-events:none}
+#intro .sun{position:absolute;left:50%;bottom:16%;width:min(80vmin,560px);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(circle,#ffe27a 0%,#ffb03a 45%,#ff6a3a 70%,transparent 71%);filter:drop-shadow(0 0 60px #ff8a2a);animation:sunrise 2.4s cubic-bezier(.2,.8,.2,1) both}
+#intro .sky-l{position:absolute;left:0;right:0;bottom:0;height:42%;background-repeat:repeat-x;background-position:0 100%;animation:pan 60s linear infinite}
+#intro .sky-l.b{height:48%;opacity:.55;animation-duration:110s;filter:blur(1px)}
+#intro .ground{position:absolute;left:0;right:0;bottom:0;height:9%;background:#0d0d14}
+#intro .star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:.0;animation:twk 3s ease-in-out infinite}
+#intro .board{position:absolute;bottom:6.5%;left:-160px;width:120px;height:20px;border-radius:12px;background:#ff2d7a;border:4px solid #15161a;animation:ride 7s linear infinite 1.2s}
+#intro .board:before,#intro .board:after{content:"";position:absolute;bottom:-14px;width:14px;height:14px;border-radius:50%;background:#ffd23a;border:3px solid #15161a}
+#intro .board:before{left:14px}#intro .board:after{right:14px}
+#intro .in-wrap{position:relative;display:grid;justify-items:center;gap:18px;width:min(560px,92vw);padding:16px}
+#intro .in-logo{width:min(560px,88vw);max-height:46vh;object-fit:contain;filter:drop-shadow(0 10px 0 rgba(0,0,0,.35)) drop-shadow(0 0 28px rgba(255,210,58,.45));
+  animation:logoIn 1.3s cubic-bezier(.18,1.4,.4,1) both .25s,logoBob 4s ease-in-out infinite 1.6s}
+#intro .shine{position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.35) 50%,transparent 60%);background-size:250% 100%;animation:shine 3.5s ease-in-out infinite 1.8s;mix-blend-mode:overlay}
+#intro .in-load{width:min(420px,80vw);display:grid;gap:8px;text-align:center;animation:fadeUp .6s both 1s}
+#intro .in-bar{height:12px;border-radius:8px;background:rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.25);overflow:hidden}
+#intro .in-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd23a,#ff2d7a);transition:width .25s;box-shadow:0 0 12px #ffd23a}
+#intro .in-tip{font-size:15px;letter-spacing:.03em;text-shadow:0 2px 0 #000;min-height:20px}
+#intro .tap{font-family:var(--display);font-size:clamp(20px,5vw,30px);letter-spacing:.06em;text-shadow:3px 3px 0 #15161a;animation:tapPulse 1.3s ease-in-out infinite;cursor:pointer;background:none;border:0;color:#fff;padding:10px 18px}
+#intro .sheet{width:min(400px,92vw);display:grid;gap:10px;padding:18px;border-radius:18px;background:rgba(18,16,30,.82);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.14);box-shadow:0 18px 50px rgba(0,0,0,.5);animation:sheetUp .45s cubic-bezier(.2,1.2,.4,1) both}
+#intro .sheet h3{margin:0 0 4px;font-family:var(--display);font-size:18px;text-align:center;letter-spacing:.04em}
+#intro .lbtn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px 16px;border-radius:12px;font:700 18px var(--cond);letter-spacing:.03em;cursor:pointer;border:0;transition:transform .12s}
+#intro .lbtn:active{transform:scale(.97)}
+#intro .lbtn.g{background:#fff;color:#1f1f1f}
+#intro .lbtn.m{background:#ffd23a;color:#15161a;box-shadow:0 4px 0 #b8901a}
+#intro .lbtn.gh{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.3);font-size:15px;padding:10px}
+#intro .lbtn svg{width:22px;height:22px}
+#intro .sheet .acc-form{display:grid;gap:10px}
+#intro .sheet .field label{color:#ddd}
+#intro .in-msg{margin:0;font-size:14px;color:#ffd23a;text-align:center;min-height:0}
+#intro .legal{font-size:11px;opacity:.6;text-align:center;margin:0}
+@keyframes sunrise{from{transform:translate(-50%,40%);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@keyframes pan{to{background-position:-1200px 100%}}
+@keyframes twk{0%,100%{opacity:0}50%{opacity:.9}}
+@keyframes ride{0%{left:-160px;transform:rotate(0)}45%{transform:rotate(0)}50%{transform:translateY(-26px) rotate(-12deg)}55%{transform:rotate(0)}100%{left:calc(100% + 160px)}}
+@keyframes logoIn{0%{transform:scale(.2) rotate(-14deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes logoBob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-8px) rotate(-1deg)}}
+@keyframes shine{0%{background-position:150% 0}60%,100%{background-position:-60% 0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes tapPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.96)}}
+@keyframes sheetUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#intro *{animation-duration:.01s!important;animation-iteration-count:1!important}}
 /* ---------- MENU ---------- */
 #menu{position:fixed;inset:0;display:grid;place-items:center;padding:16px;overflow:auto;background:
   radial-gradient(circle at 20% 15%,rgba(255,79,123,.25),transparent 40%),
@@ -513,10 +559,30 @@ canvas.swatch{background:#333}
 <body>
 <canvas id="gl" aria-label="Mundo 3D do jogo"></canvas>
 
+<!-- ABERTURA -->
+<div id="intro">
+  <div class="sun"></div>
+  <div class="sky-l b" id="sky-b"></div><div class="sky-l" id="sky-a"></div>
+  <div class="ground"></div><div class="board"></div>
+  <div class="in-wrap">
+    <div style="position:relative"><img class="in-logo" src="marca/logo.png?v=1" alt="Rolê City"><div class="shine"></div></div>
+    <div class="in-load" id="in-load"><div class="in-bar"><i id="in-bar"></i></div><div class="in-tip" id="in-tip">Carregando a cidade…</div></div>
+    <button class="tap" id="in-tap" hidden>TOQUE PARA COMEÇAR</button>
+    <div class="sheet" id="in-sheet" hidden>
+      <h3>ENTRAR NO ROLÊ</h3>
+      <button class="lbtn g" type="button" id="in-google"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Entrar com Google</button>
+      <button class="lbtn m" type="button" id="in-mail">✉️ Entrar com e-mail</button>
+      <div id="in-form-slot"></div>
+      <p class="in-msg" id="in-msg" role="status"></p>
+      <p class="legal">Seu progresso fica salvo na nuvem e você joga online com todo mundo.</p>
+    </div>
+  </div>
+</div>
+
 <!-- MENU -->
 <div id="menu">
   <div class="menu-card">
-    <h1 class="logo">ROLÊ CITY<small>skate, rolê e campeonatos pelo mundo</small></h1>
+    <h1 class="logo"><img src="marca/logo.png?v=1" alt="Rolê City" style="display:block;width:min(400px,78vw);margin:0 auto"><small>skate, rolê e campeonatos pelo mundo</small></h1>
     <button class="btn install-btn" data-act="install-app" hidden>📲 Baixar o jogo no celular</button>
     <div class="menu-box" id="install-help" hidden></div>
     <div class="menu-box" id="acc-box">
@@ -696,7 +762,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.12-40';
+const BUILD = '2026.10.13-41';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -14846,6 +14912,60 @@ async function afterLogin() {
   if (!netInit()) { $('acc-out').hidden = true; $('acc-msg').textContent = 'Modo offline: sem conexão com o servidor. O progresso fica salvo neste aparelho.'; return; }
   if (await netSession()) afterLogin();
 })();
+
+/* ---------------- ABERTURA: logo animada, carregamento, "toque para começar" e login (Google ou e-mail) ---------------- */
+const INTRO = { done: false, t0: performance.now(), tip: 0, home: null };
+const INTRO_TIPS = ['Carregando a cidade…', 'Dica: complete missões no Quadro de Missões para ganhar grana.', 'Dica: no ar, aperte Pular + direção para mandar manobra.', 'Dica: viaje entre Rio, São Paulo e Salvador pela Rodoviária.', 'Dica: o celular (P) tem mapa, GPS, banco e chat.', 'Dica: tome cuidado com a polícia depois de um assalto!'];
+function introClose() {
+  const el = $('intro'); if (!el || INTRO.done) return; INTRO.done = true;
+  const f = $('acc-form'); if (f && INTRO.home) INTRO.home.appendChild(f); // devolve o formulário para o menu
+  el.classList.add('out'); setTimeout(() => el.remove(), 700);
+}
+function introSheet() {
+  $('in-tap').hidden = true; $('in-sheet').hidden = false;
+  if (!NET.sb) $('in-msg').textContent = 'Sem conexão com o servidor agora. Toque fora para jogar sem conta.';
+}
+(function introInit() {
+  const el = $('intro'); if (!el) return;
+  if (navigator.webdriver) { el.remove(); INTRO.done = true; return; } // testes automáticos vão direto ao menu
+  // prédios e morro ao fundo (desenhados aqui mesmo, sem baixar imagem)
+  const sky = (h, col, seed, win) => { let x = 0, r = seed, out = ''; const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+    while (x < 1200) { const w = 26 + rnd() * 70, hh = h * (0.25 + rnd() * 0.75); out += `<rect x="${x.toFixed(0)}" y="${(h - hh).toFixed(0)}" width="${w.toFixed(0)}" height="${hh.toFixed(0)}" fill="${col}"/>`;
+      if (win) for (let wy = h - hh + 8; wy < h - 12; wy += 15) for (let wx = x + 5; wx < x + w - 8; wx += 11) if (rnd() < 0.3) out += `<rect x="${wx.toFixed(0)}" y="${wy.toFixed(0)}" width="5" height="7" fill="#ffd27a" opacity=".85"/>`;
+      x += w + rnd() * 5; }
+    return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='${h}'>${out}</svg>`)}")`; };
+  $('sky-a').style.backgroundImage = sky(300, '#120c1e', 7, true); $('sky-a').style.backgroundSize = 'auto 100%';
+  $('sky-b').style.backgroundImage = sky(340, '#3a1a4a', 99, false); $('sky-b').style.backgroundSize = 'auto 100%';
+  for (let i = 0; i < 40; i++) { const st = document.createElement('i'); st.className = 'star'; st.style.left = (Math.random() * 100) + '%'; st.style.top = (Math.random() * 38) + '%'; st.style.animationDelay = (Math.random() * 3) + 's'; el.appendChild(st); }
+  // carregamento: tempo mínimo da abertura + os personagens 3D (que já começam a baixar)
+  const tick = setInterval(() => {
+    if (INTRO.done) return clearInterval(tick);
+    const el2 = (performance.now() - INTRO.t0) / 1000, mf = MODELS ? 1 : (PRE.p ? PRE.f : 0), p = Math.min(1, Math.max(Math.min(el2 / 3, 0.6), 0.6 * Math.min(el2 / 3, 1) + 0.4 * mf));
+    $('in-bar').style.width = Math.round(p * 100) + '%';
+    if (Math.floor(el2 / 2.6) !== INTRO.tip) { INTRO.tip = Math.floor(el2 / 2.6); $('in-tip').textContent = INTRO_TIPS[INTRO.tip % INTRO_TIPS.length]; }
+    if (el2 > 2.8 && (mf >= 1 || el2 > 10) && $('in-tap').hidden && $('in-sheet').hidden) {
+      $('in-load').hidden = true; $('in-tap').hidden = false;
+      if (NET.user) $('in-tap').insertAdjacentHTML('afterend', `<p class="in-msg" style="color:#fff">Conectado como <b>${esc(NET.user.email || 'jogador')}</b></p>`);
+      clearInterval(tick);
+    }
+  }, 120);
+  $('in-tap').onclick = () => { if (NET.user || !NET.sb) introClose(); else introSheet(); };
+  el.addEventListener('click', e => { if (e.target === el && !NET.sb && !$('in-sheet').hidden) introClose(); });
+  $('in-mail').onclick = () => {
+    const f = $('acc-form'); if (!f) return; INTRO.home = INTRO.home || f.parentNode; $('in-form-slot').appendChild(f); $('in-mail').hidden = true; setTimeout(() => $('in-email').focus(), 50);
+  };
+  $('in-google').onclick = async () => {
+    const msg = $('in-msg'); if (!NET.sb) { msg.textContent = 'Sem conexão com o servidor agora.'; return; }
+    msg.textContent = 'Abrindo o Google…';
+    try { const r = await fetch(SUPA_URL + '/auth/v1/settings', { headers: { apikey: SUPA_KEY } }); const j = await r.json(); if (j && j.external && j.external.google === false) { msg.textContent = 'O login com Google ainda está sendo ativado. Por enquanto, entre com e-mail.'; return; } } catch (e) { }
+    try { const { error } = await NET.sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }); if (error) msg.textContent = netErr(error); }
+    catch (e) { msg.textContent = netErr(e); }
+  };
+  // mensagens do login (Entrando…, senha errada…) aparecem também na abertura
+  new MutationObserver(() => { if (!INTRO.done) $('in-msg').textContent = $('acc-msg').textContent; }).observe($('acc-msg'), { childList: true, characterData: true, subtree: true });
+})();
+const _afterLogin0 = afterLogin;
+afterLogin = async function () { const r = await _afterLogin0.apply(this, arguments); if (!INTRO.done && !$('in-sheet').hidden) introClose(); return r; };
 async function enterGame() {
   try { await Promise.race([Promise.all([document.fonts.load('40px Bungee'), document.fonts.load('700 40px "Barlow Condensed"')]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
   S.settings = S.settings || { quality: 'media', sound: true }; S.invite = S.invite || []; S.purchases = S.purchases || [];

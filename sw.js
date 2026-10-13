@@ -9,7 +9,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (/supabase\.co$/.test(url.hostname)) return; // dados do jogo online: nunca do cache
   const cdn = /(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com|fonts\.(googleapis|gstatic)\.com)$/.test(url.hostname);
-  const heavy = url.origin === location.origin && /\/(modelos|icons|lib)\//.test(url.pathname);
+  const heavy = url.origin === location.origin && /\/(modelos|icons|lib|marca)\//.test(url.pathname);
   if (cdn || heavy) { // bibliotecas e modelos 3D: do cache, e baixa se não tiver
     e.respondWith(caches.match(req).then(r => r || fetch(req).then(res => {
       if (res.ok || res.type === 'opaque') {

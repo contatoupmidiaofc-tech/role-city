@@ -435,3 +435,8 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
     - Modelos, animações e músicas só são baixados de novo quando mudam, e não mais a cada atualização do jogo.
     - A checagem de versão nova lê só o começo da página (antes baixava a página inteira, 1,5 MB, a cada 5 minutos).
     - O cache do celular guarda os arquivos pesados separados da página e apaga as versões velhas sozinho.
+
+### Build 2026.10.13-41 (abertura nova)
+  - 🎬 **Abertura no estilo dos jogos de celular**: pôr do sol com a cidade passando ao fundo, estrelas, skate cruzando a tela, logomarca entrando com animação e brilho, barra de carregamento com dicas e "TOQUE PARA COMEÇAR".
+  - 🔑 **Entrar com Google** (precisa ativar o provedor Google no Supabase) ou **Entrar com e-mail** (o mesmo login de antes).
+  - 🖼️ Logomarca em `marca/logo.png`, também no topo do menu. Para trocar, substitua o arquivo e aumente o `?v=` no `index.html`.
