@@ -8,6 +8,8 @@ Imagens prontas na pasta `marca/`:
 - `logo.png`: logomarca com fundo transparente
 - `og.jpg`: capa 1200×630
 - `print-perto.jpg`, `print-praca.jpg`, `print-morro.jpg`, `print-rua.jpg`, `print-noite.jpg`: imagens do jogo com o personagem Ajbz
+- `print-bonde.jpg`, `print-bonde-noite.jpg`: Ajbz com o bonde nas roupas lendárias (Jaqueta Dourada, Vestido Galáxia, Coroa de Campeão...)
+- `print-hilux.jpg`: Ajbz e a Hilux dourada AJBZ SOUND
 - `icons/icon-512.png`: foto de perfil
 
 ---
