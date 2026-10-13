@@ -769,7 +769,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.13-47';
+const BUILD = '2026.10.13-48';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1278,7 +1278,7 @@ function autoQualityTick(now) {
   if (fps < 40) { AQ.hi = 0; if (++AQ.lo >= 2) { AQ.lo = 0;
       if (AQ.pr > 1.01) { AQ.pr = Math.max(1, AQ.pr - 0.2); set(); }
       else if (!AQ.shOff) { AQ.shOff = true; applyShadows(false); }
-      else if (AQ.pr > 0.61) { AQ.pr = Math.max(0.6, AQ.pr - 0.1); set(); } } }
+      else if (AQ.pr > 0.81 && fps < 30) { AQ.pr = Math.max(0.8, AQ.pr - 0.1); set(); } } } // nunca abaixo de 0,8: a imagem não fica borrada
   else if (fps > 55) { AQ.lo = 0; if (++AQ.hi >= 6) { AQ.hi = 0;
       if (AQ.pr < 0.99) { AQ.pr = Math.min(1, AQ.pr + 0.1); set(); }
       else if (AQ.shOff && AQ.shBack < 1 && !city.interior && !city.shopIn && !city.inCine && ++AQ.shWait >= 4) { AQ.shOff = false; AQ.shWait = 0; AQ.shBack++; applyShadows(true); } // religa no máximo 1 vez e nunca dentro de salas (cada troca refaz os gráficos)
@@ -3085,7 +3085,7 @@ function buildCritters(sc) {
   for (let i = 0; i < 4; i++) { const g = makeDog(pick([0xb07a3e, 0x2a2018, 0xe8dcc2, 0x8a5634])); sc.add(g); city.dogs.push({ g, bx: pick(BLOCKS), bz: pick(BLOCKS), u: rand(0, 107), dir: 1, spd: rand(1.2, 2.2), ph: 0, stopT: 0, barkT: rand(2, 8), x: 0, z: 0 }); }
   for (let i = 0; i < 4; i++) { const w = pick(city.walls), g = makeCat(pick([0x15161a, 0xff9a3c, 0x9aa3ad, 0xf2efe6])); const x = w.wx + w.nx * 0.5 + rand(-2, 2) * w.nz, z = w.wz + w.nz * 0.5 + rand(-2, 2) * w.nx; g.position.set(x, 0, z); sc.add(g); city.cats.push({ g, hx: x, hz: z, x, z, h: rand(0, TAU), runT: 0 }); }
   // pombos na praça (voam quando você passa rápido)
-  for (let i = 0; i < 14; i++) { const g = makeBird(pick([0x8a8f99, 0x6d717a, 0x9aa3ad, 0xb7bcc4]), 1.1); const x = rand(-10, 10), z = rand(-9, 11); g.position.set(x, 0.12, z); sc.add(g); city.pigeons.push({ g, x, z, y: 0.12, h: rand(0, TAU), st: 'chao', t: rand(0, 5), tx: 0, tz: 0 }); }
+  for (let i = 0; i < 14; i++) { const g = makeBird(pick([0x8a8f99, 0x6d717a, 0x9aa3ad, 0xb7bcc4]), 1.1); g.traverse(o => { o.castShadow = false; }); const x = rand(-10, 10), z = rand(-9, 11); g.position.set(x, 0.12, z); sc.add(g); city.pigeons.push({ g, x, z, y: 0.12, h: rand(0, TAU), st: 'chao', t: rand(0, 5), tx: 0, tz: 0 }); }
   // bandos no céu
   for (let k = 0; k < 3; k++) { const fl = { cx: rand(-80, 80), cz: rand(-80, 80), r: rand(30, 60), y: rand(38, 60), a: rand(0, TAU), spd: rand(0.08, 0.15), birds: [] }; for (let i = 0; i < 7; i++) { const g = makeBird(0x2a2a30, 2.2); sc.add(g); fl.birds.push({ g, off: [(i % 2 ? 1 : -1) * Math.ceil(i / 2) * 2.2, rand(-0.5, 0.5), -Math.ceil(i / 2) * 2.2], ph: rand(0, 6) }); } city.flocks.push(fl); }
 }
@@ -12696,6 +12696,17 @@ function fxFree(o) {
 const BATCH = { cells: [], on: true, at: 0, bad: new WeakSet(), layer: 7 };
 // "aparência" do material: duas cópias com a mesma aparência podem ir no mesmo bloco
 function matSig(m) { const c = k => m[k] && m[k].isColor ? m[k].getHexString() : ''; return [m.type, c('color'), c('emissive'), m.emissiveIntensity, m.roughness, m.metalness, m.map ? m.map.uuid : '', m.side, m.flatShading ? 1 : 0, m.fog ? 1 : 0, m.opacity, m.alphaTest, m.toneMapped ? 1 : 0, m.depthWrite ? 1 : 0, m.depthTest ? 1 : 0, m.envMap ? m.envMap.uuid : '', m.normalMap ? m.normalMap.uuid : '', m.wireframe ? 1 : 0, m.polygonOffset ? m.polygonOffsetFactor : ''].join('|'); }
+// peças de cores diferentes também podem ir no mesmo bloco: a cor vira "cor por ponto" (o visual é o mesmo); vale também para caixas com uma cor por face
+const msig = m => Array.isArray(m) ? m.map(matSig).join('|') : matSig(m);
+const VC_TYPES = ['MeshLambertMaterial', 'MeshStandardMaterial', 'MeshBasicMaterial'];
+function vcOk(m) { return m && VC_TYPES.includes(m.type) && !m.map && !m.transparent && !m.vertexColors && !m.alphaMap && !m.emissiveMap && !(m.emissive && m.emissive.getHex()) && m.color && !m.onBeforeCompile.toString().includes('{\n') && !m.userData.noVC; }
+function vcKey(o) {
+  const M = [].concat(o.material); if (!M.every(vcOk)) return null;
+  const k = M.map(m => { const c = m.color.getHex(); m.color.setHex(0); const z = matSig(m); m.color.setHex(c); return z; });
+  return k.every(x => x === k[0]) ? 'VC|' + k[0] : null;
+}
+const VCM = {};
+function vcMat(o, key) { if (VCM[key]) return VCM[key]; const m = [].concat(o.material)[0].clone(); m.vertexColors = true; m.color.setHex(0xffffff); m.userData = { shared: true, vc: true }; return (VCM[key] = m); }
 function batchDyn() {
   const dyn = new Set([city.player, city.myVeh && city.myVeh.m]);
   for (const k of Object.keys(city)) { const L = city[k]; if (Array.isArray(L)) for (const o of L) { if (o && o.isObject3D) dyn.add(o); else if (o && typeof o === 'object') { for (const f of ['m', 'g', 'd', 'prop', 'veh', 'truck']) if (o[f] && o[f].isObject3D) dyn.add(o[f]); } } }
@@ -12706,7 +12717,8 @@ function batchDyn() {
 }
 function batchOk(o, dyn) {
   if (!o.isMesh || o.isSkinnedMesh || o.isInstancedMesh || o.isSprite || BATCH.bad.has(o) || o.userData.noMerge) return false;
-  const g = o.geometry, m = o.material; if (!g || !g.attributes.position || Array.isArray(m) || !m || m.transparent || m.vertexColors || g.morphAttributes.position || o.morphTargetInfluences) return false;
+  const g = o.geometry, m = o.material; if (!g || !g.attributes.position || !m || g.morphAttributes.position || o.morphTargetInfluences) return false;
+  if (Array.isArray(m) ? !vcKey(o) : (m.transparent || m.vertexColors)) return false;
   if (g.attributes.position.count > 6000) return false;
   for (let q = o; q; q = q.parent) { if (!q.visible) return false; const u = q.userData || {}; if (dyn.has(q) || u.ped || u.R || u.k || u.wheels || u.props || u.rotor || u.siren || u.lod != null || u.noMerge || u.bubble) return false; if (q === city.scene) break; }
   const e = o.matrixWorld.elements; if (e[12] > 380) return false; // interiores
@@ -12717,11 +12729,11 @@ function batchBuild() {
   const dyn = batchDyn(), groups = new Map(), CS = 48;
   city.scene.traverse(o => {
     if (o.layers.mask !== 1 || !batchOk(o, dyn)) return;
-    const e = o.matrixWorld.elements, cx = Math.floor(e[12] / CS), cz = Math.floor(e[14] / CS), key = cx + ',' + cz + '|' + matSig(o.material) + '|' + (o.castShadow ? 1 : 0) + (o.receiveShadow ? 1 : 0) + '|' + (o.geometry.attributes.uv ? 1 : 0);
-    let G = groups.get(key); if (!G) groups.set(key, G = { m: o.material, cast: o.castShadow, recv: o.receiveShadow, uv: !!o.geometry.attributes.uv, list: [] }); G.list.push(o);
+    const e = o.matrixWorld.elements, cx = Math.floor(e[12] / CS), cz = Math.floor(e[14] / CS), vk = vcKey(o), key = cx + ',' + cz + '|' + (vk || matSig(o.material)) + '|' + (o.castShadow ? 1 : 0) + (o.receiveShadow ? 1 : 0) + '|' + (o.geometry.attributes.uv ? 1 : 0);
+    let G = groups.get(key); if (!G) groups.set(key, G = { m: vk ? vcMat(o, vk) : o.material, vk, cast: o.castShadow, recv: o.receiveShadow, uv: !!o.geometry.attributes.uv, list: [] }); G.list.push(o);
   });
   // carregamento por partes: junta alguns blocos por quadro (até ~6 ms), em vez de travar tudo de uma vez
-  const sc = city.scene, todo = [...groups.values()].filter(G => G.list.length >= 2), job = BATCH.job = { i: 0 }; BATCH.stat = { blocks: 0, pieces: 0 };
+  const sc = city.scene, todo = [...groups.values()].filter(G => G.list.length >= 2 || (G.vk && G.list.some(o => Array.isArray(o.material)))), job = BATCH.job = { i: 0 }; BATCH.stat = { blocks: 0, pieces: 0 };
   const step = () => {
     if (BATCH.job !== job || city.scene !== sc || !BATCH.on) return;
     const t0 = performance.now();
@@ -12733,20 +12745,24 @@ function batchBuild() {
 const _bnm = new THREE.Matrix3();
 function batchGroup(G) {
   // confere de novo: entre um quadro e outro alguma peça pode ter mudado
-  G.list = G.list.filter(o => o.parent && o.visible && o.layers.mask === 1 && o.material === G.m && !BATCH.bad.has(o)); if (G.list.length < 2) return;
+  G.list = G.list.filter(o => o.parent && o.visible && o.layers.mask === 1 && (G.vk ? vcKey(o) === G.vk : o.material === G.m) && !BATCH.bad.has(o)); if (G.list.length < (G.vk && G.list.some(o => Array.isArray(o.material)) ? 1 : 2)) return;
   const nm = _bnm;
   let nv = 0, ni = 0; for (const o of G.list) { const g = o.geometry; nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const col = G.vk ? new Float32Array(nv * 3) : null;
   const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = G.uv ? new Float32Array(nv * 2) : null, idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
   let vo = 0, io = 0; const v = new THREE.Vector3();
   for (const o of G.list) {
     const g = o.geometry, P2 = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, mw = o.matrixWorld; nm.getNormalMatrix(mw);
     for (let i = 0; i < P2.count; i++) { v.fromBufferAttribute(P2, i).applyMatrix4(mw); pos[(vo + i) * 3] = v.x; pos[(vo + i) * 3 + 1] = v.y; pos[(vo + i) * 3 + 2] = v.z; if (N) { v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor[(vo + i) * 3] = v.x; nor[(vo + i) * 3 + 1] = v.y; nor[(vo + i) * 3 + 2] = v.z; } if (uv) { uv[(vo + i) * 2] = U.getX(i); uv[(vo + i) * 2 + 1] = U.getY(i); } }
+    if (col) { const M = [].concat(o.material), paint = (a, c) => { col[(vo + a) * 3] = c.r; col[(vo + a) * 3 + 1] = c.g; col[(vo + a) * 3 + 2] = c.b; };
+      if (Array.isArray(o.material) && g.groups.length) { for (const gr of g.groups) { const c = (M[gr.materialIndex] || M[0]).color; for (let i = gr.start; i < gr.start + gr.count; i++) paint(g.index ? g.index.getX(i) : i, c); } }
+      else for (let i = 0; i < P2.count; i++) paint(i, M[0].color); }
     if (g.index) for (let i = 0; i < g.index.count; i++) idx[io++] = g.index.getX(i) + vo; else for (let i = 0; i < P2.count; i++) idx[io++] = i + vo;
     vo += P2.count;
   }
-  const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); bg.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); if (uv) bg.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); bg.setIndex(new THREE.BufferAttribute(idx, 1)); bg.computeBoundingSphere(); bg.computeBoundingBox();
+  const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); bg.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); if (uv) bg.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); if (col) bg.setAttribute('color', new THREE.BufferAttribute(col, 3)); bg.setIndex(new THREE.BufferAttribute(idx, 1)); bg.computeBoundingSphere(); bg.computeBoundingBox();
   const mesh = new THREE.Mesh(bg, G.m); mesh.castShadow = G.cast; mesh.receiveShadow = G.recv; mesh.matrixAutoUpdate = false; mesh.userData.batch = true; mesh.userData.noMerge = true; city.scene.add(mesh);
-  const src = G.list.map(o => ({ o, mat: o.material, sig: matSig(o.material), mw: o.matrixWorld.elements.slice() }));
+  const src = G.list.map(o => ({ o, mat: o.material, sig: msig(o.material), mw: o.matrixWorld.elements.slice() }));
   for (const s2 of src) s2.o.layers.set(BATCH.layer);
   BATCH.cells.push({ mesh, src }); BATCH.stat.blocks++; BATCH.stat.pieces += src.length;
 }
@@ -12757,7 +12773,7 @@ function batchCheck() {
   if (!BATCH.cells.length) return; const now = performance.now(); if (now < BATCH.at) return; BATCH.at = now + 700;
   BATCH.cells = BATCH.cells.filter(C => {
     for (const s2 of C.src) {
-      const o = s2.o; let ok = o.material === s2.mat && (o.material === C.mesh.material || matSig(o.material) === s2.sig);
+      const o = s2.o; let ok = o.material === s2.mat && (o.material === C.mesh.material || msig(o.material) === s2.sig);
       if (ok) { let q = o; for (; q && q !== city.scene; q = q.parent) if (!q.visible) { ok = false; break; } if (q !== city.scene) ok = false; }
       if (ok) { const e = o.matrixWorld.elements; for (let i = 12; i < 15; i++) if (Math.abs(e[i] - s2.mw[i]) > 1e-3) { ok = false; break; } if (ok) for (const i of [0, 2, 5, 8, 10]) if (Math.abs(e[i] - s2.mw[i]) > 1e-4) { ok = false; break; } }
       if (!ok) { batchUndo(C); return false; }
@@ -12918,6 +12934,37 @@ const _safeRender2 = safeRender;
 safeRender = function (sc, cam) { try { lightPoolTick(); if (sc === city.scene) doorMarksTick(performance.now()); } catch (e) { } try { if (ATLASQ.flush && sc === city.scene) { ATLASQ.flush = false; sc.updateMatrixWorld(); atlasTick(cam, 20, sc); } else atlasTick(cam, 0, sc); } catch (e) { } return _safeRender2(sc, cam); };
 const _buildCity1 = buildCity;
 buildCity = function () { try { batchClear(); } catch (e) { } const r = _buildCity1.apply(this, arguments); clearTimeout(BATCH.t); BATCH.t = setTimeout(() => { try { batchBuild(); } catch (e) { console.warn('blocos', e); } }, 5500); try { lightPoolInit(city.scene); } catch (e) { } clearTimeout(WARM.t); warmShaders(); WARM.t = setTimeout(() => { warmShaders(); const tryIn = (n) => { if (!warmInteriors() && n > 0) WARM.t2 = setTimeout(() => tryIn(n - 1), 3000); }; clearTimeout(WARM.t2); WARM.t2 = setTimeout(() => tryIn(20), 1500); }, 2500); return r; };
+/* =========================================================
+   DESENHA SÓ O QUE DÁ PARA VER (sem baixar a qualidade):
+   - objetos pequenos lá longe (lixeira, cadeira, placa de nome) somem quando ficam do tamanho de um pontinho
+   - os gráficos não são mais conferidos um por um na hora de preparar (isso travava o jogo ao aparecer coisa nova)
+   ========================================================= */
+const DCULL = { on: false, cam: new THREE.Vector3(), s: new THREE.Sphere() };
+try { renderer.debug.checkShaderErrors = false; } catch (e) { }
+(() => {
+  const F = THREE.Frustum.prototype, io = F.intersectsObject, is = F.intersectsSprite, S0 = DCULL.s;
+  F.intersectsObject = function (o) {
+    if (DCULL.on) {
+      if (!o.isInstancedMesh && !o.isSkinnedMesh && o.geometry) { const g = o.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); S0.copy(g.boundingSphere).applyMatrix4(o.matrixWorld); if (S0.center.distanceTo(DCULL.cam) - S0.radius > 35 + S0.radius * 50) return false; }
+    }
+    return io.call(this, o);
+  };
+  F.intersectsSprite = function (o) {
+    if (DCULL.on) { const e = o.matrixWorld.elements, r = Math.max(Math.hypot(e[0], e[1], e[2]), Math.hypot(e[4], e[5], e[6])) * 0.5; if (Math.hypot(e[12] - DCULL.cam.x, e[13] - DCULL.cam.y, e[14] - DCULL.cam.z) - r > 35 + r * 50) return false; }
+    return is.call(this, o);
+  };
+})();
+const _safeRenderC = safeRender;
+// sombra de personagem só para quem está perto (de longe ela nem aparece, e custava quase metade dos triângulos dos personagens)
+function charShadows(cp) {
+  for (const o of CULL.roots) {
+    if (!o.visible || !o.parent) continue; const u = o.userData;
+    if (!u._sm || u._smN !== o.children.length) { u._sm = []; u._smN = o.children.length; o.traverse(m => { if ((m.isMesh || m.isSkinnedMesh) && m.castShadow) u._sm.push(m); }); }
+    const e = o.matrixWorld.elements, near = Math.hypot(e[12] - cp.x, e[14] - cp.z) < 22 || o === city.player;
+    if (u._shN !== near) { u._shN = near; for (const m of u._sm) m.castShadow = near; }
+  }
+}
+safeRender = function (sc, cam) { const main = sc === city.scene; if (main) { DCULL.on = true; cam.getWorldPosition(DCULL.cam); try { charShadows(DCULL.cam); } catch (e) { } } try { return _safeRenderC(sc, cam); } finally { DCULL.on = false; } };
 /* pré-aquecimento: prepara os "programas de desenho" de tudo que existe na cidade (inclusive o que ainda não apareceu na tela)
    em segundo plano, para não engasgar na primeira vez que um carro, interior ou efeito aparece. Só na versão nova do motor. */
 const WARM = { t: 0, ms: 0, n: 0 }; // logo depois de montar a cidade (antes do 1º quadro) e de novo 2,5 s depois (comércios, morros e figurantes que chegam depois)

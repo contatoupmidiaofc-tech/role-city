@@ -478,3 +478,13 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
     - **3 luzes reservadas** ficavam na cidade o tempo todo (apagadas, mas o celular calculava as 3 em cada pixel). Agora as salas clareiam só com uma luz de céu reservada, que quase não pesa. Fogo e baile voltaram a usar a luz própria.
     - A **sombra "transparente"** continuava sendo calculada, e a qualidade automática compensava baixando a resolução. Voltou a desligar a sombra de verdade quando o celular aperta. Ela só religa uma vez e nunca dentro de casas ou lojas, para não travar na entrada.
   - Medido: o quadro na praça voltou de 26 ms para 20 ms, o mesmo da build -44. Entrar em casas e lojas continua sem tela preta.
+
+### Build 2026.10.13-48 (menos travada, mesma qualidade de imagem)
+  - 🚀 **Metade dos desenhos por quadro**, com a mesma imagem:
+    - Peças paradas de **cores diferentes** agora vão juntas no mesmo bloco (a cor vira "cor por ponto"). Prédios com uma cor por face deixaram de gastar 6 desenhos cada.
+    - Objetos pequenos lá longe (do tamanho de um pontinho) não são desenhados. Os grandes continuam até o horizonte.
+    - Personagens a mais de 22 m não desenham sombra (de longe ela não aparece). De perto continua igual.
+    - Os pombos não desenham sombra.
+    - Os gráficos novos não são mais conferidos um por um na hora em que aparecem (isso causava travadinhas ao andar).
+  - Medido andando pela cidade: o quadro caiu de 40 para 27 ms, os desenhos de 1.054 para 498 (pico de 1.915 para 792), os triângulos de 484 mil para 357 mil e a maior travada de 4,2 s para 1,6 s (no computador de teste, sem placa de vídeo).
+  - 🖼️ **Qualidade de imagem:** a qualidade automática nunca baixa a resolução para menos de 0,8 (antes ia até 0,6 e a imagem ficava borrada). E só baixa até 0,8 se o celular estiver realmente abaixo de 30 quadros por segundo.
