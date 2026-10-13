@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rolê City · Jogo de mundo aberto brasileiro</title>
+<meta name="description" content="Rolê City: jogo 3D grátis no navegador. Skate, carros, motos, morro, profissões e multiplayer em São Paulo, Rio e Salvador. Joga no celular e no computador, sem baixar.">
+<meta property="og:title" content="Rolê City · Jogo brasileiro de mundo aberto">
+<meta property="og:description" content="Skate, carros, morro, profissões e multiplayer em SP, Rio e Salvador. Grátis, direto no navegador.">
+<meta property="og:image" content="https://role-city.pages.dev/marca/og.jpg">
+<meta property="og:url" content="https://role-city.pages.dev/apresentacao.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#15161a">
+<link rel="icon" href="icons/icon-192.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#120d1f;--card:#1d1730;--line:#33294d;--y:#ffd23a;--p:#ff2d7a;--o:#ff8a2a;--g:#2ec26a;--fg:#f6f1ff;--mut:#b9b0cc}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 Barlow,system-ui,sans-serif}
+a{color:inherit}
+.wrap{max-width:1100px;margin:0 auto;padding:0 18px}
+.hero{position:relative;min-height:92vh;display:grid;place-items:center;text-align:center;overflow:hidden;
+  background:linear-gradient(180deg,#1a1036 0%,#4a1a55 40%,#c2335f 70%,#ff8a2a 92%)}
+.hero:before{content:"";position:absolute;left:50%;bottom:-6%;width:min(90vw,720px);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(circle,#ffe27a 0%,#ffb03a 45%,#ff6a3a 68%,transparent 70%);filter:blur(2px);opacity:.9}
+.hero .city{position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(#0000,#120d1f 92%),url("marca/print-noite.jpg") center/cover;opacity:.35;mask:linear-gradient(transparent,#000 40%)}
+.hero .in{position:relative;padding:40px 0 70px}
+.hero img.logo{width:min(440px,82vw);filter:drop-shadow(0 14px 0 rgba(0,0,0,.35)) drop-shadow(0 0 30px rgba(255,210,58,.4));animation:float 4s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px)}}
+.hero h1{font:800 clamp(26px,4.6vw,40px)/1.15 'Barlow Condensed',sans-serif;letter-spacing:.02em;margin:10px 0 6px;text-shadow:0 3px 0 #000}
+.hero p{margin:0 auto;max-width:620px;color:#ffe9f2;font-size:clamp(16px,2.4vw,19px);text-shadow:0 2px 0 #0008}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:16px 26px;border-radius:14px;font:22px Bungee,Impact,sans-serif;text-decoration:none;letter-spacing:.03em;border:0;cursor:pointer}
+.btn.play{background:var(--y);color:#15161a;box-shadow:0 6px 0 #b8901a,0 10px 30px #0006}
+.btn.play:hover{transform:translateY(-2px)}
+.btn.ghost{background:#0006;color:#fff;border:2px solid #fff6;font-size:17px}
+.free{display:inline-block;margin-top:14px;font:700 14px 'Barlow Condensed';letter-spacing:.12em;background:var(--g);color:#0d1b12;padding:4px 12px;border-radius:999px}
+section{padding:64px 0}
+h2{font:clamp(26px,4vw,36px) Bungee,Impact,sans-serif;margin:0 0 8px;color:var(--y);text-align:center}
+.sub{text-align:center;color:var(--mut);margin:0 auto 34px;max-width:640px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.f{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:20px}
+.f b{display:block;font:800 21px 'Barlow Condensed';letter-spacing:.02em;margin:6px 0 4px}
+.f span{font-size:30px}
+.f p{margin:0;color:var(--mut);font-size:15.5px}
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.gal img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;border:2px solid var(--line);display:block}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.steps ol{margin:8px 0 0;padding-left:20px;color:var(--mut)}
+.steps li{margin:4px 0}
+.band{background:linear-gradient(90deg,var(--p),var(--o));text-align:center;padding:46px 18px}
+.band h2{color:#fff;text-shadow:0 3px 0 #0005}
+footer{padding:28px 0 40px;text-align:center;color:var(--mut);font-size:14px}
+footer a{color:var(--mut);margin:0 8px}
+@media (max-width:520px){.btn{font-size:19px;padding:14px 20px}section{padding:48px 0}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="city"></div>
+  <div class="in wrap">
+    <img class="logo" src="marca/logo.webp?v=2" alt="Rolê City">
+    <h1>O ROLÊ MAIS BRASILEIRO DOS GAMES</h1>
+    <p>Mundo aberto em 3D com skate, carros, morro, profissões e gente de verdade jogando junto em São Paulo, Rio e Salvador.</p>
+    <div class="cta"><a class="btn play" href="./">▶ JOGAR AGORA</a><a class="btn ghost" href="#instalar">📲 Instalar no celular</a></div>
+    <span class="free">GRÁTIS · SEM BAIXAR NADA · CELULAR E PC</span>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>O QUE TEM NA CIDADE</h2>
+    <p class="sub">Cria seu personagem, ganha a primeira grana nas missões e escolhe o teu corre.</p>
+    <div class="grid">
+      <div class="f"><span>🛹</span><b>Skate de verdade</b><p>Manobras, pistas, campeonatos e corridas online contra outros jogadores.</p></div>
+      <div class="f"><span>🏙️</span><b>3 cidades</b><p>São Paulo, Rio e Salvador, com pontos turísticos, praia, viagem pela BR e de avião.</p></div>
+      <div class="f"><span>🚗</span><b>Carros, motos e avião</b><p>Compre, personalize e dirija. Do Fusca à super moto, passando pelo seu próprio jato.</p></div>
+      <div class="f"><span>🏘️</span><b>Morro e facções</b><p>Suba o morro, monte seu bonde, conquiste territórios e encare a operação da PM.</p></div>
+      <div class="f"><span>👷</span><b>Profissões</b><p>Motoboy, taxista, bombeiro, policial, entregador e mais, cada uma com salário.</p></div>
+      <div class="f"><span>🥊</span><b>Luta e futsal</b><p>Ringue com rounds e plateia, quadra com times e torneio valendo prêmio.</p></div>
+      <div class="f"><span>🏠</span><b>Casa, banco e família</b><p>Compre sua casa, abra conta no banco, case e tenha filhos no jogo.</p></div>
+      <div class="f"><span>🌐</span><b>Online com todo mundo</b><p>Chat, áudio, encontros na praça e jogadores reais andando pela cidade com você.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2>OLHA O ROLÊ</h2>
+    <p class="sub">Imagens do jogo rodando no navegador.</p>
+    <div class="gal">
+      <img src="marca/print-praca.jpg" alt="Praça de skate do Rolê City" loading="lazy">
+      <img src="marca/print-morro.jpg" alt="Morro com bandeira do Brasil" loading="lazy">
+      <img src="marca/print-rua.jpg" alt="Rua com arena de luta e banco" loading="lazy">
+      <img src="marca/print-noite.jpg" alt="Praça à noite" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<section id="instalar" style="padding-top:0">
+  <div class="wrap">
+    <h2>INSTALA NO CELULAR</h2>
+    <p class="sub">Fica com ícone na tela inicial e abre em tela cheia, igual a um app. Não ocupa quase nada de espaço.</p>
+    <div class="steps">
+      <div class="f"><span>🤖</span><b>Android</b><ol><li>Abra <b>role-city.pages.dev</b> no Chrome.</li><li>Toque nos <b>três pontinhos ⋮</b> no canto de cima.</li><li>Toque em <b>Instalar app</b> (ou "Adicionar à tela inicial").</li></ol></div>
+      <div class="f"><span>🍎</span><b>iPhone</b><ol><li>Abra <b>role-city.pages.dev</b> no Safari.</li><li>Toque no botão <b>Compartilhar</b> (quadrado com seta).</li><li>Toque em <b>Adicionar à Tela de Início</b>.</li></ol></div>
+      <div class="f"><span>💻</span><b>Computador</b><ol><li>É só abrir o link e jogar.</li><li>No Chrome dá para instalar pelo ícone ⊕ na barra de endereço.</li><li>Teclado: WASD para andar, Espaço para pular.</li></ol></div>
+    </div>
+  </div>
+</section>
+
+<div class="band">
+  <h2>BORA PRO ROLÊ?</h2>
+  <div class="cta"><a class="btn play" href="./">▶ JOGAR AGORA</a></div>
+</div>
+
+<footer class="wrap">
+  <p>Rolê City é uma obra de ficção. <a href="privacidade.html">Privacidade</a>·<a href="termos.html">Termos de Uso</a></p>
+</footer>
+</body>
+</html>
