@@ -769,7 +769,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.13-45';
+const BUILD = '2026.10.13-46';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -970,6 +970,10 @@ function patColor(pat, u, v, c, skin) {
     case 'sandal': { const f = (v * 6) % 1; return f < 0.22 ? c : (skin || [200, 150, 110]); }
     default:
       if (pat === 'ajbz') return ajbzColor(u, v);
+      if (pat.startsWith('wd_')) { const [, a, b] = pat.split('_'), d = ((u * 0.9 + v * 1.4) % 1 + 1) % 1; return d < 0.34 ? c : d < 0.4 ? WHITE : d < 0.72 ? rgb(parseInt(a, 16)) : rgb(parseInt(b, 16)); } // corta-vento: faixas diagonais de 3 cores
+      if (pat.startsWith('wdp_')) { const [, a, b] = pat.split('_'), f = (u * 8 % 1 + 1) % 1; return f < 0.3 ? rgb(parseInt(a, 16)) : f < 0.36 ? WHITE : f < 0.5 ? rgb(parseInt(b, 16)) : c; } // bermuda corta-vento: painéis laterais
+      if (pat === 'angel') { const n = vnoise(u * 5, v * 5), d = ((v * 3 + n * 0.6) % 1); return d < 0.12 ? [226, 182, 64] : d < 0.16 ? [255, 236, 170] : mixc(WHITE, c, 0.15 + n * 0.1); } // branco com filetes dourados
+      if (pat === 'puffer') return shadec(c, Math.floor(v * 16) % 2 ? 0.86 : 1.06 - Math.abs(((v * 16) % 1) - 0.5) * 0.3); // gomos da jaqueta bufante
       if (pat.startsWith('tm_')) return teamColor(pat, u, v, c);
       return c;
   }
@@ -1667,8 +1671,9 @@ function buildAcc(u, acc, bag) {
     mk(boxGeo(0.16, 0.16, 0.06), std(0xe8e6e0, 0.6), 0, -0.02, -0.15);
   } else if (kind === 'chain') {
     const m = new THREE.MeshStandardMaterial({ color: acc.color, roughness: 0.25, metalness: 1 });
-    mk(new THREE.TorusGeometry(0.085, 0.007, 6, 28), m, 0, 0.25, 0.0, 1.05, 1.3, 1, 1.2);
-    mk(CYL(0.025, 0.025, 0.006, 12), m, 0, 0.15, 0.1, 1, 1, 1, Math.PI / 2 - 0.25);
+    mk(new THREE.TorusGeometry(0.085, acc.thick ? 0.013 : 0.007, 6, 28), m, 0, 0.25, 0.0, 1.05, 1.3, 1, 1.2);
+    if (acc.cross) { mk(boxGeo(0.016, 0.075, 0.008), m, 0, 0.13, 0.115, 1, 1, 1, -0.25); mk(boxGeo(0.05, 0.016, 0.008), m, 0, 0.145, 0.111, 1, 1, 1, -0.25); } // crucifixo
+    else mk(CYL(0.025, 0.025, 0.006, 12), m, 0, 0.15, 0.1, 1, 1, 1, Math.PI / 2 - 0.25);
   } else if (kind === 'colete') {
     const cid = typeof cityId === 'function' ? cityId() : 'sp', tm = new THREE.MeshStandardMaterial({ map: coleteTex(cid), roughness: 0.85 }), dk = std(0x1b1d22, 0.85);
     mk(boxGeo(0.34, 0.36, 0.035), [dk, dk, dk, dk, tm, dk], 0, -0.06, 0.125); mk(boxGeo(0.34, 0.38, 0.035), [dk, dk, dk, dk, dk, tm], 0, -0.06, -0.125);
@@ -2171,6 +2176,7 @@ function applyRealLook(g, look) {
     const sf = skinFactor(look.skin); set('Wolf3D_Skin', sf); set('Wolf3D_Body', sf);
   }
   u.hairM.color.setHex(look.hair);
+  if (u.hairM.map || u.hairM.userData.baseMap) { const bm = u.hairM.userData.baseMap || (u.hairM.userData.baseMap = u.hairM.map); const nm = look.hl ? hlHairTex(look.hair, look.hl) : bm; if (look.hl) u.hairM.color.setHex(0xffffff); if (u.hairM.map !== nm) { u.hairM.map = nm; u.hairM.needsUpdate = true; } }
   u.hairG.visible = !look.cap || ['none', 'crown', 'visor', undefined].includes(look.cap.hat) && !look.cap.beanie;
   if (u.hairShell) u.hairShell.visible = u.hairG.visible || ['cap', 'flat', 'bandana'].includes(look.cap && look.cap.hat);
   applyBody(u, look);
@@ -7093,7 +7099,7 @@ function thumbRender(id, big) {
   const it = ITEM[id], St = thumbStudio(), gk = S.gender === 'f' ? 'f' : 'm', size = big ? 384 : 128;
   const eq = Object.assign({}, S.equip); if (it) eq[it.slot] = id;
   const look = lookOf(eq, S.skin, S.hair, gk, S.board, S.body);
-  let man = St.man[gk]; if (!man) { man = St.man[gk] = makeSkater(look, null); St.sc.add(man); } else applyLook(man, look);
+  let man = St.man[gk]; if (!man) { man = St.man[gk] = makeSkater(look, null); man.userData.hiRes = true; St.sc.add(man); } man.userData.hiRes = true; applyLook(man, look); // vitrine: roupa montada na hora (não entra na fila dos figurantes)
   for (const k in St.man) St.man[k].visible = k === gk;
   animSkater(man, { walk: true, v: 0, fallT: 0 }, 0.5); man.updateMatrixWorld(true);
   const [y, d, sd] = THUMB_CAM[it && it.slot] || THUMB_CAM.full, k = man.scale.y || 1;
@@ -8393,10 +8399,149 @@ const FEM_WEAR = [
 ];
 FEM_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 SLOT_NAMES.bolsa = 'Bolsas';
+/* =========================================================
+   COLEÇÃO DRIP DA QUEBRADA: peças inspiradas no que mais faz sucesso nos jogos (Free Fire, GTA RP, Fortnite)
+   e na moda de rua: camisetas com desenho no peito e nas costas, gola polo, corta-vento, tênis de mola,
+   chinelo slide, Juliet, Lupa, cordão, relógio cravejado e cabelo pintado (nevou, amarelo e luzes).
+   ========================================================= */
+/* desenhos das camisetas: 256x256 cobrindo o tronco (x de -0,17 a 0,17 m; altura do quadril ao pescoço) */
+const GFX = {};
+const gfxPath = (g, pts) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); };
+const gfxCrown = (g, x, y, s, c = '#ffd23f') => { g.fillStyle = c; g.strokeStyle = '#15161a'; g.lineWidth = s * 0.08; gfxPath(g, [[x - s, y + s * .45], [x - s, y - s * .35], [x - s * .5, y + s * .05], [x, y - s * .55], [x + s * .5, y + s * .05], [x + s, y - s * .35], [x + s, y + s * .45]]); g.fill(); g.stroke(); g.fillStyle = '#ff2d55'; g.beginPath(); g.arc(x, y + s * .15, s * .13, 0, TAU); g.fill(); };
+const gfxText = (g, t, x, y, px, fill, stroke = '#15161a') => { g.font = `${px}px Bungee, Impact, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; if (stroke) { g.lineWidth = px * 0.18; g.strokeStyle = stroke; g.strokeText(t, x, y); } g.fillStyle = fill; g.fillText(t, x, y); };
+const gfxSkull = (g, x, y, s, c = '#f4f2ec') => { g.fillStyle = c; g.beginPath(); g.ellipse(x, y, s * .8, s * .72, 0, 0, TAU); g.fill(); g.fillRect(x - s * .45, y + s * .4, s * .9, s * .5); g.fillStyle = '#15161a'; g.beginPath(); g.ellipse(x - s * .32, y + s * .05, s * .22, s * .26, 0, 0, TAU); g.ellipse(x + s * .32, y + s * .05, s * .22, s * .26, 0, 0, TAU); g.fill(); gfxPath(g, [[x, y + s * .3], [x - s * .1, y + s * .5], [x + s * .1, y + s * .5]]); g.fill(); for (let i = -2; i <= 2; i++) g.fillRect(x + i * s * .17 - s * .03, y + s * .68, s * .06, s * .22); };
+const gfxFlame = (g, x, y, s) => { const gr = g.createLinearGradient(0, y - s, 0, y + s); gr.addColorStop(0, '#ffe14a'); gr.addColorStop(0.6, '#ff6a13'); gr.addColorStop(1, '#c0182b'); g.fillStyle = gr; g.beginPath(); g.moveTo(x - s * .7, y + s); for (let i = 0; i <= 6; i++) { const xx = x - s * .7 + i * s * .233, tip = y - s * (i % 2 ? 1 : 0.45) * (i === 3 ? 1.1 : 1); g.quadraticCurveTo(xx - s * .1, y, xx, tip); } g.lineTo(x + s * .7, y + s); g.closePath(); g.fill(); };
+const gfxDie = (g, x, y, s, rot, n) => { g.save(); g.translate(x, y); g.rotate(rot); g.fillStyle = '#f4f2ec'; g.strokeStyle = '#15161a'; g.lineWidth = s * .08; g.beginPath(); g.roundRect ? g.roundRect(-s / 2, -s / 2, s, s, s * .18) : g.rect(-s / 2, -s / 2, s, s); g.fill(); g.stroke(); g.fillStyle = '#c8102e'; const P = { 1: [[0, 0]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] }[n]; for (const [a, b] of P) { g.beginPath(); g.arc(a * s * .27, b * s * .27, s * .09, 0, TAU); g.fill(); } g.restore(); };
+const gfxRose = (g, x, y, s) => { g.strokeStyle = '#1f7a3a'; g.lineWidth = s * .12; g.beginPath(); g.moveTo(x, y + s * .4); g.quadraticCurveTo(x + s * .2, y + s * 1.1, x - s * .1, y + s * 1.6); g.stroke(); g.fillStyle = '#2e9a4a'; g.beginPath(); g.ellipse(x + s * .3, y + s * 1.0, s * .3, s * .13, -0.6, 0, TAU); g.fill(); for (const [r, c] of [[s * .62, '#9c0f22'], [s * .45, '#c8102e'], [s * .28, '#e3304a'], [s * .12, '#7a0a18']]) { g.fillStyle = c; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); } g.strokeStyle = '#5a0612'; g.lineWidth = s * .05; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(x, y, s * (.2 + i * .14), i, i + 2.4); g.stroke(); } };
+const gfxBoard = (g, x, y, s, rot) => { g.save(); g.translate(x, y); g.rotate(rot); g.fillStyle = '#15161a'; g.beginPath(); g.ellipse(0, 0, s, s * .26, 0, 0, TAU); g.fill(); g.fillStyle = '#ffcf3a'; g.fillRect(-s * .55, -s * .12, s * 1.1, s * .24); g.fillStyle = '#e8e6e0'; for (const k of [-.6, .6]) { g.beginPath(); g.arc(s * k, s * .32, s * .13, 0, TAU); g.fill(); } g.restore(); };
+const gfxWing = (g, x, y, s, dir) => { g.fillStyle = '#ffffff'; g.strokeStyle = '#d4a017'; g.lineWidth = s * .04; for (let i = 0; i < 5; i++) { g.beginPath(); g.ellipse(x + dir * (s * .25 + i * s * .17), y - s * .1 + i * s * .12, s * .55 - i * s * .07, s * .12, dir * (0.5 + i * 0.12), 0, TAU); g.fill(); g.stroke(); } };
+const GFX_DEF = {
+  // camisetas (peito)
+  caveira: { front: g => { gfxCrown(g, 128, 66, 30); gfxSkull(g, 128, 108, 34); gfxText(g, 'SK8 OU NADA', 128, 164, 22, '#ffd23f'); }, back: g => gfxSkull(g, 128, 110, 50) },
+  dados: { front: g => { gfxDie(g, 112, 100, 40, -0.3, 6); gfxDie(g, 148, 116, 40, 0.35, 5); gfxText(g, 'SORTE', 128, 162, 28, '#c8102e', '#f4f2ec'); } },
+  fe: { front: g => { gfxText(g, 'FÉ', 128, 96, 52, '#ffd23f'); gfxText(g, 'EM DEUS', 128, 142, 26, '#f4f2ec'); }, back: g => { g.fillStyle = '#ffd23f'; g.fillRect(120, 50, 16, 110); g.fillRect(96, 78, 64, 16); gfxText(g, 'DEUS É FIEL', 128, 190, 20, '#f4f2ec'); } },
+  rosa: { front: g => { gfxRose(g, 128, 96, 34); gfxText(g, 'LEALDADE', 128, 168, 22, '#f4f2ec'); } },
+  sk8: { front: g => { gfxFlame(g, 128, 104, 40); gfxBoard(g, 128, 118, 46, -0.35); gfxText(g, 'FLIP', 128, 166, 28, '#ffd23f'); }, back: g => { gfxBoard(g, 128, 110, 70, 0.4); gfxText(g, 'SKATE OU MORTE', 128, 180, 18, '#ffcf3a'); } },
+  grana: { front: g => { gfxText(g, '$', 128, 98, 76, '#3ddc84'); gfxText(g, 'GRANA', 128, 160, 30, '#ffd23f'); } },
+  // gola polo: gola, carcela com botões e o bordado no peito (lado esquerdo de quem veste)
+  polo: { front: (g, it) => { const ac = hex(it.polo || 0xffffff); g.fillStyle = ac; g.fillRect(60, 0, 136, 24); g.fillRect(122, 20, 12, 44); g.fillStyle = '#d9d9d9'; for (const yy of [34, 50]) { g.beginPath(); g.arc(128, yy, 2.8, 0, TAU); g.fill(); } g.fillStyle = it.polo2 ? hex(it.polo2) : ac; g.beginPath(); g.ellipse(160, 74, 9, 6, 0, 0, TAU); g.fill(); g.fillRect(150, 73, 20, 2); }, back: (g, it) => { g.fillStyle = hex(it.polo || 0xffffff); g.fillRect(60, 0, 136, 22); } },
+  // jaquetas e moletons
+  college: { front: g => { gfxText(g, 'R', 160, 84, 30, '#ffd23f', '#f4f2ec'); g.fillStyle = '#f4f2ec'; for (let i = 0; i < 5; i++) g.fillRect(124, 30 + i * 30, 8, 8); }, back: g => { gfxText(g, 'ROLÊ', 128, 82, 40, '#ffd23f', '#f4f2ec'); gfxText(g, 'CITY', 128, 128, 30, '#f4f2ec'); gfxText(g, '27', 128, 182, 40, '#ffd23f', '#f4f2ec'); } },
+  anjo: { front: g => { gfxCrown(g, 160, 82, 13); }, back: g => { gfxWing(g, 128, 110, 70, -1); gfxWing(g, 128, 110, 70, 1); g.strokeStyle = '#ffd23f'; g.lineWidth = 6; g.beginPath(); g.ellipse(128, 52, 26, 8, 0, 0, TAU); g.stroke(); } },
+  skrat: { front: g => gfxText(g, 'SK8', 158, 84, 18, '#ffcf3a'), back: g => { gfxBoard(g, 128, 96, 64, -0.3); gfxSkull(g, 128, 104, 22); gfxText(g, 'SKATE RAT', 128, 172, 24, '#ffcf3a'); } },
+  rei: { front: g => gfxCrown(g, 160, 82, 14), back: g => { gfxCrown(g, 128, 80, 48); gfxText(g, 'REI DO ROLÊ', 128, 162, 24, '#ffd23f'); } },
+  corta: { front: g => { gfxText(g, 'RC', 160, 82, 14, '#f4f2ec'); } },
+};
+function gfxCanvas(it, side) {
+  const def = GFX_DEF[it.img]; if (!def || !def[side]) return null;
+  const k = it.id + '_' + side; if (GFX[k] !== undefined) return GFX[k];
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  try { def[side](g, it); } catch (e) { console.warn('estampa', e); }
+  return (GFX[k] = g.getImageData(0, 0, 256, 256).data);
+}
+/* pinta o desenho por cima da camiseta já colorida (só no corpo novo, que sabe onde fica o peito e as costas) */
+function rpmPrintGfx(A, p, sh, topMask) {
+  if (!sh.img || !A.prt) return;
+  const F = gfxCanvas(sh, 'front'), B = gfxCanvas(sh, 'back'); if (!F && !B) return;
+  const W = A.w, H = A.h, ref = A.ref[2];
+  for (let j = 0; j < W * H; j++) {
+    const sd = A.prtS[j]; if (!sd || (topMask && topMask[j])) continue;
+    const D = sd > 0 ? F : B; if (!D) continue;
+    const x = A.prt[j * 2], t = A.prt[j * 2 + 1], X = Math.floor(((sd > 0 ? x : -x) + 0.17) / 0.34 * 256), Y = Math.floor((1.05 - t) / 1.05 * 256);
+    if (X < 0 || X > 255 || Y < 0 || Y > 255) continue;
+    const q = (Y * 256 + X) * 4, a = D[q + 3] / 255; if (a < 0.02) continue;
+    const f = clamp(A.lum[j] / ref, 0.7, 1.2), i = j * 4;
+    for (let k = 0; k < 3; k++) p[i + k] = Math.min(255, p[i + k] * (1 - a) + D[q + k] * f * a);
+  }
+}
+/* tinta no cabelo: cor por cima (nevou, amarelo...) ou luzes (mechas claras por cima da cor natural) */
+const HL_TEX = {};
+function hlHairTex(base, hl) {
+  const k = base + '_' + hl; if (HL_TEX[k]) return HL_TEX[k];
+  const src = hairTex().image, c = document.createElement('canvas'); c.width = src.width; c.height = src.height; const g = c.getContext('2d'); g.drawImage(src, 0, 0);
+  const d = g.getImageData(0, 0, c.width, c.height), px = d.data, A = rgb(base), Bc = rgb(hl), r = mulberry32(7);
+  const cols = Float32Array.from({ length: c.width }, () => r()); // mechas finas e grossas misturadas
+  for (let y = 0, i = 0; y < c.height; y++) for (let x = 0; x < c.width; x++, i += 4) { const L = px[i] / 255, m = cols[x] > 0.62 || cols[(x + 1) % c.width] > 0.8 ? 1 : 0, C = m ? Bc : A; px[i] = Math.min(255, C[0] * L * 1.15); px[i + 1] = Math.min(255, C[1] * L * 1.15); px[i + 2] = Math.min(255, C[2] * L * 1.15); }
+  g.putImageData(d, 0, 0); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; const b = hairTex(); t.repeat.copy(b.repeat); return (HL_TEX[k] = t);
+}
+const DRIP_WEAR = [
+  // camisetas com desenho
+  I('shirt', 'ct_caveira', 'Camiseta Caveira Coroada', 0x15161a, 1500, 45, 'raro', { pat: 'plain', img: 'caveira', desc: 'Caveira com coroa no peito e caveira grande nas costas.' }),
+  I('shirt', 'ct_dados', 'Camiseta Dados da Sorte', 0xf4f2ec, 1300, 40, 'raro', { pat: 'plain', img: 'dados' }),
+  I('shirt', 'ct_fe', 'Camiseta Fé em Deus', 0x15161a, 1300, 40, 'raro', { pat: 'plain', img: 'fe', desc: '"FÉ EM DEUS" no peito e cruz dourada nas costas.' }),
+  I('shirt', 'ct_rosa', 'Camiseta Rosa da Lealdade', 0xf4f2ec, 1300, 40, 'raro', { pat: 'plain', img: 'rosa' }),
+  I('shirt', 'ct_sk8', 'Camiseta SK8 em Chamas', 0x15161a, 1500, 45, 'raro', { pat: 'plain', img: 'sk8', desc: 'Skate pegando fogo no peito e nas costas.' }),
+  I('shirt', 'ct_grana', 'Camiseta Grana', 0x15161a, 1500, 45, 'raro', { pat: 'plain', img: 'grana' }),
+  // gola polo
+  I('shirt', 'po_branca', 'Gola Polo Branca', 0xf4f2ec, 450, null, 'comum', { pat: 'plain', img: 'polo', polo: 0x1f3a7a }),
+  I('shirt', 'po_preta', 'Gola Polo Preta', 0x15161a, 450, null, 'comum', { pat: 'plain', img: 'polo', polo: 0xf4f2ec }),
+  I('shirt', 'po_azul', 'Gola Polo Azul-Marinho', 0x1f3a7a, 1200, 35, 'raro', { pat: 'plain', img: 'polo', polo: 0xf4f2ec, polo2: 0x2ecc71 }),
+  I('shirt', 'po_listrada', 'Gola Polo Listrada', 0x1f6b3a, 1400, 40, 'raro', { pat: 'stripes', img: 'polo', polo: 0x15161a }),
+  I('shirt', 'po_ouro', 'Gola Polo Black & Gold', 0x15161a, null, 90, 'lendario', { pat: 'plain', img: 'polo', polo: 0xd4a017, polo2: 0xffd23f }),
+  // jaquetas e moletons
+  I('shirt', 'ja_corta', 'Corta-Vento Tricolor', 0x1f4fbf, 1800, 55, 'raro', { pat: 'wd_ffd23f_c8102e', img: 'corta', desc: 'Jaqueta corta-vento com faixas de três cores, sucesso nos bailes.' }),
+  I('shirt', 'ja_corta2', 'Corta-Vento Neon', 0x15161a, 1800, 55, 'raro', { pat: 'wd_9cff3a_ff4fa3', img: 'corta' }),
+  I('shirt', 'ja_puffer', 'Jaqueta Bufante Prata', 0xb9bec7, 2000, 60, 'raro', { pat: 'puffer' }),
+  I('shirt', 'mo_skrat', 'Moletom Skate Rat', 0x55603a, 1600, 50, 'raro', { pat: 'plain', img: 'skrat', desc: 'Moletom de skatista com estampa grande nas costas.' }),
+  I('shirt', 'ja_college', 'Jaqueta College Rolê City', 0x7a1630, null, 100, 'lendario', { pat: 'plain', img: 'college', desc: 'Jaqueta de time americana: ROLÊ CITY 27 nas costas.' }),
+  I('shirt', 'mo_rei', 'Moletom Rei do Rolê', 0x15161a, null, 120, 'lendario', { pat: 'plain', img: 'rei', desc: 'Coroa dourada gigante nas costas.' }),
+  I('shirt', 'ja_angelical', 'Jaqueta Angelical', 0xf4f2ec, null, 150, 'lendario', { pat: 'angel', img: 'anjo', desc: 'Branca com filetes dourados e asas de anjo nas costas. A peça mais desejada.' }),
+  // calças e bermudas
+  I('pants', 'be_corta', 'Bermuda Corta-Vento', 0x1f4fbf, 1100, 35, 'raro', { pat: 'wdp_ffd23f_c8102e', short: true, desc: 'Combina com a jaqueta corta-vento.' }),
+  I('pants', 'be_corta2', 'Bermuda Corta-Vento Neon', 0x15161a, 1100, 35, 'raro', { pat: 'wdp_9cff3a_ff4fa3', short: true }),
+  I('pants', 'be_cargo', 'Bermuda Cargo Preta', 0x1c1c20, 380, null, 'comum', { pat: 'plain', short: true }),
+  I('pants', 'ca_skate', 'Calça Larga de Skatista', 0x8fa9c9, 420, null, 'comum', { pat: 'denim' }),
+  I('pants', 'ca_jogger', 'Calça Jogger Refletiva', 0x15161a, 1300, 40, 'raro', { pat: 'sidestripe' }),
+  I('pants', 'ca_angelical', 'Calça Angelical', 0xf4f2ec, null, 120, 'lendario', { pat: 'angel', desc: 'Par da Jaqueta Angelical.' }),
+  // calçados
+  I('shoes', 'te_mola', 'Tênis de Mola Prata', 0xc9ced6, 1800, 55, 'raro', { pat: 'gradient', desc: 'O tênis de mola: o mais pedido da quebrada.' }),
+  I('shoes', 'te_mola2', 'Tênis de Mola Preto e Vermelho', 0x15161a, 1800, 55, 'raro', { pat: 'stripes' }),
+  I('shoes', 'te_chunky', 'Tênis Chunky Branco', 0xf4f2ec, 520, null, 'comum', { pat: 'plain' }),
+  I('shoes', 'te_skate', 'Tênis de Skate Camurça', 0x3a3f4a, 480, null, 'comum', { pat: 'check' }),
+  I('shoes', 'ch_slide', 'Chinelo Slide Preto', 0x15161a, 260, null, 'comum', { pat: 'sandal' }),
+  I('shoes', 'ch_slide_ouro', 'Chinelo Slide Dourado', 0xd4a017, 900, 30, 'raro', { pat: 'sandal', shine: true }),
+  I('shoes', 'sd_rider', 'Sandália Papete Esportiva', 0x2f6db5, 320, null, 'comum', { pat: 'sandal' }),
+  I('shoes', 'te_anjo', 'Tênis Angelical', 0xf4f2ec, null, 80, 'lendario', { pat: 'angel' }),
+  // bonés e toucas
+  I('cap', 'cap_trucker', 'Boné Trucker', 0x2f4f86, 240, null, 'comum', { hat: 'cap' }),
+  I('cap', 'cap_aba_branca', 'Boné Aba Reta Branco', 0xf4f2ec, 260, null, 'comum', { hat: 'flat' }),
+  I('cap', 'cap_touca', 'Touca Preta', 0x15161a, 220, null, 'comum', { hat: 'beanie' }),
+  I('cap', 'cap_bandana_pt', 'Bandana Preta', 0x15161a, 200, null, 'comum', { hat: 'bandana' }),
+  I('cap', 'cap_aba_ouro', 'Boné Aba Reta Black & Gold', 0xd4a017, null, 80, 'lendario', { hat: 'flat', metal: true }),
+  // óculos
+  I('glasses', 'gl_juliet', 'Óculos Juliet Espelhado', 0x7a5cff, 1500, 45, 'raro', { gl: 'sport', desc: 'Lente espelhada furta-cor, estilo Juliet.' }),
+  I('glasses', 'gl_juliet2', 'Óculos Juliet Dourado', 0xffb627, 1500, 45, 'raro', { gl: 'sport' }),
+  I('glasses', 'gl_lupa', 'Óculos Lupa Vilão', 0xb07a3a, 1700, 50, 'raro', { gl: 'aviator', desc: 'Armação de madeira com lente marrom, estilo Lupa.' }),
+  I('glasses', 'gl_vilao', 'Óculos Vilão Preto', 0x15161a, 300, null, 'comum', { gl: 'dark' }),
+  // cordões e relógios
+  I('acc', 'ac_cruz', 'Cordão com Crucifixo', 0xd4a017, 2000, 60, 'raro', { ak: 'chain', metal: true, cross: true }),
+  I('acc', 'ac_grumet', 'Cordão Grumet de Ouro', 0xffc83d, null, 130, 'lendario', { ak: 'chain', metal: true, thick: true, desc: 'Cordão grosso de ouro.' }),
+  I('wrist', 'wr_rose', 'Relógio Ouro Rosé', 0xe8a090, 2200, 70, 'raro', { wk: 'metal' }),
+  I('wrist', 'wr_iced', 'Relógio Cravejado Prata', 0xdfe7f0, null, 130, 'lendario', { wk: 'ice', desc: 'Todo cravejado: brilha de longe.' }),
+  // cabelo pintado
+  I('dye', 'dy_none', 'Cor natural', 0x555555, 0, null, 'comum', { dye: null }),
+  I('dye', 'dy_nevou', 'Nevou (Platinado)', 0xf1ecdc, 1300, 40, 'raro', { dye: 0xf1ecdc, desc: 'Cabelo descolorido quase branco.' }),
+  I('dye', 'dy_amarelo', 'Amarelo Nevou', 0xf5cf2e, 1300, 40, 'raro', { dye: 0xf5cf2e, desc: 'O amarelo do baile.' }),
+  I('dye', 'dy_luzes', 'Luzes Douradas', 0xe2b955, 1500, 45, 'raro', { hl: 0xe8c25a, desc: 'Mechas douradas por cima da sua cor natural.' }),
+  I('dye', 'dy_luzes2', 'Luzes Platinadas', 0xeeeadc, 1500, 45, 'raro', { hl: 0xf1ecdc, desc: 'Mechas quase brancas por cima da sua cor natural.' }),
+  I('dye', 'dy_ruivo', 'Ruivo Vermelho', 0xb3322a, 600, null, 'comum', { dye: 0xb3322a }),
+  I('dye', 'dy_rosa', 'Rosa Chiclete', 0xff6fb0, 1100, 35, 'raro', { dye: 0xff6fb0 }),
+  I('dye', 'dy_azul', 'Azul Elétrico', 0x2f7dff, 1100, 35, 'raro', { dye: 0x2f7dff }),
+  I('dye', 'dy_verde', 'Verde Neon', 0x5be04a, 1100, 35, 'raro', { dye: 0x5be04a }),
+];
+DRIP_WEAR.forEach(i => { if (i.r !== 'comum') i.c = null; ITEMS.push(i); ITEM[i.id] = i; }); // raras e lendárias: só com tokens
+SLOT_NAMES.dye = 'Cabelo pintado';
+WEAR_SLOTS.push('dye'); THUMB_CAM.dye = THUMB_CAM.cap;
+const _lookOfDrip = lookOf;
+lookOf = function (equip, skin, hair, gender, board, body) {
+  const L = _lookOfDrip.apply(this, arguments), d = equip && ITEM[equip.dye];
+  if (d && d.slot === 'dye') { if (d.dye != null) { L.hair0 = L.hair; L.hair = d.dye; } if (d.hl != null) L.hl = d.hl; }
+  return L;
+};
 const _dressLegs = {};
 function dressLegs(sh) { return _dressLegs[sh.id] || (_dressLegs[sh.id] = { slot: 'pants', id: '_dl_' + sh.id, name: sh.name, color: sh.color, pat: sh.pat, trunk: true }); }
-const WEAR_FREE = ['shirt_none', 'wr_none', 'ea_none', 'bo_none'];
-function wearMigrate() { if (!S) return; for (const id of WEAR_FREE) if (!S.owned.includes(id)) S.owned.push(id); S.equip.wrist = S.equip.wrist || 'wr_none'; S.equip.ear = S.equip.ear || 'ea_none'; S.equip.bolsa = S.equip.bolsa || 'bo_none'; S.tats = S.tats || {}; }
+const WEAR_FREE = ['shirt_none', 'wr_none', 'ea_none', 'bo_none', 'dy_none'];
+function wearMigrate() { if (!S) return; for (const id of WEAR_FREE) if (!S.owned.includes(id)) S.owned.push(id); S.equip.wrist = S.equip.wrist || 'wr_none'; S.equip.ear = S.equip.ear || 'ea_none'; S.equip.bolsa = S.equip.bolsa || 'bo_none'; S.equip.dye = S.equip.dye || 'dy_none'; S.tats = S.tats || {}; }
 /* arma de fogo: fica no coldre na cintura; o botão da arma tira da cintura (e depois atira) */
 const handNow = () => { const k = myHandKind(); if (!k) return null; return myGun() && !(P.drawnT > 0) && !P.aim ? null : k; };
 const holsterNow = () => { const g = myGun(); if (g && g.melee) return null; return g && !(P.drawnT > 0) && !P.aim && !(P.jailT > 0) && ['pistola', 'revolver', 'taser'].includes(g.gun) ? g.gun : g && !(P.drawnT > 0) && !P.aim ? 'longa_' + g.gun : null; };
@@ -9181,12 +9326,12 @@ function prepAtlasRPM(img, k) {
   for (let x = 0; x < W; x++) { let s = 0; for (let y = -R; y <= R; y++) s += tmp[clamp(y, 0, H - 1) * W + x]; for (let y = 0; y < H; y++) { const bl = s / (2 * R + 1), j = y * W + x; clean[j] = clamp(lum[j], bl * 0.88, bl * 1.12); s += tmp[clamp(y + R + 1, 0, H - 1) * W + x] - tmp[clamp(y - R, 0, H - 1) * W + x]; } }
   const ref = [0, 0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0, 0]; for (let j = 0; j < n; j++) { const kc = cls[j]; ref[kc] += kc === 1 || kc === 2 || kc === 4 ? clean[j] : lum[j]; cnt[kc]++; }
   for (let kk = 0; kk < 6; kk++) ref[kk] /= Math.max(1, cnt[kk]);
-  return { rpm: true, c, d, cls, lum: clean, rawLum: lum, ref, skinRef, hairRef, w: W, h: H, cache: {} };
+  return { rpm: true, c, d, cls, lum: clean, rawLum: lum, ref, skinRef, hairRef, w: W, h: H, cache: {}, blk: BL };
 }
 function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi, defer) {
   const sh = look.shirt, pa = look.pants, so = look.shoes, sp = plainPat(sh) ? 'plain' : sh.pat, pp = plainPat(pa) ? 'plain' : pa.pat;
   const bare = so && (so.id === 'shoes_none' || so.barefoot);
-  const key = [sh.color, sp, pa.color, pp, so ? so.color : 0, bare ? 1 : 0, look.skin, look.hair, bald ? 1 : 0, pantsMask ? pantsMask.nm : '', topMask ? topMask.nm : '', hi ? 'hi' : 'lo'].join('_');
+  const key = [sh.color, sp, pa.color, pp, so ? so.color : 0, so ? so.pat || '' : '', bare ? 1 : 0, look.skin, look.hair, bald ? 1 : 0, pantsMask ? pantsMask.nm : '', topMask ? topMask.nm : '', hi ? 'hi' : 'lo', sh.img ? sh.id : '', look.hl || '', look.hair0 ?? ''].join('_');
   if (A.cache[key]) return A.cache[key];
   if (defer) return null; // ainda não existe: quem chamou monta depois (por partes)
   const W = A.w, H = A.h, src = A.d.data, out = new ImageData(new Uint8ClampedArray(src), W, H), p = out.data;
@@ -9199,12 +9344,14 @@ function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi, defer) {
     const u = (j % W) / W, v = Math.floor(j / W) / H;
     if (kc === 5 && bald) { put(i, skin, 0.92); continue; }
     if (kc === 3) { p[i] = Math.min(255, src[i] * kr[0]); p[i + 1] = Math.min(255, src[i + 1] * kr[1]); p[i + 2] = Math.min(255, src[i + 2] * kr[2]); continue; }
-    if (kc === 5) { put(i, hair, clamp(A.rawLum[j] / ref[5], 0.45, 1.8)); continue; }
+    if (kc === 5 && look.hair0 != null && A.blk && !inBlk(A.blk.hair, u, v)) { put(i, rgbA(look.hair0), clamp(A.rawLum[j] / ref[5], 0.45, 1.8)); continue; } // tintura: sobrancelha fica na cor natural
+    if (kc === 5) { const hl = look.hl && (!A.blk || inBlk(A.blk.hair, u, v)) && (Math.sin(u * W * 0.55 + v * H * 0.08) > 0.45 || Math.sin(u * W * 0.21 + 1.3) > 0.8); put(i, hl ? rgbA(look.hl) : hair, clamp(A.rawLum[j] / ref[5], 0.45, 1.8)); continue; }
     const f = clamp(A.lum[j] / ref[kc], 0.55, 1.3);
     if (kc === 1) { if (pantsMask && pantsMask[j]) put(i, skin, clamp(f, 0.75, 1.1) * 0.95); else put(i, pp === 'plain' ? cP : patColor(pp, u * 1.6, v * 1.6, cP, skin), f); }
     else if (kc === 2) { if (topMask && topMask[j]) { if (topMask.nm === 'nude' && A.torso) { const sf = A.torso[j]; p[i] = Math.min(255, skin[0] * sf * 0.93); p[i + 1] = Math.min(255, skin[1] * sf * 0.93); p[i + 2] = Math.min(255, skin[2] * sf * 0.93); } else put(i, skin, clamp(f, 0.8, 1.08) * 0.95); } else put(i, sp === 'plain' ? cS : patColor(sp, u * 1.6, v * 1.6, cS, skin), f); }
-    else if (kc === 4) put(i, bare ? skin : cF, f);
+    else if (kc === 4) put(i, bare ? skin : so && !plainPat(so) && !['sandal', 'gradient'].includes(so.pat) ? patColor(so.pat, u * 2, v * 2, cF, skin) : cF, f);
   }
+  try { rpmPrintGfx(A, p, sh, topMask); } catch (e) { console.warn('estampa', e); }
   let c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').putImageData(out, 0, 0);
   if (!hi) { const c2 = document.createElement('canvas'); c2.width = W / 2; c2.height = H / 2; const g2 = c2.getContext('2d'); g2.imageSmoothingQuality = 'high'; g2.drawImage(c, 0, 0, W / 2, H / 2); c = c2; }
   const t = new THREE.CanvasTexture(c); t.flipY = false; t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
@@ -9253,6 +9400,7 @@ function rpmTorsoDetail(info, mesh, scene) {
   const A = info.atlas, W = A.w, H = A.h, geo = mesh.geometry, pos = geo.attributes.position, uv = geo.attributes.uv, idx = geo.index, BL = RPM_BLOCKS[info.k];
   const wpY = n => { let b = null; scene.traverse(o => { if (o.isBone && new RegExp(n + '$').test(o.name)) b = o; }); return b ? b.getWorldPosition(new THREE.Vector3()) : null; };
   const hip = wpY('Hips'), neck = wpY('Neck'); if (!hip || !neck) return;
+  const prt = new Float32Array(W * H * 2), prtS = new Int8Array(W * H); A.prt = prt; A.prtS = prtS; // onde cada pixel da camiseta fica no corpo (para os desenhos)
   const det = new Float32Array(W * H).fill(1), y0 = hip.y, y1 = neck.y, P = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
   const shade = (x, y, z) => {
     const t = (y - y0) / (y1 - y0), ax = Math.abs(x), front = z > 0.0; let d = 0;
@@ -9278,7 +9426,8 @@ function rpmTorsoDetail(info, mesh, scene) {
     for (let py = yA; py <= yB; py++) for (let px = x0; px <= x1; px++) {
       const qx = px + 0.5, qy = py + 0.5, a = ((V[1] - V[2]) * (qx - U[2]) + (U[2] - U[1]) * (qy - V[2])) / den, b = ((V[2] - V[0]) * (qx - U[2]) + (U[0] - U[2]) * (qy - V[2])) / den, c = 1 - a - b;
       if (a < -0.02 || b < -0.02 || c < -0.02) continue;
-      det[py * W + px] = shade(P[0].x * a + P[1].x * b + P[2].x * c, P[0].y * a + P[1].y * b + P[2].y * c, P[0].z * a + P[1].z * b + P[2].z * c);
+      const wx = P[0].x * a + P[1].x * b + P[2].x * c, wy = P[0].y * a + P[1].y * b + P[2].y * c, wz = P[0].z * a + P[1].z * b + P[2].z * c, jj = py * W + px;
+      det[jj] = shade(wx, wy, wz); prt[jj * 2] = wx; prt[jj * 2 + 1] = (wy - y0) / (y1 - y0); prtS[jj] = wz > 0 ? 1 : -1;
     }
   }
   A.torso = det;
@@ -13916,7 +14065,7 @@ const ICONS = { 'cap:none': '∅', 'glasses:none': '∅', 'acc:none': '∅', 'we
 const PANELS = {
   shop(kind) {
     city.lastShop = kind;
-    const conf = { roupas: ['Drip Store', ['shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'wrist', 'ear', 'bolsa']], skate: ['Shape & Truck', ['skate', 'wheels', 'print']], celular: ['CelZap', ['phone']] }[kind];
+    const conf = { roupas: ['Drip Store', ['shirt', 'pants', 'shoes', 'cap', 'dye', 'glasses', 'acc', 'wrist', 'ear', 'bolsa']], skate: ['Shape & Truck', ['skate', 'wheels', 'print']], celular: ['CelZap', ['phone']] }[kind];
     let html = `<p class="muted">Saldo: <b class="coin">$ ${fmt(S.coins)}</b> · <b class="tokc">${fmt(S.tokens)} T</b>. Raridade: <span class="rar" style="--rc:${RAR.comum.c}">Comum</span> <span class="rar" style="--rc:${RAR.raro.c}">Raro</span> <span class="rar" style="--rc:${RAR.lendario.c}">Lendário</span>. Itens lendários também saem em caixas, eventos e no ranking semanal.</p>`;
     if (kind === 'roupas') html += `<div class="note"><b>Peças simples</b> (comuns): compre com a grana de missões e trampos. <b>Raras e lendárias</b> (as mais procuradas): só com tokens, comprados com dinheiro real na Casa de Tokens.</div>`;
     if (kind === 'skate') html += `<div class="card"><h4>Oficina</h4><p>Monte seu skate: cor do shape, estampa, rodas, lixa e trucks.</p><div><button class="btn" data-act="open-oficina" ${hasSkate() ? '' : 'disabled'}>Abrir Oficina</button></div></div>`;
@@ -14108,7 +14257,7 @@ const PANELS = {
       html += `<h3>Caixas</h3><div class="crates">${[['rara', 'Caixa Rara', 'peça comum ou $ 600'], ['lendaria', 'Caixa Lendária', 'peça comum ou $ 2.500 + 25 tokens']].map(([k, n, d]) => `<div class="crate c-${k}"><b>${n}</b><small>${d}</small><span class="big-num">${S.crates[k]}</span><button class="btn sm" data-act="crate" data-k="${k}" ${S.crates[k] ? '' : 'disabled'}>Abrir</button></div>`).join('')}</div>
       <p class="muted">Caixas não são vendidas: você ganha vencendo campeonatos de manobras e no ranking semanal.</p>
       ${cr ? `<div class="reveal" style="--rc:${RAR[cr.item ? cr.item.r : cr.rar].c}">${cr.item ? `<span>${RAR[cr.item.r].n}</span><b>${esc(cr.item.name)}</b><small>${SLOT_NAMES[cr.item.slot]}</small>` : `<span>Você já tem tudo dessa raridade</span><b>+$ ${fmt(cr.coins)}</b>`}</div>` : ''}
-      <h3>Seus itens (${S.owned.length})</h3>${['skate', 'wheels', 'print', 'shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'wrist', 'ear', 'bolsa', 'weapon', 'gun'].map(sl => { const its = [...ITEMS, ...EXCL_ITEMS].filter(i => i.slot === sl && S.owned.includes(i.id)); return its.length ? `<h3>${SLOT_NAMES[sl]}</h3><div class="grid-items">${its.map(itemCard).join('')}</div>` : ''; }).join('')}`;
+      <h3>Seus itens (${S.owned.length})</h3>${['skate', 'wheels', 'print', 'shirt', 'pants', 'shoes', 'cap', 'glasses', 'acc', 'wrist', 'ear', 'bolsa', 'dye', 'weapon', 'gun'].map(sl => { const its = [...ITEMS, ...EXCL_ITEMS].filter(i => i.slot === sl && S.owned.includes(i.id)); return its.length ? `<h3>${SLOT_NAMES[sl]}</h3><div class="grid-items">${its.map(itemCard).join('')}</div>` : ''; }).join('')}`;
       paintPrintSwatches();
     }
     return { title: S.name, html };
@@ -14693,7 +14842,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && NET
 
 /* aparência compacta enviada para os outros jogadores */
 const myNetLook = () => { const L = myNetLook0(); if (S.beachWear) Object.assign(L.e, beachEquip()); return L; };
-const myNetLook0 = () => ({ bd: S.body || null, w: handNow(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print, wrist: S.equip.wrist, ear: S.equip.ear, bolsa: S.equip.bolsa, tats: S.tats || null, tn: S.name, hol: holsterNow() }, b: S.board });
+const myNetLook0 = () => ({ bd: S.body || null, w: handNow(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print, wrist: S.equip.wrist, ear: S.equip.ear, bolsa: S.equip.bolsa, dye: S.equip.dye, tats: S.tats || null, tn: S.name, hol: holsterNow() }, b: S.board });
 const myPresence = () => ({ ca: S.casaAberta ? (isAdm() ? 'adm' : S.casa && S.casa.cid === cityId() ? S.casa.key : null) : null, lib: isAdm() ? (S.segLib || []) : null, seg: isAdm() && S.segOff ? 0 : 1, segm: isAdm() ? S.segMode || 'perto' : null, kd: hasKids() ? S.kids.slice(0, 4).map(k => ({ n: k.n, g: k.g, age: k.age, eq: k.eq, hs: k.hs, sk: k.sk })) : null, fb: (isAdm() || hasKids()) && S.filhas && S.filhas.comigo && S.filhas.br ? S.filhas.br.map(v => Math.round(v * 10) / 10) : null, sa: isAdm() && S.segMode === 'porta' && S.segAnchor ? S.segAnchor.map(v => Math.round(v * 10) / 10) : null, id: NET.user.id, name: S.name, crew: S.crew ? S.crew.name : '', look: myNetLook(), adm: isAdm() ? 1 : 0, job: S.shift || '', sp: S.spouse ? S.spouse.name : '', gang: S.gang ? { n: S.gang.n, e: S.gang.e, c: S.gang.c } : null });
 function netJoinPlaza() {
   if (!NET.user || NET.ch) return;

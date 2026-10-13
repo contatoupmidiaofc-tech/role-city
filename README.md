@@ -457,3 +457,18 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
   - 🚪 **Entrar e sair de casas e comércios na hora**, sem tela preta. A troca de lugar acontece no mesmo instante do toque.
   - ⚡ A causa da demora: a qualidade automática desligava e religava as sombras, e cada troca obrigava o celular a refazer os gráficos de tudo. Agora a sombra só fica transparente (nada é refeito). As luzes de dentro das casas e lojas também usam luzes que já existem na cidade, então entrar não muda mais a contagem de luzes.
   - 🎨 **Portas bem visíveis:** toda casa (vila, condomínios e morro) ganhou porta colorida com moldura branca e uma luzinha em cima. Lojas, prédios e pontos comerciais ganharam porta escura de vidro com moldura branca, que contrasta com qualquer fachada.
+
+### Build 2026.10.13-46 (Coleção Drip da Quebrada)
+  - 👕 **53 peças novas**, inspiradas no que mais faz sucesso nos jogos (Free Fire, GTA RP) e na moda de rua:
+    - **Camisetas com desenho** no peito e nas costas: Caveira Coroada, Fé em Deus, Grana, SK8 em Chamas, Rosa da Lealdade e Dados da Sorte.
+    - **Gola polo:** branca, preta, azul-marinho, listrada e Black & Gold, com gola, botões e bordado.
+    - **Jaquetas e moletons:** corta-vento tricolor e neon, bufante prata, Skate Rat, College Rolê City, Rei do Rolê e a **Jaqueta Angelical** (asas nas costas).
+    - **Calças e bermudas:** bermuda corta-vento, cargo, calça de skatista, jogger refletiva e Calça Angelical.
+    - **Calçados:** tênis de mola, chunky, de skate, chinelo slide (preto e dourado), papete e Tênis Angelical.
+    - **Bonés e toucas:** trucker, aba reta branco, touca preta, bandana preta e aba reta Black & Gold.
+    - **Óculos:** Juliet espelhado e dourado, Lupa Vilão e Vilão Preto.
+    - **Cordões e relógios:** cordão com crucifixo, cordão grumet de ouro, relógio ouro rosé e relógio cravejado prata.
+  - 💇 **Cabelo pintado** (nova seção da Drip Store): Nevou (platinado), Amarelo Nevou, Luzes Douradas, Luzes Platinadas (mechas por cima da cor natural), Ruivo, Rosa, Azul e Verde. A sobrancelha continua na cor natural. Todo mundo online vê.
+  - 💎 Raras e lendárias só com tokens: raras de 30 a 60 T e lendárias de 80 a 150 T. As comuns saem com a grana do jogo.
+  - Tênis agora mostram a estampa (listras, xadrez etc.) no corpo novo.
+  - Vitrine da loja: a miniatura mostra a roupa montada (antes podia aparecer o boneco sem a roupa).
