@@ -762,7 +762,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.13-42';
+const BUILD = '2026.10.13-43';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -13695,8 +13695,9 @@ const OLD_PANELS = {
       const ck = city.checkout;
       html += `<div class="card" id="checkout"><h4>Pagamento · ${fmt(ck.t)} tokens</h4><div class="meta"><span>Total R$ ${ck.brl}</span></div>
       <div class="seg" role="group" aria-label="Forma de pagamento"><button aria-pressed="${ck.method === 'pix'}" data-act="pay-method" data-m="pix">Pix</button><button aria-pressed="${ck.method === 'card'}" data-act="pay-method" data-m="card">Cartão</button></div>
-      <div class="note">Modo demonstração: nenhum valor é cobrado. Na versão publicada, este passo abre o checkout do Mercado Pago (ou Stripe) ligado à conta do dono do jogo, e os tokens só entram depois que o pagamento é confirmado pelo servidor.</div>
-      <div class="row"><button class="btn tok" data-act="pay-demo">Simular pagamento aprovado</button><button class="btn ghost" data-act="pay-cancel">Cancelar</button></div></div>`;
+      <div class="note">Você vai para a página segura do <b>Mercado Pago</b> e pode pagar com <b>Pix</b> ou <b>cartão</b>. Assim que o pagamento for aprovado, os tokens entram sozinhos na sua conta (pode levar alguns segundos).</div>
+      ${ck.msg ? `<p class="muted" role="status">${esc(ck.msg)}</p>` : ''}
+      <div class="row"><button class="btn tok" data-act="pay-mp" ${ck.busy ? 'disabled' : ''}>${ck.busy ? 'Abrindo…' : '💳 Pagar com Mercado Pago'}</button><button class="btn ghost" data-act="pay-cancel">Cancelar</button>${isAdm() ? '<button class="btn ghost sm" data-act="pay-demo">Simular (ADM)</button>' : ''}</div></div>`;
     }
     html += `<h3>Trocar tokens por grana</h3><p class="muted">1 token = $ 10 no jogo.</p><div class="row"><button class="btn sm" data-act="exchange" data-n="10" ${S.tokens < 10 ? 'disabled' : ''}>10 T → $ 100</button><button class="btn sm" data-act="exchange" data-n="50" ${S.tokens < 50 ? 'disabled' : ''}>50 T → $ 500</button><button class="btn sm" data-act="exchange" data-n="100" ${S.tokens < 100 ? 'disabled' : ''}>100 T → $ 1.000</button></div>`;
     if (S.purchases.length) html += `<h3>Histórico</h3>` + S.purchases.slice(-5).reverse().map(p => `<div class="muted">${esc(p)}</div>`).join('');
@@ -14313,7 +14314,8 @@ function act(a, ds, el) {
     case 'checkout': city.checkout = { id: ds.id, t: +ds.t, brl: ds.brl, method: 'pix' }; renderPanel(); setTimeout(() => { const c = $('checkout'); if (c) c.scrollIntoView({ behavior: 'smooth' }); }, 30); break;
     case 'pay-method': city.checkout.method = ds.m; renderPanel(); break;
     case 'pay-cancel': city.checkout = null; renderPanel(); break;
-    case 'pay-demo': { const ck = city.checkout; S.tokens += ck.t; S.purchases.push(`${new Date().toLocaleDateString('pt-BR')} · ${fmt(ck.t)} T · R$ ${ck.brl} · ${ck.method === 'pix' ? 'Pix' : 'Cartão'} (demonstração)`); city.checkout = null; persist(); updateHUD(); sfx('level'); toast(`+${fmt(ck.t)} tokens creditados (demonstração)`, 'pink'); renderPanel(); break; }
+    case 'pay-mp': mpPagar(); break;
+    case 'pay-demo': { if (!isAdm()) break; const ck = city.checkout; S.tokens += ck.t; S.purchases.push(`${new Date().toLocaleDateString('pt-BR')} · ${fmt(ck.t)} T · R$ ${ck.brl} · ${ck.method === 'pix' ? 'Pix' : 'Cartão'} (demonstração)`); city.checkout = null; persist(); updateHUD(); sfx('level'); toast(`+${fmt(ck.t)} tokens creditados (demonstração)`, 'pink'); renderPanel(); break; }
     case 'exchange': { const n = +ds.n; if (S.tokens < n) return; S.tokens -= n; addCoins(n * 10); persist(); sfx('coin'); renderPanel(); break; }
     case 'crew-invite': {
       const id = ds.id, b = BOT[id];
@@ -14966,6 +14968,48 @@ function introSheet() {
 })();
 const _afterLogin0 = afterLogin;
 afterLogin = async function () { const r = await _afterLogin0.apply(this, arguments); if (!INTRO.done && !$('in-sheet').hidden) introClose(); return r; };
+
+/* ---------------- PAGAMENTOS (Mercado Pago) ----------------
+   O jogo só pede o link de pagamento (função mp-checkout). Quem confirma é o servidor (mp-webhook consulta o Mercado Pago),
+   e os tokens entram pela função resgatar_tokens(), uma única vez por pedido. */
+async function mpPagar() {
+  const ck = city.checkout; if (!ck) return;
+  if (!NET.user || !NET.sb) { ck.msg = 'Entre na sua conta (Google ou e-mail) para comprar tokens.'; renderPanel(); return; }
+  ck.busy = true; ck.msg = ''; renderPanel();
+  try {
+    const { data, error } = await NET.sb.functions.invoke('mp-checkout', { body: { pacote: ck.id, volta: location.origin + location.pathname } });
+    let erro = data && data.erro;
+    if (error && !erro) { try { const j = await error.context.json(); erro = j.erro; } catch (e) { erro = 'Não foi possível abrir o pagamento agora.'; } }
+    if (erro || !data || !data.url) { ck.busy = false; ck.msg = erro || 'Não foi possível abrir o pagamento agora.'; renderPanel(); return; }
+    try { await cloudSave(); } catch (e) { }
+    try { sessionStorage.setItem('rc_pag', String(Date.now())); } catch (e) { }
+    location.href = data.url;
+  } catch (e) { ck.busy = false; ck.msg = 'Sem conexão. Tente de novo.'; renderPanel(); }
+}
+async function mpResgatar(silencio) {
+  if (!NET.user || !NET.sb || !S) return 0;
+  try {
+    const { data, error } = await NET.sb.rpc('resgatar_tokens'); const n = error ? 0 : (+data || 0);
+    if (n > 0) {
+      S.tokens += n; S.purchases = S.purchases || []; S.purchases.push(`${new Date().toLocaleDateString('pt-BR')} · +${fmt(n)} T · Mercado Pago`);
+      persist(); try { updateHUD(); } catch (e) { } try { await cloudSave(); } catch (e) { }
+      if (typeof toast === 'function' && mode !== 'menu') { toast(`💰 Pagamento aprovado! +${fmt(n)} tokens na sua conta.`, 'pink'); try { sfx('level'); } catch (e) { } }
+      else MP.pend += n;
+      if (panelKind === 'tokens') renderPanel();
+    }
+    return n;
+  } catch (e) { return 0; }
+}
+const MP = { pend: 0, t: 0 };
+(function mpVolta() {
+  // voltando do Mercado Pago: confere algumas vezes (Pix pode demorar alguns segundos para ser confirmado)
+  const q = new URLSearchParams(location.search), pag = q.get('pag'); let veio = 0;
+  try { veio = +sessionStorage.getItem('rc_pag') || 0; } catch (e) { }
+  if (!pag && !(veio && Date.now() - veio < 30 * 60000)) return;
+  if (pag) history.replaceState(null, '', location.pathname);
+  MP.msg = pag === 'falhou' ? 'O pagamento não foi concluído. Nenhum valor foi cobrado.' : pag === 'pendente' ? 'Pagamento em análise. Os tokens entram assim que ele for aprovado.' : '';
+  let n = 0; MP.t = setInterval(async () => { if (++n > 40) { clearInterval(MP.t); try { sessionStorage.removeItem('rc_pag'); } catch (e) { } return; } if (await mpResgatar() > 0) { clearInterval(MP.t); try { sessionStorage.removeItem('rc_pag'); } catch (e) { } } }, 6000);
+})();
 async function enterGame() {
   try { await Promise.race([Promise.all([document.fonts.load('40px Bungee'), document.fonts.load('700 40px "Barlow Condensed"')]), new Promise(r => setTimeout(r, 1500))]); } catch (e) { }
   S.settings = S.settings || { quality: 'media', sound: true }; S.invite = S.invite || []; S.purchases = S.purchases || [];
@@ -14995,7 +15039,7 @@ async function enterGame() {
   setTimeout(() => { if (isAdm()) toast('👑 Chefe: seu helicóptero está no telhado da mansão (topo do morro; elevador → Telhado). O Hangar AJBZ fica na porta dourada ao lado da Rodoviária. Veja no Mapa.', 'pink'); }, 7000);
   if (!S.mission && S.stats.missions === 0) setTimeout(() => toast(hasSkate() ? 'Vá até o Quadro de Missões (marcador amarelo) para fazer sua primeira grana.' : 'Você está a pé. Vá até o Quadro de Missões (marcador amarelo): a primeira missão te dá um skate.', 'pink'), 800);
   updateEventChip(); setInterval(updateEventChip, 30000);
-  if (NET.user) { cloudSave(); netJoinPlaza(); updateOnlineChip(); }
+  if (NET.user) { cloudSave(); netJoinPlaza(); updateOnlineChip(); setTimeout(async () => { await mpResgatar(); if (MP.pend) { toast(`💰 Pagamento aprovado! +${fmt(MP.pend)} tokens na sua conta.`, 'pink'); MP.pend = 0; } if (MP.msg) { toast(MP.msg, 'pink'); MP.msg = ''; } }, 2500); }
   const ev = activeEvents()[0]; setTimeout(() => toast(`Evento da semana: ${ev.name}. Veja em Eventos.`, 'pink'), 2600);
   sfx('ui');
 }

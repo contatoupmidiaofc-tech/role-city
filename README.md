@@ -440,3 +440,9 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
   - 🎬 **Abertura no estilo dos jogos de celular**: pôr do sol com a cidade passando ao fundo, estrelas, skate cruzando a tela, logomarca entrando com animação e brilho, barra de carregamento com dicas e "TOQUE PARA COMEÇAR".
   - 🔑 **Entrar com Google** (precisa ativar o provedor Google no Supabase) ou **Entrar com e-mail** (o mesmo login de antes).
   - 🖼️ Logomarca nova (Canva) com fundo removido: `marca/logo.webp` (abertura e menu) e `marca/logo.png` (original em alta). Ícones do app (`icons/`) refeitos com ela. Para trocar, substitua os arquivos e aumente o `?v=`.
+
+### Build 2026.10.13-43 (pagamentos de verdade pelo Mercado Pago)
+  - 💳 **Casa de Tokens ligada ao Mercado Pago** (Pix e cartão). O botão "Pagar com Mercado Pago" abre a página segura do Mercado Pago; ao aprovar, os tokens entram sozinhos.
+  - Como funciona (seguro): `supabase/functions/mp-checkout` cria o pedido na tabela `pagamentos` com o preço definido no servidor e gera o link; `supabase/functions/mp-webhook` recebe o aviso do Mercado Pago e confere o pagamento direto na API dele antes de aprovar; o jogo pega os tokens pela função `resgatar_tokens()` do banco, uma única vez por pedido.
+  - O botão "Simular pagamento" ficou só para o ADM.
+  - **Configuração:** colocar o Access Token de produção do Mercado Pago em Supabase → Edge Functions → Secrets, com o nome `MP_ACCESS_TOKEN`. Sem ele, o jogo avisa que os pagamentos ainda não foram configurados.

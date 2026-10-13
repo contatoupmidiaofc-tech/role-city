@@ -36,3 +36,4 @@ jobs:
             package.json
             _redirects
             ferramentas/**
+            supabase/**
