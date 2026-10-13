@@ -403,7 +403,7 @@ table.res tr.ally td:nth-child(2){color:var(--ok)}
 #qchat input{flex:1;min-width:0;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--fg);font-size:16px}
 #qchat .chips{display:flex;flex-wrap:wrap;gap:5px}
 #qchat .chips button{background:var(--panel-2);border-radius:99px;padding:4px 10px;font-size:13px}
-#fade{position:fixed;inset:0;z-index:60;background:#0b0c10;display:grid;place-items:center;color:#fff;font-family:var(--cond);font-weight:700;font-size:22px;letter-spacing:.04em;opacity:1;transition:opacity .35s}
+#fade{position:fixed;inset:0;z-index:60;background:#0b0c10;display:grid;place-items:center;color:#fff;font-family:var(--cond);font-weight:700;font-size:22px;letter-spacing:.04em;opacity:1;transition:opacity .16s}
 #bigmap{cursor:crosshair}
 .clock-chip{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 222px);background:rgba(21,22,26,.82);border:2px solid var(--line);border-radius:99px;padding:2px 10px;font-family:var(--cond);font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;pointer-events:none}
 #wp-slot{pointer-events:auto;cursor:pointer;position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);display:flex;align-items:center;gap:8px;background:rgba(21,22,26,.86);border:2px solid #a66bff;border-radius:12px;padding:5px 10px 5px 5px}
@@ -769,7 +769,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.13-44';
+const BUILD = '2026.10.13-45';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1267,7 +1267,7 @@ const AQ = { pr: Math.min(devicePixelRatio || 1, 1.5), n: 0, t0: 0, lo: 0, hi: 0
 function autoQualityTick(now) {
   AQ.fr++;
   // sombras atualizam um quadro sim, outro não no modo automático (metade do custo, ninguém percebe)
-  renderer.shadowMap.autoUpdate = !(S && S.settings.quality === 'auto'); if (!renderer.shadowMap.autoUpdate) renderer.shadowMap.needsUpdate = AQ.fr % 2 === 0;
+  renderer.shadowMap.autoUpdate = !(S && S.settings.quality === 'auto'); if (!renderer.shadowMap.autoUpdate) renderer.shadowMap.needsUpdate = !(SH_SOFT && AQ.shOff) && AQ.fr % 2 === 0;
   if (!S || S.settings.quality !== 'auto' || document.hidden || mode === 'menu') { AQ.t0 = now; AQ.n = 0; return; }
   AQ.n++; const el = now - AQ.t0; if (el < 1000) return; const fps = AQ.n * 1000 / el; AQ.t0 = now; AQ.n = 0; AQ.fps = fps;
   const cap = Math.min(devicePixelRatio || 1, 2), set = () => { renderer.setPixelRatio(AQ.pr); resize(); };
@@ -1283,19 +1283,22 @@ function autoQualityTick(now) {
   if (panelKind === 'config' && (AQ.uiT = (AQ.uiT || 0) + 1) % 2 === 0) { const el2 = $('aq-info'); if (el2) el2.textContent = aqInfo(); }
 }
 const aqInfo = () => `Agora: ${Math.round(AQ.fps)} quadros por segundo · resolução ${AQ.pr.toFixed(1)}x · sombras ${AQ.shOff ? 'desligadas' : 'ligadas'}`;
+// three novo: em vez de desligar as sombras (o que obriga a refazer os gráficos de tudo e trava a tela), só deixa a sombra transparente e para de desenhá-la
+const SH_SOFT = (() => { try { return 'intensity' in new THREE.DirectionalLight().shadow; } catch (e) { return false; } })();
 function applyShadows(on) {
+  if (SH_SOFT && renderer.shadowMap.enabled && city.sun && city.sun.castShadow) { city.sun.shadow.intensity = on ? 1 : 0; return; }
   renderer.shadowMap.enabled = on; if (city.sun) city.sun.castShadow = on;
   [city.scene, R && R.sc].forEach(sc => sc && sc.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; }); }));
 }
 function applyQuality() {
   const q = QUALITY[S.settings.quality] || QUALITY.media;
   renderer.setPixelRatio(q.auto ? AQ.pr : Math.min(devicePixelRatio || 1, q.pr));
-  renderer.shadowMap.enabled = q.shadows && !(q.auto && AQ.shOff);
+  renderer.shadowMap.enabled = q.shadows && (SH_SOFT || !(q.auto && AQ.shOff));
   renderer.shadowMap.type = q.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   for (const L of [city.sun, R && R.sun]) if (L) { L.castShadow = q.shadows; L.shadow.mapSize.set(q.map, q.map); if (L.shadow.map) { if (L.shadow.map.depthTexture) L.shadow.map.depthTexture.dispose(); L.shadow.map.dispose(); L.shadow.map = null; } }
   const an = q.pr >= 2 ? renderer.capabilities.getMaxAnisotropy() : 4;
   [city.scene, R && R.sc].forEach(sc => sc && sc.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; if (o.isSkinnedMesh && m.map) { m.map.anisotropy = an; m.map.needsUpdate = true; } }); }));
-  if (city.sun) city.sun.castShadow = q.shadows && !(q.auto && AQ.shOff);
+  if (city.sun) { city.sun.castShadow = q.shadows && (SH_SOFT || !(q.auto && AQ.shOff)); if (SH_SOFT) city.sun.shadow.intensity = q.auto && AQ.shOff ? 0 : 1; }
   if (city.scene) { city.scene.fog.far = 210 * q.fog; }
   resize();
 }
@@ -4037,8 +4040,8 @@ function buildInterior(hid) {
   col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
   const ceil = add(new THREE.PlaneGeometry(W, D), std(0xf6f6f2, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
   const lampM = new THREE.MeshBasicMaterial({ color: 0xfff4d8 }); add(CYL(0.35, 0.35, 0.06, 16), lampM, 0, H - 0.04, 0);
-  const light = new THREE.PointLight(0xfff0d8, 1.4, Math.max(W, D) * 1.6, 1.6); light.position.set(0, H - 0.4, 0); g.add(light);
-  const amb = new THREE.HemisphereLight(0xfff6ea, 0x6a5a48, 0.35); amb.position.set(0, H, 0); g.add(amb);
+  const light = poolPoint(0xfff0d8, 1.4, Math.max(W, D) * 1.6, 1.6); light.position.set(0, H - 0.4, 0); g.add(light);
+  const amb = poolHemi(0xfff6ea, 0x6a5a48, 0.35); amb.position.set(0, H, 0); g.add(amb);
   // janelas com vista (claras de dia, escuras à noite)
   it.winM = new THREE.MeshBasicMaterial({ color: 0xbfe3ff });
   for (const x of [-W / 4, W / 4]) { add(new THREE.PlaneGeometry(1.4, 1.1), it.winM, x, 1.7, -D / 2 + 0.02); box(1.55, 0.08, 0.08, 0xffffff, x, 1.15, -D / 2 + 0.05); box(1.55, 0.08, 0.08, 0xffffff, x, 2.25, -D / 2 + 0.05); box(0.06, 1.1, 0.06, 0xffffff, x, 1.7, -D / 2 + 0.05); }
@@ -4103,7 +4106,8 @@ function exitHome() {
     city.doorAnim = { t: 0, open: true, close: true };
   });
 }
-function fadeTo(fn) { const f = $('fade'); f.textContent = ''; f.hidden = false; f.classList.add('on'); setTimeout(() => { fn(); setTimeout(() => { f.classList.remove('on'); setTimeout(() => { f.hidden = true; }, 350); }, 120); }, 380); }
+// troca de lugar (entrar/sair de casas, comércios...): na hora, sem tela preta. Roda logo depois do código atual, antes do próximo quadro.
+function fadeTo(fn) { const f = $('fade'); if (!f.textContent) { f.classList.remove('on'); f.hidden = true; } queueMicrotask(fn); }
 function updateHomeDoor(dt) {
   const A = city.doorAnim, piv = city.homeDoorPivot; if (!A || !piv) { if (A && !piv) { const cb = A.cb; city.doorAnim = null; if (cb) cb(); } return; }
   A.t += dt;
@@ -5560,7 +5564,7 @@ function jobObjsNew(m) {
   if (m.type === 'job_fogo') {
     const [x, z, h] = m.fire, fireT = canvasTex(64, 128, (g, w, hh) => { const gr = g.createLinearGradient(0, hh, 0, 0); gr.addColorStop(0, 'rgba(255,240,120,1)'); gr.addColorStop(0.4, 'rgba(255,120,20,.9)'); gr.addColorStop(1, 'rgba(255,40,0,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(w / 2, 0); g.quadraticCurveTo(w, hh * 0.6, w / 2, hh); g.quadraticCurveTo(0, hh * 0.6, w / 2, 0); g.fill(); });
     for (let i = 0; i < 14; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: fireT, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.position.set(x + rand(-5, 5), rand(2, Math.min(h, 18)), z + rand(-5, 5)); s.scale.set(3, 5, 1); s.userData.fire = rand(0, 6); city.scene.add(s); city.mObjs.push(s); }
-    const lt = new THREE.PointLight(0xff7a1a, 2, 30); lt.position.set(x, 6, z); lt.userData.fireL = true; city.scene.add(lt); city.mObjs.push(lt);
+    const lt = poolPoint(0xff7a1a, 2, 30); lt.position.set(x, 6, z); lt.userData.fireL = true; city.scene.add(lt); city.mObjs.push(lt);
   }
   if (m.type === 'job_taxi' && m.stage === 0) {
     const g = MODELS ? makeRealPed(Math.random() < 0.5) : makePed({ shirt: 0x4fc3ff, pants: 0x2f4f86, skin: pick(SKINS), hair: pick(HAIRS) }); g.position.set(m.a[0], 0, m.a[1]); g.userData.pax = true; city.scene.add(g); city.mObjs.push(g); bubble(g, 'Táxi! Táxi!', 30);
@@ -6359,7 +6363,7 @@ function buildShopInterior(d) {
   col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
   const ceil = add(new THREE.PlaneGeometry(W, D), std(0xf4f4f2, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
   for (const x of [-W / 4, W / 4]) for (const z of [-D / 4, D / 4]) add(boxGeo(1.2, 0.05, 0.3), new THREE.MeshBasicMaterial({ color: 0xfffbea }), x, H - 0.03, z);
-  const lt = new THREE.PointLight(0xfff4e0, 1.4, Math.max(W, D) * 1.8, 1.5); lt.position.set(0, H - 0.4, 0); g.add(lt); g.add(new THREE.HemisphereLight(0xffffff, 0x7a6a5a, 0.5));
+  const lt = poolPoint(0xfff4e0, 1.4, Math.max(W, D) * 1.8, 1.5); lt.position.set(0, H - 0.4, 0); g.add(lt); g.add(poolHemi(0xffffff, 0x7a6a5a, 0.5));
   box(1.6, 2.4, 0.1, 0x6b4a2f, 0, 1.2, D / 2 - 0.06); // porta
   const sign = textSprite(info.label.toUpperCase(), { bg: info.css || '#15161a', fg: '#15161a', size: 54, scale: [Math.min(W * 0.5, 7), 0.9, 1] }); sign.position.set(0, H - 0.8, -D / 2 + 0.12); g.add(sign);
   spot('Sair', 0, D / 2 - 0.9, exitShop);
@@ -6961,7 +6965,7 @@ function mansaoDecor(it, n, h) {
   for (const x of [-W / 2 + 0.1, W / 2 - 0.1]) box(0.1, 0.2, D, gold, x, 4.1, 0); for (const z of [-D / 2 + 0.1, D / 2 - 0.1]) box(W, 0.2, 0.1, gold, 0, 4.1, z);
   // lustre de cristal
   const ch = new THREE.Group(); ch.add(new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.06, 8, 32), gold)); for (let k = 0; k < 16; k++) { const a = k / 16 * TAU, c = new THREE.Mesh(SPH(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xfff6d8 })); c.position.set(Math.cos(a) * 0.9, -0.15, Math.sin(a) * 0.9); ch.add(c); } ch.children[0].rotation.x = Math.PI / 2; ch.position.set(0, 3.6, 0); it.g.add(ch);
-  const lt = new THREE.PointLight(0xffe7b0, 0.9, 26, 1.6); lt.position.set(0, 3.3, 0); it.g.add(lt);
+  const lt = poolPoint(0xffe7b0, 0.9, 26, 1.6); lt.position.set(0, 3.3, 0); it.g.add(lt);
   // elevador
   box(1.8, 2.6, 0.12, gold, W / 2 - 2.4, 1.3, D / 2 - 0.08); box(0.04, 2.5, 0.14, 0x15161a, W / 2 - 2.4, 1.3, D / 2 - 0.1);
   const el = textSprite('🛗 ELEVADOR', { bg: '#15161a', fg: '#ffd700', size: 40, scale: [1.6, 0.36, 1] }); el.position.set(W / 2 - 2.4, 2.95, D / 2 - 0.2); it.g.add(el);
@@ -8600,7 +8604,7 @@ function startCityFire(sl) {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: T, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); s.position.set(px, y, pz); s.scale.set(3.5, 5.5, 1); s.userData.ph = rand(0, 6); city.scene.add(s); F.fx.push(s); }
   F.h = b.h;
   F.smoke = []; for (let i = 0; i < 10; i++) { const m = new THREE.Mesh(SPH(1.6, 8, 6), new THREE.MeshLambertMaterial({ color: 0x3a3a3a, transparent: true, opacity: 0.55, depthWrite: false })); m.position.set(b.x + rand(-3, 3), F.h + rand(0, 14), b.z + rand(-3, 3)); m.userData.ph = rand(0, 1); city.scene.add(m); F.smoke.push(m); }
-  F.light = new THREE.PointLight(0xff7a1a, 2.2, 36); F.light.position.set(b.x, 6, b.z); city.scene.add(F.light);
+  F.light = poolPoint(0xff7a1a, 2.2, 36); F.light.position.set(b.x, 6, b.z); city.scene.add(F.light);
   F.addr = nearestAddr(b.x, b.z);
   const base = city.doors.find(d => d.kind === 'bombeiros') || { x: 0, z: 0 };
   F.path = roadPath(base.x, base.z, F.addr[0], F.addr[1]); F.base = base;
@@ -11403,7 +11407,7 @@ EXTRA_INT.brega = (h) => {
   for (let i = 0; i < 4; i++) { const z = -2 + i * 1.6; box(0.9, 0.42, 1.4, 0xa62bd9, -W / 2 + 0.7, 0.21, z); box(0.25, 0.7, 1.4, 0xa62bd9, -W / 2 + 0.2, 0.55, z); shopSeat(h, -W / 2 + 0.8, z, Math.PI / 2, '🛋️ Sentar no sofá'); }
   spot('💃 Dançar na pista', 0, 0.5, () => { P.emote = { id: 'dance', t: 30 }; toast('💃 Mandando ver no brega!', 'pink'); });
   bregaShow(h);
-  const lt = new THREE.PointLight(0xff2a8a, 1.6, 18); lt.position.set(0, 3, -1); it.g.add(lt); it.disco = lt;
+  const lt = poolPoint(0xff2a8a, 1.6, 18); lt.position.set(0, 3, -1); it.g.add(lt); it.disco = lt;
 };
 EXTRA_INT.emprestimo = (h) => {
   cleanShopSeats(); const { box, add, D, W } = h;
@@ -12677,13 +12681,115 @@ function atlasTick(cam, near, scene) {
     const tex = rpmAtlasTex(j[0], j[1], j[2], j[3], j[4], false); m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; } ATLASQ.done++;
   }
 }
+
+/* luzes reservadas: casas, comércios e incêndios usam luzes que já existem na cidade (desligadas quando livres).
+   Assim o número de luzes nunca muda e o jogo não precisa recompilar os gráficos de tudo ao entrar/sair (era a tela preta). */
+const LPOOL = { p: [], h: [], sc: null };
+function lightPoolInit(sc) {
+  LPOOL.sc = sc; LPOOL.p = []; LPOOL.h = [];
+  for (let i = 0; i < 3; i++) { const l = new THREE.PointLight(0xffffff, 0, 1, 2); l.userData.pool = 1; l.userData.free = true; l.position.set(0, -50, 0); sc.add(l); LPOOL.p.push(l); }
+  const hl = new THREE.HemisphereLight(0xffffff, 0x000000, 0); hl.userData.pool = 1; hl.userData.free = true; sc.add(hl); LPOOL.h.push(hl);
+}
+function poolPoint(color, intensity, distance = 0, decay = 2) {
+  const l = LPOOL.p.find(x => x.userData.free && x.parent === LPOOL.sc && LPOOL.sc === city.scene);
+  if (!l) return new THREE.PointLight(color, intensity, distance, decay);
+  l.userData.free = false; l.color.set(color); l.intensity = intensity; l.distance = distance; l.decay = decay; l.position.set(0, 0, 0); l.visible = true; return l;
+}
+function poolHemi(sky, ground, intensity) {
+  const l = LPOOL.h.find(x => x.userData.free && x.parent === LPOOL.sc && LPOOL.sc === city.scene);
+  if (!l) return new THREE.HemisphereLight(sky, ground, intensity);
+  l.userData.free = false; l.color.set(sky); l.groundColor.set(ground); l.intensity = intensity; l.position.set(0, 1, 0); l.visible = true; return l;
+}
+function lightPoolTick() {
+  const sc = LPOOL.sc; if (!sc || sc !== city.scene) return;
+  for (const l of LPOOL.p.concat(LPOOL.h)) {
+    if (!l.userData.free) { let o = l; while (o && o !== sc) o = o.parent; if (o) continue; l.userData.free = true; } // saiu da cidade (interior desmontado, fogo apagado): volta para a reserva
+    if (l.parent !== sc) sc.add(l);
+    l.intensity = 0; l.visible = true;
+  }
+}
+/* PORTAS BEM VISÍVEIS: toda casa e todo comércio ganha uma porta colorida com moldura branca e uma luzinha em cima,
+   para dar para enxergar de longe onde se entra (antes a porta era marrom-escura ou nem existia, só a vitrine). */
+const DMK = { sig: '', meshes: [], t: 0 };
+const DOOR_PAINT = [0xd63a2f, 0x1e6fd9, 0x1f9d55, 0x8e44ad, 0xe67e22, 0x00897b, 0xc2185b, 0x2c3e91];
+const DOOR_SKIP = new Set(['casa', 'mansao', 'missoes', 'elevadorCasa', 'hangar']);
+function doorMarkSpecs() {
+  const L = [];
+  // prédios da cidade (lojas, órgãos públicos, pontos comerciais): acha a parede mais perto do anel da porta
+  for (const d of city.doors) {
+    if (d.inside || DOOR_SKIP.has(d.kind) || d.y != null) continue;
+    let best = null, bd = 4.5;
+    for (const c of city.colliders) {
+      if (c.inside || c.home || c.x1 - c.x0 < 3 || c.z1 - c.z0 < 3) continue;
+      const qx = clamp(d.x, c.x0, c.x1), qz = clamp(d.z, c.z0, c.z1), dist = Math.hypot(d.x - qx, d.z - qz);
+      if (dist > 0.01 && dist < bd) { bd = dist; best = c; }
+    }
+    if (!best) continue;
+    const c = best, out = [[d.x - c.x1, 1, 0], [c.x0 - d.x, -1, 0], [d.z - c.z1, 0, 1], [c.z0 - d.z, 0, -1]].sort((a, b) => b[0] - a[0])[0];
+    const nx = out[1], nz = out[2], fx = nx ? (nx > 0 ? c.x1 : c.x0) : clamp(d.x, c.x0 + 1, c.x1 - 1), fz = nz ? (nz > 0 ? c.z1 : c.z0) : clamp(d.z, c.z0 + 1, c.z1 - 1);
+    const small = d.kind === 'biz';
+    L.push({ x: fx, z: fz, nx, nz, y: groundH(fx + nx * 0.5, fz + nz * 0.5), w: small ? 1.5 : 1.8, h: small ? 2.5 : 2.8, col: 0x1b1d22 }); // porta escura de vidro: contrasta com qualquer fachada colorida
+  }
+  // casas: vila, condomínios e morro (cada uma com uma cor de porta)
+  for (const k in city.casas || {}) {
+    const c = city.casas[k]; if (c.morro) continue;
+    const back = c.mans ? 0.2 : 0.02; // o ponto da casa fica um pouco à frente da parede
+    L.push({ x: c.x - c.fx * back, z: c.z - c.fz * back, nx: c.fx, nz: c.fz, y: c.y || 0, w: c.mans ? 1.5 : 1.2, h: c.mans ? 2.6 : 2.3, col: DOOR_PAINT[Math.floor(hash01(k + 'p') * DOOR_PAINT.length)] });
+  }
+  (city.mWalls || []).forEach((w, i) => {
+    const px = w.wx - w.nx * 0.03 + (w.nz ? 0.8 : 0), pz = w.wz - w.nz * 0.03 + (w.nx ? 0.8 : 0);
+    L.push({ x: px, z: pz, nx: w.nx, nz: w.nz, y: w.y, w: 1.0, h: 2.1, col: DOOR_PAINT[Math.floor(hash01(cityId() + 'm' + i + 'p') * DOOR_PAINT.length)] });
+  });
+  return L;
+}
+function doorMarksBuild() {
+  const sc = city.scene; if (!sc) return;
+  for (const m of DMK.meshes) { if (m.parent) m.parent.remove(m); m.dispose && m.dispose(); }
+  DMK.meshes = [];
+  const L = doorMarkSpecs(); if (!L.length) return;
+  if (!DMK.mat) DMK.mat = { frame: new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x3a3a3a }), panel: new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x111111 }), lamp: new THREE.MeshBasicMaterial({ color: 0xffe08a }), geo: boxGeo(1, 1, 1) };
+  const fr = new THREE.InstancedMesh(DMK.mat.geo, DMK.mat.frame, L.length), pn = new THREE.InstancedMesh(DMK.mat.geo, DMK.mat.panel, L.length), lp = new THREE.InstancedMesh(DMK.mat.geo, DMK.mat.lamp, L.length);
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), P3 = new THREE.Vector3(), S3 = new THREE.Vector3(), C = new THREE.Color();
+  L.forEach((d, i) => {
+    Q.setFromAxisAngle(Y, Math.atan2(d.nx, d.nz)); // caixa com o "z" virado para fora da parede
+    fr.setMatrixAt(i, M.compose(P3.set(d.x + d.nx * 0.1, d.y + (d.h + 0.18) / 2, d.z + d.nz * 0.1), Q, S3.set(d.w + 0.36, d.h + 0.18, 0.2)));
+    pn.setMatrixAt(i, M.compose(P3.set(d.x + d.nx * 0.22, d.y + d.h / 2, d.z + d.nz * 0.22), Q, S3.set(d.w, d.h - 0.02, 0.06)));
+    pn.setColorAt(i, C.setHex(d.col));
+    lp.setMatrixAt(i, M.compose(P3.set(d.x + d.nx * 0.28, d.y + d.h + 0.42, d.z + d.nz * 0.28), Q, S3.set(0.5, 0.16, 0.16)));
+  });
+  for (const m of [fr, pn, lp]) { m.receiveShadow = m !== lp; m.userData.doorMark = 1; m.computeBoundingSphere(); sc.add(m); DMK.meshes.push(m); }
+}
+// confere de vez em quando se a cidade mudou (troca de cidade, morro carregado em partes) e refaz as portas
+function doorMarksTick(now) {
+  if (now - DMK.t < 700 || !city.scene) return; DMK.t = now;
+  const sig = cityId() + '|' + city.doors.filter(d => !d.inside).length + '|' + Object.keys(city.casas || {}).length + '|' + (city.mWalls || []).length + '|' + city.colliders.filter(c => !c.inside).length;
+  if (sig === DMK.sig && DMK.meshes.length && DMK.meshes[0].parent === city.scene) return;
+  DMK.sig = sig; try { doorMarksBuild(); } catch (e) { console.warn('portas', e); }
+}
 const _safeRender2 = safeRender;
-safeRender = function (sc, cam) { try { if (ATLASQ.flush && sc === city.scene) { ATLASQ.flush = false; sc.updateMatrixWorld(); atlasTick(cam, 20, sc); } else atlasTick(cam, 0, sc); } catch (e) { } return _safeRender2(sc, cam); };
+safeRender = function (sc, cam) { try { lightPoolTick(); if (sc === city.scene) doorMarksTick(performance.now()); } catch (e) { } try { if (ATLASQ.flush && sc === city.scene) { ATLASQ.flush = false; sc.updateMatrixWorld(); atlasTick(cam, 20, sc); } else atlasTick(cam, 0, sc); } catch (e) { } return _safeRender2(sc, cam); };
 const _buildCity1 = buildCity;
-buildCity = function () { try { batchClear(); } catch (e) { } const r = _buildCity1.apply(this, arguments); clearTimeout(BATCH.t); BATCH.t = setTimeout(() => { try { batchBuild(); } catch (e) { console.warn('blocos', e); } }, 5500); clearTimeout(WARM.t); warmShaders(); WARM.t = setTimeout(warmShaders, 2500); return r; };
+buildCity = function () { try { batchClear(); } catch (e) { } const r = _buildCity1.apply(this, arguments); clearTimeout(BATCH.t); BATCH.t = setTimeout(() => { try { batchBuild(); } catch (e) { console.warn('blocos', e); } }, 5500); try { lightPoolInit(city.scene); } catch (e) { } clearTimeout(WARM.t); warmShaders(); WARM.t = setTimeout(() => { warmShaders(); const tryIn = (n) => { if (!warmInteriors() && n > 0) WARM.t2 = setTimeout(() => tryIn(n - 1), 3000); }; clearTimeout(WARM.t2); WARM.t2 = setTimeout(() => tryIn(20), 1500); }, 2500); return r; };
 /* pré-aquecimento: prepara os "programas de desenho" de tudo que existe na cidade (inclusive o que ainda não apareceu na tela)
    em segundo plano, para não engasgar na primeira vez que um carro, interior ou efeito aparece. Só na versão nova do motor. */
 const WARM = { t: 0, ms: 0, n: 0 }; // logo depois de montar a cidade (antes do 1º quadro) e de novo 2,5 s depois (comércios, morros e figurantes que chegam depois)
+/* prepara antes os gráficos de dentro das casas e das lojas (sem mostrar nada), para a primeira entrada já ser na hora */
+function warmInteriors() {
+  if (WARM.inDone === city.scene || !city.scene || mode !== 'city' || city.interior || city.shopIn || city.inCine || !renderer.compile) return false;
+  if (!(parseInt(THREE.REVISION) >= 158)) { WARM.inDone = city.scene; return true; } // three antigo: não dá para preparar fora da tela
+  WARM.inDone = city.scene; const t0 = performance.now(), n0 = renderer.info.programs.length, par = renderer.compileAsync && renderer.extensions.has('KHR_parallel_shader_compile');
+  // uma sala por vez: monta fora da cidade, compila com as luzes da cidade e devolve as luzes reservadas antes da próxima
+  const one = mk => { let objs = []; try { objs = mk(); } catch (e) { } city.colliders = city.colliders.filter(c => !c.inside && !c.shop); if (!objs.length) return;
+    const hold = new THREE.Group(); for (const o of objs) hold.add(o);
+    try { if (par) renderer.compileAsync(hold, camera, city.scene).catch(() => { }); else renderer.compile(hold, camera, city.scene); } catch (e) { }
+    hold.traverse(o => { if (o.isLight && o.userData.pool) o.userData.free = true; });
+    for (const l of LPOOL.p.concat(LPOOL.h)) if (l.userData.free && l.parent !== city.scene) { city.scene.add(l); l.intensity = 0; }
+    for (const o of objs) hold.remove(o); };
+  one(() => [buildInterior('casa').g]);
+  one(() => { const d = city.doors.find(x => !x.inside && x.kind === 'roupas') || city.doors.find(x => !x.inside && x.kind === 'skate'); if (!d) return []; const it = buildShopInterior(d); return [it.g, ...(it.npcs || [])]; });
+  WARM.inMs = Math.round(performance.now() - t0); WARM.inN = renderer.info.programs.length - n0;
+  return true;
+}
 function warmShaders() {
   // só quando o aparelho compila em paralelo (KHR_parallel_shader_compile); sem isso, aquecer tudo de uma vez travaria a tela
   if (!renderer.compileAsync || !city.scene || mode !== 'city' || !renderer.extensions.has('KHR_parallel_shader_compile')) return; const t0 = performance.now(), n0 = renderer.info.programs.length;

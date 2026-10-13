@@ -452,3 +452,8 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
   - 🌐 **Página de apresentação:** `apresentacao.html`, com logo animada, recursos, imagens do jogo, como instalar e botão "Jogar agora". Use como link da bio.
   - 🖼️ Prévia ao compartilhar o link (WhatsApp, Instagram etc.): `marca/og.jpg`. Imagens do jogo em `marca/print-*.jpg`.
   - 📣 Plano de Instagram (perfil, primeira semana, legendas, roteiros de Reels, hashtags): `divulgacao/instagram.md`.
+
+### Build 2026.10.13-45 (entrar sem tela preta e portas visíveis)
+  - 🚪 **Entrar e sair de casas e comércios na hora**, sem tela preta. A troca de lugar acontece no mesmo instante do toque.
+  - ⚡ A causa da demora: a qualidade automática desligava e religava as sombras, e cada troca obrigava o celular a refazer os gráficos de tudo. Agora a sombra só fica transparente (nada é refeito). As luzes de dentro das casas e lojas também usam luzes que já existem na cidade, então entrar não muda mais a contagem de luzes.
+  - 🎨 **Portas bem visíveis:** toda casa (vila, condomínios e morro) ganhou porta colorida com moldura branca e uma luzinha em cima. Lojas, prédios e pontos comerciais ganharam porta escura de vidro com moldura branca, que contrasta com qualquer fachada.
