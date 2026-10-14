@@ -529,3 +529,22 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
   - 📢 **Denúncia anônima:** enquanto o traficante carrega a encomenda, os policiais de serviço recebem uma denúncia com a área aproximada (±25 m) e um botão "Ir".
     - Quando uma viatura real passa a menos de 60 m, o traficante recebe o aviso de "Contenção".
     - Prender o traficante denunciado dá ao policial um bônus de apreensão ($ 120 × cargo).
+
+### Build 2026.10.14-54 (Profissões, etapa 5: Empresário, Grafite, Gari e Instrutor com jogador real)
+  - 🏪 **Empresário:** na tela do próprio comércio, o dono contrata jogadores que estão perto (até 40 m), como Atendente ou Segurança, com salário por minuto.
+    - A pessoa contratada aceita pela Central e bate o ponto ficando no comércio ou na porta. O salário sai do caixa do dono a cada minuto trabalhado.
+    - Com funcionário trabalhando, cada venda rende mais para o dono (+10% com Atendente, +5% com Segurança), e quem trabalha leva 5% de comissão.
+    - O dono pode desligar a pessoa, e ela pode pedir demissão.
+    - **Promoção relâmpago** ($ 150): todos na cidade são avisados e o cardápio fica 30% mais barato por 5 minutos.
+  - 🎨 **Grafite que fica na parede:** qualquer jogador encomenda um grafite pela Central (nome ou marca, duas cores e estilo: Bolha, Respingos, Estrelas ou Raios) para a parede mais perto.
+    - O grafiteiro de serviço aceita, vai até a parede e pinta. A arte fica **7 dias** para todo mundo ver, com a assinatura do artista, e cobre o desenho antigo da parede.
+    - A encomenda custa a partir de $ 100, mais a avaliação.
+    - O grafiteiro também tem a própria tag e um **modo pichação**: pinta qualquer parede, mas ganha ★ de procurado e a pichação pode ser apagada.
+    - A Central mostra a galeria da cidade com GPS até cada arte.
+  - 🗑️ **Gari:** festa, incêndio apagado e movimento na praça deixam sacos de lixo na rua, visíveis para todos.
+    - Os garis de serviço são avisados e veem a sujeira na Central. Cada saco recolhido paga, e em dupla (outro gari a até 25 m) paga 30% a mais.
+    - Os garis também limpam pichações: a Prefeitura paga e a pichação some para todos.
+  - 🛹 **Instrutor:** quem quer aprender pede "Aula de skate" na Central. O instrutor vai até a pessoa e a aula começa.
+    - O instrutor pede 4 manobras e o aluno vê na tela qual fazer. Cada manobra certa avança.
+    - No fim o aluno paga a aula, vira **Skatista Formado(a)** (10% de desconto na Skate Shop) e avalia. O instrutor recebe a aula, a taxa e a avaliação.
+  - Banco: nova tabela `grafites` (posição, texto, cores, artista, validade de 7 dias). Qualquer pessoa vê; só quem pintou cria; quem pintou ou qualquer jogador (no caso de pichação) pode apagar.

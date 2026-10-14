@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.14-53';
+const BUILD = '2026.10.14-54';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -4410,7 +4410,7 @@ function updateCity(dt, t) {
   }
 
   // interação
-  if (!S.mission || S.mission.type !== 'job_graf') P.spray = false;
+  if ((!S.mission || S.mission.type !== 'job_graf') && !(typeof WORK !== 'undefined' && WORK.j)) P.spray = false;
   updateMission(dt, t);
   updateNav(dt);
   let near = null, nd = 1e9;
@@ -4434,6 +4434,7 @@ function updateCity(dt, t) {
   if (!near && S.gang && !P.drive && !P.ride && (city.paintCd = (city.paintCd || 0) - dt) <= 0) { const w = nearWall(); if (w) near = { type: 'paint', w }; }
   if (S.shift === 'policial' && !P.drive && !P.ride) (city.policeLot || []).forEach((L, i) => { if (!L.m.visible) return; const k = Math.hypot(L.x - P.x, L.z - P.z); if (k < 3.2 && k < nd) { nd = k; near = { type: 'lotveh', i }; } });
   { const xn = extraNear(near, nd); if (xn) { near = xn; nd = xn.nd; } }
+  { const s5 = s5Near(); if (s5) { near = s5; nd = s5.nd; } }
   if (P.drive) near = { type: 'exitveh' };
   if (P.ride) near = { type: 'rideexit' };
   const pr = $('prompt');
@@ -4849,6 +4850,7 @@ function playerFell(cause) {
   if (m.lives != null) { m.lives--; if (m.lives <= 0) return failMission(cause === 'car' ? 'atropelado vezes demais.' : 'caiu vezes demais.'); toast(`Caiu! Restam ${m.lives} ${m.lives === 1 ? 'vida' : 'vidas'} na missão.`, 'bad'); renderMissionBox(); }
 }
 function missionEvent(ev, arg) {
+  if (ev === 'trick') try { aulaTrick(arg); } catch (e) { }
   const m = S.mission; if (!m) return;
   if (m.type === 'aula' && ev === 'trick') {
     if (arg === m.seq[m.got]) { m.got++; sfx('coin'); if (m.got >= m.seq.length) return completeMission(); if (city.student) bubble(city.student.g, `Agora um ${TRK[m.seq[m.got]].name}!`, 4); renderMissionBox(); }
@@ -5617,7 +5619,7 @@ function updateJobNew(m, dt, t) {
         if (Math.random() < dt * 6) sfx('spray');
       }
       pr.textContent = `Segure ${key} · Apagar o fogo ${Math.round(Math.min(1, m.p) * 100)}%${m.big ? ` · ${m.crew ? m.crew + 1 : 1} na mangueira` : ''}`;
-      if (m.p >= 1) { if (m.cc) { ccSend0('fogo_fim', { id: m.cc }); fireDoneCC(m.cc); } toast(m.big ? '🚒 Incêndio controlado pela equipe!' : 'Fogo apagado! O prédio foi salvo.', 'good'); return completeMission(); }
+      if (m.p >= 1) { if (m.cc) { ccSend0('fogo_fim', { id: m.cc }); fireDoneCC(m.cc); sujNew(m.fire[0] + 5, m.fire[1] + 5, 'Restos do incêndio'); } toast(m.big ? '🚒 Incêndio controlado pela equipe!' : 'Fogo apagado! O prédio foi salvo.', 'good'); return completeMission(); }
     }
   } else if (m.type === 'job_pm') {
     if (m.got < m.pts.length) { if (near < 4) { m.got++; sfx('coin'); renderMissionBox(); if (m.got >= m.pts.length) { toast('Central: suspeito avistado! Vá até o local e aborde.', 'pink'); rebuildMissionObjs(); } } }
@@ -6530,6 +6532,7 @@ function comBlock(sc, cx, cz, addBuilding) {
   });
 }
 async function loadBiz() {
+  SUJ.spots = {}; loadGrafites();
   city.biz = {}; if (!NET.sb || !NET.user) return; const cid = cityId();
   try { const { data, error } = await NET.sb.from('comercios').select('id,dono,dono_nome,nome,tipo,slot').eq('cidade', cid); if (error || !data || cityId() !== cid) return; for (const r of data) setBiz(r); } catch (e) { }
 }
@@ -6558,7 +6561,7 @@ function bizDecor(it, r, helpers) {
   const owner = textSprite(`Dono: ${r.dono_nome}`, { bg: '#15161a', fg: '#ffcf3a', size: 36, scale: [3, 0.5, 1] }); owner.position.set(-W / 2 + 2.4, 1.9, -D / 2 + 0.15); it.g.add(owner);
 }
 function buyBiz(slot, idx) {
-  const r = city.biz && city.biz[slot]; if (!r) return; const T = BIZ_TYPES[r.tipo], [name, price, hp, special] = T.menu[+idx];
+  const r = city.biz && city.biz[slot]; if (!r) return; const T = BIZ_TYPES[r.tipo], [name, price0, hp, special] = T.menu[+idx], price = bizPromoOn(r.id) ? Math.round(price0 * 0.7) : price0;
   if (special === 'roupas') { openPanel('shop:roupas'); return; }
   if (S.coins < price) return toast(`Custa $ ${price}.`, 'bad');
   S.coins -= price; persist(); updateHUD(); sfx('coin');
@@ -6566,9 +6569,9 @@ function buyBiz(slot, idx) {
   toast(`${name}${hp && r.tipo === 'farmacia' ? ' · guardado na bolsa (botão 💊 para tomar)' : ''}`, 'good');
   if (special === 'visual') openPanel('perfil', 'aparencia');
   if (special === 'lavar' && city.myVeh) toast('Veículo limpinho e revisado!', 'pink');
-  if (NET.ch && NET.online && NET.user && r.dono !== NET.user.id) NET.ch.send({ type: 'broadcast', event: 'venda', payload: { owner: r.dono, amt: Math.round(price * 0.6), item: name, buyer: S.name, loja: r.nome } });
+  if (NET.ch && NET.online && NET.user && r.dono !== NET.user.id) NET.ch.send({ type: 'broadcast', event: 'venda', payload: { owner: r.dono, biz: r.id, price, amt: Math.round(price * 0.6), item: name, buyer: S.name, loja: r.nome } });
 }
-function onSale(d) { if (!NET.user || d.owner !== NET.user.id) return; S.coins += d.amt; persist(); updateHUD(); toast(`💰 ${d.buyer} comprou ${d.item} no ${d.loja}: +$ ${d.amt}`, 'good'); sfx('coin'); }
+function onSale(d) { if (!NET.user || d.owner !== NET.user.id) return; const bn = d.biz ? empSaleBonus(d) : 0; if (bn) { d.amt += bn; d.item += ` (equipe: +$ ${bn})`; } S.coins += d.amt; persist(); updateHUD(); toast(`💰 ${d.buyer} comprou ${d.item} no ${d.loja}: +$ ${d.amt}`, 'good'); sfx('coin'); }
 async function openBiz() {
   const name = (($('biz-name') || {}).value || '').trim().slice(0, 30), tipo = city.bizTipo || 'lanchonete', slot = city.bizSlot;
   if (!certOk('comerciante')) return startJobTest('comerciante');
@@ -14387,8 +14390,9 @@ const PANELS = {
   biz(slot) {
     const r = (city.biz || {})[slot]; if (!r) return { title: 'Comércio', html: '<p class="muted">Este comércio fechou.</p>' };
     const T = BIZ_TYPES[r.tipo] || BIZ_TYPES.loja, me = NET.user && r.dono === NET.user.id;
-    let html = `<p class="muted">${T.i} ${esc(T.n)} de <b>${esc(r.dono_nome)}</b> · Alvará da Prefeitura em dia ✅ · Sua vida: ${Math.round(P.hp)}%</p><div class="grid-items">${T.menu.map(([n, p, hp, sp], i) => `<div class="item-card"><div class="swatch ico" style="--sw:#${T.c.toString(16).padStart(6, '0')}">${T.i}</div><div class="item-info"><b>${esc(n)}</b><small>${hp ? `Recupera ${hp}% de vida` : sp === 'visual' ? 'Muda cabelo, corpo e estilo' : sp === 'roupas' ? 'Abre a vitrine de roupas' : 'Serviço'}</small></div><div class="item-actions"><button class="btn sm" data-act="biz-buy" data-slot="${slot}" data-i="${i}" ${S.coins < p ? 'disabled' : ''}>${p ? '$ ' + p : 'Ver'}</button></div></div>`).join('')}</div>`;
-    if (me) html += `<div class="card"><h4>Este comércio é seu</h4><button class="btn" data-act="biz-col" data-id="${r.id}">Receber faturamento</button></div>`;
+    let html = `<p class="muted">${T.i} ${esc(T.n)} de <b>${esc(r.dono_nome)}</b> · Alvará da Prefeitura em dia ✅ · Sua vida: ${Math.round(P.hp)}%</p><div class="grid-items">${T.menu.map(([n, p, hp, sp], i) => `<div class="item-card"><div class="swatch ico" style="--sw:#${T.c.toString(16).padStart(6, '0')}">${T.i}</div><div class="item-info"><b>${esc(n)}</b><small>${hp ? `Recupera ${hp}% de vida` : sp === 'visual' ? 'Muda cabelo, corpo e estilo' : sp === 'roupas' ? 'Abre a vitrine de roupas' : 'Serviço'}</small></div><div class="item-actions"><button class="btn sm" data-act="biz-buy" data-slot="${slot}" data-i="${i}" ${S.coins < (bizPromoOn(r.id) ? Math.round(p * 0.7) : p) ? 'disabled' : ''}>${p ? (bizPromoOn(r.id) ? `⚡ $ ${Math.round(p * 0.7)}` : '$ ' + p) : 'Ver'}</button></div></div>`).join('')}</div>`;
+    if (bizPromoOn(r.id)) html = `<div class="note">⚡ Promoção relâmpago: 30% de desconto por mais ${Math.ceil((EMP.promo[r.id] - Date.now()) / 60000)} min.</div>` + html;
+    if (me) html += `<div class="card"><h4>Este comércio é seu</h4><button class="btn" data-act="biz-col" data-id="${r.id}">Receber faturamento</button></div>` + (NET.online ? empBizHtml(r) : '');
     return { title: `${T.i} ${r.nome}`, html };
   },
   igreja() {
@@ -14635,7 +14639,7 @@ function act(a, ds, el) {
     case 'open-config': openPanel('config'); break;
     case 'phone-toggle': togglePhone(); break;
     case 'buy': {
-      const it = ITEM[ds.id], cur = ds.cur, price = cur === 'c' ? it.c : it.t;
+      const it = ITEM[ds.id], cur = ds.cur, sk5 = cur === 'c' && S.formado && city.lastShop === 'skate', price = cur === 'c' ? (sk5 ? Math.round(it.c * 0.9) : it.c) : it.t; if (sk5) toast('🎓 Desconto de Skatista Formado: 10%.', 'pink');
       if (cur === 'c' && S.coins < price) return toast('Grana insuficiente. Faça missões ou corridas.', 'bad');
       if (cur === 't' && S.tokens < price) { toast('Tokens insuficientes.', 'bad'); city.checkout = null; return openPanel('tokens'); }
       if (cur === 'c') S.coins -= price; else S.tokens -= price;
@@ -14735,7 +14739,7 @@ function act(a, ds, el) {
     case 'pedido-nao': answerProposal(false); break;
     case 'divorcio': divorce(); break;
     case 'amor-gps': spouseGps(); break;
-    case 'festa': if (S.coins >= 100) { S.coins -= 100; persist(); updateHUD(); celebrate(); toast('🎆 Festa!', 'pink'); renderPanel(); } break;
+    case 'festa': if (S.coins >= 100) { S.coins -= 100; persist(); updateHUD(); celebrate(); sujNew(P.x + 2, P.z + 2, 'Fim de festa'); toast('🎆 Festa!', 'pink'); renderPanel(); } break;
     case 'med-buy': medBuy(ds.k); break; case 'med-take': medTake(ds.k); break; case 'open-meds': openPanel('remedios'); break; case 'consulta': { P.hp = 100; renderHp(); S.consultaT = Date.now() + 3 * 60000; persist(); toast('Consulta feita! Vida 100%.', 'good'); sfx('level'); renderPanel(); break; }
     case 'open-agencia': openPanel('agencia'); break;
     case 'radio': toggleRadio(); break;
@@ -14936,6 +14940,8 @@ const CC_SVC = {
   taxi: { n: 'Táxi', tel: 'Rolê Táxi', i: '🚕', jobs: ['taxista'], pay: 50, act: true, dest: true, why: ['Preciso de uma corrida'] },
   entrega: { n: 'Entrega', tel: 'RolêFood', i: '🛵', jobs: ['entregador', 'motoboy'], pay: 60, act: true, menu: true, why: ['Quero um lanche aqui'] },
   advogado: { n: 'Advogado', tel: 'OAB', i: '⚖️', jobs: ['advogado'], pay: 120, why: ['Preciso de defesa', 'Ajuda com uma multa'] },
+  grafite: { n: 'Grafite', tel: 'Galeria', i: '🎨', jobs: ['grafiteiro'], pay: 80, act: true, art: true, why: ['Quero um grafite na parede'] },
+  aula: { n: 'Aula de skate', tel: 'Escolinha', i: '🛹', jobs: ['instrutor'], pay: 80, act: true, why: ['Quero aprender manobras'] },
 };
 // grupos do rádio: quem trabalha junto ouve junto
 const CC_RADIO = { policial: 'seg', bombeiro: 'seg', socorrista: 'saude', medico: 'saude', taxista: 'transp', entregador: 'transp', motoboy: 'transp', advogado: 'just', catador: 'cidade', grafiteiro: 'cidade', instrutor: 'cidade', traficante: 'fac' };
@@ -15003,6 +15009,7 @@ function ccTake(id) {
   const p = ccPeer(c.from); closePanel();
   if (c.svc === 'consulta' && p && p.t && p.t.rm === 'hosp' && !city.hospIn) { toast(`Indo para a enfermaria atender ${c.name}…`, 'good'); return goEnfermaria(); }
   if (c.fire) return fireJoin(c, true);
+  if (c.wall) { setGps(c.wall.x, c.wall.z, `🎨 Parede de ${c.name}`); return toast(`🎨 Encomenda de ${c.name}: "${c.art.texto}". O GPS leva até a parede escolhida.`, 'good'); }
   setGps(p ? p.x : c.x, p ? p.z : c.z, `${CC_SVC[c.svc].i} ${c.name}`); toast(`A caminho de ${c.name}. O GPS aponta para a pessoa.${c.sus ? ` Suspeito: ${c.sus.name}.` : ''}`, 'good');
 }
 function ccDrop(msg) { if (CC.take) { CC.take = null; clearGps(); ccMeter(''); if (msg) toast(msg, 'pink'); ccRefresh(); } }
@@ -15055,7 +15062,8 @@ function ccPhaseTick(T, p, now) {
       if (!aboard && !T.arr) { ccMeter(''); T.ph = 'buscar'; toast('O passageiro desceu antes do destino.', 'pink'); }
       if (!T.arr && Math.hypot(T.c.dest.x - P.x, T.c.dest.z - P.z) < 14) { T.arr = now; T.job = S.shift; ccMeter(''); clearGps(); ccSend0('taxi_fim', { to: T.c.from, from: ccMe(), fare: T.fare, l: T.c.dest.l }); ccSend0('cc_arrive', { id: T.id, to: T.c.from }); toast(`🏁 Chegamos em ${T.c.dest.l}. Corrida: $ ${fmt(T.fare)}.`, 'good'); }
     }
-  } else if (svc === 'entrega') {
+  } else if (svc === 'aula') aulaPhase(T, p, now);
+  else if (svc === 'entrega') {
     T.ph = T.ph || 'loja';
     if (T.ph === 'loja') {
       if (!T.k) { T.k = (city.kiosks || []).slice().sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z))[0] || { x: P.x, z: P.z, label: 'lanchonete' }; setGps(T.k.x, T.k.z, `🛵 Retirar: ${T.c.item ? T.c.item.n : 'pedido'}`); toast(`🛵 Retire o pedido (${T.c.item ? T.c.item.n : 'lanche'}) na ${T.k.label || 'lanchonete'}.`, 'pink'); }
@@ -15147,6 +15155,241 @@ function correTick(now) {
   if (pol && (!CC.cont || now - CC.cont > 15000)) { CC.cont = now; toast('🚨 Contenção: viatura por perto! Disfarça ou corre.', 'bad'); tone('square', 600, 900, 0.08, 0.05); }
 }
 function onDenuncia(d) { if (S.shift !== 'policial') return; const old = CC.den2 && CC.den2[d.id]; (CC.den2 = CC.den2 || {})[d.id] = d; if (!old || d.t - old.t > 60000) { toast('📢 Denúncia anônima: movimentação suspeita na área. Veja em 📞 Chamados.', 'pink'); sfx('ui'); } ccRefresh(); }
+/* ---- etapa 5: Empresário com funcionários, grafite que fica na parede, Gari e Instrutor com jogador real ---- */
+const s5Send = (k, d) => ccSend0('s5', Object.assign({ k }, d));
+const s5Hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+/* trabalho de segurar Ação perto de um ponto (pintar, limpar): para se a pessoa se afastar */
+const WORK = { j: null };
+function workStart(label, dur, x, z, done, spray) { WORK.j = { label, dur, x, z, t0: Date.now(), done, spray }; P.v = 0; if (spray) { P.spray = true; P.h = Math.atan2(x - P.x, z - P.z); } }
+function workTick(now) {
+  const j = WORK.j; if (!j) return;
+  if (Math.hypot(j.x - P.x, j.z - P.z) > 4 || P.drive) { WORK.j = null; P.spray = false; ccMeter(''); return toast('Você se afastou: o trabalho parou.', 'pink'); }
+  const p = (now - j.t0) / j.dur; if (j.spray) { P.spray = true; if (Math.random() < 0.5) sfx('spray'); }
+  if (p >= 1) { WORK.j = null; P.spray = false; ccMeter(''); j.done(); } else ccMeter(`${j.label} ${Math.round(p * 100)}%`);
+}
+
+/* ===== Empresário: contrata jogadores, paga salário pelo caixa, promoção relâmpago ===== */
+const EMP_ROLES = { atendente: { n: 'Atendente', i: '🧑‍💼', b: 0.10 }, seguranca: { n: 'Segurança', i: '🕶️', b: 0.05 } };
+const EMP = { staff: {}, job: null, offer: null, promo: {} };
+const myBizHere = () => Object.values(city.biz || {}).filter(r => NET.user && r.dono === NET.user.id);
+const empOn = (s, now = Date.now()) => s && now - (s.last || 0) < 75000;
+function empHire(bizId) {
+  const r = myBizHere().find(b => b.id === bizId); if (!r) return;
+  const to = ($('emp-who') || {}).value, role = ($('emp-role') || {}).value || 'atendente', sal = clamp(Math.round(+($('emp-sal') || {}).value || 30), 5, 500);
+  if (!to) return toast('Chegue perto (até 40 m) de quem você quer contratar.', 'bad');
+  if (Object.keys(EMP.staff).length >= 4) return toast('Máximo de 4 funcionários.', 'bad');
+  if (EMP.staff[to]) return toast('Essa pessoa já trabalha para você.', 'bad');
+  s5Send('emp', { op: 'oferta', to, from: ccMe(), oName: S.name, biz: r.id, bizName: r.nome, slot: r.slot, role, sal });
+  toast(`📄 Proposta enviada para ${(NET.peers[to] || {}).name || 'o jogador'}: ${EMP_ROLES[role].n}, $ ${sal} por minuto trabalhado.`, 'good');
+}
+function empAnswer(yes) {
+  const o = EMP.offer; if (!o) return; EMP.offer = null;
+  if (!yes) { s5Send('emp', { op: 'recusado', to: o.from, name: S.name }); return ccRefresh(); }
+  if (EMP.job) s5Send('emp', { op: 'saiu', to: EMP.job.owner, from: ccMe(), name: S.name });
+  EMP.job = { owner: o.from, oName: o.oName, biz: o.biz, bizName: o.bizName, slot: o.slot, role: o.role, sal: o.sal, on: false, t: 0, earned: 0 };
+  s5Send('emp', { op: 'aceito', to: o.from, from: ccMe(), name: S.name, role: o.role, sal: o.sal, biz: o.biz });
+  toast(`🤝 Contratado(a)! ${EMP_ROLES[o.role].i} ${EMP_ROLES[o.role].n} no ${o.bizName}. Fique no comércio (ou na porta) para bater o ponto: $ ${o.sal} por minuto, mais 5% de comissão em cada venda.`, 'good'); sfx('level');
+  const sl = city.comSlots && city.comSlots[o.slot]; if (sl) setGps(sl.door.x, sl.door.z, `🏪 ${o.bizName}`); ccRefresh();
+}
+function empQuit() { const J = EMP.job; if (!J) return; s5Send('emp', { op: 'saiu', to: J.owner, from: ccMe(), name: S.name }); EMP.job = null; toast(`Você pediu demissão do ${J.bizName}.`, 'pink'); ccRefresh(); }
+function empFire(id) { const s = EMP.staff[id]; if (!s) return; s5Send('emp', { op: 'demitido', to: id, bizName: s.bizName }); delete EMP.staff[id]; toast(`${s.name} foi desligado(a).`, 'pink'); renderPanel(); }
+function empPromo(bizId) {
+  const r = myBizHere().find(b => b.id === bizId); if (!r) return; if (S.coins < 150) return toast('O anúncio da promoção custa $ 150.', 'bad');
+  if ((EMP.promo[r.id] || 0) > Date.now()) return toast('A promoção já está rolando.', 'bad');
+  S.coins -= 150; persist(); updateHUD(); const until = Date.now() + 5 * 60000; EMP.promo[r.id] = until;
+  s5Send('promo', { biz: r.id, slot: r.slot, nome: r.nome, until }); toast(`⚡ Promoção relâmpago no ${r.nome}: 30% de desconto por 5 minutos. Todo mundo na cidade foi avisado!`, 'good'); sfx('level'); renderPanel();
+}
+function staffTick(now) {
+  const J = EMP.job; if (!J || !NET.online) return;
+  if (!ccPeer(J.owner)) { if (!J.gone) { J.gone = now; } else if (now - J.gone > 120000) { EMP.job = null; toast(`O dono do ${J.bizName} saiu da cidade: seu contrato acabou.`, 'pink'); ccRefresh(); } return; } J.gone = 0;
+  const sl = city.comSlots && city.comSlots[J.slot], inShop = city.shopIn && city.shopIn.door && city.shopIn.door.kind === 'biz' && city.shopIn.door.slot === J.slot;
+  const near = !!(inShop || (sl && !city.shopIn && !city.interior && Math.hypot(sl.door.x - P.x, sl.door.z - P.z) < 20));
+  if (near !== J.on) { J.on = near; J.t = now; toast(near ? `🕒 Ponto batido: você está trabalhando no ${J.bizName}.` : `Você saiu do ${J.bizName}: o ponto parou.`, near ? 'good' : 'pink'); ccRefresh(); }
+  if (near && now - J.t >= 60000) { J.t = now; s5Send('emp', { op: 'ponto', to: J.owner, from: ccMe(), name: S.name, role: J.role, sal: J.sal, biz: J.biz, bizName: J.bizName }); }
+}
+function onStaff(d) {
+  const me = ccMe(); if (d.to !== me) return; const now = Date.now();
+  if (d.op === 'oferta') { EMP.offer = d; toast(`📄 ${d.oName} quer te contratar como ${EMP_ROLES[d.role].n} no ${d.bizName}: $ ${d.sal} por minuto. Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.op === 'aceito') { const r = myBizHere().find(b => b.id === d.biz); EMP.staff[d.from] = { name: d.name, role: d.role, sal: d.sal, biz: d.biz, bizName: r ? r.nome : '', last: 0, paid: 0 }; toast(`🤝 ${d.name} aceitou: agora é ${EMP_ROLES[d.role].n} do seu comércio.`, 'good'); sfx('level'); }
+  else if (d.op === 'recusado') toast(`${d.name} recusou a vaga.`, 'pink');
+  else if (d.op === 'saiu') { if (EMP.staff[d.from]) { delete EMP.staff[d.from]; toast(`${d.name} pediu demissão.`, 'pink'); } }
+  else if (d.op === 'demitido') { if (EMP.job) { EMP.job = null; toast(`Você foi desligado(a) do ${d.bizName}.`, 'pink'); } }
+  else if (d.op === 'ponto') {
+    let s = EMP.staff[d.from]; const r = myBizHere().find(b => b.id === d.biz); if (!r) return;
+    if (!s) s = EMP.staff[d.from] = { name: d.name, role: d.role, sal: d.sal, biz: d.biz, bizName: r.nome, last: 0, paid: 0 }; // o dono entrou de novo no jogo: o contrato continua
+    if (S.coins < s.sal) { s5Send('emp', { op: 'sem_caixa', to: d.from, bizName: r.nome }); return toast(`Sem caixa para pagar ${s.name}. Receba o faturamento ou venda mais.`, 'bad'); }
+    S.coins -= s.sal; s.last = now; s.paid += s.sal; persist(); updateHUD(); s5Send('emp', { op: 'pago', to: d.from, amt: s.sal, why: 'salário' });
+  }
+  else if (d.op === 'pago') { S.coins += d.amt; persist(); updateHUD(); if (EMP.job) EMP.job.earned += d.amt; feed(`💼 ${d.why === 'comissão' ? 'Comissão' : 'Salário'}: +$ ${fmt(d.amt)}`); if (d.why === 'comissão') sfx('coin'); }
+  else if (d.op === 'sem_caixa') toast(`O ${d.bizName} está sem caixa para te pagar agora.`, 'bad');
+  ccRefresh();
+}
+function onPromo(d) { EMP.promo[d.biz] = d.until; if (!(NET.user && myBizHere().some(b => b.id === d.biz))) { toast(`⚡ Promoção relâmpago no ${d.nome}: 30% de desconto por 5 minutos!`, 'pink'); sfx('ui'); } }
+const bizPromoOn = id => (EMP.promo[id] || 0) > Date.now();
+/* venda com funcionário trabalhando: o dono ganha mais e o funcionário leva comissão */
+function empSaleBonus(d) {
+  const price = d.price || Math.round(d.amt / 0.6); let bonus = 0;
+  for (const id in EMP.staff) { const s = EMP.staff[id]; if (s.biz !== d.biz || !empOn(s)) continue; bonus += Math.round(price * EMP_ROLES[s.role].b); s5Send('emp', { op: 'pago', to: id, amt: Math.max(1, Math.round(price * 0.05)), why: 'comissão' }); }
+  return bonus;
+}
+function empBizHtml(r) {
+  const st = Object.entries(EMP.staff).filter(([, s]) => s.biz === r.id), P0 = ctPeersNear().filter(p => !EMP.staff[p.id]);
+  let h = `<div class="card"><h4>👥 Funcionários (${st.length}/4)</h4>`;
+  h += st.length ? st.map(([id, s]) => `<div class="row"><span>${EMP_ROLES[s.role].i} <b>${esc(s.name)}</b> · ${EMP_ROLES[s.role].n} · $ ${s.sal}/min · ${empOn(s) ? '<span class="pill on">trabalhando</span>' : '<span class="pill">fora</span>'} · pago $ ${fmt(s.paid)}</span><button class="btn ghost sm" data-act="cc-emp-fire" data-id="${esc(id)}">Desligar</button></div>`).join('') : '<p class="muted">Ninguém contratado ainda.</p>';
+  h += P0.length ? `<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><select id="emp-who">${P0.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><select id="emp-role">${Object.entries(EMP_ROLES).map(([k, R]) => `<option value="${k}">${R.i} ${R.n}</option>`).join('')}</select><input id="emp-sal" type="number" min="5" max="500" value="30" style="width:90px" title="Salário por minuto"><button class="btn sm" data-act="cc-emp-hire" data-id="${esc(r.id)}">Contratar</button></div>` : '<p class="muted">Para contratar, chame alguém para perto (até 40 m).</p>';
+  h += `<p class="muted" style="margin-top:4px">O salário sai do seu caixa a cada minuto que a pessoa fica no comércio. Atendente trabalhando: +10% em cada venda para você; Segurança: +5%. Quem trabalha leva 5% de comissão.</p></div>`;
+  h += `<div class="card"><h4>⚡ Promoção relâmpago</h4><p class="muted">Todos na cidade recebem o aviso e o cardápio fica 30% mais barato por 5 minutos. Anúncio: $ 150.</p><button class="btn sm" data-act="cc-emp-promo" data-id="${esc(r.id)}" ${bizPromoOn(r.id) || S.coins < 150 ? 'disabled' : ''}>${bizPromoOn(r.id) ? `Rolando: ${Math.ceil((EMP.promo[r.id] - Date.now()) / 60000)} min` : 'Anunciar promoção'}</button></div>`;
+  return h;
+}
+
+/* ===== Grafite que fica na parede (7 dias, para todos) ===== */
+const GRAF = { rows: {}, meshes: {}, free: false };
+const GRAF_COLS = [['#ff4f7b', 'Rosa'], ['#2ff3ff', 'Ciano'], ['#ffcf3a', 'Amarelo'], ['#9b5cff', 'Roxo'], ['#3ddc84', 'Verde'], ['#ff8a3d', 'Laranja'], ['#4fc3ff', 'Azul'], ['#f4f2ec', 'Branco'], ['#15161a', 'Preto']];
+const GRAF_ST = ['Bolha', 'Respingos', 'Estrelas', 'Raios'];
+const grafArt = () => S.grafArt || { texto: String(S.name || 'ROLÊ').slice(0, 16), cor: '#ff4f7b', cor2: '#ffcf3a', estilo: 0 };
+function artTex(g) {
+  return canvasTex(384, 165, (c, w, h) => {
+    const r = mulberry32(s5Hash(g.texto + (g.artista_nome || ''))), st = g.estilo | 0;
+    c.fillStyle = '#3a3d44'; c.globalAlpha = 0.96; c.beginPath(); c.moveTo(6, 10); for (let x = 6; x <= w - 6; x += 24) c.lineTo(x, 4 + r() * 10); for (let y = 10; y <= h - 10; y += 24) c.lineTo(w - 4 - r() * 10, y); for (let x = w - 6; x >= 6; x -= 24) c.lineTo(x, h - 4 - r() * 10); for (let y = h - 10; y >= 10; y -= 24) c.lineTo(4 + r() * 10, y); c.closePath(); c.fill(); // tinta por baixo cobre o que tinha na parede
+    c.fillStyle = g.cor2; c.globalAlpha = 0.9;
+    if (st === 0) { c.beginPath(); c.ellipse(w / 2, h / 2, w * 0.46, h * 0.38, -0.05, 0, TAU); c.fill(); }
+    else if (st === 1) { c.fillRect(w * 0.06, h * 0.2, w * 0.88, h * 0.55); for (let k = 0; k < 14; k++) c.fillRect(w * 0.08 + r() * w * 0.84, h * 0.7, 4, 8 + r() * 36); }
+    else if (st === 2) for (let k = 0; k < 9; k++) { const x = r() * w, y = r() * h, s = 8 + r() * 16; c.beginPath(); for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5, rr = i % 2 ? s * 0.45 : s; c.lineTo(x + Math.sin(a) * rr, y - Math.cos(a) * rr); } c.fill(); }
+    else { c.beginPath(); c.moveTo(w * 0.05, h * 0.5); for (let i = 1; i <= 8; i++) c.lineTo(w * 0.05 + i * w * 0.112, h * (i % 2 ? 0.15 : 0.85)); c.lineTo(w * 0.95, h * 0.5); c.closePath(); c.fill(); }
+    c.globalAlpha = 1; c.save(); c.translate(w / 2, h / 2); c.rotate(-0.08 + r() * 0.06);
+    const t = String(g.texto || '').toUpperCase(), fs = Math.min(92, (w * 0.9) / Math.max(1, t.length * 0.62));
+    c.font = `${fs}px Bungee, Impact`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.lineWidth = Math.max(6, fs * 0.15); c.strokeStyle = g.cor === '#15161a' ? '#f4f2ec' : '#15161a'; c.strokeText(t, 0, 4); c.fillStyle = g.cor; c.fillText(t, 0, 4); c.restore();
+    c.font = '15px sans-serif'; c.textAlign = 'right'; c.fillStyle = 'rgba(21,22,26,.85)'; c.fillText(`✍ ${String(g.artista_nome || '').slice(0, 20)}${g.autorizado === false ? '' : ' · arte'}`, w - 8, h - 8);
+  });
+}
+function grafRender(g) {
+  if (!city.scene || GRAF.meshes[g.id]) return; GRAF.rows[g.id] = g;
+  for (const id in GRAF.meshes) { const o = GRAF.rows[id]; if (o && Math.hypot(o.x - g.x, o.z - g.z) < 1.6) grafUnrender(id); } // o mais novo cobre o antigo
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2.75), new THREE.MeshLambertMaterial({ map: artTex(g), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
+  m.position.set(g.x + Math.sin(g.h) * 0.04, (g.y || 0) + 2.4, g.z + Math.cos(g.h) * 0.04); m.rotation.y = g.h; m.renderOrder = 3; city.scene.add(m); GRAF.meshes[g.id] = m;
+}
+function grafUnrender(id) { const m = GRAF.meshes[id]; if (m) { city.scene.remove(m); m.geometry.dispose(); if (m.material.map) m.material.map.dispose(); m.material.dispose(); } delete GRAF.meshes[id]; }
+function grafDrop(id) { grafUnrender(id); delete GRAF.rows[id]; }
+async function loadGrafites() {
+  for (const id in GRAF.meshes) grafUnrender(id); GRAF.rows = {}; GRAF.meshes = {};
+  if (!NET.user || !NET.sb) return; const cid = cityId();
+  try {
+    const { data, error } = await NET.sb.from('grafites').select('id,artista,artista_nome,x,z,h,y,texto,cor,cor2,estilo,autorizado,cliente_nome,criado_em,expira').eq('cidade', cid).gt('expira', new Date().toISOString()).order('criado_em', { ascending: false }).limit(50);
+    if (error || !data || cityId() !== cid) return; data.reverse().forEach(grafRender);
+  } catch (e) { }
+}
+async function grafSave(w, art, autorizado, cliente) {
+  const row = { artista_nome: S.name, cidade: cityId(), x: Math.round((w.wx + w.nx * 0.06) * 100) / 100, z: Math.round((w.wz + w.nz * 0.06) * 100) / 100, h: Math.round(Math.atan2(w.nx, w.nz) * 1000) / 1000, y: w.y || 0, texto: String(art.texto).slice(0, 16), cor: art.cor, cor2: art.cor2, estilo: art.estilo | 0, autorizado, cliente_nome: cliente || null };
+  let g = Object.assign({ id: 'loc' + Date.now(), artista: ccMe(), criado_em: new Date().toISOString() }, row);
+  if (NET.user && NET.sb) try { const { data, error } = await NET.sb.from('grafites').insert(row).select().single(); if (!error && data) g = data; } catch (e) { }
+  grafRender(g); s5Send('graf', g); return g;
+}
+function grafWall(x, z, r) { let best = null, bd = r; for (const w of [...(city.walls || []), ...(city.mWalls || [])]) { const d = Math.hypot(w.x - x, w.z - z); if (d < bd) { bd = d; best = w; } } return best; }
+function grafPicho(w) { // grafiteiro pintando por conta própria: sem autorização é pichação
+  const art = grafArt(); workStart('🎨 Pichando', 3000, w.x, w.z, async () => { await grafSave(w, art, false, null); addWanted(1, 'pichação sem autorização'); toast('Tag na parede! Sem autorização é pichação: a polícia pode te procurar e o gari pode apagar.', 'pink'); }, true);
+}
+function grafPaintCC() { // encomenda: pinta a arte de quem chamou
+  const T = CC.take; if (!T || T.arr || !T.c.wall) return; const w = T.c.wall;
+  workStart(`🎨 Grafitando a arte de ${T.c.name}`, 4500, w.x, w.z, async () => {
+    if (!CC.take || CC.take.id !== T.id) return; await grafSave(w, T.c.art, true, T.c.name);
+    T.arr = Date.now(); T.job = S.shift; clearGps(); ccSend0('cc_arrive', { id: T.id, to: T.c.from });
+    const fee = Math.round(100 * rankMult('grafiteiro')); s5Send('graf_ok', { to: T.c.from, from: ccMe(), fee });
+    const g = earn(jobPay('grafiteiro', 50)); addXP(30); toast(`🎨 Arte entregue para ${T.c.name}! +$${fmt(g)} (a encomenda e a avaliação vêm em seguida). Ela fica 7 dias na parede.`, 'good'); sfx('level');
+  }, true);
+}
+function onGrafOk(d) { if (d.to !== ccMe()) return; const f = payCash(d.fee || 0); persist(); updateHUD(); s5Send('graf_pago', { to: d.from, fee: f }); toast(`🎨 Seu grafite ficou pronto! Encomenda paga: $ ${fmt(f)}. Ele fica 7 dias na parede para todo mundo ver.`, 'good'); sfx('coin'); }
+function onGrafPago(d) { if (d.to !== ccMe() || !d.fee) return; S.coins += d.fee; persist(); updateHUD(); toast(`🎨 Encomenda recebida: +$ ${fmt(d.fee)}.`, 'good'); sfx('coin'); }
+async function grafClean(id) { // gari apaga pichação: a Prefeitura paga
+  const g = GRAF.rows[id]; if (!g || g.autorizado !== false) return;
+  workStart('🧽 Limpando a pichação', 3000, g.x, g.z, async () => {
+    if (!GRAF.rows[id]) return toast('Alguém já limpou essa parede.'); grafDrop(id); s5Send('graf_del', { id });
+    if (NET.sb && NET.user && !String(id).startsWith('loc')) try { await NET.sb.from('grafites').delete().eq('id', id); } catch (e) { }
+    const p = earn(Math.round(jobPay('catador', 90) * rankMult('catador'))); const r = jobRec('catador'); r.real = (r.real || 0) + 1; ccRankCheck(); addXP(20); toast(`🧽 Parede limpa! A Prefeitura pagou +$${fmt(p)}.`, 'good'); sfx('coin');
+  });
+}
+function grafPanelHtml() {
+  const a = grafArt(), sel = (id, v) => `<select id="${id}">${GRAF_COLS.map(([c, n]) => `<option value="${c}" ${c === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`;
+  let h = `<div class="card"><h4>🎨 Sua tag</h4><div class="row" style="flex-wrap:wrap;gap:6px"><input id="gf-txt" maxlength="16" value="${esc(a.texto)}" style="width:150px">${sel('gf-c1', a.cor)}${sel('gf-c2', a.cor2)}<select id="gf-st">${GRAF_ST.map((s, i) => `<option value="${i}" ${i === a.estilo ? 'selected' : ''}>${s}</option>`).join('')}</select><button class="btn sm" data-act="cc-gf-save">Salvar</button></div>`;
+  h += `<div class="row" style="margin-top:6px"><button class="btn ${GRAF.free ? '' : 'ghost'} sm" data-act="cc-gf-free">${GRAF.free ? '✅ Modo pichação ligado' : 'Ligar modo pichação'}</button></div><p class="muted" style="margin-top:4px">Com encomenda (chamado de um jogador) a arte é autorizada e paga. No modo pichação você pinta qualquer parede, mas ganha ★ de procurado e o gari pode apagar. Tudo fica 7 dias na parede.</p></div>`;
+  return h;
+}
+function grafGalleryHtml() {
+  const L = Object.values(GRAF.rows).sort((a, b) => String(b.criado_em).localeCompare(String(a.criado_em))).slice(0, 8); if (!L.length) return '';
+  return `<h3>🖼️ Galeria da cidade</h3>` + L.map(g => `<div class="row"><span>${g.autorizado === false ? '🚫' : '🎨'} <b>${esc(g.texto)}</b> · por ${esc(g.artista_nome)}${g.cliente_nome ? ` para ${esc(g.cliente_nome)}` : ''} · ${Math.round(Math.hypot(g.x - P.x, g.z - P.z))} m</span><button class="btn ghost sm" data-act="cc-go" data-x="${g.x}" data-z="${g.z}" data-n="${esc(g.texto)}">📍</button></div>`).join('');
+}
+
+/* ===== Gari: a bagunça dos jogadores vira sujeira na rua; em dupla rende mais; pichação dá serviço ===== */
+const SUJ = { spots: {}, t: 0 };
+function sujNew(x, z, why) {
+  if (!NET.online || Object.keys(SUJ.spots).length >= 6) return; const id = 'sj' + Date.now().toString(36) + Math.floor(Math.random() * 99);
+  const d = { id, x: Math.round(x), z: Math.round(z), why, t: Date.now(), bags: [1, 1, 1, 1, 1] }; s5Send('suj', d); onSujeira(Object.assign({}, d, { bags: d.bags.slice() }));
+}
+function sujBag(d, k) { const r = mulberry32(s5Hash(d.id) + k * 97), a = r() * TAU, rr = 1.5 + r() * 3.5; return [d.x + Math.cos(a) * rr, d.z + Math.sin(a) * rr]; }
+function onSujeira(d) {
+  if (SUJ.spots[d.id] || !city.scene) return; SUJ.spots[d.id] = d; d.ms = [];
+  d.bags.forEach((b, k) => { if (!b) return d.ms.push(null); const [x, z] = sujBag(d, k), m = new THREE.Mesh(SPH(0.32, 7, 5), lam(k % 2 ? 0x15161a : 0x2b5f3a)); m.scale.set(1, 1.25, 1); m.position.set(x, groundH(x, z) + 0.36, z); city.scene.add(m); d.ms.push(m); });
+  if (S.shift === 'catador') { toast(`🗑️ Sujeira na rua: ${d.why}. Veja em 📞 Chamados.`, 'pink'); sfx('ui'); } ccRefresh();
+}
+function sujPick(id, k) { const d = SUJ.spots[id]; if (!d || !d.bags[k]) return false; d.bags[k] = 0; if (d.ms[k]) city.scene.remove(d.ms[k]); if (d.bags.every(b => !b)) { delete SUJ.spots[id]; ccRefresh(); } return true; }
+function sujTick(now) {
+  for (const id in SUJ.spots) if (now - SUJ.spots[id].t > 15 * 60000) { SUJ.spots[id].ms.forEach(m => m && city.scene.remove(m)); delete SUJ.spots[id]; }
+  // depois de um tempo de cidade cheia, a praça suja: quem tem o menor id cria (para não duplicar)
+  if (NET.online && now - SUJ.t > 6 * 60000) { SUJ.t = now; const ids = [ccMe(), ...Object.keys(NET.peers)].sort(); if (ids[0] === ccMe() && Object.values(NET.peers).some(p => p.job === 'catador') && (city.kiosks || []).length) { const k = pick(city.kiosks); sujNew(k.x, k.z, 'Sujeira na Praça depois do movimento'); } }
+  if (S.shift !== 'catador' || P.drive || P.ride) return;
+  for (const id in SUJ.spots) { const d = SUJ.spots[id]; d.bags.forEach((b, k) => { if (!b) return; const [x, z] = sujBag(d, k); if (Math.hypot(x - P.x, z - P.z) > 2.2) return;
+    const cleared = d.bags.filter(Boolean).length === 1; sujPick(id, k); s5Send('lixo', { id, bag: k });
+    const duo = Object.values(NET.peers).some(p => p.job === 'catador' && Math.hypot(p.x - P.x, p.z - P.z) < 25), g = earn(Math.round(jobPay('catador', 16) * rankMult('catador') * (duo ? 1.3 : 1)));
+    sfx('coin'); feed(`🗑️ Saco recolhido: +$ ${fmt(g)}${duo ? ' (em dupla +30%)' : ''}`);
+    if (cleared) { const r = jobRec('catador'); r.real = (r.real || 0) + 1; ccRankCheck(); addXP(25); toast(`✨ Rua limpa: ${d.why}.`, 'good'); }
+  }); }
+}
+
+/* ===== Instrutor: aula com aluno real; o aluno formado ganha selo e desconto ===== */
+const AULA_POOL = ['kickflip', 'heelflip', 'shove'];
+function aulaPhase(T, p, now) {
+  if (!T.ok) return; const d = Math.hypot(p.x - P.x, p.z - P.z);
+  if (!T.les && d < 10) { T.les = { seq: Array.from({ length: 4 }, () => pick(AULA_POOL)), i: 0, t: 0 }; clearGps(); toast(`🛹 Aula começou com ${T.c.name}! Mostre a manobra: ele(a) precisa acertar 4 seguidas.`, 'good'); sfx('ui'); }
+  const L = T.les; if (!L || T.arr) return;
+  if (!L.t || now - L.t > 8000) { L.t = now; s5Send('aula_m', { to: T.c.from, from: ccMe(), trick: L.seq[L.i], i: L.i, n: L.seq.length, prof: S.name }); }
+  ccMeter(`🛹 Aula de ${T.c.name}: ${TRK[L.seq[L.i]].name} (${L.i + 1}/${L.seq.length})`);
+}
+function onAulaOk(d) {
+  const T = CC.take; if (d.to !== ccMe() || !T || !T.les || T.c.from !== d.from || d.i !== T.les.i || T.arr) return;
+  T.les.i++; T.les.t = 0; sfx('coin'); toast(`✅ ${T.c.name} acertou! (${T.les.i}/${T.les.seq.length})`, 'good');
+  if (T.les.i >= T.les.seq.length) {
+    T.arr = Date.now(); T.job = S.shift; ccMeter(''); ccSend0('cc_arrive', { id: T.id, to: T.c.from });
+    const fee = Math.round(60 * rankMult('instrutor')); s5Send('aula_fim', { to: T.c.from, from: ccMe(), fee, prof: S.name });
+    const g = earn(jobPay('instrutor', 60)); addXP(35); toast(`🎓 ${T.c.name} se formou! +$${fmt(g)} (a aula e a avaliação vêm em seguida).`, 'good'); sfx('level');
+  }
+}
+function onAulaM(d) { if (d.to !== ccMe()) return; const novo = !CC.aula; CC.aula = d; ccMeter(`🛹 Aula com ${d.prof}: faça um ${TRK[d.trick].name} (${d.i + 1}/${d.n})`); if (novo) { toast(`🛹 A aula começou! Suba no skate e faça as manobras que ${d.prof} pedir.`, 'pink'); sfx('ui'); } }
+function aulaTrick(id) { const A = CC.aula; if (!A || !A.trick || id !== A.trick) return; s5Send('aula_ok', { to: A.from, from: ccMe(), i: A.i }); A.trick = null; ccMeter('✅ Boa! Espere a próxima manobra…'); sfx('coin'); }
+function onAulaFim(d) {
+  if (d.to !== ccMe()) return; CC.aula = null; ccMeter(''); const f = payCash(d.fee || 0); const novo = !S.formado; S.formado = true; persist(); updateHUD(); s5Send('aula_pago', { to: d.from, fee: f });
+  toast(novo ? `🎓 Você é Skatista Formado(a)! Aula paga: $ ${fmt(f)}. Agora tem 10% de desconto na Skate Shop.` : `🎓 Aula concluída! Paga: $ ${fmt(f)}.`, 'good'); sfx('level');
+}
+function onAulaPago(d) { if (d.to !== ccMe() || !d.fee) return; S.coins += d.fee; persist(); updateHUD(); toast(`🛹 Aula recebida: +$ ${fmt(d.fee)}.`, 'good'); sfx('coin'); }
+
+/* ---- prompts de Ação da etapa 5 (chamado no laço do jogo) ---- */
+function s5Near() {
+  if (WORK.j || P.drive || P.ride || city.shopIn || city.interior) return null;
+  const T = CC.take;
+  if (T && T.c.svc === 'grafite' && T.ok && !T.arr && T.c.wall && Math.hypot(T.c.wall.x - P.x, T.c.wall.z - P.z) < 3) return { type: 'xtra', label: `🎨 Grafitar a arte de ${T.c.name}`, fn: grafPaintCC, nd: 0 };
+  if (S.shift === 'catador') for (const id in GRAF.rows) { const g = GRAF.rows[id]; if (g.autorizado === false && Math.hypot(g.x - P.x, g.z - P.z) < 3.2) return { type: 'xtra', label: '🧽 Limpar a pichação (Prefeitura paga)', fn: () => grafClean(id), nd: 0 }; }
+  if (S.shift === 'grafiteiro' && GRAF.free && !T && (!S.mission || S.mission.type !== 'job_graf')) { const w = nearWall(); if (w) return { type: 'xtra', label: '🎨 Pichar sua tag (sem autorização: ★)', fn: () => grafPicho(w), nd: 1 }; }
+  return null;
+}
+function onS5(d) {
+  if (!d || !S) return;
+  if (d.k === 'emp') onStaff(d); else if (d.k === 'promo') onPromo(d);
+  else if (d.k === 'graf') grafRender(d); else if (d.k === 'graf_del') { grafDrop(d.id); ccRefresh(); }
+  else if (d.k === 'graf_ok') onGrafOk(d); else if (d.k === 'graf_pago') onGrafPago(d);
+  else if (d.k === 'suj') onSujeira(d); else if (d.k === 'lixo') sujPick(d.id, d.bag);
+  else if (d.k === 'aula_m') onAulaM(d); else if (d.k === 'aula_ok') onAulaOk(d); else if (d.k === 'aula_fim') onAulaFim(d); else if (d.k === 'aula_pago') onAulaPago(d);
+}
+function s5Tick(now) { try { workTick(now); staffTick(now); sujTick(now); } catch (e) { console.warn('s5', e); } }
+
 /* ---- rádio ---- */
 function ccRadioSend(txt, loc) {
   const g = S.shift && CC_RADIO[S.shift]; if (!g) return toast('O rádio da equipe liga quando você está de serviço.', 'bad');
@@ -15191,12 +15434,12 @@ function ccTick() {
   if (CC.mine && CC.mine.svc === 'taxi' && CC.mine.st === 'a caminho' && !CC.mine.near && !P.ride) { const q = ccPeer(CC.mine.byId); if (q && q.t && q.t.vh && Math.hypot(q.x - P.x, q.z - P.z) < 12) { CC.mine.near = true; toast('🚕 Seu táxi chegou! Abra 📞 Chamados e toque em "Entrar no táxi".', 'good'); sfx('level'); ccRefresh(); } }
   if (CC.mine) {
     if (now - CC.mine.t > 5 * 60000 && !CC.mine.byId) { CC.mine = null; toast('Seu chamado expirou sem resposta.', 'pink'); ccRefresh(); }
-    else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t, sus: CC.mine.sus, dest: CC.mine.dest, item: CC.mine.item, fire: CC.mine.fire }); }
+    else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t, sus: CC.mine.sus, dest: CC.mine.dest, item: CC.mine.item, fire: CC.mine.fire, art: CC.mine.art, wall: CC.mine.wall }); }
   }
   const T = CC.take; if (T) {
     const p = ccPeer(T.c.from); if (!p) return ccDrop('A pessoa saiu da cidade.');
     try { ccPhaseTick(T, p, now); } catch (e) { console.warn('fase', e); }
-    if (!T.arr && !city.hospIn && !T.sus && !T.c.fire && T.ph !== 'levando' && T.ph !== 'loja' && (!S.gps || Math.hypot(S.gps.x - p.x, S.gps.z - p.z) > 6)) setGps(p.x, p.z, `${CC_SVC[T.c.svc].i} ${T.c.name}`);
+    if (!T.arr && !city.hospIn && !T.sus && !T.c.fire && !T.c.wall && !T.les && T.ph !== 'levando' && T.ph !== 'loja' && (!S.gps || Math.hypot(S.gps.x - p.x, S.gps.z - p.z) > 6)) setGps(p.x, p.z, `${CC_SVC[T.c.svc].i} ${T.c.name}`);
     if (T.sus) { const q = ccPeer(T.c.sus.id); if (q && (!S.gps || Math.hypot(S.gps.x - q.x, S.gps.z - q.z) > 6)) setGps(q.x, q.z, `🚨 Suspeito: ${T.c.sus.name}`); }
     const d = Math.hypot(p.x - P.x, p.z - P.z); T.near = d < 6 ? T.near + 0.5 : 0;
     if (!T.arr && T.ok && T.near >= 1.5 && !CC_SVC[T.c.svc].act && !T.c.fire) { T.arr = now; T.job = S.shift; clearGps(); ccSend0('cc_arrive', { id: T.id, to: T.c.from }); toast(`Você chegou até ${T.c.name}. Atenda e aguarde a avaliação.`, 'good'); }
@@ -15204,6 +15447,7 @@ function ccTick() {
   }
   if (now - CC.rs > 5000) { CC.rs = now; ccRankCheck(); ccDot(); }
   try { ctTick(now); correTick(now); } catch (e) { }
+  s5Tick(now);
 }
 
 /* ---- tela da central ---- */
@@ -15221,6 +15465,9 @@ function PANEL_CENTRAL() {
     else h += `<p><b>${esc(m.by)}</b> chegou. Como foi o atendimento?</p><div class="row">${[1, 2, 3, 4, 5].map(s => `<button class="btn sm ${s >= 4 ? '' : 'ghost'}" data-act="cc-rate" data-s="${s}" data-tip="0">${'★'.repeat(s)}</button>`).join('')}</div><p class="muted" style="margin-top:6px">Com gorjeta (nota 5):</p><div class="row">${[20, 50, 100].map(t => `<button class="btn sm" data-act="cc-rate" data-s="5" data-tip="${t}" ${S.coins < t ? 'disabled' : ''}>★★★★★ + $ ${t}</button>`).join('')}</div>`;
     h += `</div>`;
   }
+  if (EMP.offer) { const o = EMP.offer; h += `<div class="card"><h4>📄 Proposta de emprego</h4><p>${esc(o.oName)} quer te contratar como <b>${EMP_ROLES[o.role].i} ${EMP_ROLES[o.role].n}</b> no <b>${esc(o.bizName)}</b>: $ ${o.sal} por minuto trabalhado + 5% de comissão nas vendas.</p><div class="row"><button class="btn sm" data-act="cc-emp-yes">Aceitar</button><button class="btn ghost sm" data-act="cc-emp-no">Recusar</button></div></div>`; }
+  if (EMP.job) { const J = EMP.job; h += `<div class="card"><h4>💼 ${EMP_ROLES[J.role].i} ${EMP_ROLES[J.role].n} no ${esc(J.bizName)}</h4><p class="muted">Patrão: ${esc(J.oName)} · $ ${J.sal}/min · ganho até agora: $ ${fmt(J.earned)} · ${J.on ? '<span class="pill on">ponto batido</span>' : 'vá até o comércio para bater o ponto'}</p><div class="row"><button class="btn ghost sm" data-act="cc-emp-quit">Pedir demissão</button></div></div>`; }
+  if (CC.aula) h += `<div class="card"><h4>🛹 Aula com ${esc(CC.aula.prof)}</h4><p>${CC.aula.trick ? `Faça um <b>${esc(TRK[CC.aula.trick].name)}</b> (${CC.aula.i + 1}/${CC.aula.n}).` : 'Boa! Espere a próxima manobra.'}</p></div>`;
   const svcMe = S.shift && ccSvcOf(S.shift);
   if (S.shift) {
     const id = S.shift, r = jobRank(id), nx = RANK_PTS[r + 1];
@@ -15232,6 +15479,10 @@ function PANEL_CENTRAL() {
       h += L.length ? L.map(c => `<div class="row"><span>👤 <b>${esc(c.name)}</b> · "${esc(c.why)}" · ${ccDist(c)} m${c.sus ? ` · <b style="color:#ff7088">suspeito: ${esc(c.sus.name)}</b>` : ''}</span><button class="btn sm" data-act="cc-take" data-id="${esc(c.id)}" ${CC.take ? 'disabled' : ''}>Aceitar</button></div>`).join('') : '<p class="muted">Nenhum chamado de jogador agora. Os chamados de figurantes continuam chegando pela missão do turno.</p>';
     }
     if (svcMe === 'bombeiro') { const F = Object.values(CC.calls).filter(c => c.fire && c.by && c.by !== ccMe() && !(S.mission && S.mission.cc === c.id)); if (F.length) h += `<h3>🔥 Incêndios precisando de apoio</h3>` + F.map(c => `<div class="row"><span>🔥 Chamado de <b>${esc(c.name)}</b> · ${ccDist(c)} m</span><button class="btn sm" data-act="cc-fire" data-id="${esc(c.id)}">Ajudar</button></div>`).join(''); }
+    if (S.shift === 'grafiteiro') h += grafPanelHtml();
+    if (S.shift === 'catador') { const SJ = Object.values(SUJ.spots), PX = Object.values(GRAF.rows).filter(g => g.autorizado === false);
+      h += `<h3>🗑️ Sujeira na cidade</h3>` + (SJ.length ? SJ.map(d => `<div class="row"><span>🗑️ ${esc(d.why)} · ${d.bags.filter(Boolean).length} sacos · ${Math.round(Math.hypot(d.x - P.x, d.z - P.z))} m</span><button class="btn sm" data-act="cc-go" data-x="${d.x}" data-z="${d.z}" data-n="Sujeira">📍 Ir</button></div>`).join('') : '<p class="muted">Rua limpa por enquanto. Depois de festa, incêndio ou movimento na praça, aparece aqui.</p>') + '<p class="muted">Em dupla (outro gari a até 25 m) cada saco paga 30% a mais.</p>';
+      if (PX.length) h += `<h3>🧽 Pichações para limpar (Prefeitura paga)</h3>` + PX.map(g => `<div class="row"><span>🚫 "${esc(g.texto)}" de ${esc(g.artista_nome)} · ${Math.round(Math.hypot(g.x - P.x, g.z - P.z))} m</span><button class="btn sm" data-act="cc-go" data-x="${g.x}" data-z="${g.z}" data-n="Pichação">📍 Ir</button></div>`).join(''); }
     if (S.shift === 'policial' && CC.den2) { const L2 = Object.values(CC.den2).filter(d => Date.now() - d.t < 60000); if (L2.length) h += `<h3>📢 Denúncias anônimas</h3>` + L2.map(d => `<div class="row"><span>Movimentação suspeita · ~${Math.round(Math.hypot(d.x - P.x, d.z - P.z))} m (área aproximada)</span><button class="btn sm" data-act="cc-go" data-x="${d.x}" data-z="${d.z}" data-n="Denúncia">📍 Ir</button></div>`).join(''); }
     const g = CC_RADIO[S.shift];
     if (g) {
@@ -15241,10 +15492,12 @@ function PANEL_CENTRAL() {
     }
   }
   if (NET.online) h += `<h3>📝 Contratos</h3>` + ctPanel();
+  if (NET.online) h += grafGalleryHtml();
   h += `<h3>🆘 Pedir ajuda</h3><p class="muted">O chamado vai na hora para quem está de serviço. Chegou perto, você avalia com estrelas.</p>`;
   for (const k in CC_SVC) {
     const V = CC_SVC[k], n = NET.online ? ccOnDuty(k) : 0;
     if (V.dest) { const D = ccDests(); h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="gap:6px"><select id="cc-dest" style="flex:1;min-width:0">${D.map((d, i) => `<option value="${i}">${esc(d.l)} · ~$ ${taxiEst(P, d)}</option>`).join('')}</select><button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-taxi" ${m || svcMe === k ? 'disabled' : ''}>Chamar táxi</button></div><p class="muted" style="margin-top:4px">Preço pelo taxímetro (a estimativa aparece ao lado do destino).</p></div>`; continue; }
+    if (V.art) { const a = grafArt(), sel = (id, v) => `<select id="${id}">${GRAF_COLS.map(([c, nm]) => `<option value="${c}" ${c === v ? 'selected' : ''}>${nm}</option>`).join('')}</select>`; h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="flex-wrap:wrap;gap:6px"><input id="cg-txt" maxlength="16" placeholder="Nome ou marca" value="${esc(a.texto)}" style="width:140px">${sel('cg-c1', a.cor)}${sel('cg-c2', a.cor2)}<select id="cg-st">${GRAF_ST.map((s, i) => `<option value="${i}">${s}</option>`).join('')}</select><button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-graf" ${m || svcMe === k ? 'disabled' : ''}>Encomendar</button></div><p class="muted" style="margin-top:4px">O grafiteiro pinta na parede mais perto de você e a arte fica 7 dias para todo mundo ver. A partir de $ 100, pago quando ficar pronto.</p></div>`; continue; }
     if (V.menu) { h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="flex-wrap:wrap;gap:6px">${FOOD.map((f, i) => `<button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-food" data-i="${i}" ${m || svcMe === k || cashNow() < f.p + deliveryFee() ? 'disabled' : ''}>${f.i} ${esc(f.n)} · $ ${f.p}</button>`).join('')}</div><p class="muted" style="margin-top:4px">+ $ ${deliveryFee()} de entrega, pago quando chegar.</p></div>`; continue; }
     h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="flex-wrap:wrap;gap:6px">${V.why.map((w, i) => `<button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-send" data-svc="${k}" data-i="${i}" ${m || (svcMe === k) ? 'disabled' : ''}>${esc(w)}</button>`).join('')}</div></div>`;
   }
@@ -15262,6 +15515,17 @@ function ccAct(act, ds) {
   if (act === 'cc-say') { const el = $('cc-txt'); ccRadioSend(el && el.value); if (el) el.value = ''; return; }
   if (act === 'cc-fire') { const c = CC.calls[ds.id]; if (c) fireJoin(c, false); return; }
   if (act === 'ct-new') return ctNew();
+  if (act === 'cc-emp-hire') return empHire(ds.id);
+  if (act === 'cc-emp-fire') return empFire(ds.id);
+  if (act === 'cc-emp-promo') return empPromo(ds.id);
+  if (act === 'cc-emp-yes') return empAnswer(true);
+  if (act === 'cc-emp-no') return empAnswer(false);
+  if (act === 'cc-emp-quit') return empQuit();
+  if (act === 'cc-gf-save') { S.grafArt = { texto: String(($('gf-txt') || {}).value || S.name).trim().slice(0, 16) || 'ROLÊ', cor: ($('gf-c1') || {}).value || '#ff4f7b', cor2: ($('gf-c2') || {}).value || '#ffcf3a', estilo: +($('gf-st') || {}).value || 0 }; persist(); toast('🎨 Tag salva.', 'good'); return ccRefresh(); }
+  if (act === 'cc-gf-free') { GRAF.free = !GRAF.free; toast(GRAF.free ? 'Modo pichação ligado: chegue numa parede e aperte Ação. Cuidado com a polícia!' : 'Modo pichação desligado.', GRAF.free ? 'pink' : ''); return ccRefresh(); }
+  if (act === 'cc-graf') { const w = grafWall(P.x, P.z, 12); if (!w) return toast('Fique perto de uma parede (até 12 m) para encomendar o grafite nela.', 'bad'); if (cashNow() < 100) return toast('A encomenda custa a partir de $ 100.', 'bad');
+    const art = { texto: String(($('cg-txt') || {}).value || S.name).trim().slice(0, 16) || S.name.slice(0, 16), cor: ($('cg-c1') || {}).value || '#ff4f7b', cor2: ($('cg-c2') || {}).value || '#ffcf3a', estilo: +($('cg-st') || {}).value || 0 };
+    return ccSend('grafite', `Grafite: ${art.texto}`, { art, wall: { x: w.x, z: w.z, wx: w.wx, wz: w.wz, nx: w.nx, nz: w.nz, y: w.y || 0 } }); }
   if (act === 'ct-op') return ctOp(ds.id, ds.op);
   if (act === 'cc-taxi') { const D = ccDests(), d = D[+($('cc-dest') || {}).value || 0]; return ccSend('taxi', `Corrida até ${d.l}`, { dest: { l: d.l, x: d.x, z: d.z } }); }
   if (act === 'cc-food') { const f = FOOD[+ds.i]; return ccSend('entrega', `Pedido: ${f.n}`, { item: f }); }
@@ -15328,7 +15592,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
-    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
