@@ -665,6 +665,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" id="hb-canhao" data-act="tank-fire" aria-label="Disparar o canhão" hidden style="background:#3b4a2a;border-color:#c9e07a"><span style="font-size:17px">💥</span><span class="lbl">Canhão</span></button>
     <button class="hud-btn" id="hb-tiro" data-act="heist-tiro" aria-label="Atirar nas viaturas" hidden style="background:#15161a;border-color:#ff7088"><span style="font-size:17px">🔫</span><span class="lbl">Atirar</span></button>
     <button class="hud-btn" id="hb-seg" data-act="open-seg" aria-label="Seguranças" hidden><span style="font-size:17px">🕶️</span><span class="lbl">Seguranças</span></button>
+    <button class="hud-btn" id="hb-cc" data-act="open-central" aria-label="Central de chamados" style="position:relative"><span style="font-size:17px">📞</span><span class="lbl">Chamados</span><i id="cc-dot" hidden style="position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;background:#ff4f7b;box-shadow:0 0 0 2px #15161a"></i></button>
     <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
     <button class="hud-btn" data-act="radio" aria-label="Rádio do grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8 15 3M9 13h6M9 17h3"/></svg><span class="lbl">Rádio</span></button>
     <button class="hud-btn" id="hb-mic" aria-label="Segure para mandar áudio (tecla B)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="lbl">Áudio</span></button>
@@ -769,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.14-49';
+const BUILD = '2026.10.14-50';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -12482,7 +12483,7 @@ function cityPolice() { const L = []; if (S.shift === 'policial' && NET.user) L.
 function jobsTick() {
   if (mode !== 'city') return; const now = performance.now(), dt = Math.min(1, (now - (city.jobT || now)) / 1000); city.jobT = now;
   // salário do plantão
-  if (S.shift) { S.salT = (S.salT || 0) + dt; if (S.salT >= 600) { S.salT = 0; const id = S.shift === 'policial' && iAmDelegado() ? 'delegado' : S.shift, v = SALARIO[id] || 0; if (v) { S.coins += v; persist(); updateHUD(); sfx('coin'); toast(`💼 Salário de ${id === 'delegado' ? 'Delegado' : JOBS[S.shift].name}: +$ ${fmt(v)}`, 'good'); } } }
+  if (S.shift) { S.salT = (S.salT || 0) + dt; if (S.salT >= 600) { S.salT = 0; const id = S.shift === 'policial' && iAmDelegado() ? 'delegado' : S.shift, v = Math.round((SALARIO[id] || 0) * (typeof rankMult === 'function' ? rankMult(S.shift) : 1)); if (v) { S.coins += v; persist(); updateHUD(); sfx('coin'); toast(`💼 Salário de ${id === 'delegado' ? 'Delegado' : `${JOBS[S.shift].name} (${rankName(S.shift)})`}: +$ ${fmt(v)}`, 'good'); } } }
   // reenviar meu voto de tempos em tempos (quem entrou agora fica sabendo)
   if (S.shift === 'policial' && S.voto && S.voto[cityId()] && now > (city.votoT || 0)) { city.votoT = now + 25000; netSend('voto', { c: cityId(), cand: S.voto[cityId()] }); }
   // bots saem quando entram jogadores reais na profissão
@@ -14619,6 +14620,7 @@ function botReply(id, text) {
 
 /* ---------------- AÇÕES ---------------- */
 function act(a, ds, el) {
+  if (a === 'open-central' || a.startsWith('cc-')) return ccAct(a, ds);
   switch (a) {
     case 'panel-close': closePanel(); break;
     case 'open-perfil': if (mode === 'city') openPanel('perfil'); break;
@@ -14912,6 +14914,198 @@ async function cloudSave() {
 setInterval(() => { if (NET.dirty) cloudSave(); }, 10000);
 document.addEventListener('visibilitychange', () => { if (document.hidden && NET.dirty) cloudSave(); });
 
+/* =========================================================
+   CENTRAL DE CHAMADOS (190, 192, 193, táxi, entrega e advogado), RÁDIO DA EQUIPE E CARGOS
+   - Qualquer jogador pede ajuda pelo botão 📞 Chamados; quem está de serviço naquela profissão recebe na hora e aceita.
+   - O primeiro que aceitar leva: o GPS aponta para quem chamou (acompanhando a pessoa), e quem chamou vê quem está a caminho.
+   - Chegou perto: quem chamou dá de 1 a 5 estrelas e, se quiser, gorjeta. Chamado de jogador real paga mais que o de figurante.
+   - Rádio da equipe: só quem está de serviço na mesma área (segurança, saúde, transporte...) ouve; códigos de um toque.
+   - Cargos: cada profissão tem 5 cargos; sobe com os atendimentos; cargo maior = salário maior (+10% por cargo).
+   ========================================================= */
+const CC_SVC = {
+  policia: { n: 'Polícia', tel: '190', i: '🚓', jobs: ['policial'], pay: 140, why: ['Fui assaltado', 'Tem uma briga aqui', 'Roubaram meu carro', 'Estou em perigo'] },
+  samu: { n: 'SAMU', tel: '192', i: '🚑', jobs: ['socorrista', 'medico'], pay: 130, why: ['Estou ferido', 'Tem uma pessoa caída', 'Acidente de trânsito'] },
+  bombeiro: { n: 'Bombeiros', tel: '193', i: '🚒', jobs: ['bombeiro'], pay: 130, why: ['Incêndio', 'Fiquei preso no alto', 'Carro pegando fogo'] },
+  taxi: { n: 'Táxi', tel: 'App', i: '🚕', jobs: ['taxista'], pay: 90, why: ['Preciso de uma corrida'] },
+  entrega: { n: 'Entrega', tel: 'App', i: '🛵', jobs: ['entregador', 'motoboy'], pay: 80, why: ['Quero um lanche aqui', 'Preciso de uma encomenda'] },
+  advogado: { n: 'Advogado', tel: 'OAB', i: '⚖️', jobs: ['advogado'], pay: 120, why: ['Preciso de defesa', 'Ajuda com uma multa'] },
+};
+// grupos do rádio: quem trabalha junto ouve junto
+const CC_RADIO = { policial: 'seg', bombeiro: 'seg', socorrista: 'saude', medico: 'saude', taxista: 'transp', entregador: 'transp', motoboy: 'transp', advogado: 'just', catador: 'cidade', grafiteiro: 'cidade', instrutor: 'cidade', traficante: 'fac' };
+const CC_RADIO_N = { seg: 'Segurança e resgate (PM e Bombeiros)', saude: 'Saúde (SAMU e Hospital)', transp: 'Transporte e entregas', just: 'Justiça', cidade: 'Serviços da cidade', fac: 'Rádio da facção' };
+const CC_CODES = { seg: ['QAP, na escuta', 'Preciso de apoio aqui', 'Suspeito em fuga', 'Ocorrência encerrada'], saude: ['Na escuta', 'Paciente a caminho', 'Preciso de reforço', 'Atendimento encerrado'], transp: ['Na escuta', 'Blitz na área, cuidado', 'Trânsito parado aqui', 'Corrida encerrada'], just: ['Na escuta', 'Tem preso precisando de defesa', 'Audiência encerrada'], cidade: ['Na escuta', 'Preciso de ajuda aqui', 'Serviço encerrado'], fac: ['Na escuta', 'Sujou! Polícia chegando', 'Área limpa', 'Bonde reunido'] };
+const RANKS = {
+  policial: ['Soldado', 'Cabo', 'Sargento', 'Tenente', 'Capitão'], bombeiro: ['Recruta', 'Bombeiro', 'Cabo', 'Sargento', 'Comandante'],
+  socorrista: ['Socorrista', 'Condutor', 'Enfermeiro', 'Chefe de Equipe', 'Coordenador do SAMU'], medico: ['Residente', 'Clínico', 'Especialista', 'Cirurgião', 'Diretor do Hospital'],
+  advogado: ['Estagiário', 'Advogado', 'Advogado Pleno', 'Advogado Sênior', 'Presidente da OAB'], taxista: ['Iniciante', 'Taxista', 'Taxista Experiente', 'Executivo', 'Dono da Frota'],
+  entregador: ['Iniciante', 'Entregador', 'Veterano', 'Entrega Expressa', 'Chefe da Central'], motoboy: ['Iniciante', 'Motoboy', 'Veterano', 'Motoboy Expresso', 'Chefe da Central'],
+  catador: ['Catador', 'Gari', 'Gari Experiente', 'Motorista do Caminhão', 'Chefe da Cooperativa'], grafiteiro: ['Iniciante', 'Grafiteiro', 'Artista', 'Artista Renomado', 'Mestre do Spray'],
+  instrutor: ['Monitor', 'Instrutor', 'Instrutor Sênior', 'Profissional', 'Lenda do Skate'], traficante: ['Aviãozinho', 'Vapor', 'Soldado', 'Gerente', 'Frente'],
+};
+const RANK_PTS = [0, 10, 25, 50, 100]; // atendimento de figurante = 1 ponto, de jogador real = 2
+const CC = { calls: {}, mine: null, take: null, radio: [], t: 0, rs: 0 };
+const ccSvcOf = job => Object.keys(CC_SVC).find(k => CC_SVC[k].jobs.includes(job));
+const ccMe = () => NET.user ? NET.user.id : 'eu';
+const ccSend0 = (event, payload) => { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event, payload }); };
+function jobRec(id) { S.jobs = S.jobs || {}; return S.jobs[id] = S.jobs[id] || { done: 0, earned: 0 }; }
+function jobPts(id) { const j = (S.jobs || {})[id] || {}; return (j.done || 0) + 2 * (j.real || 0); }
+function jobRank(id) { const p = jobPts(id); let r = 0; RANK_PTS.forEach((v, i) => { if (p >= v) r = i; }); return r; }
+function rankName(id, r = jobRank(id)) { return (RANKS[id] || ['Nível 1', 'Nível 2', 'Nível 3', 'Nível 4', 'Nível 5'])[r]; }
+const rankMult = id => 1 + 0.1 * jobRank(id);
+function jobStars(id) { const j = (S.jobs || {})[id] || {}; return j.nst ? j.st / j.nst : null; }
+const ccOnDuty = svc => Object.values(NET.peers).filter(p => CC_SVC[svc].jobs.includes(p.job)).length;
+const ccPeer = id => NET.peers[id] || null;
+function ccDist(c) { const p = ccPeer(c.from); const x = p ? p.x : c.x, z = p ? p.z : c.z; return Math.round(Math.hypot(x - P.x, z - P.z)); }
+function ccRefresh() { if (!$('panel').hidden && panelKind === 'central') { const a = document.activeElement; if (!(a && a.id === 'cc-txt')) renderPanel(); } ccDot(); }
+function ccDot() { const d = $('cc-dot'); if (!d) return; const svc = S.shift && ccSvcOf(S.shift); const n = svc ? Object.values(CC.calls).filter(c => c.svc === svc && !c.by).length : 0; d.hidden = !(n || (CC.mine && CC.mine.st === 'chegou')); }
+// promoção: avisa quando o cargo sobe (vale também para os atendimentos de figurante)
+function ccRankCheck() {
+  if (!S || !S.jobs) return; S.jobRk = S.jobRk || {};
+  for (const id in S.jobs) { const r = jobRank(id), was = S.jobRk[id] ?? r; if (r > was) { toast(`🎖️ Promoção! Agora você é ${rankName(id, r)} (${JOBS[id] ? JOBS[id].name : id}). Salário +${r * 10}%.`, 'good'); sfx('level'); } S.jobRk[id] = r; }
+}
+
+/* ---- pedir ajuda ---- */
+function ccSend(svc, why) {
+  const V = CC_SVC[svc]; if (!V) return;
+  if (!NET.ch || !NET.online) return toast('A Central funciona online: entre com sua conta para chamar outros jogadores.', 'bad');
+  if (CC.mine) return toast('Você já tem um chamado aberto. Cancele antes de abrir outro.', 'bad');
+  if (S.shift && V.jobs.includes(S.shift)) return toast('Você mesmo está de serviço nessa profissão.', 'bad');
+  const c = { id: ccMe().slice(0, 6) + Date.now().toString(36), from: ccMe(), name: S.name, svc, why: String(why || V.why[0]).slice(0, 60), x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10, t: Date.now() };
+  CC.mine = Object.assign({ st: 'aberto', rs: 0 }, c); ccSend0('cc_new', c); sfx('ui');
+  const n = ccOnDuty(svc);
+  toast(n ? `${V.i} Chamado enviado para ${V.n}: ${n} ${n > 1 ? 'profissionais de serviço vão' : 'profissional de serviço vai'} receber.` : `${V.i} Chamado enviado. Ninguém de ${V.n} está de serviço agora; ele fica aberto por 5 minutos.`, n ? 'good' : 'pink');
+  ccRefresh();
+}
+function ccCancel() { if (!CC.mine) return; ccSend0('cc_cancel', { id: CC.mine.id }); CC.mine = null; toast('Chamado cancelado.'); ccRefresh(); }
+function ccRate(stars, tip) {
+  const m = CC.mine; if (!m || !m.byId) return; tip = Math.max(0, Math.min(tip | 0, S.coins));
+  if (tip) { S.coins -= tip; updateHUD(); }
+  ccSend0('cc_done', { id: m.id, to: m.byId, stars: Math.max(1, Math.min(5, stars | 0)), tip }); persist();
+  toast(`Obrigado! Você deu ${'★'.repeat(stars)}${tip ? ` e $ ${fmt(tip)} de gorjeta` : ''} para ${m.by}.`, 'good'); CC.mine = null; ccRefresh();
+}
+
+/* ---- atender ---- */
+function ccTake(id) {
+  const c = CC.calls[id]; if (!c) return toast('Esse chamado já foi atendido ou cancelado.', 'bad');
+  if (!S.shift || !CC_SVC[c.svc].jobs.includes(S.shift)) return toast(`Entre de serviço como ${CC_SVC[c.svc].n} para atender.`, 'bad');
+  if (CC.take) return toast('Termine o atendimento atual primeiro.', 'bad');
+  CC.take = { id, c, ok: false, t: Date.now(), near: 0 }; ccSend0('cc_take', { id, to: c.from, by: ccMe(), name: S.name, job: S.shift, rank: rankName(S.shift) });
+  const p = ccPeer(c.from); setGps(p ? p.x : c.x, p ? p.z : c.z, `${CC_SVC[c.svc].i} ${c.name}`); toast(`A caminho de ${c.name}. O GPS aponta para a pessoa.`, 'good'); closePanel();
+}
+function ccDrop(msg) { if (CC.take) { CC.take = null; clearGps(); if (msg) toast(msg, 'pink'); ccRefresh(); } }
+function ccFinishPay(stars, tip) {
+  const T = CC.take; if (!T) return; const job = S.shift || T.job, V = CC_SVC[T.c.svc];
+  const pay = Math.round(V.pay * 1.5 * rankMult(job) * (stars ? 0.7 + stars * 0.1 : 1)); // jogador real paga 50% a mais; a nota ajusta
+  S.coins += pay + (tip || 0); const r = jobRec(job); r.real = (r.real || 0) + 1; r.earned = (r.earned || 0) + pay; if (stars) { r.st = (r.st || 0) + stars; r.nst = (r.nst || 0) + 1; }
+  try { addXP(40); } catch (e) { } persist(); updateHUD(); sfx('coin');
+  toast(`✅ Atendimento concluído: +$ ${fmt(pay)}${tip ? ` + $ ${fmt(tip)} de gorjeta` : ''}${stars ? ` · ${'★'.repeat(stars)}` : ''}`, 'good');
+  CC.take = null; clearGps(); ccRankCheck(); ccRefresh();
+}
+
+/* ---- rádio ---- */
+function ccRadioSend(txt, loc) {
+  const g = S.shift && CC_RADIO[S.shift]; if (!g) return toast('O rádio da equipe liga quando você está de serviço.', 'bad');
+  txt = String(txt || '').trim().slice(0, 120); if (!txt) return;
+  const m = { g, from: ccMe(), name: S.name, rank: rankName(S.shift), txt, x: loc ? Math.round(P.x) : null, z: loc ? Math.round(P.z) : null, t: Date.now() };
+  ccSend0('cc_radio', m); CC.radio.push(Object.assign({ me: true }, m)); CC.radio = CC.radio.slice(-20); ccRefresh();
+}
+
+/* ---- mensagens da rede ---- */
+function onCC(ev, d) {
+  if (!d || !S) return; const me = ccMe();
+  if (ev === 'cc_new') {
+    if (d.from === me || Date.now() - d.t > 5 * 60000) return; const old = CC.calls[d.id]; CC.calls[d.id] = Object.assign(old || {}, d);
+    if (!old && S.shift && CC_SVC[d.svc] && CC_SVC[d.svc].jobs.includes(S.shift) && !CC.take) { sfx('ui'); toast(`📞 ${CC_SVC[d.svc].tel} · ${d.name}: "${d.why}" (${ccDist(d)} m). Toque em 📞 Chamados para aceitar.`, 'pink'); }
+  } else if (ev === 'cc_take') {
+    if (CC.mine && d.id === CC.mine.id && !CC.mine.byId) { CC.mine.byId = d.by; CC.mine.by = `${d.rank} ${d.name}`; CC.mine.st = 'a caminho'; ccSend0('cc_conf', { id: d.id, by: d.by, name: d.name }); toast(`🚨 ${CC.mine.by} aceitou e está a caminho.`, 'good'); sfx('ui'); }
+  } else if (ev === 'cc_conf') {
+    const c = CC.calls[d.id]; if (c) c.by = d.by;
+    if (CC.take && CC.take.id === d.id) { if (d.by === me) CC.take.ok = true; else ccDrop(`${d.name} chegou primeiro nesse chamado.`); }
+  } else if (ev === 'cc_cancel_take') {
+    const c = CC.calls[d.id]; if (c) c.by = null;
+    if (CC.mine && d.id === CC.mine.id) { CC.mine.byId = null; CC.mine.by = null; CC.mine.st = 'aberto'; CC.mine.rs = 0; toast('O profissional desistiu. Seu chamado voltou para a fila.', 'pink'); }
+  } else if (ev === 'cc_cancel') {
+    delete CC.calls[d.id]; if (CC.take && CC.take.id === d.id) ccDrop('A pessoa cancelou o chamado.');
+  } else if (ev === 'cc_arrive') {
+    if (CC.mine && d.id === CC.mine.id) { CC.mine.st = 'chegou'; toast(`👋 ${CC.mine.by} chegou até você. Abra 📞 Chamados para avaliar.`, 'good'); sfx('level'); }
+  } else if (ev === 'cc_done') {
+    delete CC.calls[d.id]; if (CC.take && CC.take.id === d.id && d.to === me) ccFinishPay(d.stars, d.tip);
+  } else if (ev === 'cc_radio') {
+    if (!S.shift || CC_RADIO[S.shift] !== d.g || d.from === me) return; CC.radio.push(d); CC.radio = CC.radio.slice(-20);
+    feed(`📻 ${d.rank} ${d.name}: ${d.txt}`); tone('square', 900, 700, 0.04, 0.03);
+  }
+  ccRefresh();
+}
+
+/* ---- a cada meio segundo: GPS seguindo a pessoa, chegada, chamado reenviado para quem entrou depois ---- */
+function ccTick() {
+  const now = Date.now(); if (now - CC.t < 500) return; CC.t = now;
+  for (const k in CC.calls) if (now - CC.calls[k].t > 5 * 60000) delete CC.calls[k];
+  if (CC.mine) {
+    if (now - CC.mine.t > 5 * 60000 && !CC.mine.byId) { CC.mine = null; toast('Seu chamado expirou sem resposta.', 'pink'); ccRefresh(); }
+    else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t }); }
+  }
+  const T = CC.take; if (T) {
+    const p = ccPeer(T.c.from); if (!p) return ccDrop('A pessoa saiu da cidade.');
+    if (!T.arr && (!S.gps || Math.hypot(S.gps.x - p.x, S.gps.z - p.z) > 6)) setGps(p.x, p.z, `${CC_SVC[T.c.svc].i} ${T.c.name}`);
+    const d = Math.hypot(p.x - P.x, p.z - P.z); T.near = d < 6 ? T.near + 0.5 : 0;
+    if (!T.arr && T.ok && T.near >= 1.5) { T.arr = now; T.job = S.shift; clearGps(); ccSend0('cc_arrive', { id: T.id, to: T.c.from }); toast(`Você chegou até ${T.c.name}. Atenda e aguarde a avaliação.`, 'good'); }
+    if (T.arr && now - T.arr > 60000) ccFinishPay(0, 0); // ninguém avaliou em 1 minuto: recebe assim mesmo
+  }
+  if (now - CC.rs > 5000) { CC.rs = now; ccRankCheck(); ccDot(); }
+}
+
+/* ---- tela da central ---- */
+function PANEL_CENTRAL() {
+  const star = v => v == null ? 'sem avaliações' : `${'★'.repeat(Math.round(v))}${'☆'.repeat(5 - Math.round(v))} ${v.toFixed(1)}`;
+  let h = '';
+  const m = CC.mine;
+  if (m) {
+    const V = CC_SVC[m.svc];
+    h += `<div class="card"><h4>${V.i} Seu chamado: ${esc(V.n)} (${V.tel})</h4><p class="muted">"${esc(m.why)}"</p>`;
+    if (m.st === 'aberto') h += `<p>Aguardando um profissional aceitar… ${ccOnDuty(m.svc) ? `${ccOnDuty(m.svc)} de serviço agora.` : 'Ninguém dessa profissão de serviço agora.'}</p><button class="btn ghost sm" data-act="cc-cancel">Cancelar chamado</button>`;
+    else if (m.st === 'a caminho') { const p = ccPeer(m.byId); h += `<p><b>${esc(m.by)}</b> está a caminho${p ? ` · ${Math.round(Math.hypot(p.x - P.x, p.z - P.z))} m` : ''}.</p><button class="btn ghost sm" data-act="cc-cancel">Cancelar chamado</button>`; }
+    else h += `<p><b>${esc(m.by)}</b> chegou. Como foi o atendimento?</p><div class="row">${[1, 2, 3, 4, 5].map(s => `<button class="btn sm ${s >= 4 ? '' : 'ghost'}" data-act="cc-rate" data-s="${s}" data-tip="0">${'★'.repeat(s)}</button>`).join('')}</div><p class="muted" style="margin-top:6px">Com gorjeta (nota 5):</p><div class="row">${[20, 50, 100].map(t => `<button class="btn sm" data-act="cc-rate" data-s="5" data-tip="${t}" ${S.coins < t ? 'disabled' : ''}>★★★★★ + $ ${t}</button>`).join('')}</div>`;
+    h += `</div>`;
+  }
+  const svcMe = S.shift && ccSvcOf(S.shift);
+  if (S.shift) {
+    const id = S.shift, r = jobRank(id), nx = RANK_PTS[r + 1];
+    h += `<div class="card"><h4>💼 ${esc(JOBS[id] ? JOBS[id].name : id)} · ${esc(rankName(id))}</h4><p class="muted">Atendimentos: ${(S.jobs[id] || {}).done || 0} de figurantes + ${(S.jobs[id] || {}).real || 0} de jogadores · ${star(jobStars(id))} · salário +${r * 10}%</p>${nx != null ? `<p class="muted">Próximo cargo: <b>${esc(rankName(id, r + 1))}</b> em ${nx - jobPts(id)} pontos (figurante = 1, jogador = 2).</p>` : '<p class="muted">Cargo máximo.</p>'}</div>`;
+    if (svcMe) {
+      const L = Object.values(CC.calls).filter(c => c.svc === svcMe && !c.by).sort((a, b) => ccDist(a) - ccDist(b));
+      h += `<h3>${CC_SVC[svcMe].i} Chamados abertos (${CC_SVC[svcMe].tel})</h3>`;
+      if (CC.take) h += `<div class="card"><p>Atendendo <b>${esc(CC.take.c.name)}</b>: "${esc(CC.take.c.why)}" · ${ccDist(CC.take.c)} m${CC.take.arr ? ' · aguardando avaliação' : ''}</p><button class="btn ghost sm" data-act="cc-drop">Desistir</button></div>`;
+      h += L.length ? L.map(c => `<div class="row"><span>👤 <b>${esc(c.name)}</b> · "${esc(c.why)}" · ${ccDist(c)} m</span><button class="btn sm" data-act="cc-take" data-id="${esc(c.id)}" ${CC.take ? 'disabled' : ''}>Aceitar</button></div>`).join('') : '<p class="muted">Nenhum chamado de jogador agora. Os chamados de figurantes continuam chegando pela missão do turno.</p>';
+    }
+    const g = CC_RADIO[S.shift];
+    if (g) {
+      h += `<h3>📻 Rádio · ${esc(CC_RADIO_N[g])}</h3><div style="background:rgba(255,255,255,.05);border-radius:10px;padding:6px 10px">${CC.radio.filter(x => x.g === g).slice(-8).map(x => `<p style="margin:5px 0;line-height:1.35"><b>${esc(x.rank)} ${esc(x.name)}</b>: ${esc(x.txt)}${x.x != null && !x.me ? ` <button class="btn ghost sm" data-act="cc-go" data-x="${x.x}" data-z="${x.z}" data-n="${esc(x.name)}">📍 Ir</button>` : ''}</p>`).join('') || '<p class="muted" style="margin:5px 0">Silêncio no rádio.</p>'}</div>`;
+      h += `<div class="row" style="flex-wrap:wrap;gap:6px">${CC_CODES[g].map((t, i) => `<button class="btn ghost sm" data-act="cc-code" data-i="${i}">${esc(t)}</button>`).join('')}</div>`;
+      h += `<div class="row" style="margin-top:6px"><input id="cc-txt" maxlength="120" placeholder="Falar no rádio…" style="flex:1"><button class="btn sm" data-act="cc-say">Enviar</button></div>`;
+    }
+  }
+  h += `<h3>🆘 Pedir ajuda</h3><p class="muted">O chamado vai na hora para quem está de serviço. Chegou perto, você avalia com estrelas.</p>`;
+  for (const k in CC_SVC) {
+    const V = CC_SVC[k], n = NET.online ? ccOnDuty(k) : 0;
+    h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="flex-wrap:wrap;gap:6px">${V.why.map((w, i) => `<button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-send" data-svc="${k}" data-i="${i}" ${m || (svcMe === k) ? 'disabled' : ''}>${esc(w)}</button>`).join('')}</div></div>`;
+  }
+  if (!NET.online) h = `<div class="note">Você está jogando sem internet ou sem conta: a Central liga quando você entra online.</div>` + h;
+  return { title: '📞 Central de Chamados', html: h };
+}
+function ccAct(act, ds) {
+  if (act === 'open-central') return openPanel('central');
+  if (act === 'cc-send') return ccSend(ds.svc, CC_SVC[ds.svc].why[+ds.i]);
+  if (act === 'cc-cancel') return ccCancel();
+  if (act === 'cc-rate') return ccRate(+ds.s, +ds.tip);
+  if (act === 'cc-take') return ccTake(ds.id);
+  if (act === 'cc-drop') { if (CC.take) ccSend0('cc_cancel_take', { id: CC.take.id }); return ccDrop('Você desistiu do chamado.'); }
+  if (act === 'cc-code') { const g = CC_RADIO[S.shift]; const t = CC_CODES[g][+ds.i]; return ccRadioSend(t, /apoio|ajuda|reforço|fuga|Sujou/i.test(t)); }
+  if (act === 'cc-say') { const el = $('cc-txt'); ccRadioSend(el && el.value); if (el) el.value = ''; return; }
+  if (act === 'cc-go') { setGps(+ds.x, +ds.z, `📻 ${ds.n}`); closePanel(); return toast(`GPS marcado até ${ds.n}.`); }
+}
+Object.assign(PANELS, { central: PANEL_CENTRAL });
+
 /* aparência compacta enviada para os outros jogadores */
 const myNetLook = () => { const L = myNetLook0(); if (S.beachWear) Object.assign(L.e, beachEquip()); return L; };
 const myNetLook0 = () => ({ bd: S.body || null, w: handNow(), g: S.gender, sk: S.skin, h: S.hair, e: { shirt: (UNIFORM[S.shift] || {}).shirt || S.equip.shirt, pants: (UNIFORM[S.shift] || {}).pants || S.equip.pants, cap: (UNIFORM[S.shift] || {}).cap || S.equip.cap, shoes: S.equip.shoes, glasses: S.equip.glasses, acc: S.equip.acc, bag: S.shift === 'entregador' || S.shift === 'motoboy' ? 1 : 0, skate: S.equip.skate || 'sk_basic', wheels: S.equip.wheels || 'wh_basic', print: S.equip.print, wrist: S.equip.wrist, ear: S.equip.ear, bolsa: S.equip.bolsa, dye: S.equip.dye, tats: S.tats || null, tn: S.name, hol: holsterNow() }, b: S.board });
@@ -14968,6 +15162,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload))
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
@@ -15406,7 +15601,7 @@ function loop(now) {
   if (now - lastDraw < 1000 / fpsCap() - 3) { requestAnimationFrame(loop); return; } lastDraw = now;
   const dt = Math.min(0.05, (now - last) / 1000); last = now; const t = now / 1000;
   try {
-    if (mode === 'city') { updateCity(dt, t); if (city.inCine) { camera.position.set(CINE_IN.x + 0.85, 3.4, CINE_IN.z + 6.5); camera.lookAt(CINE_IN.x, 3.6, CINE_IN.z - 10.8); } safeRender(city.scene, camera); }
+    if (mode === 'city') { updateCity(dt, t); try { ccTick(); } catch (e) { console.warn('central', e); } if (city.inCine) { camera.position.set(CINE_IN.x + 0.85, 3.4, CINE_IN.z + 6.5); camera.lookAt(CINE_IN.x, 3.6, CINE_IN.z - 10.8); } safeRender(city.scene, camera); }
     else if (mode === 'race' && R) { updateRace(dt, t); renderer.render(R.sc, camera); }
     else if (mode === 'trip' && TRIP) { updateTrip(dt, t); renderer.render((TRIP && TRIP.sc) || city.scene, camera); }
     else if (mode === 'replay' && RP) { updateReplay(dt, t); renderer.render(city.scene, camera); }

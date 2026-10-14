@@ -493,3 +493,13 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
   - 🧍 **Nível de detalhe dos personagens (LOD):** até 16 m, o corpo completo (11 mil triângulos). De 16 a 45 m, uma versão com 3,9 mil. Depois de 45 m, uma com 1,7 mil. A textura, as roupas, o esqueleto e a animação são os mesmos. O seu personagem e a câmera de rosto usam sempre o completo. As versões leves foram geradas com o meshoptimizer (`ferramentas/lod.mjs` → `modelos/rpm_*_lod1.bin` e `_lod2.bin`, de 10 a 23 KB).
   - 🌡️ **Limite de quadros:** no máximo 60 por segundo (telas de 90/120 Hz não passam disso, e o celular esquenta menos). Há uma opção de 30 (economia de bateria) em Configurações → Quadros por segundo. A qualidade automática mede a fluidez em relação a esse limite.
   - Medido andando pela cidade: os triângulos por quadro caíram de 357 mil para 228 mil (pico de 654 mil para 396 mil) e o quadro de 27 para 24 ms.
+
+### Build 2026.10.14-50 (Profissões, etapa 1: central de chamados, rádio e cargos)
+  - 📞 **Central de Chamados** (botão "Chamados" na tela): qualquer jogador pede ajuda para Polícia (190), SAMU (192), Bombeiros (193), Táxi, Entrega ou Advogado, escolhendo o motivo. O painel mostra quantos profissionais estão de serviço.
+    - Quem está de serviço naquela profissão recebe o chamado na hora, com o nome, o motivo e a distância, e toca em **Aceitar**. O primeiro que aceitar leva.
+    - O GPS aponta para quem chamou e acompanha a pessoa se ela andar. Quem chamou vê quem está a caminho e a distância.
+    - Quando o profissional chega perto, quem chamou dá de 1 a 5 estrelas e, se quiser, gorjeta.
+    - Chamado de jogador real paga 50% a mais que o de figurante, e a nota ajusta o valor. Sem avaliação em 1 minuto, o profissional recebe assim mesmo.
+    - O chamado fica aberto por 5 minutos e é reenviado para quem entra na cidade depois. Dá para cancelar.
+  - 📻 **Rádio da equipe:** só quem está de serviço na mesma área ouve (PM e Bombeiros; SAMU e Hospital; Táxi e entregas; Justiça; Serviços da cidade; Facção). Tem códigos de um toque ("Preciso de apoio aqui", "Suspeito em fuga", "Sujou!"...) e texto livre. Pedidos de apoio levam a localização e um botão 📍 Ir.
+  - 🎖️ **Cargos:** 5 por profissão (ex.: Soldado → Cabo → Sargento → Tenente → Capitão). O cargo sobe com os atendimentos: figurante vale 1 ponto e jogador real 2 (10, 25, 50 e 100 pontos). Cada cargo dá +10% no salário, com aviso de promoção. A avaliação média aparece no painel.
