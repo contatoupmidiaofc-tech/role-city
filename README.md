@@ -508,3 +508,12 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
   - 🚑 **SAMU:** quem cai ferido abre um chamado 192 sozinho na Central. O socorrista real aceita, o GPS leva até a vítima e "Socorrer" conclui o atendimento (a vítima acorda no hospital e avalia). Enquanto um socorrista real está a caminho, a ambulância de figurante espera (até 2 minutos).
   - 🩺 **Médico:** um chamado novo, "Consulta médica". O médico de plantão aceita e, se o paciente estiver na enfermaria, vai direto para lá. Perto do paciente, aperta Ação para "Atender": um exame de 2,5 s cura 100% da vida. O paciente paga a consulta ($ 60, mais $ 20 por cargo do médico), e o médico ganha o atendimento mais a consulta. Quem acorda no hospital é avisado quando há médico de plantão.
   - 🚓 **Polícia:** quem foi assaltado por outro jogador chama o 190 e o assaltante vai junto no chamado como suspeito. O policial vê o suspeito e a distância, toca em "Seguir o suspeito" (o GPS acompanha) e, ao algemar o suspeito na abordagem, ganha bônus ($ 150 × cargo). A vítima é avisada da prisão e avalia o atendimento.
+
+### Build 2026.10.14-52 (Profissões, etapa 3: Táxi e Entregas com jogador real)
+  - 🚕 **Rolê Táxi:** o passageiro escolhe o destino na Central (praça, sua casa, lojas e prédios) e vê a estimativa de preço.
+    - O taxista aceita e o GPS leva até o passageiro. Quando o táxi chega perto, aparece "Entrar no táxi" (o passageiro senta no carro).
+    - A partir daí o **taxímetro corre**: $ 12 + $ 0,45 por metro, mais o bônus do cargo. Ele aparece no alto da tela dos dois, e o GPS do taxista vai para o destino.
+    - No destino o passageiro paga a corrida, desce sozinho e avalia (com gorjeta, se quiser).
+  - 🛵 **RolêFood:** o cliente pede do cardápio (X-Tudo, Pizza, Açaí, Pastel e caldo de cana, Marmita, Refrigerante), mais $ 15 de entrega.
+    - O entregador ou motoboy aceita, o GPS leva até a lanchonete mais perto para retirar o pedido (o cliente é avisado que saiu) e depois até o cliente, acompanhando se ele andar.
+    - Na frente do cliente aparece "Entregar o pedido". O cliente paga o pedido mais a entrega, ganha +15% de vida e avalia. O entregador ganha o serviço mais a taxa de entrega.
