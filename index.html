@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.14-52';
+const BUILD = '2026.10.14-53';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -5612,12 +5612,12 @@ function updateJobNew(m, dt, t) {
       city.promptBusy = true; pr.hidden = false;
       if (input.held.KeyE || input.hold.act || tap('act') || m.spraying > 0) {
         m.spraying = (m.spraying || 0) - dt; if (tap('act') || input.held.KeyE || input.hold.act) m.spraying = 0.35;
-        m.p += dt / 6; P.v = 0; P.h = Math.atan2(m.fire[0] - P.x, m.fire[1] - P.z); P.wpShowT = 0.3;
+        const inc = dt / (m.big ? 16 : 6); m.p += inc; if (m.cc) { m.sent = (m.sent || 0) + inc; if (!m.st || t - m.st > 0.4) { m.st = t; ccSend0('fogo_p', { id: m.cc, add: m.sent, by: S.name }); m.sent = 0; } } P.v = 0; P.h = Math.atan2(m.fire[0] - P.x, m.fire[1] - P.z); P.wpShowT = 0.3;
         if (Math.random() < dt * 30) { const s = new THREE.Mesh(SPH(0.12, 6, 4), new THREE.MeshBasicMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.8 })); s.position.set(P.x + Math.sin(P.h) * 0.6, P.y + 1.3, P.z + Math.cos(P.h) * 0.6); city.scene.add(s); city.fx.push({ m: s, vx: Math.sin(P.h) * 14 + rand(-1, 1), vy: rand(2, 4), vz: Math.cos(P.h) * 14 + rand(-1, 1), life: 0.9, max: 0.9, conf: true }); }
         if (Math.random() < dt * 6) sfx('spray');
       }
-      pr.textContent = `Segure ${key} · Apagar o fogo ${Math.round(m.p * 100)}%`;
-      if (m.p >= 1) { toast('Fogo apagado! O prédio foi salvo.', 'good'); return completeMission(); }
+      pr.textContent = `Segure ${key} · Apagar o fogo ${Math.round(Math.min(1, m.p) * 100)}%${m.big ? ` · ${m.crew ? m.crew + 1 : 1} na mangueira` : ''}`;
+      if (m.p >= 1) { if (m.cc) { ccSend0('fogo_fim', { id: m.cc }); fireDoneCC(m.cc); } toast(m.big ? '🚒 Incêndio controlado pela equipe!' : 'Fogo apagado! O prédio foi salvo.', 'good'); return completeMission(); }
     }
   } else if (m.type === 'job_pm') {
     if (m.got < m.pts.length) { if (near < 4) { m.got++; sfx('coin'); renderMissionBox(); if (m.got >= m.pts.length) { toast('Central: suspeito avistado! Vá até o local e aborde.', 'pink'); rebuildMissionObjs(); } } }
@@ -14626,7 +14626,7 @@ function botReply(id, text) {
 
 /* ---------------- AÇÕES ---------------- */
 function act(a, ds, el) {
-  if (a === 'open-central' || a.startsWith('cc-')) return ccAct(a, ds);
+  if (a === 'open-central' || a.startsWith('cc-') || a.startsWith('ct-')) return ccAct(a, ds);
   switch (a) {
     case 'panel-close': closePanel(); break;
     case 'open-perfil': if (mode === 'city') openPanel('perfil'); break;
@@ -14980,6 +14980,7 @@ function ccSend(svc, why, ex) {
   const c = { id: ccMe().slice(0, 6) + Date.now().toString(36), from: ccMe(), name: S.name, svc, why: String(why || V.why[0]).slice(0, 60), x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10, t: Date.now() };
   if (svc === 'policia' && CC.lastRob && Date.now() - CC.lastRob.t < 5 * 60000) c.sus = { id: CC.lastRob.id, name: CC.lastRob.name }; // quem te assaltou vai junto no chamado
   if (ex) Object.assign(c, ex);
+  if (svc === 'bombeiro' && /incêndio|fogo/i.test(c.why)) c.fire = true; // incêndio de verdade: o fogo aparece para os bombeiros
   CC.mine = Object.assign({ st: 'aberto', rs: 0 }, c); ccSend0('cc_new', c); sfx('ui');
   const n = ccOnDuty(svc);
   toast(n ? `${V.i} Chamado enviado para ${V.n}: ${n} ${n > 1 ? 'profissionais de serviço vão' : 'profissional de serviço vai'} receber.` : `${V.i} Chamado enviado. Ninguém de ${V.n} está de serviço agora; ele fica aberto por 5 minutos.`, n ? 'good' : 'pink');
@@ -15001,6 +15002,7 @@ function ccTake(id) {
   CC.take = { id, c, ok: false, t: Date.now(), near: 0 }; ccSend0('cc_take', { id, to: c.from, by: ccMe(), name: S.name, job: S.shift, rank: rankName(S.shift) });
   const p = ccPeer(c.from); closePanel();
   if (c.svc === 'consulta' && p && p.t && p.t.rm === 'hosp' && !city.hospIn) { toast(`Indo para a enfermaria atender ${c.name}…`, 'good'); return goEnfermaria(); }
+  if (c.fire) return fireJoin(c, true);
   setGps(p ? p.x : c.x, p ? p.z : c.z, `${CC_SVC[c.svc].i} ${c.name}`); toast(`A caminho de ${c.name}. O GPS aponta para a pessoa.${c.sus ? ` Suspeito: ${c.sus.name}.` : ''}`, 'good');
 }
 function ccDrop(msg) { if (CC.take) { CC.take = null; clearGps(); ccMeter(''); if (msg) toast(msg, 'pink'); ccRefresh(); } }
@@ -15025,6 +15027,7 @@ function onCuraOk(d) { if (d.to !== ccMe() || !d.fee) return; S.coins += d.fee; 
 // a vítima de assalto guarda quem foi (para o chamado da polícia) e é avisada da prisão
 function ccRobbedBy(d) { CC.lastRob = { id: d.id, name: d.by, t: Date.now() }; setTimeout(() => toast(`🚓 Chame a polícia em 📞 Chamados: ${d.by} vai como suspeito no chamado.`, 'pink'), 1500); }
 function ccArrestHook(p) { // policial prendeu alguém: se for o suspeito do chamado, bônus e aviso para a vítima
+  if (CC.den2 && CC.den2[p.id] && Date.now() - CC.den2[p.id].t < 60000) { const g = earn(Math.round(120 * rankMult('policial'))); toast(`🚓 Apreensão! Era a denúncia anônima: bônus +$ ${fmt(g)}.`, 'good'); delete CC.den2[p.id]; }
   const T = CC.take; if (!T || !T.c.sus || T.c.sus.id !== p.id) return; const g = earn(Math.round(150 * rankMult('policial'))); toast(`🚓 Suspeito do chamado preso! Bônus +$ ${fmt(g)}.`, 'good');
   ccSend0('cc_preso', { to: T.c.from, by: S.name, name: p.name }); T.sus = false; T.c.sus = null; if (!T.arr) { T.arr = Date.now(); T.job = S.shift; ccSend0('cc_arrive', { id: T.id, to: T.c.from }); }
 }
@@ -15070,6 +15073,80 @@ function onEntregaOk(d) { if (d.to !== ccMe() || !d.fee) return; S.coins += d.fe
 function onTaxiM(d) { if (!NET.user || d.to !== NET.user.id || !P.ride) return; ccMeter(`🚕 Taxímetro $ ${fmt(d.fare)} · ${d.l} a ${d.d} m`); }
 function onTaxiFim(d) { if (!NET.user || d.to !== NET.user.id) return; ccMeter(''); const f = payCash(d.fare || 0); persist(); if (P.ride) endRide(true); ccSend0('taxi_pago', { to: d.from, fare: f }); toast(`🏁 Chegou em ${d.l}. Corrida paga: $ ${fmt(f)}.`, 'good'); sfx('coin'); }
 function onTaxiPago(d) { if (d.to !== ccMe() || !d.fare) return; S.coins += d.fare; persist(); updateHUD(); toast(`🚕 Corrida recebida: +$ ${fmt(d.fare)}.`, 'good'); sfx('coin'); }
+/* ---- etapa 4: incêndio em equipe, contratos com advogado, denúncia anônima ---- */
+function fireJoin(c, taker) { // cria (ou entra no) incêndio do chamado: todos os bombeiros no mesmo fogo
+  if (S.mission && S.mission.cc === c.id) return toast('Você já está nesse incêndio.');
+  const fx = Math.round(c.x + 4), fz = Math.round(c.z + 2), b = (city.blds || []).slice().sort((a, b2) => Math.hypot(a.x - fx, a.z - fz) - Math.hypot(b2.x - fx, b2.z - fz))[0];
+  const x = b && Math.hypot(b.x - fx, b.z - fz) < 30 ? b.x : fx, z = b && Math.hypot(b.x - fx, b.z - fz) < 30 ? b.z : fz;
+  S.mission = { job: 'bombeiro', type: 'job_fogo', title: `Incêndio (chamado de ${c.name})`, fire: [x, z, b ? Math.min(b.h, 14) : 8], tgt: nearestAddr(x, z), p: 0, big: true, cc: c.id, crew: 0, pay: jobPay('bombeiro', JOBS.bombeiro.base * 1.6), time: 240, timeMax: 240 };
+  persist(); rebuildMissionObjs(); renderMissionBox(); setGps(x, z, '🔥 Incêndio');
+  ccSend0('fogo_entrou', { id: c.id, by: S.name }); closePanel();
+  toast(taker ? '🚒 Incêndio grande! Vá até o fogo e segure Ação na mangueira. Chame apoio no rádio: dois bombeiros apagam duas vezes mais rápido.' : `🚒 Você entrou no combate ao incêndio de ${c.name}.`, 'good');
+}
+function fireDoneCC(id) { const T = CC.take; if (T && T.id === id && !T.arr) { T.arr = Date.now(); T.job = 'bombeiro'; ccSend0('cc_arrive', { id: T.id, to: T.c.from }); } }
+function onFogo(ev, d) {
+  const m = S.mission; if (!m || m.cc !== d.id) { if (ev === 'fogo_fim' && CC.calls[d.id]) delete CC.calls[d.id]; return; }
+  if (ev === 'fogo_p') { m.p += d.add || 0; if (m.p >= 1) { fireDoneCC(m.cc); toast('🚒 Incêndio controlado pela equipe!', 'good'); completeMission(); } }
+  else if (ev === 'fogo_entrou') { m.crew = (m.crew || 0) + 1; toast(`🚒 ${d.by} chegou para ajudar no incêndio.`, 'good'); }
+  else if (ev === 'fogo_fim') { fireDoneCC(m.cc); toast('🚒 Incêndio controlado pela equipe!', 'good'); completeMission(); }
+}
+/* contrato entre jogadores: venda de veículo ou combinado em dinheiro, com advogado de garantia (5% para o advogado) */
+const CT = { list: {} };
+function ctPeersNear() { return Object.entries(NET.peers).filter(([, p]) => Math.hypot(p.x - P.x, p.z - P.z) < 40).map(([id, p]) => ({ id, name: p.name || 'Jogador' })); }
+function ctNew() {
+  const by = ($('ct-buyer') || {}).value, kind = ($('ct-kind') || {}).value, price = Math.max(1, Math.round(+($('ct-price') || {}).value || 0)), adv = ($('ct-adv') || {}).value || '';
+  if (!by) return toast('Escolha o comprador (precisa estar perto de você).', 'bad'); if (!price) return toast('Coloque o preço.', 'bad');
+  let veh = null, txt = ''; if (kind.startsWith('v:')) { veh = kind.slice(2); if (!(S.vehicles || []).includes(veh)) return toast('Você não tem esse veículo.', 'bad'); if (veh === S.veh && P.drive) return toast('Desça do veículo antes de vender.', 'bad'); txt = VEH[veh].name; } else txt = String(($('ct-txt') || {}).value || '').trim().slice(0, 60) || 'Serviço combinado';
+  const c = { id: 'ct' + Date.now().toString(36), seller: ccMe(), sName: S.name, buyer: by, bName: (NET.peers[by] || {}).name || 'Comprador', adv: adv || null, aName: adv ? (NET.peers[adv] || {}).name : null, veh, txt, price, st: 'proposta', t: Date.now() };
+  CT.list[c.id] = c; ccSend0('ct', Object.assign({ op: 'new' }, c)); toast(`📝 Proposta enviada para ${c.bName}: ${txt} por $ ${fmt(price)}${adv ? ` (garantia: Dr(a). ${c.aName})` : ''}.`, 'good'); ccRefresh();
+}
+function ctOp(id, op) {
+  const c = CT.list[id]; if (!c) return; const me = ccMe();
+  if (op === 'aceitar' && c.buyer === me && c.st === 'proposta') { if (cashNow() < c.price) return toast('Dinheiro insuficiente para esse contrato.', 'bad'); payCash(c.price); persist(); c.st = c.adv ? 'garantia' : 'pago'; c.payT = Date.now(); ccSend0('ct', { op: 'pago', id }); toast(c.adv ? `💰 Pagamento guardado com o advogado ${c.aName} até ele validar.` : '💰 Pago. O vendedor recebe agora.', 'good'); if (!c.adv) ctSettle(c); }
+  else if (op === 'recusar' && (c.buyer === me || c.seller === me) && c.st === 'proposta') { c.st = 'recusado'; ccSend0('ct', { op: 'recusado', id }); }
+  else if (op === 'validar' && c.adv === me && c.st === 'garantia') { c.st = 'pago'; ccSend0('ct', { op: 'validado', id }); const fee = Math.round(c.price * 0.05); S.coins += fee; persist(); updateHUD(); const r = jobRec('advogado'); r.real = (r.real || 0) + 1; ccRankCheck(); toast(`⚖️ Contrato validado. Honorários: +$ ${fmt(fee)}.`, 'good'); sfx('coin'); }
+  ccRefresh();
+}
+function ctSettle(c) { // conclui: vendedor recebe, veículo muda de dono
+  const me = ccMe(); if (c.done) return; c.done = true; c.st = 'concluído';
+  const net = c.adv ? Math.round(c.price * 0.95) : c.price;
+  if (c.seller === me) { S.coins += net; if (c.veh) { S.vehicles = (S.vehicles || []).filter(v => v !== c.veh); if (S.veh === c.veh) { S.veh = S.vehicles[0] || null; if (city.myVeh) { city.scene.remove(city.myVeh.m); city.myVeh = null; } } } persist(); updateHUD(); toast(`📝 Contrato concluído: +$ ${fmt(net)}${c.veh ? ` · ${VEH[c.veh].name} entregue para ${c.bName}` : ''}.`, 'good'); sfx('coin'); }
+  if (c.buyer === me) { if (c.veh && !(S.vehicles || []).includes(c.veh)) { S.vehicles.push(c.veh); S.veh = c.veh; } persist(); toast(`📝 Contrato concluído${c.veh ? `: o ${VEH[c.veh].name} agora é seu (Garagem)` : ''}.`, 'good'); }
+}
+function onCT(d) {
+  const me = ccMe(); let c = CT.list[d.id];
+  if (d.op === 'new') { if (![d.buyer, d.adv].includes(me)) return; CT.list[d.id] = c = Object.assign({}, d); delete c.op; toast(d.buyer === me ? `📝 ${d.sName} quer te vender: ${d.txt} por $ ${fmt(d.price)}. Veja em 📞 Chamados.` : `⚖️ Você foi chamado(a) para garantir um contrato entre ${d.sName} e ${d.bName}.`, 'pink'); sfx('ui'); }
+  else if (!c) return;
+  else if (d.op === 'pago') { c.st = c.adv ? 'garantia' : 'pago'; c.payT = Date.now(); if (!c.adv) ctSettle(c); else if (c.adv === me) toast(`⚖️ ${c.bName} pagou $ ${fmt(c.price)}. Valide o contrato em 📞 Chamados.`, 'pink'); }
+  else if (d.op === 'validado') ctSettle(c);
+  else if (d.op === 'recusado') { c.st = 'recusado'; if (c.seller === me) toast(`📝 ${c.bName} recusou a proposta.`, 'pink'); }
+  else if (d.op === 'devolvido') { c.st = 'devolvido'; }
+  ccRefresh();
+}
+function ctTick(now) { // garantia sem validação em 3 minutos: o comprador recebe de volta
+  for (const id in CT.list) { const c = CT.list[id]; if (c.st === 'garantia' && c.buyer === ccMe() && now - c.payT > 180000) { c.st = 'devolvido'; S.coins += c.price; persist(); updateHUD(); ccSend0('ct', { op: 'devolvido', id }); toast('📝 O advogado não validou em 3 minutos: seu dinheiro voltou.', 'pink'); ccRefresh(); } }
+}
+function ctPanel() {
+  const me = ccMe(); let h = '';
+  const mine = Object.values(CT.list).filter(c => !['recusado', 'devolvido'].includes(c.st) || Date.now() - c.t < 60000).sort((a, b) => b.t - a.t).slice(0, 5);
+  for (const c of mine) {
+    const role = c.seller === me ? 'Você vende' : c.buyer === me ? 'Você compra' : 'Você garante';
+    let btn = ''; if (c.st === 'proposta' && c.buyer === me) btn = `<button class="btn sm" data-act="ct-op" data-id="${c.id}" data-op="aceitar" ${cashNow() < c.price ? 'disabled' : ''}>Aceitar e pagar</button><button class="btn ghost sm" data-act="ct-op" data-id="${c.id}" data-op="recusar">Recusar</button>`;
+    if (c.st === 'garantia' && c.adv === me) btn = `<button class="btn sm" data-act="ct-op" data-id="${c.id}" data-op="validar">Validar contrato</button>`;
+    h += `<div class="card"><p><b>📝 ${role}</b>: ${esc(c.txt)} · $ ${fmt(c.price)}</p><p class="muted">${esc(c.sName)} → ${esc(c.bName)}${c.adv ? ` · garantia: ${esc(c.aName)} (5%)` : ' · sem advogado'} · ${esc(c.st)}</p>${btn ? `<div class="row" style="gap:6px">${btn}</div>` : ''}</div>`;
+  }
+  const P0 = ctPeersNear(), advs = Object.entries(NET.peers).filter(([, p]) => p.job === 'advogado');
+  h += `<div class="card"><h4>📝 Novo contrato de venda</h4>${P0.length ? `<div class="row" style="flex-wrap:wrap;gap:6px"><select id="ct-buyer">${P0.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><select id="ct-kind"><option value="txt">Combinado (texto)</option>${(S.vehicles || []).filter(v => VEH[v] && !VEH[v].plane && !VEH[v].heli && !['v_tanque'].includes(v)).map(v => `<option value="v:${v}">Veículo: ${esc(VEH[v].name)}</option>`).join('')}</select><input id="ct-txt" maxlength="60" placeholder="O que é (se for combinado)"><input id="ct-price" type="number" min="1" placeholder="Preço $" style="width:110px"><select id="ct-adv"><option value="">Sem advogado</option>${advs.map(([id, p]) => `<option value="${esc(id)}">Advogado(a) ${esc(p.name)}</option>`).join('')}</select><button class="btn sm" data-act="ct-new">Enviar proposta</button></div><p class="muted" style="margin-top:4px">Com advogado, o dinheiro fica guardado até ele validar (ninguém leva calote) e ele ganha 5%. Sem validação em 3 minutos, o comprador recebe de volta.</p>` : '<p class="muted">Chegue perto (até 40 m) de quem vai comprar para fazer um contrato.</p>'}</div>`;
+  return h;
+}
+/* traficante carregando: a denúncia anônima chega aos policiais de serviço (área aproximada); a contenção avisa quando a viatura chega perto */
+function correTick(now) {
+  const m = S.mission; if (!m || m.type !== 'job_corre' || m.stage !== 1 || !NET.online) { CC.den = null; return; }
+  if (!CC.den || now - CC.den > 20000) { CC.den = now; const ox = rand(-25, 25), oz = rand(-25, 25); ccSend0('denuncia', { id: ccMe(), x: Math.round(P.x + ox), z: Math.round(P.z + oz), t: now }); }
+  const pol = Object.values(NET.peers).find(p => p.job === 'policial' && Math.hypot(p.x - P.x, p.z - P.z) < 60);
+  if (pol && (!CC.cont || now - CC.cont > 15000)) { CC.cont = now; toast('🚨 Contenção: viatura por perto! Disfarça ou corre.', 'bad'); tone('square', 600, 900, 0.08, 0.05); }
+}
+function onDenuncia(d) { if (S.shift !== 'policial') return; const old = CC.den2 && CC.den2[d.id]; (CC.den2 = CC.den2 || {})[d.id] = d; if (!old || d.t - old.t > 60000) { toast('📢 Denúncia anônima: movimentação suspeita na área. Veja em 📞 Chamados.', 'pink'); sfx('ui'); } ccRefresh(); }
 /* ---- rádio ---- */
 function ccRadioSend(txt, loc) {
   const g = S.shift && CC_RADIO[S.shift]; if (!g) return toast('O rádio da equipe liga quando você está de serviço.', 'bad');
@@ -15114,18 +15191,19 @@ function ccTick() {
   if (CC.mine && CC.mine.svc === 'taxi' && CC.mine.st === 'a caminho' && !CC.mine.near && !P.ride) { const q = ccPeer(CC.mine.byId); if (q && q.t && q.t.vh && Math.hypot(q.x - P.x, q.z - P.z) < 12) { CC.mine.near = true; toast('🚕 Seu táxi chegou! Abra 📞 Chamados e toque em "Entrar no táxi".', 'good'); sfx('level'); ccRefresh(); } }
   if (CC.mine) {
     if (now - CC.mine.t > 5 * 60000 && !CC.mine.byId) { CC.mine = null; toast('Seu chamado expirou sem resposta.', 'pink'); ccRefresh(); }
-    else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t, sus: CC.mine.sus, dest: CC.mine.dest, item: CC.mine.item }); }
+    else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t, sus: CC.mine.sus, dest: CC.mine.dest, item: CC.mine.item, fire: CC.mine.fire }); }
   }
   const T = CC.take; if (T) {
     const p = ccPeer(T.c.from); if (!p) return ccDrop('A pessoa saiu da cidade.');
     try { ccPhaseTick(T, p, now); } catch (e) { console.warn('fase', e); }
-    if (!T.arr && !city.hospIn && !T.sus && T.ph !== 'levando' && T.ph !== 'loja' && (!S.gps || Math.hypot(S.gps.x - p.x, S.gps.z - p.z) > 6)) setGps(p.x, p.z, `${CC_SVC[T.c.svc].i} ${T.c.name}`);
+    if (!T.arr && !city.hospIn && !T.sus && !T.c.fire && T.ph !== 'levando' && T.ph !== 'loja' && (!S.gps || Math.hypot(S.gps.x - p.x, S.gps.z - p.z) > 6)) setGps(p.x, p.z, `${CC_SVC[T.c.svc].i} ${T.c.name}`);
     if (T.sus) { const q = ccPeer(T.c.sus.id); if (q && (!S.gps || Math.hypot(S.gps.x - q.x, S.gps.z - q.z) > 6)) setGps(q.x, q.z, `🚨 Suspeito: ${T.c.sus.name}`); }
     const d = Math.hypot(p.x - P.x, p.z - P.z); T.near = d < 6 ? T.near + 0.5 : 0;
-    if (!T.arr && T.ok && T.near >= 1.5 && !CC_SVC[T.c.svc].act) { T.arr = now; T.job = S.shift; clearGps(); ccSend0('cc_arrive', { id: T.id, to: T.c.from }); toast(`Você chegou até ${T.c.name}. Atenda e aguarde a avaliação.`, 'good'); }
+    if (!T.arr && T.ok && T.near >= 1.5 && !CC_SVC[T.c.svc].act && !T.c.fire) { T.arr = now; T.job = S.shift; clearGps(); ccSend0('cc_arrive', { id: T.id, to: T.c.from }); toast(`Você chegou até ${T.c.name}. Atenda e aguarde a avaliação.`, 'good'); }
     if (T.arr && now - T.arr > 60000) ccFinishPay(0, 0); // ninguém avaliou em 1 minuto: recebe assim mesmo
   }
   if (now - CC.rs > 5000) { CC.rs = now; ccRankCheck(); ccDot(); }
+  try { ctTick(now); correTick(now); } catch (e) { }
 }
 
 /* ---- tela da central ---- */
@@ -15153,6 +15231,8 @@ function PANEL_CENTRAL() {
       if (CC.take) h += `<div class="card"><p>Atendendo <b>${esc(CC.take.c.name)}</b>: "${esc(CC.take.c.why)}" · ${ccDist(CC.take.c)} m${CC.take.arr ? ' · aguardando avaliação' : ''}</p>${CC.take.c.sus ? `<p>🚨 Suspeito: <b>${esc(CC.take.c.sus.name)}</b> ${ccPeer(CC.take.c.sus.id) ? `· ${Math.round(Math.hypot(ccPeer(CC.take.c.sus.id).x - P.x, ccPeer(CC.take.c.sus.id).z - P.z))} m` : '(saiu da cidade)'}</p>` : ''}<div class="row">${CC.take.c.sus && ccPeer(CC.take.c.sus.id) ? `<button class="btn sm" data-act="cc-sus">${CC.take.sus ? 'Voltar para a vítima' : 'Seguir o suspeito'}</button>` : ''}${CC.take.c.svc === 'consulta' && !city.hospIn && ccPeer(CC.take.c.from) && (ccPeer(CC.take.c.from).t || {}).rm === 'hosp' ? '<button class="btn sm" data-act="cc-enf">Ir para a enfermaria</button>' : ''}<button class="btn ghost sm" data-act="cc-drop">Desistir</button></div></div>`;
       h += L.length ? L.map(c => `<div class="row"><span>👤 <b>${esc(c.name)}</b> · "${esc(c.why)}" · ${ccDist(c)} m${c.sus ? ` · <b style="color:#ff7088">suspeito: ${esc(c.sus.name)}</b>` : ''}</span><button class="btn sm" data-act="cc-take" data-id="${esc(c.id)}" ${CC.take ? 'disabled' : ''}>Aceitar</button></div>`).join('') : '<p class="muted">Nenhum chamado de jogador agora. Os chamados de figurantes continuam chegando pela missão do turno.</p>';
     }
+    if (svcMe === 'bombeiro') { const F = Object.values(CC.calls).filter(c => c.fire && c.by && c.by !== ccMe() && !(S.mission && S.mission.cc === c.id)); if (F.length) h += `<h3>🔥 Incêndios precisando de apoio</h3>` + F.map(c => `<div class="row"><span>🔥 Chamado de <b>${esc(c.name)}</b> · ${ccDist(c)} m</span><button class="btn sm" data-act="cc-fire" data-id="${esc(c.id)}">Ajudar</button></div>`).join(''); }
+    if (S.shift === 'policial' && CC.den2) { const L2 = Object.values(CC.den2).filter(d => Date.now() - d.t < 60000); if (L2.length) h += `<h3>📢 Denúncias anônimas</h3>` + L2.map(d => `<div class="row"><span>Movimentação suspeita · ~${Math.round(Math.hypot(d.x - P.x, d.z - P.z))} m (área aproximada)</span><button class="btn sm" data-act="cc-go" data-x="${d.x}" data-z="${d.z}" data-n="Denúncia">📍 Ir</button></div>`).join(''); }
     const g = CC_RADIO[S.shift];
     if (g) {
       h += `<h3>📻 Rádio · ${esc(CC_RADIO_N[g])}</h3><div style="background:rgba(255,255,255,.05);border-radius:10px;padding:6px 10px">${CC.radio.filter(x => x.g === g).slice(-8).map(x => `<p style="margin:5px 0;line-height:1.35"><b>${esc(x.rank)} ${esc(x.name)}</b>: ${esc(x.txt)}${x.x != null && !x.me ? ` <button class="btn ghost sm" data-act="cc-go" data-x="${x.x}" data-z="${x.z}" data-n="${esc(x.name)}">📍 Ir</button>` : ''}</p>`).join('') || '<p class="muted" style="margin:5px 0">Silêncio no rádio.</p>'}</div>`;
@@ -15160,6 +15240,7 @@ function PANEL_CENTRAL() {
       h += `<div class="row" style="margin-top:6px"><input id="cc-txt" maxlength="120" placeholder="Falar no rádio…" style="flex:1"><button class="btn sm" data-act="cc-say">Enviar</button></div>`;
     }
   }
+  if (NET.online) h += `<h3>📝 Contratos</h3>` + ctPanel();
   h += `<h3>🆘 Pedir ajuda</h3><p class="muted">O chamado vai na hora para quem está de serviço. Chegou perto, você avalia com estrelas.</p>`;
   for (const k in CC_SVC) {
     const V = CC_SVC[k], n = NET.online ? ccOnDuty(k) : 0;
@@ -15179,6 +15260,9 @@ function ccAct(act, ds) {
   if (act === 'cc-drop') { if (CC.take) ccSend0('cc_cancel_take', { id: CC.take.id }); return ccDrop('Você desistiu do chamado.'); }
   if (act === 'cc-code') { const g = CC_RADIO[S.shift]; const t = CC_CODES[g][+ds.i]; return ccRadioSend(t, /apoio|ajuda|reforço|fuga|Sujou/i.test(t)); }
   if (act === 'cc-say') { const el = $('cc-txt'); ccRadioSend(el && el.value); if (el) el.value = ''; return; }
+  if (act === 'cc-fire') { const c = CC.calls[ds.id]; if (c) fireJoin(c, false); return; }
+  if (act === 'ct-new') return ctNew();
+  if (act === 'ct-op') return ctOp(ds.id, ds.op);
   if (act === 'cc-taxi') { const D = ccDests(), d = D[+($('cc-dest') || {}).value || 0]; return ccSend('taxi', `Corrida até ${d.l}`, { dest: { l: d.l, x: d.x, z: d.z } }); }
   if (act === 'cc-food') { const f = FOOD[+ds.i]; return ccSend('entrega', `Pedido: ${f.n}`, { item: f }); }
   if (act === 'cc-board') { const m = CC.mine; if (m && m.byId) { askRide({ id: m.byId, name: m.by }); closePanel(); } return; }
@@ -15244,7 +15328,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
-    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }

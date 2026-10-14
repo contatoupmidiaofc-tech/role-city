@@ -517,3 +517,15 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
   - 🛵 **RolêFood:** o cliente pede do cardápio (X-Tudo, Pizza, Açaí, Pastel e caldo de cana, Marmita, Refrigerante), mais $ 15 de entrega.
     - O entregador ou motoboy aceita, o GPS leva até a lanchonete mais perto para retirar o pedido (o cliente é avisado que saiu) e depois até o cliente, acompanhando se ele andar.
     - Na frente do cliente aparece "Entregar o pedido". O cliente paga o pedido mais a entrega, ganha +15% de vida e avalia. O entregador ganha o serviço mais a taxa de entrega.
+
+### Build 2026.10.14-53 (Profissões, etapa 4: Bombeiro em equipe, Advogado com contratos, Traficante contra a polícia real)
+  - 🚒 **Incêndio em equipe:** quem chama o 193 com "Incêndio" ou "Fogo" cria um incêndio grande perto de onde está.
+    - O bombeiro que aceita vai direto para o fogo. Os outros bombeiros de serviço veem "🔥 Incêndios precisando de apoio" na Central e tocam em "Ajudar".
+    - A mangueira de todos enche a mesma barra: dois bombeiros apagam duas vezes mais rápido. Cada um recebe o pagamento do incêndio grande, e quem chamou avalia o atendimento.
+  - ⚖️ **Contratos com advogado:** perto de outro jogador (até 40 m), dá para propor a venda de um veículo ou um combinado em dinheiro, em "📝 Novo contrato" na Central.
+    - Sem advogado, o pagamento vai direto ao vendedor.
+    - Com advogado de serviço, o dinheiro fica guardado até ele validar o contrato. Aí o vendedor recebe 95%, o advogado recebe 5% de honorários e o veículo passa para a garagem do comprador.
+    - Sem validação em 3 minutos, o comprador recebe o dinheiro de volta.
+  - 📢 **Denúncia anônima:** enquanto o traficante carrega a encomenda, os policiais de serviço recebem uma denúncia com a área aproximada (±25 m) e um botão "Ir".
+    - Quando uma viatura real passa a menos de 60 m, o traficante recebe o aviso de "Contenção".
+    - Prender o traficante denunciado dá ao policial um bônus de apreensão ($ 120 × cargo).
