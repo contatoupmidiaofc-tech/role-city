@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.14-54';
+const BUILD = '2026.10.14-55';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1559,7 +1559,7 @@ function buildHairStyle(u, hs, look) {
   const f = u.k === 'f' && !(MODELS[u.k] && MODELS[u.k].rpm), y0 = f ? 0.1 : 0.15;
   const RP = !!(MODELS[u.k] && MODELS[u.k].rpm);
   if (hs === 'black') { if (RP) mk(SPH(0.122, 18, 14), 0, y0 - 0.03, -0.04, 0, 0, 0, 1.0, 0.92, 1.05); else mk(SPH(0.17, 18, 14), 0, y0 + 0.02, -0.02, 0, 0, 0, 1.12, 0.92, 1.1); }
-  else if (hs === 'moicano') { mk(boxGeo(0.04, 0.05, 0.2), 0, y0 + (RP ? 0.0 : 0.06), -0.02); }
+  else if (hs === 'moicano') { if (RP) mk(SPH(0.118, 16, 12), 0, y0 - 0.005, -0.02, 0, 0, 0, 0.22, 1.0, 0.8); else mk(boxGeo(0.04, 0.05, 0.2), 0, y0 + 0.06, -0.02); }
   else if (hs === 'dread' || hs === 'tranca') { const n = hs === 'dread' ? 14 : 2; for (let i = 0; i < n; i++) { const a = hs === 'dread' ? Math.PI * 0.35 + i / (n - 1) * Math.PI * 1.3 : Math.PI * (0.8 + i * 0.4); const rr = RP ? 0.085 : 0.1, x = Math.sin(a) * rr, z = Math.cos(a) * rr - (RP ? 0.03 : 0.02); mk(CAPG(hs === 'dread' ? (RP ? 0.008 : 0.014) : (RP ? 0.014 : 0.022), hs === 'dread' ? 0.2 : 0.3), x, y0 - (hs === 'dread' ? (RP ? 0.1 : 0.06) : (RP ? 0.15 : 0.12)), z, Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25); } }
   else if (hs === 'rabo') mk(CAPG(0.035, 0.18), 0, y0 - 0.06, -0.14, 0.5);
   else if (hs === 'coque') mk(SPH(0.065, 12, 10), 0, y0 + 0.05, -0.09);
@@ -3874,7 +3874,7 @@ function vehHorn() {
 function spawnMyVehicle(Vj) {
   if (!Vj && (!S.veh || !VEH[S.veh])) return toast('Você ainda não tem veículo. Compre na Concessionária.', 'bad');
   if (city.myVeh) city.scene.remove(city.myVeh.m);
-  const V = Vj || VEH[S.veh], m = makeVehicleMesh(V);
+  const V = Vj || vehTuned(S.veh), m = makeVehicleMesh(V);
   let x = P.x + Math.cos(P.h) * 3, z = P.z - Math.sin(P.h) * 3; if (collide(x, z, 1.2)) { x = P.x - Math.cos(P.h) * 3; z = P.z + Math.sin(P.h) * 3; }
   m.position.set(x, groundH(x, z), z); m.rotation.y = P.h; city.scene.add(m);
   city.myVeh = { m, V, x, z, h: P.h };
@@ -3903,14 +3903,14 @@ function updateDriving(dt, ax, blocked) {
   const thr = blocked ? 0 : ax.y, st = blocked ? 0 : ax.x;
   if (thr > 0.1) P.v += V.acc * thr * dt * (1 - Math.max(0, P.v) / V.top);
   else if (thr < -0.1) P.v -= (P.v > 0.5 ? 20 : V.acc * 0.4) * -thr * dt;
-  P.v -= P.v * (thr > 0.1 ? 0.08 : 0.45) * dt; P.v = clamp(P.v, -6, V.top);
+  P.v -= P.v * (thr > 0.1 ? 0.08 : 0.45) * dt; P.v = clamp(P.v, -6, V.top * vehDmgMul());
   const steerK = (moto ? 2.4 : 1.9) * Math.min(1, Math.abs(P.v) / 5) / (1 + Math.abs(P.v) * 0.025);
   P.h -= st * steerK * dt * Math.sign(P.v || 1);
   const r = d.m.userData.radius, nx = P.x + Math.sin(P.h) * P.v * dt, nz = P.z + Math.cos(P.h) * P.v * dt;
   if (!collide(nx, nz, r) && !(beachCity() && nz > SEA_Z - 2)) { P.x = nx; P.z = nz; }
-  else { if (Math.abs(P.v) > 8) { sfx('hit'); toast('Bateu!', 'bad'); } P.v *= -0.25; }
+  else { if (Math.abs(P.v) > 8) { sfx('hit'); toast('Bateu!', 'bad'); vehHit(Math.abs(P.v)); } P.v *= -0.25; }
   for (const o of [...city.bots, ...city.peds]) { const dd = Math.hypot(o.x - P.x, o.z - P.z); if (dd < r + 0.8 && Math.abs(P.v) > 3 && !(o.fallT > 0)) { o.fallT = 1.6; scream(0, o.g.userData.k === 'f'); bubble(o.g, pick(['Ô barbeiro!', 'Olha a faixa!', 'Quase me atropela!']), 3); P.v *= 0.7; sfx('hit'); } }
-  for (const c of city.cars) { const dx = P.x - c.x, dz = P.z - c.z; if (Math.hypot(dx, dz) < (c.moto ? 1.6 : 2.6) + r * 0.5) { P.v *= -0.3; P.x += dx * 0.1; P.z += dz * 0.1; if (!d.crashT || d.crashT < 0) { sfx('hit'); d.crashT = 1; } } }
+  for (const c of city.cars) { const dx = P.x - c.x, dz = P.z - c.z; if (Math.hypot(dx, dz) < (c.moto ? 1.6 : 2.6) + r * 0.5) { P.v *= -0.3; P.x += dx * 0.1; P.z += dz * 0.1; if (!d.crashT || d.crashT < 0) { sfx('hit'); d.crashT = 1; if (Math.abs(P.v) > 4) vehHit(Math.abs(P.v) * 0.7); } } }
   d.crashT = (d.crashT || 0) - dt;
   const m = d.m, L2 = (m.userData.len || 4) / 2, hf = groundH(P.x + Math.sin(P.h) * L2, P.z + Math.cos(P.h) * L2), hb = groundH(P.x - Math.sin(P.h) * L2, P.z - Math.cos(P.h) * L2);
   P.y = (hf + hb) / 2; m.rotation.order = 'YXZ'; m.position.set(P.x, P.y, P.z); m.rotation.y = P.h; m.rotation.x = -Math.atan2(hf - hb, L2 * 2);
@@ -4972,6 +4972,7 @@ function endShift() {
 function nextJobTask() {
   const id = S.shift; if (!id) return;
   const lv = jobLv(id);
+  if (S6_JOBS.includes(id)) { S.mission = s6Task(id, lv); persist(); rebuildMissionObjs(); renderMissionBox(); sfx('ui'); return; }
   if (['motoboy', 'taxista', 'catador', 'bombeiro', 'policial', 'traficante', 'socorrista', 'medico'].includes(id)) { S.mission = jobTaskNew(id, lv); persist(); rebuildMissionObjs(); renderMissionBox(); sfx('ui'); return; }
   if (id === 'entregador') {
     const a = pick(city.kiosks), b = farPoint(45), dist = Math.hypot(a.x - P.x, a.z - P.z) + Math.hypot(b[0] - a.x, b[1] - a.z), sp = skateOut() ? 8.5 : 5;
@@ -5000,7 +5001,7 @@ function completeJobTask(m) {
   setTimeout(() => { if (S.shift === id && !S.mission) nextJobTask(); }, 2200);
 }
 function updateJobTask(m, dt, t) {
-  if (['job_taxi', 'job_lixo', 'job_fogo', 'job_pm', 'job_corre', 'job_resgate', 'job_consulta'].includes(m.type)) return updateJobNew(m, dt, t);
+  if (['job_taxi', 'job_lixo', 'job_fogo', 'job_pm', 'job_corre', 'job_resgate', 'job_consulta', 'job_serv'].includes(m.type)) return updateJobNew(m, dt, t);
   if (m.type === 'job_ent') {
     const tg = m.stage === 0 ? m.a : m.b;
     if (m.moto && !(P.drive && P.drive.V.kind === 'moto') && Math.hypot(tg[0] - P.x, tg[1] - P.z) < 3) { city.promptBusy = true; $('prompt').hidden = false; $('prompt').textContent = 'Motoboy: chegue pilotando a sua moto'; return; }
@@ -5558,6 +5559,7 @@ function jobTaskNew(id, lv) {
 }
 function nearestAddr(x, z) { let best = [x, z], bd = 1e9; for (const p of city.addrs) { const d = Math.hypot(p[0] - x, p[1] - z); if (d < bd) { bd = d; best = p; } } return best; }
 function jobTarget(m) {
+  if (m.type === 'job_serv') { const s = m.stops[m.got]; return s ? [s[0], s[1]] : null; }
   if (m.type === 'job_taxi') return m.stage === 0 ? m.a : m.b;
   if (m.type === 'job_lixo') { if (m.got >= m.goal) return m.rc; let best = null, bd = 1e9; for (const c of m.items) if (!c[2]) { const d = Math.hypot(c[0] - P.x, c[1] - P.z); if (d < bd) { bd = d; best = c; } } return best; }
   if (m.type === 'job_fogo') return m.tgt;
@@ -5568,6 +5570,7 @@ function jobTarget(m) {
   return null;
 }
 function jobObjsNew(m) {
+  if (m.type === 'job_serv') return s6TaskObjs(m);
   if (m.type === 'job_lixo') {
     const geo = { saco: SPH(0.45, 10, 8), papelao: boxGeo(0.9, 0.5, 0.7), latas: CYL(0.35, 0.35, 0.6, 10) }, mat = { saco: lam(0x15161a), papelao: lam(0xb08a5a), latas: lam(0xcfd3d8) };
     m.items.forEach((c, i) => { if (c[2]) return; const o = new THREE.Mesh(geo[c[3]], mat[c[3]]); o.position.set(c[0], groundH(c[0], c[1]) + 0.4, c[1]); o.userData.i = i; o.castShadow = true; city.scene.add(o); city.mObjs.push(o); });
@@ -5595,6 +5598,7 @@ function updateJobNew(m, dt, t) {
   const ring = city.mObjs.find(o => o.userData.ring), tg = jobTarget(m), key = IS_TOUCH ? 'Ação' : 'E', pr = $('prompt');
   if (ring && tg) { ring.position.set(tg[0], groundH(tg[0], tg[1]) + 0.2, tg[1]); ring.rotation.z += dt; }
   const near = tg && Math.hypot(tg[0] - P.x, tg[1] - P.z);
+  if (m.type === 'job_serv') return s6TaskTick(m, dt, near, key, pr);
   if (m.type === 'job_taxi') {
     const inCar = P.drive && P.drive.V.kind === 'car';
     const pax = city.mObjs.find(o => o.userData.pax); if (pax) { tickBubble(pax, dt); if (pax.userData.real) animSkater(pax, { walk: true, v: 0, fallT: 0, emote: 'wave' }, t); pax.rotation.y = Math.atan2(P.x - pax.position.x, P.z - pax.position.z); }
@@ -5654,6 +5658,7 @@ function updateJobNew(m, dt, t) {
   }
 }
 function missionBoxNew(m) {
+  if (m.type === 'job_serv') { const s = m.stops[m.got]; return s ? `${s[2]} (${m.got + 1}/${m.stops.length})` : 'Pronto'; }
   if (m.type === 'job_taxi') return m.stage === 0 ? 'Busque o passageiro que está acenando' : `Leve até: ${m.bL}`;
   if (m.type === 'job_lixo') return m.got < m.goal ? `Recolhidos ${m.got} / ${m.goal}` : 'Leve tudo para a Cooperativa de Reciclagem';
   if (m.type === 'job_fogo') return `Apague o incêndio · ${Math.round(m.p * 100)}%`;
@@ -9416,7 +9421,7 @@ function charLod(o, d) {
 function rpmBodyMat(M) { const m = new THREE.MeshStandardMaterial({ map: M.atlas.base || (M.atlas.base = (() => { const t = new THREE.CanvasTexture(M.atlas.c); t.flipY = false; t.encoding = THREE.sRGBEncoding; return t; })()), normalMap: M.normal, roughness: 0.78, metalness: 0 }); m.name = M.avatarMat; if (M.normal) m.normalScale.set(0.8, 0.8); return m; }
 function applyRpmLook(u, look) {
   const M = MODELS[u.k], m = u.mats[M.avatarMat]; if (!m) return;
-  const bald = (look.body && look.body.hs) === 'careca';
+  const bald = ['careca', 'moicano'].includes(look.body && look.body.hs); // moicano: laterais raspadas, só a crista
   const pm = look.pants.trunk && M.trunkMask ? M.trunkMask : look.pants.long && !look.pants.baggy && M.longMask ? M.longMask : (look.pants.short || look.pants.baggy) ? M.legMask : null;
   const tm = look.shirt.nude ? (u.k === 'f' ? M.braMask : M.nudeMask) : look.shirt.bra ? M.braMask : look.shirt.tank ? M.tankMask : null;
   // figurantes: se a roupa ainda não foi montada, entra na fila (os mais perto da câmera primeiro) e fica com a textura atual até lá
@@ -9493,7 +9498,7 @@ function radioTick(vol) {
   const lv = Math.sqrt(clamp(vol, 0, 1));
   if (FM.g && FM.g !== 'x') { a.volume = 1; FM.g.gain.value = lv * 3.2 * FM.boost; } else a.volume = lv;
   // o chefe reenvia a programação de vez em quando (quem entrou depois fica sincronizado)
-  if (isAdm() && FM.anchor.t0 && NET.ch && NET.online && (FM.sentT -= 1 / 30) <= 0) { FM.sentT = 600; NET.ch.send({ type: 'broadcast', event: 'fm', payload: FM.anchor }); }
+  if ((isAdm() || (S.shift === 'dj' && FM.anchor.by === S.name)) && FM.anchor.t0 && NET.ch && NET.online && (FM.sentT -= 1 / 30) <= 0) { FM.sentT = 600; NET.ch.send({ type: 'broadcast', event: 'fm', payload: FM.anchor }); }
   return true;
 }
 function radioPlay(i) {
@@ -9501,7 +9506,7 @@ function radioPlay(i) {
   FM.cur = -1; if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'fm', payload: FM.anchor });
   toast(`🎵 Tocando para todos: ${FM.list[i].n}`, 'pink'); renderPanel();
 }
-function onRadio(d) { if (!d || typeof d.i !== 'number' || !d.t0) return; if (d.i === FM.anchor.i && d.t0 === FM.anchor.t0) return; FM.anchor = { i: d.i, t0: d.t0 }; FM.cur = -1; const m = FM.list && FM.list[d.i]; if (m && MUSIC.vol > 0.1) toast(`🎵 O chefe colocou: ${m.n}`, 'pink'); }
+function onRadio(d) { if (!d || typeof d.i !== 'number' || !d.t0) return; if (d.i === FM.anchor.i && d.t0 === FM.anchor.t0) return; FM.anchor = { i: d.i, t0: d.t0, by: d.by }; FM.cur = -1; const m = FM.list && FM.list[d.i]; if (m && MUSIC.vol > 0.1) toast(d.by ? `🎧 DJ ${d.by} colocou: ${m.n}` : `🎵 O chefe colocou: ${m.n}`, 'pink'); }
 const PANEL_RADIO = function () {
   const L = FM.list, now = radioNow();
   if (!L) return { title: '🎵 Rádio do Rolê', html: '<p class="muted">Carregando as músicas…</p>' };
@@ -14986,6 +14991,8 @@ function ccSend(svc, why, ex) {
   const c = { id: ccMe().slice(0, 6) + Date.now().toString(36), from: ccMe(), name: S.name, svc, why: String(why || V.why[0]).slice(0, 60), x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10, t: Date.now() };
   if (svc === 'policia' && CC.lastRob && Date.now() - CC.lastRob.t < 5 * 60000) c.sus = { id: CC.lastRob.id, name: CC.lastRob.name }; // quem te assaltou vai junto no chamado
   if (ex) Object.assign(c, ex);
+  if (svc === 'mecanico') { if (!S.veh || !VEH[S.veh]) return toast('Você não tem carro ou moto para o mecânico ver.', 'bad'); Object.assign(c, { dmg: vehDmg(S.veh), vn: VEH[S.veh].name }); }
+  if (svc === 'barbeiro') c.g = S.gender;
   if (svc === 'bombeiro' && /incêndio|fogo/i.test(c.why)) c.fire = true; // incêndio de verdade: o fogo aparece para os bombeiros
   CC.mine = Object.assign({ st: 'aberto', rs: 0 }, c); ccSend0('cc_new', c); sfx('ui');
   const n = ccOnDuty(svc);
@@ -15390,6 +15397,258 @@ function onS5(d) {
 }
 function s5Tick(now) { try { workTick(now); staffTick(now); sujTick(now); } catch (e) { console.warn('s5', e); } }
 
+/* ---- etapa 6: profissões novas: Mecânico, Barbeiro, Corretor de Imóveis e DJ ---- */
+const s6Send = (k, d) => ccSend0('s6', Object.assign({ k }, d));
+const S6_JOBS = ['mecanico', 'barbeiro', 'corretor', 'dj'];
+Object.assign(JOBS, {
+  mecanico: { name: 'Mecânico', desc: 'Conserte carros quebrados pela cidade (segure Ação no carro). Jogadores te chamam pela Central: você faz o orçamento de conserto e tuning (pintura, turbo e som) e cobra.', base: 130, need: 2, icon: '🔧' },
+  barbeiro: { name: 'Barbeiro / Cabeleireiro', desc: 'Corte e pinte o cabelo da clientela na rua. Jogadores te chamam: você escolhe o corte e a cor, cobra, e o visual muda na hora para todo mundo ver.', base: 90, need: 1, icon: '💈' },
+  corretor: { name: 'Corretor de Imóveis', desc: 'Leve clientes para conhecer casas. Jogadores te chamam: você mostra as casas livres, leva até lá, fecha o aluguel ou a compra e ganha 10% de comissão da Imobiliária.', base: 150, need: 3, icon: '🏡' },
+  dj: { name: 'DJ', desc: 'Anime as festas da cidade. Online, você escolhe a música que toca para todo mundo, recebe pedidos com gorjeta e ganha por música tocada com público perto.', base: 110, need: 2, icon: '🎧' },
+});
+Object.assign(JOB_QUIZ, {
+  mecanico: [['Antes de mexer no motor, o mecânico deve:', ['Desligar o carro e esperar esfriar', 'Acelerar bem', 'Tirar a roda', 'Lavar o carro']], ['O óleo do motor serve para:', ['Lubrificar e diminuir o desgaste', 'Deixar o carro cheiroso', 'Encher o pneu', 'Limpar o vidro']], ['Pneu careca é perigoso porque:', ['Perde aderência e derrapa', 'Fica mais bonito', 'Gasta menos', 'Não muda nada']], ['O macaco serve para:', ['Levantar o carro e trocar o pneu', 'Ligar o carro', 'Medir o óleo', 'Pintar a lataria']], ['Freio fazendo barulho é sinal de:', ['Pastilha gasta: precisa revisar', 'Carro novo', 'Motor forte', 'Pneu cheio']], ['Orçamento honesto é:', ['Explicar o serviço e o preço antes de fazer', 'Cobrar depois sem avisar', 'Trocar peça boa', 'Não dar recibo']]],
+  barbeiro: [['Antes de cortar, o barbeiro deve:', ['Conversar com o cliente sobre o corte', 'Começar pela máquina zero', 'Molhar a roupa', 'Cobrar em dobro']], ['A navalha precisa ser:', ['Esterilizada e de lâmina nova', 'Usada por todo mundo', 'Guardada molhada', 'Enferrujada']], ['"Nevou" é quando o cabelo fica:', ['Platinado, quase branco', 'Raspado', 'Cacheado', 'Comprido']], ['Para descolorir com segurança:', ['Fazer teste de mecha e proteger o couro cabeludo', 'Usar água sanitária', 'Deixar o dia todo', 'Nunca lavar']], ['O degradê (fade) é um corte:', ['Que vai do curto ao mais longo aos poucos', 'Todo do mesmo tamanho', 'Só com tesoura', 'Só para criança']], ['Pente e máquina devem ser:', ['Limpos entre um cliente e outro', 'Limpos uma vez por mês', 'Jogados fora', 'Nunca limpos']]],
+  corretor: [['Para trabalhar como corretor no Brasil é preciso registro no:', ['CRECI', 'DETRAN', 'CRM', 'OAB']], ['A comissão do corretor é paga quando:', ['O negócio é fechado', 'Mostra a casa', 'O cliente liga', 'Nunca']], ['No aluguel, o contrato deve ter:', ['Valor, prazo e regras assinados pelas partes', 'Só o nome', 'Nada escrito', 'Só o endereço']], ['Antes de mostrar a casa, o corretor:', ['Confere se ela está livre e o preço certo', 'Inventa o preço', 'Esconde defeitos', 'Não sabe o endereço']], ['Escritura serve para:', ['Comprovar a compra do imóvel', 'Pagar o aluguel', 'Ligar a luz', 'Pintar a casa']], ['Ser honesto com o cliente:', ['Traz indicação e mais clientes', 'Não importa', 'Atrapalha a venda', 'Só no começo']]],
+  dj: [['O DJ precisa ler a pista para:', ['Tocar o que faz a galera dançar', 'Tocar só o que gosta', 'Parar a música', 'Desligar o som']], ['BPM quer dizer:', ['Batidas por minuto', 'Baile por mês', 'Banda pequena', 'Bateria e piano']], ['Volume alto demais na festa:', ['Pode estourar o som e machucar o ouvido', 'É sempre melhor', 'Não faz mal', 'Melhora o grave']], ['Pedido de música do público:', ['O DJ avalia e encaixa na hora certa', 'Ignora sempre', 'Toca no meio da outra', 'Cobra o dobro']], ['Passagem de som serve para:', ['Testar o equipamento antes da festa', 'Ir embora cedo', 'Cantar', 'Comer']], ['O funk carioca nasceu no:', ['Rio de Janeiro', 'Japão', 'Polo Norte', 'Canadá']]],
+});
+Object.assign(SALARIO, { mecanico: 80, barbeiro: 60, corretor: 90, dj: 70 });
+Object.assign(SAL_REAL, { mecanico: 'R$ 3 mil', barbeiro: 'R$ 2,5 mil', corretor: 'R$ 4 mil', dj: 'R$ 3 mil' });
+Object.assign(RANKS, { mecanico: ['Aprendiz', 'Mecânico', 'Mecânico Chefe', 'Preparador', 'Dono da Oficina'], barbeiro: ['Aprendiz', 'Barbeiro', 'Visagista', 'Barbeiro Famoso', 'Dono do Salão'], corretor: ['Estagiário', 'Corretor', 'Corretor Sênior', 'Gerente', 'Dono da Imobiliária'], dj: ['DJ de Garagem', 'DJ', 'DJ Residente', 'DJ Famoso', 'Lenda do Baile'] });
+Object.assign(CC_RADIO, { mecanico: 'transp', barbeiro: 'cidade', corretor: 'just', dj: 'cidade' });
+Object.assign(CC_SVC, {
+  mecanico: { n: 'Mecânico', tel: 'Oficina', i: '🔧', jobs: ['mecanico'], pay: 90, act: true, why: ['Meu carro quebrou', 'Quero tunar meu carro'] },
+  barbeiro: { n: 'Barbeiro', tel: 'Salão', i: '💈', jobs: ['barbeiro'], pay: 70, act: true, why: ['Quero cortar o cabelo', 'Quero pintar o cabelo'] },
+  corretor: { n: 'Corretor', tel: 'Imobiliária', i: '🏡', jobs: ['corretor'], pay: 90, act: true, why: ['Quero alugar uma casa', 'Quero comprar uma casa'] },
+});
+
+/* ---- trampo com figurantes: ir até o ponto e segurar Ação ---- */
+function s6Task(id, lv) {
+  const n = id === 'dj' ? 1 : id === 'corretor' ? 2 : 2 + Math.min(2, lv - 1), dur = { mecanico: 5, barbeiro: 4, corretor: 3, dj: 12 }[id];
+  const casas = Object.values(city.casas || {}).filter(c => !(city.casaRows || {})[c.key] && c.st !== 'morador' && !c.morro && !c.mans);
+  const stops = [];
+  for (let i = 0; i < n; i++) {
+    if (id === 'corretor' && i === 1 && casas.length) { const c = pick(casas), fx = c.fx || 0, fz = c.fz || 0; stops.push([c.ox + fx * 3, c.oz + fz * 3, `Mostrar a ${c.n}`]); continue; } // na calçada, longe do botão da porta
+    const k = id !== 'mecanico' && (city.kiosks || []).length ? pick(city.kiosks) : null, p = k ? [k.x + rand(-2, 2), k.z + rand(-2, 2)] : farPoint(35 + i * 10);
+    stops.push([p[0], p[1], { mecanico: 'Consertar o carro quebrado', barbeiro: pick(['Corte degradê', 'Pintar o cabelo (nevou)', 'Desenho na máquina', 'Fazer a barba']), corretor: 'Encontrar o cliente', dj: 'Tocar o set da festa' }[id]]);
+  }
+  const t = stops.reduce((a, s, i) => a + Math.hypot(s[0] - (i ? stops[i - 1][0] : P.x), s[1] - (i ? stops[i - 1][1] : P.z)), 0);
+  return { job: id, type: 'job_serv', title: { mecanico: 'Socorro mecânico', barbeiro: 'Clientes na calçada', corretor: 'Visita a imóvel', dj: 'Festa na praça' }[id], stops, got: 0, p: 0, dur, pay: jobPay(id, JOBS[id].base + n * 20), time: Math.round(t / 4 + n * (dur + 20) + 30), timeMax: Math.round(t / 4 + n * (dur + 20) + 30) };
+}
+function s6TaskObjs(m) {
+  m.stops.forEach((s, i) => {
+    if (i < m.got) return; let o;
+    if (m.job === 'mecanico') { o = makeVehicleMesh(VEH[pick(['v_fusca', 'v_gol', 'v_sedan'])]); o.rotation.y = rand(0, TAU); }
+    else { o = makePed({ shirt: pick([0x4fc3ff, 0xff4f7b, 0x3ddc84, 0xffcf3a]), pants: 0x2f4f86, skin: pick(SKINS), hair: pick(HAIRS), f: Math.random() < 0.5 }); }
+    o.position.set(s[0] + (m.job === 'mecanico' ? 2 : 0.9), groundH(s[0], s[1]), s[1]); o.userData.si = i; city.scene.add(o); city.mObjs.push(o);
+  });
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.15, 8, 28), new THREE.MeshBasicMaterial({ color: 0x3ddc84 })); ring.rotation.x = Math.PI / 2; ring.userData.ring = true; city.scene.add(ring); city.mObjs.push(ring);
+}
+function s6TaskTick(m, dt, near, key, pr) {
+  const s = m.stops[m.got]; if (!s) return completeMission();
+  if (near < 3 && !P.drive) {
+    city.promptBusy = true; pr.hidden = false;
+    const hold = input.held.KeyE || input.hold.act || tap('act');
+    if (hold) { m.p += dt / m.dur; P.v = 0; P.h = Math.atan2(s[0] - P.x, s[1] - P.z); if (m.job === 'dj' && Math.random() < dt * 2) sfx('ui'); }
+    pr.textContent = `Segure ${key} · ${s[2]} ${Math.round(Math.min(1, m.p) * 100)}%`;
+    if (m.p >= 1) { m.p = 0; m.got++; sfx('coin'); for (const o of city.mObjs) if (o.userData.si === m.got - 1) o.visible = false; if (m.got >= m.stops.length) return completeMission(); toast(`Feito! Próximo: ${m.stops[m.got][2]}.`, 'good'); renderMissionBox(); }
+  }
+}
+
+/* ===== Mecânico: dano no carro, conserto e tuning ===== */
+const MEC_COLS = [[0xd32f2f, 'Vermelho'], [0x1565c0, 'Azul'], [0x15161a, 'Preto fosco'], [0xf4f2ec, 'Branco pérola'], [0xffcf3a, 'Amarelo'], [0x2e7d32, 'Verde'], [0x9b5cff, 'Roxo'], [0xff7a1a, 'Laranja'], [0x9aa3ad, 'Prata']];
+const vehDmg = id => ((S.vdmg || {})[id] || 0);
+const myVehId = () => (P.drive && P.drive.V && !P.drive.V.job ? P.drive.V.id : null);
+function vehTuned(id) {
+  const V = VEH[id], t = (S.vtune || {})[id]; if (!V || !t) return V;
+  return Object.assign({}, V, t.col ? { color: t.col, tc: t.col } : {}, t.turbo ? { top: V.top * 1.08, acc: (V.acc || 10) * 1.1 } : {}, t.som ? { som: true } : {});
+}
+function vehDmgMul() { const id = myVehId(); if (!id) return 1; const d = vehDmg(id); return d >= 100 ? 0.15 : 1 - Math.min(0.45, d / 220); }
+function vehHit(sp) { // batidas amassam o carro: anda menos e, em 100%, o motor para
+  const id = myVehId(); if (!id || P.drive.V.tank || P.drive.V.plane || P.drive.V.heli) return;
+  S.vdmg = S.vdmg || {}; const before = S.vdmg[id] || 0, now = Math.min(100, before + Math.max(4, sp * 1.1)); S.vdmg[id] = Math.round(now); persist();
+  if (before < 50 && now >= 50) toast('💥 Carro amassado: o motor perdeu força. Chame o 🔧 Mecânico na Central.', 'bad');
+  if (before < 100 && now >= 100) toast('💥 O motor parou! Só anda devagar. Chame o 🔧 Mecânico na Central.', 'bad');
+}
+const MEC = { orc: null, job: null };
+function mecOrcSend() {
+  const T = CC.take; if (!T || T.c.svc !== 'mecanico') return; const it = [];
+  if (($('mo-rep') || {}).checked) it.push('rep'); const col = +($('mo-col') || {}).value || 0; if (col) it.push('col:' + col);
+  if (($('mo-turbo') || {}).checked) it.push('turbo'); if (($('mo-som') || {}).checked) it.push('som');
+  if (!it.length) return toast('Escolha pelo menos um serviço.', 'bad');
+  const total = mecPrice(it, T.c.dmg || 0); T.orc = { it, total };
+  s6Send('mec_orc', { to: T.c.from, from: ccMe(), it, total, by: S.name }); toast(`🔧 Orçamento enviado: $ ${fmt(total)}.`, 'good'); ccRefresh();
+}
+function mecPrice(it, dmg) { const k = rankMult('mecanico'); let p = 0; for (const x of it) p += x === 'rep' ? 40 + dmg * 2 : x.startsWith('col:') ? 250 : x === 'turbo' ? 600 : x === 'som' ? 400 : 0; return Math.round(p * (0.9 + 0.1 * k)); }
+const mecDesc = it => it.map(x => x === 'rep' ? 'Conserto' : x.startsWith('col:') ? `Pintura ${(MEC_COLS.find(c => c[0] === +x.slice(4)) || [0, ''])[1]}` : x === 'turbo' ? 'Turbo (+8% velocidade)' : 'Som automotivo').join(' + ');
+function mecAnswer(yes) {
+  const o = MEC.orc; if (!o) return; MEC.orc = null;
+  if (!yes) { s6Send('mec_nao', { to: o.from }); return ccRefresh(); }
+  if (cashNow() < o.total) return toast(`O orçamento é $ ${fmt(o.total)}: falta dinheiro.`, 'bad');
+  MEC.job = Object.assign({ veh: S.veh }, o); s6Send('mec_sim', { to: o.from, from: ccMe() }); toast('🔧 Orçamento aprovado. O mecânico está trabalhando no seu carro…', 'good'); ccRefresh();
+}
+function mecWork() { // mecânico: orçamento aprovado, trabalha no carro do cliente
+  const T = CC.take; if (!T || !T.orc || T.arr) return; const p = ccPeer(T.c.from); if (!p) return;
+  workStart('🔧 Trabalhando no carro', 5000, p.x, p.z, () => {
+    if (!CC.take || CC.take.id !== T.id) return; T.arr = Date.now(); T.job = S.shift; ccSend0('cc_arrive', { id: T.id, to: T.c.from });
+    s6Send('mec_feito', { to: T.c.from, from: ccMe(), it: T.orc.it, total: T.orc.total });
+    const g = earn(jobPay('mecanico', 40)); addXP(30); toast(`🔧 Serviço pronto! +$${fmt(g)} (o orçamento e a avaliação vêm em seguida).`, 'good'); sfx('level');
+  });
+}
+function onMecFeito(d) {
+  const J = MEC.job; if (!J) return; MEC.job = null; const id = J.veh; const f = payCash(d.total || 0);
+  S.vdmg = S.vdmg || {}; S.vtune = S.vtune || {}; const t = S.vtune[id] = S.vtune[id] || {};
+  for (const x of d.it) { if (x === 'rep') S.vdmg[id] = 0; else if (x.startsWith('col:')) t.col = +x.slice(4); else if (x === 'turbo') t.turbo = 1; else if (x === 'som') t.som = 1; }
+  persist(); updateHUD(); s6Send('mec_pago', { to: d.from, fee: f });
+  if (city.myVeh && !P.drive && S.veh === id) { const mv = city.myVeh, V = vehTuned(id), m = makeVehicleMesh(V); city.scene.remove(mv.m); m.position.copy(mv.m.position); m.rotation.y = mv.h; city.scene.add(m); city.myVeh = Object.assign(mv, { m, V }); }
+  toast(`🔧 Carro pronto: ${mecDesc(d.it)}. Pago: $ ${fmt(f)}.${P.drive ? ' O visual novo aparece quando você descer e chamar o carro de novo.' : ''}`, 'good'); sfx('coin');
+}
+
+/* ===== Barbeiro: corte e cor feitos por outra pessoa, visíveis para todos ===== */
+const BB = { orc: null, job: null };
+const BB_DYES = ['dy_none', 'dy_nevou', 'dy_amarelo', 'dy_luzes', 'dy_ruivo', 'dy_rosa', 'dy_azul', 'dy_verde'].filter(id => ITEM[id]);
+const bbStyles = g => g === 'f' ? Object.assign({}, FEM_HAIR, { black: 'Black power', tranca: 'Tranças', dread: 'Dreads', careca: 'Careca' }) : { padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano', dread: 'Dreads', tranca: 'Tranças' };
+function bbOrcSend() {
+  const T = CC.take; if (!T || T.c.svc !== 'barbeiro') return;
+  const hs = ($('bo-hs') || {}).value || '', dye = ($('bo-dye') || {}).value || '';
+  if (!hs && !dye) return toast('Escolha o corte ou a cor.', 'bad');
+  const total = Math.round(((hs ? 35 : 0) + (dye ? (dye === 'dy_none' ? 20 : 60) : 0)) * rankMult('barbeiro')); T.orc = { hs, dye, total };
+  s6Send('bb_orc', { to: T.c.from, from: ccMe(), hs, dye, total, by: S.name }); toast(`💈 Proposta enviada: $ ${fmt(total)}.`, 'good'); ccRefresh();
+}
+const bbDesc = d => [d.hs ? `corte ${bbStyles('f')[d.hs] || bbStyles('m')[d.hs] || d.hs}` : '', d.dye ? `cor ${ITEM[d.dye] ? ITEM[d.dye].name : d.dye}` : ''].filter(Boolean).join(' e ');
+function bbAnswer(yes) {
+  const o = BB.orc; if (!o) return; BB.orc = null;
+  if (!yes) { s6Send('bb_nao', { to: o.from }); return ccRefresh(); }
+  if (cashNow() < o.total) return toast(`Custa $ ${fmt(o.total)}: falta dinheiro.`, 'bad');
+  BB.job = o; s6Send('bb_sim', { to: o.from, from: ccMe() }); toast('💈 Pode sentar: o barbeiro está fazendo o seu cabelo…', 'good'); ccRefresh();
+}
+function bbWork() {
+  const T = CC.take; if (!T || !T.orc || T.arr) return; const p = ccPeer(T.c.from); if (!p) return;
+  workStart('💈 Cortando', 5000, p.x, p.z, () => {
+    if (!CC.take || CC.take.id !== T.id) return; T.arr = Date.now(); T.job = S.shift; ccSend0('cc_arrive', { id: T.id, to: T.c.from });
+    s6Send('bb_feito', { to: T.c.from, from: ccMe(), hs: T.orc.hs, dye: T.orc.dye, total: T.orc.total });
+    const g = earn(jobPay('barbeiro', 30)); addXP(25); toast(`💈 Ficou show! +$${fmt(g)} (o serviço e a avaliação vêm em seguida).`, 'good'); sfx('level');
+  });
+}
+function onBbFeito(d) {
+  if (!BB.job) return; BB.job = null; const f = payCash(d.total || 0);
+  if (d.hs) { S.body = Object.assign({}, S.body, { hs: d.hs }); }
+  if (d.dye && ITEM[d.dye]) { if (!S.owned.includes(d.dye)) S.owned.push(d.dye); S.equip.dye = d.dye; }
+  persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); s6Send('bb_pago', { to: d.from, fee: f });
+  toast(`💈 Visual novo: ${bbDesc(d)}! Pago: $ ${fmt(f)}. Todo mundo já está vendo.`, 'good'); sfx('coin');
+}
+
+/* ===== Corretor: mostra casas livres, leva o cliente e fecha o negócio ===== */
+const COR = { visita: null, fechar: null };
+const corFree = () => Object.values(city.casas || {}).filter(c => !(city.casaRows || {})[c.key] && c.st !== 'morador' && !c.mans);
+function corShow(key) {
+  const T = CC.take, c = city.casas[key]; if (!T || !c) return; T.casa = key;
+  s6Send('cor_vis', { to: T.c.from, from: ccMe(), key, n: c.n, x: c.ox, z: c.oz, rent: c.rent, buy: c.buy, by: S.name });
+  setGps(c.ox, c.oz, `🏡 ${c.n}`); toast(`🏡 Levando ${T.c.name} para conhecer a ${c.n}. O GPS dos dois aponta para lá.`, 'good'); closePanel();
+}
+function corClose(modo) {
+  const T = CC.take, c = T && city.casas[T.casa]; if (!c) return; const p = ccPeer(T.c.from);
+  if (!p || Math.hypot(p.x - c.ox, p.z - c.oz) > 14 || Math.hypot(P.x - c.ox, P.z - c.oz) > 14) return toast('Os dois precisam estar na frente da casa para fechar.', 'bad');
+  s6Send('cor_fecha', { to: T.c.from, from: ccMe(), key: c.key, n: c.n, modo, price: modo === 'compra' ? c.buy : c.rent }); toast('📝 Proposta de fechamento enviada.', 'good');
+}
+async function corAccept() {
+  const o = COR.fechar; if (!o) return; COR.fechar = null;
+  await takeCasa(o.key, o.modo); const r = (city.casaRows || {})[o.key];
+  if (r && NET.user && r.dono === NET.user.id) { s6Send('cor_ok', { to: o.from, n: o.n, price: o.price, modo: o.modo }); COR.visita = null; }
+  ccRefresh();
+}
+function onCorOk(d) {
+  const T = CC.take; const fee = Math.round((d.price || 0) * 0.1 * rankMult('corretor')); S.coins += fee; persist(); updateHUD();
+  const g = earn(jobPay('corretor', 40)); addXP(40); toast(`🏡 Negócio fechado: ${d.modo === 'compra' ? 'venda' : 'aluguel'} da ${d.n}! Comissão da Imobiliária +$ ${fmt(fee)} e serviço +$ ${fmt(g)}.`, 'good'); sfx('level');
+  if (T && !T.arr) { T.arr = Date.now(); T.job = S.shift; clearGps(); ccSend0('cc_arrive', { id: T.id, to: T.c.from }); }
+}
+
+/* ===== DJ: escolhe a música da cidade, recebe pedidos e gorjetas ===== */
+const DJ = { reqs: [], last: 0, paidT: 0 };
+const djOnDuty = () => Object.entries(NET.peers).filter(([, p]) => p.job === 'dj');
+function djPlay(i, req) {
+  if (S.shift !== 'dj' || !FM.list || !FM.list[i]) return; FM.anchor = { i, t0: Date.now(), by: S.name }; FM.cur = -1;
+  if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'fm', payload: FM.anchor });
+  toast(`🎧 Tocando para a cidade: ${FM.list[i].n}`, 'pink');
+  const now = Date.now(), aud = Object.values(NET.peers).filter(p => Math.hypot(p.x - P.x, p.z - P.z) < 50 && p.job !== 'dj').length;
+  if (aud && now - DJ.paidT > 45000) { DJ.paidT = now; const g = earn(Math.round((15 + 10 * Math.min(8, aud)) * rankMult('dj'))); const r = jobRec('dj'); r.real = (r.real || 0) + 1; ccRankCheck(); addXP(10); feed(`🎧 Música para ${aud} ${aud > 1 ? 'pessoas' : 'pessoa'}: +$ ${fmt(g)}`); }
+  if (req) { DJ.reqs = DJ.reqs.filter(q => q !== req); s6Send('dj_tocou', { to: req.from, from: ccMe(), i, tip: req.tip, by: S.name }); }
+  ccRefresh();
+}
+function djRequest(i, tip) {
+  const D = djOnDuty(); if (!D.length) return toast('Nenhum DJ de serviço agora.', 'bad'); if (tip && cashNow() < tip) return toast('Dinheiro insuficiente para a gorjeta.', 'bad');
+  for (const [id] of D) s6Send('dj_ped', { to: id, from: ccMe(), name: S.name, i, tip: tip || 0, t: Date.now() });
+  toast(`🎧 Pedido enviado: ${FM.list[i].n}${tip ? ` com gorjeta de $ ${tip} (paga quando tocar)` : ''}.`, 'good');
+}
+function djPanelHtml() {
+  if (!FM.list) { loadRadio(); return '<p class="muted">Carregando as músicas…</p>'; }
+  const now = radioNow(); let h = `<div class="card"><h4>🎧 Cabine do DJ</h4><p class="muted">A música que você escolher toca para a cidade toda (paredões, caixas e carros de som). Com público a até 50 m, cada música rende (no máximo uma vez a cada 45 s).${now ? ` Agora: <b>${esc(now.m.n)}</b>.` : ''}</p><div class="row" style="flex-wrap:wrap;gap:6px">${FM.list.map((m, i) => `<button class="btn sm ${now && now.i === i ? '' : 'ghost'}" data-act="cc-dj-play" data-i="${i}">${now && now.i === i ? '🔊' : '▶'} ${esc(m.n)}</button>`).join('')}</div></div>`;
+  if (DJ.reqs.length) h += `<h3>📨 Pedidos do público</h3>` + DJ.reqs.map((q, k) => `<div class="row"><span>${esc(q.name)} pediu <b>${esc(FM.list[q.i] ? FM.list[q.i].n : '?')}</b>${q.tip ? ` · gorjeta $ ${q.tip}` : ''}</span><button class="btn sm" data-act="cc-dj-req" data-k="${k}">▶ Tocar</button></div>`).join('');
+  return h;
+}
+function djReqCard() {
+  const D = NET.online ? djOnDuty() : []; if (!D.length || S.shift === 'dj') return ''; if (!FM.list) { loadRadio(); return ''; }
+  return `<div class="card"><h4>🎧 Pedir música ao DJ <span class="pill on">${D.length} DJ de serviço</span></h4><div class="row" style="gap:6px;flex-wrap:wrap"><select id="dj-song">${FM.list.map((m, i) => `<option value="${i}">${esc(m.n)}</option>`).join('')}</select>${[0, 20, 50].map(t => `<button class="btn sm ${t ? '' : 'ghost'}" data-act="cc-dj-ped" data-tip="${t}" ${t && cashNow() < t ? 'disabled' : ''}>${t ? `Pedir + $ ${t}` : 'Pedir'}</button>`).join('')}</div></div>`;
+}
+
+/* ---- telas na Central ---- */
+function s6CentralTop() {
+  let h = '';
+  if (MEC.orc) { const o = MEC.orc; h += `<div class="card"><h4>🔧 Orçamento de ${esc(o.by)}</h4><p>${esc(mecDesc(o.it))} · <b>$ ${fmt(o.total)}</b></p><div class="row"><button class="btn sm" data-act="cc-mec-sim" ${cashNow() < o.total ? 'disabled' : ''}>Aprovar</button><button class="btn ghost sm" data-act="cc-mec-nao">Recusar</button></div></div>`; }
+  if (BB.orc) { const o = BB.orc; h += `<div class="card"><h4>💈 Proposta de ${esc(o.by)}</h4><p>${esc(bbDesc(o))} · <b>$ ${fmt(o.total)}</b></p><div class="row"><button class="btn sm" data-act="cc-bb-sim" ${cashNow() < o.total ? 'disabled' : ''}>Aceitar</button><button class="btn ghost sm" data-act="cc-bb-nao">Recusar</button></div></div>`; }
+  if (COR.visita && !COR.fechar) h += `<div class="card"><h4>🏡 Visita: ${esc(COR.visita.n)}</h4><p class="muted">${esc(COR.visita.by)} vai te mostrar a casa · aluguel $ ${fmt(COR.visita.rent)}/dia · compra $ ${fmt(COR.visita.buy)}. Vá até lá (o GPS aponta).</p></div>`;
+  if (COR.fechar) { const o = COR.fechar; h += `<div class="card"><h4>📝 Fechar negócio: ${esc(o.n)}</h4><p>${o.modo === 'compra' ? 'Compra' : 'Aluguel'} por <b>$ ${fmt(o.price)}</b>${o.modo === 'compra' ? '' : ' por dia'}.</p><div class="row"><button class="btn sm" data-act="cc-cor-sim" ${S.coins < o.price ? 'disabled' : ''}>Fechar</button><button class="btn ghost sm" data-act="cc-cor-nao">Agora não</button></div></div>`; }
+  return h;
+}
+function s6CentralJob() {
+  const T = CC.take, id = S.shift; let h = '';
+  if (id === 'dj') h += djPanelHtml();
+  if (!T || T.arr || !T.ok) return h; const p = ccPeer(T.c.from), d = p ? Math.hypot(p.x - P.x, p.z - P.z) : 1e9;
+  if (T.c.svc === 'mecanico') {
+    if (d > 8) return h + '<p class="muted">Chegue perto do cliente (até 8 m) para montar o orçamento.</p>';
+    if (T.orc && T.orc.ok) return h + `<div class="card"><h4>🔧 Aprovado: ${esc(mecDesc(T.orc.it))}</h4><button class="btn sm" data-act="cc-mec-work">Começar o serviço</button></div>`;
+    h += `<div class="card"><h4>🔧 Orçamento para ${esc(T.c.name)}</h4><p class="muted">${T.c.vn ? `Carro: ${esc(T.c.vn)} · ` : ''}dano ${T.c.dmg || 0}%</p><label class="row" style="gap:6px"><input type="checkbox" id="mo-rep" ${(T.c.dmg || 0) > 0 ? 'checked' : ''}> Conserto ($ ${40 + (T.c.dmg || 0) * 2})</label><div class="row" style="gap:6px;flex-wrap:wrap"><select id="mo-col"><option value="0">Sem pintura</option>${MEC_COLS.map(([c, n]) => `<option value="${c}">Pintura ${n} ($ 250)</option>`).join('')}</select><label><input type="checkbox" id="mo-turbo"> Turbo ($ 600)</label><label><input type="checkbox" id="mo-som"> Som ($ 400)</label></div><button class="btn sm" data-act="cc-mec-orc" style="margin-top:6px">${T.orc ? 'Reenviar orçamento' : 'Enviar orçamento'}</button>${T.orc ? `<p class="muted">Aguardando o cliente aprovar: $ ${fmt(T.orc.total)}.</p>` : ''}</div>`;
+  } else if (T.c.svc === 'barbeiro') {
+    if (d > 6) return h + '<p class="muted">Chegue perto do cliente (até 6 m) para combinar o corte.</p>';
+    if (T.orc && T.orc.ok) return h + `<div class="card"><h4>💈 Aprovado: ${esc(bbDesc(T.orc))}</h4><button class="btn sm" data-act="cc-bb-work">Começar o corte</button></div>`;
+    const st = bbStyles(T.c.g); h += `<div class="card"><h4>💈 Visual para ${esc(T.c.name)}</h4><div class="row" style="gap:6px;flex-wrap:wrap"><select id="bo-hs"><option value="">Manter o corte</option>${Object.entries(st).map(([k, n]) => `<option value="${k}">${esc(n)}</option>`).join('')}</select><select id="bo-dye"><option value="">Manter a cor</option>${BB_DYES.map(k => `<option value="${k}">${esc(ITEM[k].name)}</option>`).join('')}</select><button class="btn sm" data-act="cc-bb-orc">${T.orc ? 'Reenviar' : 'Propor'}</button></div><p class="muted" style="margin-top:4px">Corte $ 35 · cor $ 60 (cor natural $ 20), mais o bônus do cargo.${T.orc ? ` Aguardando: $ ${fmt(T.orc.total)}.` : ''}</p></div>`;
+  } else if (T.c.svc === 'corretor') {
+    const c = T.casa && city.casas[T.casa];
+    if (c) { const dc = p ? Math.hypot(p.x - c.ox, p.z - c.oz) : 1e9; h += `<div class="card"><h4>🏡 Visita: ${esc(c.n)}</h4><p class="muted">Cliente a ${Math.round(dc)} m da casa · você a ${Math.round(Math.hypot(P.x - c.ox, P.z - c.oz))} m.</p><div class="row" style="gap:6px">${c.st !== 'vende' ? `<button class="btn sm" data-act="cc-cor-fecha" data-m="aluguel">Fechar aluguel ($ ${fmt(c.rent)}/dia)</button>` : ''}${c.st !== 'aluga' ? `<button class="btn sm" data-act="cc-cor-fecha" data-m="compra">Fechar venda ($ ${fmt(c.buy)})</button>` : ''}<button class="btn ghost sm" data-act="cc-cor-outra">Mostrar outra</button></div></div>`; }
+    else { const L = corFree().sort((a, b) => Math.hypot(a.ox - P.x, a.oz - P.z) - Math.hypot(b.ox - P.x, b.oz - P.z)).slice(0, 6); h += `<h3>🏡 Casas livres para ${esc(T.c.name)}</h3>` + (L.length ? L.map(c => `<div class="row"><span>${esc(c.n)} · ${c.st === 'aluga' ? `aluga $ ${fmt(c.rent)}/dia` : c.st === 'vende' ? `vende $ ${fmt(c.buy)}` : `$ ${fmt(c.rent)}/dia ou $ ${fmt(c.buy)}`} · ${Math.round(Math.hypot(c.ox - P.x, c.oz - P.z))} m</span><button class="btn sm" data-act="cc-cor-show" data-k="${esc(c.key)}">Levar para ver</button></div>`).join('') : '<p class="muted">Nenhuma casa livre nesta cidade agora.</p>'); }
+  }
+  return h;
+}
+function onS6(d) {
+  if (!d || !S) return; const me = ccMe(); if (d.to && d.to !== me) return; const T = CC.take;
+  if (d.k === 'mec_orc') { MEC.orc = d; toast(`🔧 ${d.by} mandou o orçamento: $ ${fmt(d.total)}. Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'mec_sim') { if (T && T.orc) { T.orc.ok = true; toast('🔧 Orçamento aprovado! Toque em "Começar o serviço" na Central.', 'good'); sfx('ui'); } }
+  else if (d.k === 'mec_nao') { if (T) T.orc = null; toast('O cliente recusou o orçamento.', 'pink'); }
+  else if (d.k === 'mec_feito') onMecFeito(d);
+  else if (d.k === 'mec_pago' || d.k === 'bb_pago') { if (d.fee) { S.coins += d.fee; persist(); updateHUD(); toast(`${d.k === 'mec_pago' ? '🔧 Orçamento' : '💈 Serviço'} recebido: +$ ${fmt(d.fee)}.`, 'good'); sfx('coin'); } }
+  else if (d.k === 'bb_orc') { BB.orc = d; toast(`💈 ${d.by} propôs: ${bbDesc(d)} por $ ${fmt(d.total)}. Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'bb_sim') { if (T && T.orc) { T.orc.ok = true; toast('💈 Cliente topou! Toque em "Começar o corte" na Central.', 'good'); sfx('ui'); } }
+  else if (d.k === 'bb_nao') { if (T) T.orc = null; toast('O cliente recusou a proposta.', 'pink'); }
+  else if (d.k === 'bb_feito') onBbFeito(d);
+  else if (d.k === 'cor_vis') { COR.visita = d; COR.fechar = null; setGps(d.x, d.z, `🏡 ${d.n}`); toast(`🏡 ${d.by} vai te mostrar a ${d.n}. O GPS aponta para lá.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'cor_fecha') { COR.fechar = d; toast(`📝 ${d.n}: ${d.modo === 'compra' ? 'compra' : 'aluguel'} por $ ${fmt(d.price)}. Feche em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'cor_nao') toast('O cliente preferiu não fechar agora.', 'pink');
+  else if (d.k === 'cor_ok') onCorOk(d);
+  else if (d.k === 'dj_ped') { if (S.shift !== 'dj') return; DJ.reqs.push(d); DJ.reqs = DJ.reqs.slice(-8); toast(`🎧 ${d.name} pediu ${FM.list && FM.list[d.i] ? FM.list[d.i].n : 'uma música'}${d.tip ? ` (gorjeta $ ${d.tip})` : ''}.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'dj_tocou') { const f = d.tip ? payCash(d.tip) : 0; persist(); updateHUD(); if (f) s6Send('dj_gorjeta', { to: d.from, tip: f, name: S.name }); toast(`🎧 O DJ ${d.by} tocou o seu pedido!${f ? ` Gorjeta paga: $ ${fmt(f)}.` : ''}`, 'good'); }
+  else if (d.k === 'dj_gorjeta') { S.coins += d.tip; persist(); updateHUD(); toast(`🎧 Gorjeta de ${d.name}: +$ ${fmt(d.tip)}.`, 'good'); sfx('coin'); }
+  ccRefresh();
+}
+function s6Act(act, ds) {
+  if (act === 'cc-mec-orc') return mecOrcSend(); if (act === 'cc-mec-sim') return mecAnswer(true); if (act === 'cc-mec-nao') return mecAnswer(false); if (act === 'cc-mec-work') { closePanel(); return mecWork(); }
+  if (act === 'cc-bb-orc') return bbOrcSend(); if (act === 'cc-bb-sim') return bbAnswer(true); if (act === 'cc-bb-nao') return bbAnswer(false); if (act === 'cc-bb-work') { closePanel(); return bbWork(); }
+  if (act === 'cc-cor-show') return corShow(ds.k); if (act === 'cc-cor-fecha') return corClose(ds.m); if (act === 'cc-cor-outra') { if (CC.take) CC.take.casa = null; return ccRefresh(); }
+  if (act === 'cc-cor-sim') return corAccept(); if (act === 'cc-cor-nao') { const o = COR.fechar; COR.fechar = null; if (o) s6Send('cor_nao', { to: o.from }); return ccRefresh(); }
+  if (act === 'cc-dj-play') return djPlay(+ds.i); if (act === 'cc-dj-req') { const q = DJ.reqs[+ds.k]; if (q) djPlay(q.i, q); return; }
+  if (act === 'cc-dj-ped') return djRequest(+(($('dj-song') || {}).value || 0), +ds.tip);
+  return false;
+}
+
 /* ---- rádio ---- */
 function ccRadioSend(txt, loc) {
   const g = S.shift && CC_RADIO[S.shift]; if (!g) return toast('O rádio da equipe liga quando você está de serviço.', 'bad');
@@ -15434,12 +15693,12 @@ function ccTick() {
   if (CC.mine && CC.mine.svc === 'taxi' && CC.mine.st === 'a caminho' && !CC.mine.near && !P.ride) { const q = ccPeer(CC.mine.byId); if (q && q.t && q.t.vh && Math.hypot(q.x - P.x, q.z - P.z) < 12) { CC.mine.near = true; toast('🚕 Seu táxi chegou! Abra 📞 Chamados e toque em "Entrar no táxi".', 'good'); sfx('level'); ccRefresh(); } }
   if (CC.mine) {
     if (now - CC.mine.t > 5 * 60000 && !CC.mine.byId) { CC.mine = null; toast('Seu chamado expirou sem resposta.', 'pink'); ccRefresh(); }
-    else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t, sus: CC.mine.sus, dest: CC.mine.dest, item: CC.mine.item, fire: CC.mine.fire, art: CC.mine.art, wall: CC.mine.wall }); }
+    else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t, sus: CC.mine.sus, dest: CC.mine.dest, item: CC.mine.item, fire: CC.mine.fire, art: CC.mine.art, wall: CC.mine.wall, dmg: CC.mine.dmg, vn: CC.mine.vn, g: CC.mine.g }); }
   }
   const T = CC.take; if (T) {
     const p = ccPeer(T.c.from); if (!p) return ccDrop('A pessoa saiu da cidade.');
     try { ccPhaseTick(T, p, now); } catch (e) { console.warn('fase', e); }
-    if (!T.arr && !city.hospIn && !T.sus && !T.c.fire && !T.c.wall && !T.les && T.ph !== 'levando' && T.ph !== 'loja' && (!S.gps || Math.hypot(S.gps.x - p.x, S.gps.z - p.z) > 6)) setGps(p.x, p.z, `${CC_SVC[T.c.svc].i} ${T.c.name}`);
+    if (!T.arr && !city.hospIn && !T.sus && !T.c.fire && !T.c.wall && !T.les && !T.casa && T.ph !== 'levando' && T.ph !== 'loja' && (!S.gps || Math.hypot(S.gps.x - p.x, S.gps.z - p.z) > 6)) setGps(p.x, p.z, `${CC_SVC[T.c.svc].i} ${T.c.name}`);
     if (T.sus) { const q = ccPeer(T.c.sus.id); if (q && (!S.gps || Math.hypot(S.gps.x - q.x, S.gps.z - q.z) > 6)) setGps(q.x, q.z, `🚨 Suspeito: ${T.c.sus.name}`); }
     const d = Math.hypot(p.x - P.x, p.z - P.z); T.near = d < 6 ? T.near + 0.5 : 0;
     if (!T.arr && T.ok && T.near >= 1.5 && !CC_SVC[T.c.svc].act && !T.c.fire) { T.arr = now; T.job = S.shift; clearGps(); ccSend0('cc_arrive', { id: T.id, to: T.c.from }); toast(`Você chegou até ${T.c.name}. Atenda e aguarde a avaliação.`, 'good'); }
@@ -15467,6 +15726,7 @@ function PANEL_CENTRAL() {
   }
   if (EMP.offer) { const o = EMP.offer; h += `<div class="card"><h4>📄 Proposta de emprego</h4><p>${esc(o.oName)} quer te contratar como <b>${EMP_ROLES[o.role].i} ${EMP_ROLES[o.role].n}</b> no <b>${esc(o.bizName)}</b>: $ ${o.sal} por minuto trabalhado + 5% de comissão nas vendas.</p><div class="row"><button class="btn sm" data-act="cc-emp-yes">Aceitar</button><button class="btn ghost sm" data-act="cc-emp-no">Recusar</button></div></div>`; }
   if (EMP.job) { const J = EMP.job; h += `<div class="card"><h4>💼 ${EMP_ROLES[J.role].i} ${EMP_ROLES[J.role].n} no ${esc(J.bizName)}</h4><p class="muted">Patrão: ${esc(J.oName)} · $ ${J.sal}/min · ganho até agora: $ ${fmt(J.earned)} · ${J.on ? '<span class="pill on">ponto batido</span>' : 'vá até o comércio para bater o ponto'}</p><div class="row"><button class="btn ghost sm" data-act="cc-emp-quit">Pedir demissão</button></div></div>`; }
+  h += s6CentralTop();
   if (CC.aula) h += `<div class="card"><h4>🛹 Aula com ${esc(CC.aula.prof)}</h4><p>${CC.aula.trick ? `Faça um <b>${esc(TRK[CC.aula.trick].name)}</b> (${CC.aula.i + 1}/${CC.aula.n}).` : 'Boa! Espere a próxima manobra.'}</p></div>`;
   const svcMe = S.shift && ccSvcOf(S.shift);
   if (S.shift) {
@@ -15479,6 +15739,7 @@ function PANEL_CENTRAL() {
       h += L.length ? L.map(c => `<div class="row"><span>👤 <b>${esc(c.name)}</b> · "${esc(c.why)}" · ${ccDist(c)} m${c.sus ? ` · <b style="color:#ff7088">suspeito: ${esc(c.sus.name)}</b>` : ''}</span><button class="btn sm" data-act="cc-take" data-id="${esc(c.id)}" ${CC.take ? 'disabled' : ''}>Aceitar</button></div>`).join('') : '<p class="muted">Nenhum chamado de jogador agora. Os chamados de figurantes continuam chegando pela missão do turno.</p>';
     }
     if (svcMe === 'bombeiro') { const F = Object.values(CC.calls).filter(c => c.fire && c.by && c.by !== ccMe() && !(S.mission && S.mission.cc === c.id)); if (F.length) h += `<h3>🔥 Incêndios precisando de apoio</h3>` + F.map(c => `<div class="row"><span>🔥 Chamado de <b>${esc(c.name)}</b> · ${ccDist(c)} m</span><button class="btn sm" data-act="cc-fire" data-id="${esc(c.id)}">Ajudar</button></div>`).join(''); }
+    h += s6CentralJob();
     if (S.shift === 'grafiteiro') h += grafPanelHtml();
     if (S.shift === 'catador') { const SJ = Object.values(SUJ.spots), PX = Object.values(GRAF.rows).filter(g => g.autorizado === false);
       h += `<h3>🗑️ Sujeira na cidade</h3>` + (SJ.length ? SJ.map(d => `<div class="row"><span>🗑️ ${esc(d.why)} · ${d.bags.filter(Boolean).length} sacos · ${Math.round(Math.hypot(d.x - P.x, d.z - P.z))} m</span><button class="btn sm" data-act="cc-go" data-x="${d.x}" data-z="${d.z}" data-n="Sujeira">📍 Ir</button></div>`).join('') : '<p class="muted">Rua limpa por enquanto. Depois de festa, incêndio ou movimento na praça, aparece aqui.</p>') + '<p class="muted">Em dupla (outro gari a até 25 m) cada saco paga 30% a mais.</p>';
@@ -15493,6 +15754,7 @@ function PANEL_CENTRAL() {
   }
   if (NET.online) h += `<h3>📝 Contratos</h3>` + ctPanel();
   if (NET.online) h += grafGalleryHtml();
+  h += djReqCard();
   h += `<h3>🆘 Pedir ajuda</h3><p class="muted">O chamado vai na hora para quem está de serviço. Chegou perto, você avalia com estrelas.</p>`;
   for (const k in CC_SVC) {
     const V = CC_SVC[k], n = NET.online ? ccOnDuty(k) : 0;
@@ -15515,6 +15777,7 @@ function ccAct(act, ds) {
   if (act === 'cc-say') { const el = $('cc-txt'); ccRadioSend(el && el.value); if (el) el.value = ''; return; }
   if (act === 'cc-fire') { const c = CC.calls[ds.id]; if (c) fireJoin(c, false); return; }
   if (act === 'ct-new') return ctNew();
+  if (s6Act(act, ds) !== false) return;
   if (act === 'cc-emp-hire') return empHire(ds.id);
   if (act === 'cc-emp-fire') return empFire(ds.id);
   if (act === 'cc-emp-promo') return empPromo(ds.id);
@@ -15592,7 +15855,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
-    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
@@ -15711,7 +15974,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, sg: S.skateGuardado ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), fk: (isAdm() || hasKids()) && S.filhas && S.filhas.comigo ? 1 : 0, pv: myParked(), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, sg: S.skateGuardado ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, vc: P.drive && P.drive.V.tc ? P.drive.V.tc : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), fk: (isAdm() || hasKids()) && S.filhas && S.filhas.comigo ? 1 : 0, pv: myParked(), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
@@ -15730,7 +15993,7 @@ function netTick(dt, t) {
     } else if (!d.vh && !p.g.visible && p.seen) p.g.visible = true;
     // veículo do outro jogador
     if (d.vh && VEH[d.vh]) {
-      if (!p.veh || p.vehId !== d.vh) { if (p.veh) city.scene.remove(p.veh); p.veh = makeVehicleMesh(VEH[d.vh]); p.vehId = d.vh; city.scene.add(p.veh); }
+      if (!p.veh || p.vehId !== d.vh || (p.vehC || 0) !== (d.vc || 0)) { if (p.veh) city.scene.remove(p.veh); p.veh = makeVehicleMesh(d.vc ? Object.assign({}, VEH[d.vh], { color: d.vc }) : VEH[d.vh]); p.vehId = d.vh; p.vehC = d.vc || 0; city.scene.add(p.veh); }
       p.veh.position.set(p.x, VEH[d.vh].heli ? p.y : groundH(p.x, p.z), p.z); p.veh.rotation.y = p.h; const vu = p.veh.userData; vu.spin = (vu.spin || 0) + d.v * dt / 0.35; for (const w of vu.wheels) w.children[0].rotation.x = vu.spin; vehLightsTick(p.veh, d.vl, d.bk, t);
       if (VEH[d.vh].kind === 'car' || VEH[d.vh].heli) { p.g.visible = false; if (vu.rotor) { vu.rotor.rotation.y += dt * 28; vu.trotor.rotation.x += dt * 40; } } else { p.g.visible = true; p.g.position.y = groundH(p.x, p.z) + vu.seatY - 1.07; if (vu.crank) vu.crank.rotation.x = vu.spin * 0.45; animSkater(p.g, { pedal: vu.bike ? vu.spin || 0 : null, ride: true, walk: true, v: 0, fallT: 0 }, t); }
       tickBubble(p.g, dt); continue;

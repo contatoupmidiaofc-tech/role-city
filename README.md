@@ -548,3 +548,17 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
     - O instrutor pede 4 manobras e o aluno vê na tela qual fazer. Cada manobra certa avança.
     - No fim o aluno paga a aula, vira **Skatista Formado(a)** (10% de desconto na Skate Shop) e avalia. O instrutor recebe a aula, a taxa e a avaliação.
   - Banco: nova tabela `grafites` (posição, texto, cores, artista, validade de 7 dias). Qualquer pessoa vê; só quem pintou cria; quem pintou ou qualquer jogador (no caso de pichação) pode apagar.
+
+### Build 2026.10.14-55 (Profissões, etapa 6: Mecânico, Barbeiro, Corretor e DJ)
+Quatro profissões novas na Agência de Empregos. Cada uma tem teste de entrada, salário, 5 cargos, rádio da equipe, trampo com figurantes (ir até o ponto e segurar Ação) e atendimento de jogadores reais pela Central.
+  - 🔧 **Mecânico:** os carros agora amassam quando batem. Com 50% de dano o motor perde força; com 100% o carro só anda devagar.
+    - Quem tem carro chama o mecânico na Central. Perto do cliente, o mecânico monta o orçamento: conserto, pintura (9 cores), turbo (+8% de velocidade) e som automotivo.
+    - O cliente aprova e o mecânico trabalha no carro. O carro volta consertado e personalizado, e a pintura nova aparece para todos os jogadores.
+  - 💈 **Barbeiro / Cabeleireiro:** o cliente chama na Central. O barbeiro escolhe o corte e a cor (nevou, amarelo, luzes, ruivo, rosa, azul, verde ou natural) e manda o preço.
+    - O cliente aceita e o visual muda na hora para todo mundo ver. Corte $ 35 e cor $ 60, mais o bônus do cargo.
+    - O corte moicano foi refeito no modelo realista: laterais raspadas e crista no topo, com a cor da tinta.
+  - 🏡 **Corretor de Imóveis:** o cliente pede para alugar ou comprar uma casa. O corretor vê as casas livres da cidade e leva o cliente para conhecer (o GPS dos dois aponta para a casa).
+    - Na frente da casa, o corretor fecha o aluguel ou a venda. O cliente confirma e a casa passa a ser dele. O corretor ganha 10% de comissão da Imobiliária mais o serviço.
+  - 🎧 **DJ:** a cabine do DJ na Central escolhe a música que toca para a cidade toda (paredões, caixas e carros de som).
+    - Com público a até 50 m, cada música rende (no máximo a cada 45 s).
+    - Qualquer jogador pede música ao DJ de serviço, com gorjeta de $ 20 ou $ 50, paga quando o DJ toca o pedido.
