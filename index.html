@@ -769,7 +769,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.13-48';
+const BUILD = '2026.10.14-49';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1273,7 +1273,7 @@ function autoQualityTick(now) {
   // sombras atualizam um quadro sim, outro não no modo automático (metade do custo, ninguém percebe)
   renderer.shadowMap.autoUpdate = !(S && S.settings.quality === 'auto'); if (!renderer.shadowMap.autoUpdate) renderer.shadowMap.needsUpdate = !(SH_SOFT && AQ.shOff) && AQ.fr % 2 === 0;
   if (!S || S.settings.quality !== 'auto' || document.hidden || mode === 'menu') { AQ.t0 = now; AQ.n = 0; return; }
-  AQ.n++; const el = now - AQ.t0; if (el < 1000) return; const fps = AQ.n * 1000 / el; AQ.t0 = now; AQ.n = 0; AQ.fps = fps;
+  AQ.n++; const el = now - AQ.t0; if (el < 1000) return; const fpsR = AQ.n * 1000 / el, fps = fpsR * 60 / fpsCap(); AQ.t0 = now; AQ.n = 0; AQ.fps = fpsR;
   const cap = Math.min(devicePixelRatio || 1, 2), set = () => { renderer.setPixelRatio(AQ.pr); resize(); };
   if (fps < 40) { AQ.hi = 0; if (++AQ.lo >= 2) { AQ.lo = 0;
       if (AQ.pr > 1.01) { AQ.pr = Math.max(1, AQ.pr - 0.2); set(); }
@@ -2134,7 +2134,7 @@ function makeRealSkater(look, tagText, tagColor) {
     o.castShadow = true; o.frustumCulled = false;
     const n = o.material.name;
     if (k === 'm' && (n === 'Wolf3D_Headwear' || /Beard/.test(o.name))) { o.visible = false; return; }
-    if (M.rpm && n === M.avatarMat) { const mat = rpmBodyMat(M); u.mats[n] = mat; if (M.hairGroup) { u.hairMat2 = mat.clone(); o.material = [mat, u.hairMat2]; } else o.material = mat; return; }
+    if (M.rpm && n === M.avatarMat) { u.avatar = o; const mat = rpmBodyMat(M); u.mats[n] = mat; if (M.hairGroup) { u.hairMat2 = mat.clone(); o.material = [mat, u.hairMat2]; } else o.material = mat; return; }
     o.material = o.material.clone(); u.mats[n] = o.material;
     if (o.morphTargetDictionary && o.morphTargetInfluences) u.morphs.push(o);
     if (k === 'm' && M[n]) o.material.map = M[n];
@@ -9378,7 +9378,30 @@ function prepRPM(info, scene, k, normalTex) {
   if (arm) { const sy = arm.y; info.braMask = legMask(mesh, W, H, 0, false, (y, x) => y < sy - (k === 'f' ? 0.24 : 0.2) || y > sy - 0.06 || Math.abs(x) > Math.abs(arm.x) * 0.95); info.braMask.nm = 'bra'; }
   info.nudeMask = new Uint8Array(W * H).fill(1); info.nudeMask.nm = 'nude';
   info.k = k; try { rpmTorsoDetail(info, mesh, scene); } catch (e) { console.warn('tronco', e); }
+  try { rpmLodLoad(info, mesh.geometry, k); } catch (e) { console.warn('lod', e); }
   return true;
+}
+/* NÍVEL DE DETALHE DOS PERSONAGENS (como nos jogos de celular): de perto o corpo completo (11 mil triângulos),
+   a meia distância uma versão com 3,9 mil e lá longe uma com 1,7 mil. Mesma textura, mesmo esqueleto e mesma roupa:
+   só muda quantos triângulos o celular desenha (versões geradas com o meshoptimizer: ferramentas/lod.mjs). */
+function rpmLodLoad(info, geo, k) {
+  info.lods = [geo];
+  const BL = RPM_BLOCKS[k], uv = geo.attributes.uv;
+  ['lod1', 'lod2'].forEach((tag, li) => fetch(`modelos/rpm_${k}_${tag}.bin?v=1`).then(r => r.ok ? r.arrayBuffer() : null).then(buf => {
+    if (!buf) return; const src = new Uint16Array(buf), body = [], hair = [];
+    for (let t = 0; t < src.length; t += 3) { const a = src[t], b = src[t + 1], c = src[t + 2]; if (Math.max(a, b, c) >= uv.count) return; const u = (uv.getX(a) + uv.getX(b) + uv.getX(c)) / 3, v = (uv.getY(a) + uv.getY(b) + uv.getY(c)) / 3; (info.hairGroup && inBlk(BL.hair, u, v) ? hair : body).push(a, b, c); }
+    const g = new THREE.BufferGeometry(); for (const n in geo.attributes) g.setAttribute(n, geo.attributes[n]);
+    g.morphAttributes = geo.morphAttributes; g.morphTargetsRelative = geo.morphTargetsRelative;
+    g.setIndex([...body, ...hair]); if (info.hairGroup) { g.addGroup(0, body.length, 0); g.addGroup(body.length, hair.length, 1); }
+    if (geo.boundingSphere) g.boundingSphere = geo.boundingSphere.clone(); if (geo.boundingBox) g.boundingBox = geo.boundingBox.clone();
+    info.lods[li + 1] = g;
+  }).catch(() => { }));
+}
+// escolhe o nível pela distância da câmera (o seu personagem e a câmera de rosto sempre no completo)
+function charLod(o, d) {
+  const u = o.userData, av = u.avatar, M = av && MODELS && MODELS[u.k]; if (!M || !M.lods) return;
+  const want = o === city.player || city.faceCam || d < 16 ? 0 : d < 45 ? 1 : 2, g = M.lods[want] || M.lods[want - 1] || M.lods[0];
+  if (av.geometry !== g) av.geometry = g;
 }
 function rpmBodyMat(M) { const m = new THREE.MeshStandardMaterial({ map: M.atlas.base || (M.atlas.base = (() => { const t = new THREE.CanvasTexture(M.atlas.c); t.flipY = false; t.encoding = THREE.sRGBEncoding; return t; })()), normalMap: M.normal, roughness: 0.78, metalness: 0 }); m.name = M.avatarMat; if (M.normal) m.normalScale.set(0.8, 0.8); return m; }
 function applyRpmLook(u, look) {
@@ -12960,7 +12983,7 @@ function charShadows(cp) {
   for (const o of CULL.roots) {
     if (!o.visible || !o.parent) continue; const u = o.userData;
     if (!u._sm || u._smN !== o.children.length) { u._sm = []; u._smN = o.children.length; o.traverse(m => { if ((m.isMesh || m.isSkinnedMesh) && m.castShadow) u._sm.push(m); }); }
-    const e = o.matrixWorld.elements, near = Math.hypot(e[12] - cp.x, e[14] - cp.z) < 22 || o === city.player;
+    const e = o.matrixWorld.elements, dd = Math.hypot(e[12] - cp.x, e[14] - cp.z), near = dd < 22 || o === city.player; try { charLod(o, dd); } catch (er) { }
     if (u._shN !== near) { u._shN = near; for (const m of u._sm) m.castShadow = near; }
   }
 }
@@ -14041,6 +14064,8 @@ const OLD_PANELS = {
       title: 'Configurações', html: `<h3>Qualidade gráfica</h3><div class="seg" role="group" aria-label="Qualidade"><button data-act="quality" data-q="auto" aria-pressed="${q === 'auto'}">Automática</button><button data-act="quality" data-q="baixa" aria-pressed="${q === 'baixa'}">Baixa</button><button data-act="quality" data-q="media" aria-pressed="${q === 'media'}">Média</button><button data-act="quality" data-q="alta" aria-pressed="${q === 'alta'}">Alta</button><button data-act="quality" data-q="ultra" aria-pressed="${q === 'ultra'}">Ultra (rostos)</button></div>
       ${q === 'auto' ? `<p class="note" id="aq-info">${aqInfo()}</p>` : ''}
       <p class="muted"><b>Automática (recomendada):</b> o jogo mede a fluidez e ajusta sozinho a resolução e as sombras para ficar sempre liso, no máximo de qualidade que o seu aparelho aguenta. A média é boa aparência sem pesar no celular. Use a baixa se o jogo engasgar. A Ultra usa a resolução máxima da tela e sombras finas, ideal para ver os rostos de perto (pede um aparelho bom).</p>
+      <h3>Quadros por segundo</h3><div class="seg" role="group"><button data-act="fpscap" data-v="60" aria-pressed="${fpsCap() === 60}">60 (mais liso)</button><button data-act="fpscap" data-v="30" aria-pressed="${fpsCap() === 30}">30 (economia de bateria)</button></div>
+      <p class="muted">Use 30 se o celular esquentar ou a bateria acabar rápido: o jogo fica estável e sem travadas, com a mesma qualidade de imagem.</p>
       <h3>Som</h3><div class="seg"><button data-act="sound" data-on="1" aria-pressed="${S.settings.sound}">Ligado</button><button data-act="sound" data-on="0" aria-pressed="${!S.settings.sound}">Desligado</button></div>
       <h3>Baixar no celular</h3><p class="muted">${isStandalone() ? 'O jogo já está instalado como app neste aparelho.' : 'Instale o Rolê City na tela inicial: abre em tela cheia, como um aplicativo.'}</p>${isStandalone() ? '' : '<button class="btn" data-act="install-app">📲 Baixar o jogo no celular</button>'}
       <h3>Tamanho dos botões</h3><div class="row"><span>Controles (andar, pular, ação…)</span><button class="btn ghost sm" data-act="be-size" data-d="-0.1" aria-label="Diminuir controles">−</button><b>${Math.round((S.settings.btnScale || 1) * 100)}%</b><button class="btn ghost sm" data-act="be-size" data-d="0.1" aria-label="Aumentar controles">+</button></div>
@@ -14731,6 +14756,7 @@ function act(a, ds, el) {
     case 'be-save': btnEditEnd(true); break;
     case 'be-cancel': btnEditEnd(false); break;
     case 'quality': S.settings.quality = ds.q; persist(); applyQuality(); renderPanel(); break;
+    case 'fpscap': S.settings.fps = +ds.v; AQ.lo = AQ.hi = 0; persist(); renderPanel(); toast(`Limite: ${ds.v} quadros por segundo.`, 'good'); break;
     case 'sound': S.settings.sound = ds.on === '1'; persist(); renderPanel(); break;
     case 'reset-ask': $('reset-zone').innerHTML = `<div class="warn-inline"><span>Isso apaga personagem, grana, tokens e itens deste navegador.</span><div class="row"><button class="btn danger sm" data-act="reset-do">Apagar tudo</button><button class="btn ghost sm" data-act="panel-close">Cancelar</button></div></div>`; break;
     case 'reset-do': wipeSave(); location.reload(); break;
@@ -15374,7 +15400,10 @@ function safeRender(sc, cam) {
     if (!safeRender.warned) { safeRender.warned = true; console.warn('render consertado', n, e && e.message); }
   }
 }
+// limite de quadros: em telas de 90/120 Hz o jogo não passa de 60 (ou 30, no modo economia); o celular esquenta menos e não diminui a velocidade sozinho
+let lastDraw = 0; const fpsCap = () => (S && S.settings && S.settings.fps) || 60;
 function loop(now) {
+  if (now - lastDraw < 1000 / fpsCap() - 3) { requestAnimationFrame(loop); return; } lastDraw = now;
   const dt = Math.min(0.05, (now - last) / 1000); last = now; const t = now / 1000;
   try {
     if (mode === 'city') { updateCity(dt, t); if (city.inCine) { camera.position.set(CINE_IN.x + 0.85, 3.4, CINE_IN.z + 6.5); camera.lookAt(CINE_IN.x, 3.6, CINE_IN.z - 10.8); } safeRender(city.scene, camera); }

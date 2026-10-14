@@ -488,3 +488,8 @@ O projeto `role-city` do Cloudflare Pages está ligado a este repositório (ramo
     - Os gráficos novos não são mais conferidos um por um na hora em que aparecem (isso causava travadinhas ao andar).
   - Medido andando pela cidade: o quadro caiu de 40 para 27 ms, os desenhos de 1.054 para 498 (pico de 1.915 para 792), os triângulos de 484 mil para 357 mil e a maior travada de 4,2 s para 1,6 s (no computador de teste, sem placa de vídeo).
   - 🖼️ **Qualidade de imagem:** a qualidade automática nunca baixa a resolução para menos de 0,8 (antes ia até 0,6 e a imagem ficava borrada). E só baixa até 0,8 se o celular estiver realmente abaixo de 30 quadros por segundo.
+
+### Build 2026.10.14-49 (técnicas dos jogos de celular)
+  - 🧍 **Nível de detalhe dos personagens (LOD):** até 16 m, o corpo completo (11 mil triângulos). De 16 a 45 m, uma versão com 3,9 mil. Depois de 45 m, uma com 1,7 mil. A textura, as roupas, o esqueleto e a animação são os mesmos. O seu personagem e a câmera de rosto usam sempre o completo. As versões leves foram geradas com o meshoptimizer (`ferramentas/lod.mjs` → `modelos/rpm_*_lod1.bin` e `_lod2.bin`, de 10 a 23 KB).
+  - 🌡️ **Limite de quadros:** no máximo 60 por segundo (telas de 90/120 Hz não passam disso, e o celular esquenta menos). Há uma opção de 30 (economia de bateria) em Configurações → Quadros por segundo. A qualidade automática mede a fluidez em relação a esse limite.
+  - Medido andando pela cidade: os triângulos por quadro caíram de 357 mil para 228 mil (pico de 654 mil para 396 mil) e o quadro de 27 para 24 ms.
