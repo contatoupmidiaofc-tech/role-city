@@ -562,3 +562,21 @@ Quatro profissões novas na Agência de Empregos. Cada uma tem teste de entrada,
   - 🎧 **DJ:** a cabine do DJ na Central escolhe a música que toca para a cidade toda (paredões, caixas e carros de som).
     - Com público a até 50 m, cada música rende (no máximo a cada 45 s).
     - Qualquer jogador pede música ao DJ de serviço, com gorjeta de $ 20 ou $ 50, paga quando o DJ toca o pedido.
+
+### Build 2026.10.14-56 (o que ficou de fora das profissões + nitidez no celular)
+  - 🛻 **Guincho:** o Mecânico tem o Guincho da Oficina na base (Agência).
+    - Quando o carro do cliente está longe (mais de 25 m), o orçamento oferece o guincho ($ 150).
+    - O mecânico vai com o guincho até o carro, que engata sozinho e aparece pendurado na traseira. Ele leva até o cliente, solta o carro ao lado e faz o serviço.
+  - 🚗 **Rebaixado:** novo item de tuning ($ 300). A carroceria fica mais perto do chão e todo mundo vê o carro rebaixado (e a pintura) quando a pessoa dirige.
+  - ⚔️ **Batalha de grafite:** um grafiteiro desafia outro de serviço por perto, numa parede.
+    - Cada um paga $ 100 e pinta a sua arte, lado a lado. Quem passa perto vota por 90 s e quem vencer leva $ 300 (empate devolve a inscrição).
+    - O grafite de jogador agora também esconde o desenho antigo do cenário que estava na parede.
+  - 🏆 **Rachão do instrutor:** o instrutor abre as inscrições (grátis, $ 50 ou $ 100) e dá a largada.
+    - São 60 s de manobras e quem fizer mais pontos leva 90% das inscrições + $ 150 da Skate Shop. O instrutor fica com 10% e o cachê.
+  - 🛹 **Rolê em grupo:** o instrutor leva a galera por 4 picos da cidade (Skate Shop e lanchonetes). Quem passa por todos perto do instrutor ganha $ 120 e 80 XP, e o instrutor ganha por pessoa que completa.
+  - 🏪 **Cargos do empresário:** Microempreendedor(a) (1 comércio) → Lojista (20 vendas para jogadores) → Empresário(a) (2 comércios) → Magnata (3 comércios, letreiro com ⭐).
+    - Cada cargo dá +5% extra em cada venda.
+  - 🚛 **Caminhão de lixo em dupla:** com um gari dirigindo o Caminhão da Coleta por perto (até 16 m), quem recolhe os sacos ganha bônus por saco. O motorista recebe a parte dele na hora.
+  - 🔎 **Nitidez extra:** um filtro de contraste adaptativo (como o CAS/FSR dos consoles) deixa contornos e texturas mais definidos quando o jogo baixa a resolução para não travar.
+    - Fica em Configurações → Nitidez extra: Automática (padrão: só no celular, quando a resolução está reduzida), Sempre ou Desligada.
+    - As cores ficam iguais nas duas versões do motor gráfico.

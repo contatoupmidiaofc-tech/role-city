@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.14-55';
+const BUILD = '2026.10.14-56';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2754,7 +2754,7 @@ function buildCity() {
         const span = Math.min(alongX ? w : d, 9) - 1, dec = new THREE.Mesh(new THREE.PlaneGeometry(span, span * 0.42), graf[Math.floor(rng() * graf.length)]);
         if (alongX) { dec.position.set(x, 1.3 + span * 0.21, z + sgn * (d / 2 + 0.09)); dec.rotation.y = sgn > 0 ? 0 : Math.PI; }
         else { dec.position.set(x + sgn * (w / 2 + 0.09), 1.3 + span * 0.21, z); dec.rotation.y = sgn > 0 ? Math.PI / 2 : -Math.PI / 2; }
-        sc.add(dec);
+        (city.sceneGraf = city.sceneGraf || []).push(dec); sc.add(dec);
       }
     }
     return m;
@@ -3314,7 +3314,7 @@ function resetCity() {
   try { if (city.heist) heistCancel(true); } catch (e) { city.heist = null; }
   city.bonde = null; city.camOverride = null;
   for (const k of ['colliders', 'doors', 'ramps', 'cars', 'bots', 'mObjs', 'blds', 'winMats', 'addrs', 'walls', 'kiosks', 'peds', 'dogs', 'cats', 'pigeons', 'flocks', 'fx', 'bananas', 'route']) city[k] = [];
-  city.hospG = null; city.samu = null; city.samuNpc = null; city.samuNpcs = []; city.deadNpcs = []; city.hospNpcs = []; city.hospIn = false; city.shopIn = null; city.squad = []; city.homePad = null; city.morros = {}; city.regFav = []; city.party = []; city.users = []; city.kids = []; city.kidBall = null; city.leds = []; city.soundSrc = []; city.policeLot = []; city.war = null; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null; city.outer = null; city.ocol = null; city.xspots = []; city.fire = null; city.raid = null; city.tatNpc = null;
+  city.hospG = null; city.samu = null; city.samuNpc = null; city.samuNpcs = []; city.deadNpcs = []; city.hospNpcs = []; city.hospIn = false; city.shopIn = null; city.squad = []; city.homePad = null; city.morros = {}; city.regFav = []; city.party = []; city.users = []; city.kids = []; city.kidBall = null; city.leds = []; city.soundSrc = []; city.policeLot = []; city.war = null; city.airport = null; city.tour = null; city.tourSpots = null; city.helipad = null; city.heliParked = null; city.rain = null; city.bolt = null; city.fish = null; city.shark = null; city.towel = null; P.lie = false; P.swim = false; city.abord = null; city.jailedN = []; city.mansaoG = null; city.biz = {}; city.comSlots = {}; city.surf = []; city.rails = []; city.robbers = []; city.park = false; city.jail = false; city.jailG = null; city.prisonerMs = []; city.far = null; city.outer = null; city.ocol = null; city.xspots = []; city.fire = null; city.raid = null; city.tatNpc = null; city.sceneGraf = [];
   city.morro = false; city.flags = []; city.mWalls = []; city.mHouses = []; city.marks = []; city.roles = null; city.cops = []; city.thugs = []; city.boca = null;
   city.homeG = null; city.dn = null; city.student = null; city.myVeh = null; city.interior = null; city.routeM = null; city.homeDoorPivot = null; city.doorAnim = null; city.seaTex = null; city.foam = null; city.lighthouse = null;
 }
@@ -3383,7 +3383,7 @@ function carWheel(r, w, alloy) {
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.5, r * 0.5, 0.02, 16), vmat('alloy')); disc.rotation.z = Math.PI / 2; disc.position.x = -w * 0.1; wg.add(disc);
   return wg;
 }
-function makeVehicleMesh(V) { if (V.tank) return makeTankMesh(V); if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.deco) vehDeco(m, V); if (V.kind === 'car' && V.deco !== 'paredao') { try { const u = m.userData, keep = new Set([].concat(u.siren || [])); mergeByMaterial(m, keep); mergeDeep(m, keep); } catch (e) { console.warn('juntar carro', e); } } return m; }
+function makeVehicleMesh(V) { if (V.tank) return makeTankMesh(V); if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.low && V.kind === 'car') vehLower(m); if (V.deco) vehDeco(m, V); if (V.kind === 'car' && V.deco !== 'paredao') { try { const u = m.userData, keep = new Set([].concat(u.siren || [])); mergeByMaterial(m, keep); mergeDeep(m, keep); } catch (e) { console.warn('juntar carro', e); } } return m; }
 function makeVehicleMesh0(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
   const paint = vmat('paint', V.color), add = (geo, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, P = g) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.set(rx, ry, rz); k.castShadow = true; k.receiveShadow = true; P.add(k); return k; };
@@ -4434,7 +4434,7 @@ function updateCity(dt, t) {
   if (!near && S.gang && !P.drive && !P.ride && (city.paintCd = (city.paintCd || 0) - dt) <= 0) { const w = nearWall(); if (w) near = { type: 'paint', w }; }
   if (S.shift === 'policial' && !P.drive && !P.ride) (city.policeLot || []).forEach((L, i) => { if (!L.m.visible) return; const k = Math.hypot(L.x - P.x, L.z - P.z); if (k < 3.2 && k < nd) { nd = k; near = { type: 'lotveh', i }; } });
   { const xn = extraNear(near, nd); if (xn) { near = xn; nd = xn.nd; } }
-  { const s5 = s5Near(); if (s5) { near = s5; nd = s5.nd; } }
+  { const s5 = s5Near() || s7Near(); if (s5) { near = s5; nd = s5.nd; } }
   if (P.drive) near = { type: 'exitveh' };
   if (P.ride) near = { type: 'rideexit' };
   const pr = $('prompt');
@@ -4481,7 +4481,7 @@ function onLand() {
   const coins = city.contest || SKT.run ? 0 : earn(Math.round(pts / 25));
   addXP(Math.max(2, Math.round(pts / 40)));
   trickPop(names, pts, combo.length > 1 ? `combo x${combo.length}` : (coins ? `$ ${coins}` : ''));
-  if (city.contest) city.contest.score += pts; sktTrick(pts, combo.length);
+  if (city.contest) city.contest.score += pts; sktTrick(pts, combo.length); try { rachaoPts(pts); } catch (e) { }
   combo.forEach(d => missionEvent('trick', d.id)); missionEvent('combo', combo.length); evProgress('trick', combo.length);
   if (pts >= 150) scheduleReplay(names, pts);
 }
@@ -5609,7 +5609,7 @@ function updateJobNew(m, dt, t) {
       else { toast('Passageiro: "Valeu, motorista!"'); return completeMission(); }
     }
   } else if (m.type === 'job_lixo') {
-    for (const o of city.mObjs) { if (o.userData.i == null || !o.visible) continue; if (Math.hypot(o.position.x - P.x, o.position.z - P.z) < 1.8) { o.visible = false; m.items[o.userData.i][2] = 1; m.got++; P.carry = true; sfx('coin'); renderMissionBox(); } }
+    for (const o of city.mObjs) { if (o.userData.i == null || !o.visible) continue; if (Math.hypot(o.position.x - P.x, o.position.z - P.z) < 1.8) { o.visible = false; m.items[o.userData.i][2] = 1; m.got++; P.carry = true; sfx('coin'); if (lixoDuplaPay(16)) feed('🚛 Em dupla com o caminhão: bônus no saco'); renderMissionBox(); } }
     if (m.got >= m.goal && near < 3.5) { P.carry = null; return completeMission(); }
   } else if (m.type === 'job_fogo') {
     for (const o of city.mObjs) if (o.userData.fire != null) { const f = Math.max(0, 1 - m.p); o.material.opacity = f; o.scale.set(3 * (0.6 + 0.4 * Math.sin(t * 9 + o.userData.fire)) * (0.3 + f), 5 * (0.3 + f), 1); } else if (o.userData.fireL) o.intensity = 2 * (1 - m.p) + Math.sin(t * 20) * 0.3;
@@ -5847,7 +5847,7 @@ function grindTick(dt) {
   if (off || jump) {
     P.grind = null; P.air = true; P.airT = 0; P.vy = jump ? 6.5 : 2;
     const name = r.ledge ? (G.t > 1 ? 'Nosegrind no Ledge' : '5-0 no Ledge') : (G.t > 1 ? 'Boardslide' : '50-50 Grind'), pts = Math.round(80 + G.t * 120);
-    const coins = city.contest ? 0 : earn(Math.round(pts / 25)); addXP(Math.max(2, Math.round(pts / 40))); trickPop(name, pts, coins ? `$ ${coins}` : ''); if (city.contest) city.contest.score += pts; sktTrick(pts, 1); S.stats.tricks++; evProgress('trick', 1); missionEvent('trick', 'grind');
+    const coins = city.contest ? 0 : earn(Math.round(pts / 25)); addXP(Math.max(2, Math.round(pts / 40))); trickPop(name, pts, coins ? `$ ${coins}` : ''); if (city.contest) city.contest.score += pts; sktTrick(pts, 1); try { rachaoPts(pts); } catch (e) { } S.stats.tricks++; evProgress('trick', 1); missionEvent('trick', 'grind');
   }
 }
 
@@ -6537,14 +6537,15 @@ function comBlock(sc, cx, cz, addBuilding) {
   });
 }
 async function loadBiz() {
-  SUJ.spots = {}; loadGrafites();
+  SUJ.spots = {}; loadGrafites(); bizCount();
   city.biz = {}; if (!NET.sb || !NET.user) return; const cid = cityId();
   try { const { data, error } = await NET.sb.from('comercios').select('id,dono,dono_nome,nome,tipo,slot').eq('cidade', cid); if (error || !data || cityId() !== cid) return; for (const r of data) setBiz(r); } catch (e) { }
 }
 function setBiz(r) {
   city.biz = city.biz || {}; city.biz[r.slot] = r; const S2 = city.comSlots && city.comSlots[r.slot]; if (!S2) return; const T = BIZ_TYPES[r.tipo] || BIZ_TYPES.loja;
   S2.door.label = `${T.i} ${r.nome}`; city.scene.remove(S2.sign);
-  S2.sign = textSprite(`${T.i} ${r.nome.toUpperCase()}`, { bg: '#' + T.c.toString(16).padStart(6, '0'), fg: '#fff', size: 44, scale: [6, 1, 1], stroke: '#15161a' }); S2.sign.position.set(S2.x + S2.dir * 5.8, 5.6, S2.z); city.scene.add(S2.sign);
+  const star = NET.user && r.dono === NET.user.id && bizRank() === 3 ? '⭐ ' : '';
+  S2.sign = textSprite(`${star}${T.i} ${r.nome.toUpperCase()}`, { bg: '#' + T.c.toString(16).padStart(6, '0'), fg: '#fff', size: 44, scale: [6, 1, 1], stroke: '#15161a' }); S2.sign.position.set(S2.x + S2.dir * 5.8, 5.6, S2.z); city.scene.add(S2.sign);
   S2.glass.material = new THREE.MeshLambertMaterial({ color: T.c, emissive: T.c, emissiveIntensity: 0.25 });
 }
 function enterBiz(d) {
@@ -6576,7 +6577,7 @@ function buyBiz(slot, idx) {
   if (special === 'lavar' && city.myVeh) toast('Veículo limpinho e revisado!', 'pink');
   if (NET.ch && NET.online && NET.user && r.dono !== NET.user.id) NET.ch.send({ type: 'broadcast', event: 'venda', payload: { owner: r.dono, biz: r.id, price, amt: Math.round(price * 0.6), item: name, buyer: S.name, loja: r.nome } });
 }
-function onSale(d) { if (!NET.user || d.owner !== NET.user.id) return; const bn = d.biz ? empSaleBonus(d) : 0; if (bn) { d.amt += bn; d.item += ` (equipe: +$ ${bn})`; } S.coins += d.amt; persist(); updateHUD(); toast(`💰 ${d.buyer} comprou ${d.item} no ${d.loja}: +$ ${d.amt}`, 'good'); sfx('coin'); }
+function onSale(d) { if (!NET.user || d.owner !== NET.user.id) return; S.bizSales = (S.bizSales || 0) + 1; const bn = (d.biz ? empSaleBonus(d) : 0) + Math.round((d.price || d.amt / 0.6) * 0.05 * bizRank()); if (bn) { d.amt += bn; d.item += ` (equipe: +$ ${bn})`; } S.coins += d.amt; persist(); updateHUD(); toast(`💰 ${d.buyer} comprou ${d.item} no ${d.loja}: +$ ${d.amt}`, 'good'); sfx('coin'); }
 async function openBiz() {
   const name = (($('biz-name') || {}).value || '').trim().slice(0, 30), tipo = city.bizTipo || 'lanchonete', slot = city.bizSlot;
   if (!certOk('comerciante')) return startJobTest('comerciante');
@@ -6587,7 +6588,7 @@ async function openBiz() {
   try {
     const { data, error } = await NET.sb.from('comercios').insert({ dono_nome: S.name, nome: name, tipo, cidade: cityId(), slot }).select().single();
     if (error) return toast(/duplicate|unique/i.test(error.message) ? 'Esse ponto acabou de ser alugado. Escolha outro.' : 'Não deu para abrir agora.', 'bad');
-    S.coins -= 5000; S.bizCol = S.bizCol || {}; S.bizCol[data.id] = Date.now(); persist(); updateHUD(); setBiz(data);
+    S.coins -= 5000; setTimeout(bizCount, 500); S.bizCol = S.bizCol || {}; S.bizCol[data.id] = Date.now(); persist(); updateHUD(); setBiz(data);
     if (NET.ch) NET.ch.send({ type: 'broadcast', event: 'novo_comercio', payload: data });
     toast(`${BIZ_TYPES[tipo].i} ${name} está aberto! Alvará emitido.`, 'good'); sfx('level'); postFeed(`Abri meu comércio: ${name}!`); renderPanel();
   } catch (e) { toast('Sem conexão com o servidor.', 'bad'); }
@@ -6874,6 +6875,12 @@ function vehDeco(m, V) {
   }
   else if (V.deco === 'bau') { const b = new THREE.Mesh(boxGeo(0.5, 0.45, 0.5), std(V.color === 0xff7a1a ? 0xff7a1a : 0xd8312f, 0.5)); b.position.set(0, (u.seatY || 0.95) + 0.3, -0.55); host.add(b); const s = textSprite('ENTREGAS', { bg: '#15161a', fg: '#ffcf3a', size: 40, scale: [0.6, 0.15, 1] }); s.position.set(0, (u.seatY || 0.95) + 0.65, -0.55); host.add(s); }
   else if (V.deco === 'paredao') paredaoDeco(m, V);
+  else if (V.deco === 'guincho') { // reboque: luz âmbar, lança e gancho na caçamba
+    siren(0xff9f1a, 0xff9f1a); label('GUINCHO 24H', '#15161a', '#ffcf3a'); stripe(0x15161a, mid);
+    const R2 = u.roof || 1.7, arm = new THREE.Mesh(boxGeo(0.18, 0.18, L * 0.55), std(0x2b2d33, 0.5, 0.6)); arm.position.set(0, R2 - 0.1, -L * 0.3); arm.rotation.x = -0.35; m.add(arm);
+    const cab = new THREE.Mesh(CYL(0.012, 0.012, 0.7, 6), std(0x15161a, 0.4, 0.7)); cab.position.set(0, R2 - 0.35, -L * 0.56); m.add(cab);
+    const hook = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.025, 6, 12, Math.PI * 1.4), std(0xcfd3d8, 0.3, 0.9)); hook.position.set(0, R2 - 0.72, -L * 0.56); m.add(hook);
+  }
   else if (V.deco === 'graf') { label('ARTE DE RUA', '#15161a', '#ff4f7b'); stripe(0xffcf3a, mid); stripe(0x4fc3ff, mid - 0.2); stripe(0x3ddc84, mid - 0.4); }
 }
 const jobVehs = () => JOB_VEH[S.shift] || [];
@@ -14080,6 +14087,7 @@ const OLD_PANELS = {
       ${q === 'auto' ? `<p class="note" id="aq-info">${aqInfo()}</p>` : ''}
       <p class="muted"><b>Automática (recomendada):</b> o jogo mede a fluidez e ajusta sozinho a resolução e as sombras para ficar sempre liso, no máximo de qualidade que o seu aparelho aguenta. A média é boa aparência sem pesar no celular. Use a baixa se o jogo engasgar. A Ultra usa a resolução máxima da tela e sombras finas, ideal para ver os rostos de perto (pede um aparelho bom).</p>
       <h3>Quadros por segundo</h3><div class="seg" role="group"><button data-act="fpscap" data-v="60" aria-pressed="${fpsCap() === 60}">60 (mais liso)</button><button data-act="fpscap" data-v="30" aria-pressed="${fpsCap() === 30}">30 (economia de bateria)</button></div>
+      <h3>Nitidez extra</h3><div class="seg" role="group">${[['auto', 'Automática'], ['on', 'Sempre'], ['off', 'Desligada']].map(([v, n]) => `<button data-act="sharp" data-v="${v}" aria-pressed="${(S.settings.sharp || 'auto') === v}">${n}</button>`).join('')}</div><p class="muted">Deixa contornos e texturas mais definidos quando o jogo diminui a resolução para não travar (automática: só no celular, quando precisa).</p>
       <p class="muted">Use 30 se o celular esquentar ou a bateria acabar rápido: o jogo fica estável e sem travadas, com a mesma qualidade de imagem.</p>
       <h3>Som</h3><div class="seg"><button data-act="sound" data-on="1" aria-pressed="${S.settings.sound}">Ligado</button><button data-act="sound" data-on="0" aria-pressed="${!S.settings.sound}">Desligado</button></div>
       <h3>Baixar no celular</h3><p class="muted">${isStandalone() ? 'O jogo já está instalado como app neste aparelho.' : 'Instale o Rolê City na tela inicial: abre em tela cheia, como um aplicativo.'}</p>${isStandalone() ? '' : '<button class="btn" data-act="install-app">📲 Baixar o jogo no celular</button>'}
@@ -14386,7 +14394,7 @@ const PANELS = {
         <div class="row"><button class="btn" data-act="biz-open" ${S.coins < 5000 ? 'disabled' : ''}>Tirar o alvará e abrir</button>${city.bizSlot != null ? `<button class="btn ghost sm" data-act="biz-gps" data-id="${city.bizSlot}">GPS até o ponto</button>` : ''}</div>
         <p class="muted">Cada cliente que compra no seu comércio paga 60% do valor para você na hora, mesmo com você longe. O balcão também fatura $ 300 por dia do jogo (acumula até 5 dias).</p></div>`;
     }
-    if (mine.length) html += `<h3>Meus comércios</h3>` + mine.map(r => { const T = BIZ_TYPES[r.tipo] || BIZ_TYPES.loja, last = (S.bizCol || {})[r.id] || Date.now() - DAYLEN, amt = Math.floor(Math.min(5, (Date.now() - last) / DAYLEN) * 300);
+    if (mine.length) html += `<h3>Meus comércios</h3>` + bizRankHtml() + mine.map(r => { const T = BIZ_TYPES[r.tipo] || BIZ_TYPES.loja, last = (S.bizCol || {})[r.id] || Date.now() - DAYLEN, amt = Math.floor(Math.min(5, (Date.now() - last) / DAYLEN) * 300);
       return `<div class="card"><h4>${T.i} ${esc(r.nome)}</h4><p class="muted">${esc(T.n)} · Ponto ${r.slot + 1} · a receber: $ ${fmt(amt)}</p><div class="row"><button class="btn" data-act="biz-col" data-id="${r.id}" ${amt < 10 ? 'disabled' : ''}>Receber faturamento</button><button class="btn ghost sm" data-act="biz-gps" data-id="${r.slot}">GPS</button><button class="btn ghost sm" data-act="biz-close" data-id="${r.id}">Fechar o comércio</button></div></div>`; }).join('');
     const others = Object.values(B).filter(r => !mine.includes(r));
     if (others.length) html += `<h3>Comércios da cidade</h3><div class="chips">${others.map(r => `<button class="chip" data-act="biz-gps" data-id="${r.slot}">${(BIZ_TYPES[r.tipo] || BIZ_TYPES.loja).i} ${esc(r.nome)} · ${esc(r.dono_nome)}</button>`).join('')}</div>`;
@@ -14397,7 +14405,7 @@ const PANELS = {
     const T = BIZ_TYPES[r.tipo] || BIZ_TYPES.loja, me = NET.user && r.dono === NET.user.id;
     let html = `<p class="muted">${T.i} ${esc(T.n)} de <b>${esc(r.dono_nome)}</b> · Alvará da Prefeitura em dia ✅ · Sua vida: ${Math.round(P.hp)}%</p><div class="grid-items">${T.menu.map(([n, p, hp, sp], i) => `<div class="item-card"><div class="swatch ico" style="--sw:#${T.c.toString(16).padStart(6, '0')}">${T.i}</div><div class="item-info"><b>${esc(n)}</b><small>${hp ? `Recupera ${hp}% de vida` : sp === 'visual' ? 'Muda cabelo, corpo e estilo' : sp === 'roupas' ? 'Abre a vitrine de roupas' : 'Serviço'}</small></div><div class="item-actions"><button class="btn sm" data-act="biz-buy" data-slot="${slot}" data-i="${i}" ${S.coins < (bizPromoOn(r.id) ? Math.round(p * 0.7) : p) ? 'disabled' : ''}>${p ? (bizPromoOn(r.id) ? `⚡ $ ${Math.round(p * 0.7)}` : '$ ' + p) : 'Ver'}</button></div></div>`).join('')}</div>`;
     if (bizPromoOn(r.id)) html = `<div class="note">⚡ Promoção relâmpago: 30% de desconto por mais ${Math.ceil((EMP.promo[r.id] - Date.now()) / 60000)} min.</div>` + html;
-    if (me) html += `<div class="card"><h4>Este comércio é seu</h4><button class="btn" data-act="biz-col" data-id="${r.id}">Receber faturamento</button></div>` + (NET.online ? empBizHtml(r) : '');
+    if (me) html += `<div class="card"><h4>Este comércio é seu</h4><button class="btn" data-act="biz-col" data-id="${r.id}">Receber faturamento</button></div>` + (NET.online ? bizRankHtml() + empBizHtml(r) : '');
     return { title: `${T.i} ${r.nome}`, html };
   },
   igreja() {
@@ -14773,6 +14781,7 @@ function act(a, ds, el) {
     case 'be-save': btnEditEnd(true); break;
     case 'be-cancel': btnEditEnd(false); break;
     case 'quality': S.settings.quality = ds.q; persist(); applyQuality(); renderPanel(); break;
+    case 'sharp': S.settings.sharp = ds.v; persist(); renderPanel(); toast(`Nitidez extra: ${{ auto: 'automática', on: 'sempre ligada', off: 'desligada' }[ds.v]}.`, 'good'); break;
     case 'fpscap': S.settings.fps = +ds.v; AQ.lo = AQ.hi = 0; persist(); renderPanel(); toast(`Limite: ${ds.v} quadros por segundo.`, 'good'); break;
     case 'sound': S.settings.sound = ds.on === '1'; persist(); renderPanel(); break;
     case 'reset-ask': $('reset-zone').innerHTML = `<div class="warn-inline"><span>Isso apaga personagem, grana, tokens e itens deste navegador.</span><div class="row"><button class="btn danger sm" data-act="reset-do">Apagar tudo</button><button class="btn ghost sm" data-act="panel-close">Cancelar</button></div></div>`; break;
@@ -14991,7 +15000,7 @@ function ccSend(svc, why, ex) {
   const c = { id: ccMe().slice(0, 6) + Date.now().toString(36), from: ccMe(), name: S.name, svc, why: String(why || V.why[0]).slice(0, 60), x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10, t: Date.now() };
   if (svc === 'policia' && CC.lastRob && Date.now() - CC.lastRob.t < 5 * 60000) c.sus = { id: CC.lastRob.id, name: CC.lastRob.name }; // quem te assaltou vai junto no chamado
   if (ex) Object.assign(c, ex);
-  if (svc === 'mecanico') { if (!S.veh || !VEH[S.veh]) return toast('Você não tem carro ou moto para o mecânico ver.', 'bad'); Object.assign(c, { dmg: vehDmg(S.veh), vn: VEH[S.veh].name }); }
+  if (svc === 'mecanico') { if (!S.veh || !VEH[S.veh]) return toast('Você não tem carro ou moto para o mecânico ver.', 'bad'); const mv = city.myVeh, V2 = vehTuned(S.veh); Object.assign(c, { dmg: vehDmg(S.veh), vn: VEH[S.veh].name, vid: S.veh, vc: V2.tc || 0, vl: V2.low ? 1 : 0, car: mv && !P.drive ? [Math.round(mv.x), Math.round(mv.z)] : null, far: mv && !P.drive ? Math.round(Math.hypot(mv.x - P.x, mv.z - P.z)) : 0 }); }
   if (svc === 'barbeiro') c.g = S.gender;
   if (svc === 'bombeiro' && /incêndio|fogo/i.test(c.why)) c.fire = true; // incêndio de verdade: o fogo aparece para os bombeiros
   CC.mine = Object.assign({ st: 'aberto', rs: 0 }, c); ccSend0('cc_new', c); sfx('ui');
@@ -15273,6 +15282,7 @@ function artTex(g) {
 function grafRender(g) {
   if (!city.scene || GRAF.meshes[g.id]) return; GRAF.rows[g.id] = g;
   for (const id in GRAF.meshes) { const o = GRAF.rows[id]; if (o && Math.hypot(o.x - g.x, o.z - g.z) < 1.6) grafUnrender(id); } // o mais novo cobre o antigo
+  for (const d of city.sceneGraf || []) if (d.visible && Math.hypot(d.position.x - g.x, d.position.z - g.z) < 5.5) d.visible = false; // e esconde o desenho do cenário embaixo
   const m = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2.75), new THREE.MeshLambertMaterial({ map: artTex(g), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
   m.position.set(g.x + Math.sin(g.h) * 0.04, (g.y || 0) + 2.4, g.z + Math.cos(g.h) * 0.04); m.rotation.y = g.h; m.renderOrder = 3; city.scene.add(m); GRAF.meshes[g.id] = m;
 }
@@ -15345,7 +15355,7 @@ function sujTick(now) {
   if (NET.online && now - SUJ.t > 6 * 60000) { SUJ.t = now; const ids = [ccMe(), ...Object.keys(NET.peers)].sort(); if (ids[0] === ccMe() && Object.values(NET.peers).some(p => p.job === 'catador') && (city.kiosks || []).length) { const k = pick(city.kiosks); sujNew(k.x, k.z, 'Sujeira na Praça depois do movimento'); } }
   if (S.shift !== 'catador' || P.drive || P.ride) return;
   for (const id in SUJ.spots) { const d = SUJ.spots[id]; d.bags.forEach((b, k) => { if (!b) return; const [x, z] = sujBag(d, k); if (Math.hypot(x - P.x, z - P.z) > 2.2) return;
-    const cleared = d.bags.filter(Boolean).length === 1; sujPick(id, k); s5Send('lixo', { id, bag: k });
+    const cleared = d.bags.filter(Boolean).length === 1; sujPick(id, k); s5Send('lixo', { id, bag: k }); lixoDuplaPay(16);
     const duo = Object.values(NET.peers).some(p => p.job === 'catador' && Math.hypot(p.x - P.x, p.z - P.z) < 25), g = earn(Math.round(jobPay('catador', 16) * rankMult('catador') * (duo ? 1.3 : 1)));
     sfx('coin'); feed(`🗑️ Saco recolhido: +$ ${fmt(g)}${duo ? ' (em dupla +30%)' : ''}`);
     if (cleared) { const r = jobRec('catador'); r.real = (r.real || 0) + 1; ccRankCheck(); addXP(25); toast(`✨ Rua limpa: ${d.why}.`, 'good'); }
@@ -15461,7 +15471,7 @@ const vehDmg = id => ((S.vdmg || {})[id] || 0);
 const myVehId = () => (P.drive && P.drive.V && !P.drive.V.job ? P.drive.V.id : null);
 function vehTuned(id) {
   const V = VEH[id], t = (S.vtune || {})[id]; if (!V || !t) return V;
-  return Object.assign({}, V, t.col ? { color: t.col, tc: t.col } : {}, t.turbo ? { top: V.top * 1.08, acc: (V.acc || 10) * 1.1 } : {}, t.som ? { som: true } : {});
+  return Object.assign({}, V, t.col ? { color: t.col, tc: t.col } : {}, t.turbo ? { top: V.top * 1.08, acc: (V.acc || 10) * 1.1 } : {}, t.som ? { som: true } : {}, t.low ? { low: true } : {});
 }
 function vehDmgMul() { const id = myVehId(); if (!id) return 1; const d = vehDmg(id); return d >= 100 ? 0.15 : 1 - Math.min(0.45, d / 220); }
 function vehHit(sp) { // batidas amassam o carro: anda menos e, em 100%, o motor para
@@ -15474,13 +15484,13 @@ const MEC = { orc: null, job: null };
 function mecOrcSend() {
   const T = CC.take; if (!T || T.c.svc !== 'mecanico') return; const it = [];
   if (($('mo-rep') || {}).checked) it.push('rep'); const col = +($('mo-col') || {}).value || 0; if (col) it.push('col:' + col);
-  if (($('mo-turbo') || {}).checked) it.push('turbo'); if (($('mo-som') || {}).checked) it.push('som');
+  if (($('mo-turbo') || {}).checked) it.push('turbo'); if (($('mo-som') || {}).checked) it.push('som'); if (($('mo-baixo') || {}).checked) it.push('baixo'); if (($('mo-guinc') || {}).checked) it.push('guinc');
   if (!it.length) return toast('Escolha pelo menos um serviço.', 'bad');
   const total = mecPrice(it, T.c.dmg || 0); T.orc = { it, total };
   s6Send('mec_orc', { to: T.c.from, from: ccMe(), it, total, by: S.name }); toast(`🔧 Orçamento enviado: $ ${fmt(total)}.`, 'good'); ccRefresh();
 }
-function mecPrice(it, dmg) { const k = rankMult('mecanico'); let p = 0; for (const x of it) p += x === 'rep' ? 40 + dmg * 2 : x.startsWith('col:') ? 250 : x === 'turbo' ? 600 : x === 'som' ? 400 : 0; return Math.round(p * (0.9 + 0.1 * k)); }
-const mecDesc = it => it.map(x => x === 'rep' ? 'Conserto' : x.startsWith('col:') ? `Pintura ${(MEC_COLS.find(c => c[0] === +x.slice(4)) || [0, ''])[1]}` : x === 'turbo' ? 'Turbo (+8% velocidade)' : 'Som automotivo').join(' + ');
+function mecPrice(it, dmg) { const k = rankMult('mecanico'); let p = 0; for (const x of it) p += x === 'rep' ? 40 + dmg * 2 : x.startsWith('col:') ? 250 : x === 'turbo' ? 600 : x === 'som' ? 400 : x === 'baixo' ? 300 : x === 'guinc' ? 150 : 0; return Math.round(p * (0.9 + 0.1 * k)); }
+const mecDesc = it => it.map(x => x === 'rep' ? 'Conserto' : x.startsWith('col:') ? `Pintura ${(MEC_COLS.find(c => c[0] === +x.slice(4)) || [0, ''])[1]}` : x === 'turbo' ? 'Turbo (+8% velocidade)' : x === 'baixo' ? 'Rebaixado' : x === 'guinc' ? 'Guincho até você' : 'Som automotivo').join(' + ');
 function mecAnswer(yes) {
   const o = MEC.orc; if (!o) return; MEC.orc = null;
   if (!yes) { s6Send('mec_nao', { to: o.from }); return ccRefresh(); }
@@ -15498,7 +15508,7 @@ function mecWork() { // mecânico: orçamento aprovado, trabalha no carro do cli
 function onMecFeito(d) {
   const J = MEC.job; if (!J) return; MEC.job = null; const id = J.veh; const f = payCash(d.total || 0);
   S.vdmg = S.vdmg || {}; S.vtune = S.vtune || {}; const t = S.vtune[id] = S.vtune[id] || {};
-  for (const x of d.it) { if (x === 'rep') S.vdmg[id] = 0; else if (x.startsWith('col:')) t.col = +x.slice(4); else if (x === 'turbo') t.turbo = 1; else if (x === 'som') t.som = 1; }
+  for (const x of d.it) { if (x === 'rep') S.vdmg[id] = 0; else if (x.startsWith('col:')) t.col = +x.slice(4); else if (x === 'turbo') t.turbo = 1; else if (x === 'som') t.som = 1; else if (x === 'baixo') t.low = 1; }
   persist(); updateHUD(); s6Send('mec_pago', { to: d.from, fee: f });
   if (city.myVeh && !P.drive && S.veh === id) { const mv = city.myVeh, V = vehTuned(id), m = makeVehicleMesh(V); city.scene.remove(mv.m); m.position.copy(mv.m.position); m.rotation.y = mv.h; city.scene.add(m); city.myVeh = Object.assign(mv, { m, V }); }
   toast(`🔧 Carro pronto: ${mecDesc(d.it)}. Pago: $ ${fmt(f)}.${P.drive ? ' O visual novo aparece quando você descer e chamar o carro de novo.' : ''}`, 'good'); sfx('coin');
@@ -15606,8 +15616,8 @@ function s6CentralJob() {
   if (!T || T.arr || !T.ok) return h; const p = ccPeer(T.c.from), d = p ? Math.hypot(p.x - P.x, p.z - P.z) : 1e9;
   if (T.c.svc === 'mecanico') {
     if (d > 8) return h + '<p class="muted">Chegue perto do cliente (até 8 m) para montar o orçamento.</p>';
-    if (T.orc && T.orc.ok) return h + `<div class="card"><h4>🔧 Aprovado: ${esc(mecDesc(T.orc.it))}</h4><button class="btn sm" data-act="cc-mec-work">Começar o serviço</button></div>`;
-    h += `<div class="card"><h4>🔧 Orçamento para ${esc(T.c.name)}</h4><p class="muted">${T.c.vn ? `Carro: ${esc(T.c.vn)} · ` : ''}dano ${T.c.dmg || 0}%</p><label class="row" style="gap:6px"><input type="checkbox" id="mo-rep" ${(T.c.dmg || 0) > 0 ? 'checked' : ''}> Conserto ($ ${40 + (T.c.dmg || 0) * 2})</label><div class="row" style="gap:6px;flex-wrap:wrap"><select id="mo-col"><option value="0">Sem pintura</option>${MEC_COLS.map(([c, n]) => `<option value="${c}">Pintura ${n} ($ 250)</option>`).join('')}</select><label><input type="checkbox" id="mo-turbo"> Turbo ($ 600)</label><label><input type="checkbox" id="mo-som"> Som ($ 400)</label></div><button class="btn sm" data-act="cc-mec-orc" style="margin-top:6px">${T.orc ? 'Reenviar orçamento' : 'Enviar orçamento'}</button>${T.orc ? `<p class="muted">Aguardando o cliente aprovar: $ ${fmt(T.orc.total)}.</p>` : ''}</div>`;
+    if (T.orc && T.orc.ok) return h + (T.tow && T.tow.st !== 'entregue' ? '' : `<div class="card"><h4>🔧 Aprovado: ${esc(mecDesc(T.orc.it))}</h4><button class="btn sm" data-act="cc-mec-work">Começar o serviço</button></div>`);
+    h += `<div class="card"><h4>🔧 Orçamento para ${esc(T.c.name)}</h4><p class="muted">${T.c.vn ? `Carro: ${esc(T.c.vn)} · ` : ''}dano ${T.c.dmg || 0}%</p><label class="row" style="gap:6px"><input type="checkbox" id="mo-rep" ${(T.c.dmg || 0) > 0 ? 'checked' : ''}> Conserto ($ ${40 + (T.c.dmg || 0) * 2})</label><div class="row" style="gap:6px;flex-wrap:wrap"><select id="mo-col"><option value="0">Sem pintura</option>${MEC_COLS.map(([c, n]) => `<option value="${c}">Pintura ${n} ($ 250)</option>`).join('')}</select><label><input type="checkbox" id="mo-turbo"> Turbo ($ 600)</label><label><input type="checkbox" id="mo-som"> Som ($ 400)</label><label><input type="checkbox" id="mo-baixo"> Rebaixar ($ 300)</label>${T.c.car && (T.c.far || 0) > 25 ? `<label><input type="checkbox" id="mo-guinc" checked> 🛻 Guincho: o carro está a ${Math.round(T.c.far)} m ($ 150)</label>` : ''}</div><button class="btn sm" data-act="cc-mec-orc" style="margin-top:6px">${T.orc ? 'Reenviar orçamento' : 'Enviar orçamento'}</button>${T.orc ? `<p class="muted">Aguardando o cliente aprovar: $ ${fmt(T.orc.total)}.</p>` : ''}</div>`;
   } else if (T.c.svc === 'barbeiro') {
     if (d > 6) return h + '<p class="muted">Chegue perto do cliente (até 6 m) para combinar o corte.</p>';
     if (T.orc && T.orc.ok) return h + `<div class="card"><h4>💈 Aprovado: ${esc(bbDesc(T.orc))}</h4><button class="btn sm" data-act="cc-bb-work">Começar o corte</button></div>`;
@@ -15622,7 +15632,7 @@ function s6CentralJob() {
 function onS6(d) {
   if (!d || !S) return; const me = ccMe(); if (d.to && d.to !== me) return; const T = CC.take;
   if (d.k === 'mec_orc') { MEC.orc = d; toast(`🔧 ${d.by} mandou o orçamento: $ ${fmt(d.total)}. Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
-  else if (d.k === 'mec_sim') { if (T && T.orc) { T.orc.ok = true; toast('🔧 Orçamento aprovado! Toque em "Começar o serviço" na Central.', 'good'); sfx('ui'); } }
+  else if (d.k === 'mec_sim') { if (T && T.orc) { T.orc.ok = true; if (T.orc.it.includes('guinc') && T.c.car) T.tow = { st: 'buscar' }; toast('🔧 Orçamento aprovado! Toque em "Começar o serviço" na Central.', 'good'); sfx('ui'); } }
   else if (d.k === 'mec_nao') { if (T) T.orc = null; toast('O cliente recusou o orçamento.', 'pink'); }
   else if (d.k === 'mec_feito') onMecFeito(d);
   else if (d.k === 'mec_pago' || d.k === 'bb_pago') { if (d.fee) { S.coins += d.fee; persist(); updateHUD(); toast(`${d.k === 'mec_pago' ? '🔧 Orçamento' : '💈 Serviço'} recebido: +$ ${fmt(d.fee)}.`, 'good'); sfx('coin'); } }
@@ -15648,6 +15658,251 @@ function s6Act(act, ds) {
   if (act === 'cc-dj-ped') return djRequest(+(($('dj-song') || {}).value || 0), +ds.tip);
   return false;
 }
+
+/* ---- etapa 7: o que ficou de fora: guincho, rebaixado, batalha de grafite, rachão, rolê em grupo, cargos do empresário, caminhão em dupla ---- */
+const s7Send = (k, d) => ccSend0('s7', Object.assign({ k }, d));
+
+/* ===== Guincho do mecânico ===== */
+VEH.j_guincho = Object.assign({}, VEH.v_pickup, { id: 'j_guincho', name: 'Guincho da Oficina', color: 0xffcf3a, deco: 'guincho', job: 'mecanico', c: null, t: null, r: 'comum', desc: 'Veículo de trabalho: Mecânico. Reboca o carro quebrado de quem chamar.' });
+JOB_VEH.mecanico = [VEH.j_guincho]; JOB_BASE.mecanico = 'agencia';
+function mecTowTick(now) {
+  const T = CC.take; if (!T || T.c.svc !== 'mecanico' || !T.orc || !T.orc.ok || !T.tow || T.arr) return;
+  const W = T.tow, inTow = P.drive && P.drive.V.id === 'j_guincho';
+  if (W.st === 'buscar') {
+    if (!W.gps) { W.gps = 1; setGps(T.c.car[0], T.c.car[1], `🚗 Carro de ${T.c.name}`); toast(inTow ? '🛻 Vá até o carro com o guincho.' : '🛻 Pegue o Guincho na base (Agência) e vá até o carro do cliente.', 'pink'); }
+    if (inTow && Math.hypot(T.c.car[0] - P.x, T.c.car[1] - P.z) < 9) {
+      W.st = 'levando'; W.gps = 0; s7Send('tow_eng', { to: T.c.from }); sfx('ui');
+      const car = makeVehicleMesh(vehTunedNet(T.c.vid, T.c.vc, T.c.vl)); car.scale.setScalar(0.92); car.position.set(0, 0.9, -(P.drive.m.userData.len || 4.5) * 0.55); car.rotation.x = -0.18; P.drive.m.add(car); W.mesh = car;
+      toast('🛻 Carro engatado! Leve até o cliente.', 'good');
+    }
+  } else if (W.st === 'levando') {
+    const p = ccPeer(T.c.from); if (!p) return;
+    if (!S.gps || Math.hypot(S.gps.x - p.x, S.gps.z - p.z) > 8) setGps(p.x, p.z, `🙋 ${T.c.name}`);
+    if (Math.hypot(p.x - P.x, p.z - P.z) < 14) {
+      W.st = 'entregue'; if (W.mesh && W.mesh.parent) W.mesh.parent.remove(W.mesh); W.mesh = null; clearGps();
+      const bx = P.x - Math.sin(P.h) * 6, bz = P.z - Math.cos(P.h) * 6; s7Send('tow_solto', { to: T.c.from, x: Math.round(bx * 10) / 10, z: Math.round(bz * 10) / 10, h: P.h });
+      toast('🛻 Carro entregue! Desça do guincho e toque em "Começar o serviço" na Central.', 'good'); sfx('level'); ccRefresh();
+    }
+  }
+}
+const vehTunedNet = (id, vc, vl) => !VEH[id] ? VEH.v_gol : (vc || vl) ? Object.assign({}, VEH[id], vc ? { color: vc } : {}, vl ? { low: true } : {}) : VEH[id];
+function onTowEng() { if (city.myVeh) { city.scene.remove(city.myVeh.m); city.myVeh = null; } toast('🛻 O guincho engatou o seu carro e está trazendo até você.', 'pink'); }
+function onTowSolto(d) { if (!S.veh) return; spawnMyVehicle(); if (city.myVeh) { const mv = city.myVeh; mv.x = d.x; mv.z = d.z; mv.h = d.h; mv.m.position.set(d.x, groundH(d.x, d.z), d.z); mv.m.rotation.y = d.h; } toast('🛻 Seu carro chegou de guincho. O mecânico vai começar o serviço.', 'good'); sfx('level'); }
+
+/* ===== Rebaixado: carroceria mais perto do chão (rodas no lugar) ===== */
+function vehLower(m) { const u = m.userData, W = new Set(u.wheels || []); for (const c of m.children) if (!W.has(c) && !c.isSprite) c.position.y -= 0.1; u.low = true; }
+
+/* ===== Batalha de grafite: dois grafiteiros, a mesma parede, quem passa vota ===== */
+const GB = { b: null, inv: null, voted: {} };
+function gbWallPair(w) { const tx = w.nz, tz = -w.nx, sh = s => Object.assign({}, w, { wx: w.wx + tx * s, wz: w.wz + tz * s, x: w.x + tx * s, z: w.z + tz * s }); return [sh(-3.3), sh(3.3)]; }
+function gbInvite(id) {
+  const w = grafWall(P.x, P.z, 12); if (!w) return toast('Fique perto de uma parede (até 12 m) para a batalha.', 'bad');
+  if (cashNow() < 100) return toast('A inscrição da batalha é $ 100.', 'bad'); if (GB.b) return toast('Termine a batalha atual primeiro.', 'bad');
+  const ww = { x: w.x, z: w.z, wx: w.wx, wz: w.wz, nx: w.nx, nz: w.nz, y: w.y || 0 };
+  s7Send('gb_conv', { to: id, from: ccMe(), name: S.name, wall: ww }); GB.pend = { to: id, wall: ww }; toast('⚔️ Desafio enviado! Se aceitar, cada um paga $ 100 e o vencedor leva $ 300.', 'good');
+}
+function gbAccept(yes) {
+  const v = GB.inv; GB.inv = null; if (!v) return ccRefresh();
+  if (!yes) { s7Send('gb_nao', { to: v.from, name: S.name }); return ccRefresh(); }
+  if (cashNow() < 100) return toast('A inscrição é $ 100.', 'bad');
+  payCash(100); persist(); updateHUD();
+  GB.b = { id: 'gb' + Date.now().toString(36), a: v.from, an: v.name, b: ccMe(), bn: S.name, wall: v.wall, st: 'pintando', done: {}, votes: {} };
+  s7Send('gb_ok', { to: v.from, b: GB.b }); setGps(v.wall.x, v.wall.z, '⚔️ Batalha de grafite'); toast('⚔️ Batalha aceita! Vá até a parede e pinte a sua arte.', 'good'); ccRefresh();
+}
+function gbPaint() {
+  const B = GB.b; if (!B || B.st !== 'pintando') return; const side = B.a === ccMe() ? 0 : 1, w = gbWallPair(B.wall)[side];
+  workStart('🎨 Pintando na batalha', 5000, w.x, w.z, async () => { await grafSave(w, grafArt(), true, 'Batalha de grafite'); B.done[ccMe()] = 1; s7Send('gb_arte', { id: B.id, by: ccMe() }); gbCheck(); toast('🎨 Sua arte está na parede! Agora o público vota.', 'good'); }, true);
+}
+function gbCheck() { // quem desafiou comanda: as duas artes prontas → começa a votação de 90 s
+  const B = GB.b; if (!B || B.a !== ccMe() || B.st !== 'pintando' || !B.done[B.a] || !B.done[B.b]) return;
+  B.st = 'votacao'; B.until = Date.now() + 90000; s7Send('gb_vot', { id: B.id, an: B.an, bn: B.bn, x: B.wall.x, z: B.wall.z, until: B.until });
+  toast('🗳️ As duas artes estão na parede: votação aberta por 90 s!', 'pink'); ccRefresh();
+}
+function gbVote(v) { const V = GB.open; if (!V || GB.voted[V.id]) return; GB.voted[V.id] = 1; s7Send('gb_voto', { id: V.id, v, from: ccMe() }); toast(`🗳️ Voto registrado para ${v === 'a' ? V.an : V.bn}.`, 'good'); ccRefresh(); }
+function gbTick(now) {
+  const B = GB.b; if (B && B.a === ccMe() && B.st === 'votacao' && now > B.until) {
+    const va = Object.values(B.votes).filter(v => v === 'a').length, vb = Object.values(B.votes).filter(v => v === 'b').length, win = va === vb ? null : va > vb ? B.a : B.b;
+    const fim = { id: B.id, a: B.a, b: B.b, an: B.an, bn: B.bn, va, vb, win }; s7Send('gb_fim', fim); onGbFim(fim);
+  }
+  if (GB.open && now > GB.open.until + 5000) { GB.open = null; ccRefresh(); }
+}
+function onGbFim(d) {
+  const me = ccMe(); GB.open = null; if (GB.b && GB.b.id === d.id) GB.b = null;
+  const txt = d.win ? `⚔️ Batalha de grafite: ${d.win === d.a ? d.an : d.bn} venceu (${d.va} × ${d.vb})!` : `⚔️ Batalha de grafite empatou (${d.va} × ${d.vb}).`;
+  if (d.a === me || d.b === me) {
+    if (!d.win) { S.coins += 100; toast(txt + ' Sua inscrição voltou.', 'pink'); }
+    else if (d.win === me) { const g = earn(300); const r = jobRec('grafiteiro'); r.real = (r.real || 0) + 2; ccRankCheck(); addXP(60); toast(`${txt} Prêmio +$ ${fmt(g)}.`, 'good'); sfx('level'); }
+    else toast(txt + ' Fica para a próxima!', 'pink');
+    persist(); updateHUD();
+  } else feed(txt);
+  ccRefresh();
+}
+
+/* ===== Rachão: campeonato de manobras organizado pelo instrutor ===== */
+const RC = { ev: null, mine: null, score: 0, list: {} };
+function rcOpen() {
+  if (S.shift !== 'instrutor') return; const fee = +(($('rc-fee') || {}).value || 0);
+  RC.ev = { id: 'rc' + Date.now().toString(36), host: ccMe(), name: S.name, fee, x: Math.round(P.x), z: Math.round(P.z), until: Date.now() + 120000, st: 'insc' }; RC.list = {};
+  s7Send('rc_abre', RC.ev); toast(`🏆 Inscrições do rachão abertas por 2 minutos (inscrição $ ${fee}). Quem fizer mais pontos em 60 s de manobras leva o prêmio!`, 'good'); sfx('level'); ccRefresh();
+}
+function rcJoin() {
+  const E = RC.ev; if (!E || E.st !== 'insc' || RC.mine) return; if (!hasSkate()) return toast('Precisa de um skate para participar.', 'bad');
+  if (E.fee && cashNow() < E.fee) return toast(`A inscrição é $ ${E.fee}.`, 'bad'); if (E.fee) payCash(E.fee); persist(); updateHUD();
+  RC.mine = { id: E.id, pts: 0 }; s7Send('rc_insc', { to: E.host, id: E.id, from: ccMe(), name: S.name }); setGps(E.x, E.z, '🏆 Rachão'); toast('🏆 Inscrito(a)! Vá até o local: o rachão começa quando o instrutor der a largada.', 'good'); ccRefresh();
+}
+function rcGo() {
+  const E = RC.ev; if (!E || E.host !== ccMe() || E.st !== 'insc') return; const n = Object.keys(RC.list).length; if (n < 2) return toast('Precisa de pelo menos 2 inscritos.', 'bad');
+  E.st = 'valendo'; E.end = Date.now() + 60000; E.res = {}; s7Send('rc_go', { id: E.id, end: E.end, list: RC.list }); toast('🏆 Valendo! 60 segundos de manobras.', 'pink'); ccRefresh();
+}
+function rachaoPts(pts) { const M = RC.mine, E = RC.ev; if (!M || !E || E.st !== 'valendo' || Date.now() > E.end) return; M.pts += pts; ccMeter(`🏆 Rachão: ${fmt(M.pts)} pontos · ${Math.max(0, Math.ceil((E.end - Date.now()) / 1000))} s`); }
+function rcTick(now) {
+  const E = RC.ev; if (!E) return;
+  if (E.st === 'insc' && now > E.until + 30000) { RC.ev = null; RC.mine = null; return ccRefresh(); }
+  if (E.st === 'valendo' && RC.mine && now > E.end && !RC.mine.sent) { RC.mine.sent = 1; ccMeter(''); s7Send('rc_pts', { to: E.host, id: E.id, from: ccMe(), name: S.name, pts: RC.mine.pts }); toast(`🏆 Tempo! Você fez ${fmt(RC.mine.pts)} pontos. Esperando o resultado…`, 'pink'); }
+  if (E.st === 'valendo' && RC.mine && now < E.end) rachaoPts(0);
+  if (E.st === 'valendo' && E.host === ccMe() && now > E.end + 6000) {
+    const L = Object.entries(RC.list).map(([id, n]) => ({ id, n, pts: (E.res[id] || 0) })).sort((a, b) => b.pts - a.pts), pot = E.fee * L.length;
+    const prize = Math.round(pot * 0.9) + 150; const fim = { id: E.id, rank: L.slice(0, 5), prize, win: L[0] && L[0].pts > 0 ? L[0].id : null };
+    s7Send('rc_fim', fim); E.st = 'fim'; const g = earn(Math.round(pot * 0.1) + jobPay('instrutor', 80)); const r = jobRec('instrutor'); r.real = (r.real || 0) + 1; ccRankCheck(); addXP(50);
+    toast(`🏆 Rachão encerrado! ${fim.win ? `${L[0].n} venceu com ${fmt(L[0].pts)} pontos.` : 'Ninguém pontuou.'} Organização: +$ ${fmt(g)}.`, 'good'); RC.ev = null; ccRefresh();
+  }
+}
+function onRcFim(d) {
+  if (!RC.ev || RC.ev.id !== d.id) return; const me = ccMe(), pos = d.rank.findIndex(r => r.id === me);
+  if (d.win === me) { const g = earn(d.prize); addXP(80); toast(`🏆 Você venceu o rachão! Prêmio +$ ${fmt(g)}.`, 'good'); sfx('level'); }
+  else if (pos >= 0) toast(`🏆 Rachão: você ficou em ${pos + 1}º com ${fmt(d.rank[pos].pts)} pontos.`, 'pink');
+  else feed(`🏆 Rachão: ${d.rank[0] ? d.rank[0].n : 'ninguém'} venceu.`);
+  RC.ev = null; RC.mine = null; ccMeter(''); ccRefresh();
+}
+
+/* ===== Rolê em grupo: o instrutor leva a galera pelos picos da cidade ===== */
+const RL = { ev: null, mine: null, list: {} };
+function rlPicos() {
+  const K = (city.kiosks || []).slice(), pts = [], sk = city.doors.find(d => d.kind === 'skate'); if (sk) pts.push([sk.x, sk.z, 'Skate Shop']);
+  while (pts.length < 4 && K.length) { K.sort((a, b) => Math.min(...pts.map(p => -Math.hypot(p[0] - a.x, p[1] - a.z)), 0) - Math.min(...pts.map(p => -Math.hypot(p[0] - b.x, p[1] - b.z)), 0)); const k = K.filter(k => Math.hypot(k.x - P.x, k.z - P.z) < 160)[0] || K[0]; K.splice(K.indexOf(k), 1); pts.push([k.x, k.z, k.label || 'Pico']); }
+  return pts.map(p => [Math.round(p[0]), Math.round(p[1]), p[2]]);
+}
+function rlOpen() { if (S.shift !== 'instrutor') return; RL.ev = { id: 'rl' + Date.now().toString(36), host: ccMe(), name: S.name, pts: rlPicos(), until: Date.now() + 90000, st: 'insc' }; RL.list = {}; s7Send('rl_abre', RL.ev); toast(`🛹 Rolê em grupo aberto: ${RL.ev.pts.length} picos. Espere a galera entrar e dê a largada.`, 'good'); ccRefresh(); }
+function rlJoin() { const E = RL.ev; if (!E || E.st !== 'insc' || RL.mine) return; RL.mine = { id: E.id, ok: 0, i: 0 }; s7Send('rl_entra', { to: E.host, id: E.id, from: ccMe(), name: S.name }); toast('🛹 Você entrou no rolê! Siga o instrutor pelos picos (fique a até 30 m dele em cada um).', 'good'); ccRefresh(); }
+function rlGo() { const E = RL.ev; if (!E || E.host !== ccMe() || E.st !== 'insc') return; if (!Object.keys(RL.list).length) return toast('Ninguém entrou no rolê ainda.', 'bad'); E.st = 'andando'; E.i = 0; s7Send('rl_go', { id: E.id }); setGps(E.pts[0][0], E.pts[0][1], `🛹 ${E.pts[0][2]}`); toast(`🛹 Partiu! Primeiro pico: ${E.pts[0][2]}.`, 'pink'); ccRefresh(); }
+function rlTick(now) {
+  const E = RL.ev; if (!E) return;
+  if (E.st === 'insc' && now > E.until + 60000) { RL.ev = null; RL.mine = null; return ccRefresh(); }
+  if (E.st === 'andando' && E.host === ccMe()) { const p = E.pts[E.i]; if (p && Math.hypot(p[0] - P.x, p[1] - P.z) < 10) { s7Send('rl_pt', { id: E.id, i: E.i }); onRlPt({ id: E.id, i: E.i }); } }
+}
+function onRlPt(d) {
+  const E = RL.ev; if (!E || E.id !== d.id || (E.i || 0) !== d.i) return; const p = E.pts[d.i], host = E.host === ccMe();
+  if (RL.mine && !host) { const ok = Math.hypot(p[0] - P.x, p[1] - P.z) < 30; if (ok) RL.mine.ok++; toast(ok ? `🛹 Pico ${d.i + 1}/${E.pts.length}: ${p[2]} ✔` : `🛹 Você ficou para trás no pico ${p[2]}!`, ok ? 'good' : 'bad'); }
+  E.i = d.i + 1; const nx = E.pts[E.i];
+  if (nx) { if (host || RL.mine) setGps(nx[0], nx[1], `🛹 ${nx[2]}`); if (host) toast(`🛹 Próximo pico: ${nx[2]}.`, 'pink'); }
+  else { clearGps(); if (RL.mine && !host) { const all = RL.mine.ok >= E.pts.length; if (all) { const g = earn(120); addXP(80); toast(`🛹 Rolê completo! +$ ${fmt(g)} e +80 XP.`, 'good'); sfx('level'); } else toast(`🛹 Rolê encerrado: você passou por ${RL.mine.ok} de ${E.pts.length} picos.`, 'pink'); s7Send('rl_done', { to: E.host, id: E.id, all }); RL.mine = null; }
+    if (host) { toast('🛹 Rolê encerrado! Os pagamentos chegam conforme a galera confirma.', 'good'); setTimeout(() => { RL.ev = null; ccRefresh(); }, 8000); } else RL.ev = null; }
+  ccRefresh();
+}
+
+/* ===== Caminhão de lixo em dupla: um dirige o caminhão da coleta e o outro recolhe ===== */
+function lixoDupla() { // devolve o id do motorista do caminhão da coleta perto de mim (gari em dupla)
+  for (const [id, p] of Object.entries(NET.peers)) if (p.job === 'catador' && p.t && p.t.vh === 'j_coleta' && Math.hypot(p.x - P.x, p.z - P.z) < 16) return id;
+  return null;
+}
+function lixoDuplaPay(base) { const id = S.shift === 'catador' && !P.drive ? lixoDupla() : null; if (!id) return 0; const g = earn(Math.round(base * 0.5)); s7Send('lixo_dupla', { to: id, amt: Math.round(base * 0.5), name: S.name }); return g; }
+
+/* ===== Cargos do empresário: pelo tamanho do negócio ===== */
+const BIZ_RK = ['Microempreendedor(a)', 'Lojista', 'Empresário(a)', 'Magnata'];
+function bizRank() { const n = S.bizN || 0, v = S.bizSales || 0; return n >= 3 ? 3 : n === 2 ? 2 : n === 1 && v >= 20 ? 1 : 0; }
+async function bizCount() { if (!NET.user || !NET.sb) return; try { const { data, error } = await NET.sb.from('comercios').select('id').eq('dono', NET.user.id); if (!error && data) { const before = bizRank(); S.bizN = data.length; persist(); if (bizRank() > before) toast(`🏪 Novo cargo de negócios: ${BIZ_RK[bizRank()]}!`, 'good'); } } catch (e) { } }
+function bizRankHtml() {
+  if (!S.bizN) return ''; const r = bizRank(), nx = r === 0 ? 'Lojista: 20 vendas para jogadores' : r === 1 ? 'Empresário(a): abra um 2º comércio' : r === 2 ? 'Magnata: abra o 3º comércio' : null;
+  return `<div class="note">🏪 Cargo: <b>${BIZ_RK[r]}</b> · ${S.bizN} ${S.bizN > 1 ? 'comércios' : 'comércio'} · ${S.bizSales || 0} vendas · cada venda rende +${r * 5}% extra${nx ? ` · Próximo: ${nx}` : ' · cargo máximo, letreiro com ⭐'}</div>`;
+}
+
+/* ===== Nitidez extra no celular (filtro de contraste adaptativo, como o FSR/CAS dos consoles) ===== */
+const SHARP = { rt: null, sc: null, cam: null, mat: null, v: null, fail: false };
+function sharpOn() {
+  if (SHARP.fail || !renderer.capabilities.isWebGL2 || !S || !S.settings) return false; const m = S.settings.sharp || 'auto';
+  return m === 'on' || (m === 'auto' && IS_TOUCH && renderer.getPixelRatio() < (devicePixelRatio || 1) - 0.05);
+}
+function sharpInit() {
+  const r186 = !!THREE.ShaderChunk.colorspace_fragment;
+  SHARP.mat = new THREE.ShaderMaterial({ uniforms: { tDiffuse: { value: null }, px: { value: new THREE.Vector2() }, sharp: { value: 0.6 } }, depthTest: false, depthWrite: false,
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 px; uniform float sharp; varying vec2 vUv;
+      void main(){ vec3 a = texture2D(tDiffuse, vUv + vec2(0.0, -px.y)).rgb, b = texture2D(tDiffuse, vUv + vec2(-px.x, 0.0)).rgb, c = texture2D(tDiffuse, vUv).rgb, d = texture2D(tDiffuse, vUv + vec2(px.x, 0.0)).rgb, e = texture2D(tDiffuse, vUv + vec2(0.0, px.y)).rgb;
+        vec3 mn = min(min(min(a, b), min(d, e)), c), mx = max(max(max(a, b), max(d, e)), c);
+        vec3 amp = sqrt(clamp(min(mn, 2.0 - mx) / max(mx, vec3(1e-4)), 0.0, 1.0)); vec3 w = amp * (-1.0 / mix(8.0, 5.0, sharp));
+        vec3 col = max((a + b + d + e) * w + c, 0.0) / (1.0 + 4.0 * w); gl_FragColor = vec4(col, 1.0);
+        #include <tonemapping_fragment>
+        #include <${r186 ? 'colorspace_fragment' : 'encodings_fragment'}>
+      }` });
+  SHARP.mat.toneMapped = r186; // no r147 o tom já vem aplicado na textura intermediária
+  SHARP.sc = new THREE.Scene(); SHARP.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1); const q = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), SHARP.mat); q.frustumCulled = false; SHARP.sc.add(q); SHARP.v = new THREE.Vector2();
+}
+function sharpRender(sc, cam) {
+  if (!SHARP.mat) sharpInit(); renderer.getDrawingBufferSize(SHARP.v); const w = SHARP.v.x | 0, h = SHARP.v.y | 0;
+  if (!SHARP.rt || SHARP.rt.width !== w || SHARP.rt.height !== h) { if (SHARP.rt) SHARP.rt.dispose(); SHARP.rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: 4 }); SHARP.mat.uniforms.tDiffuse.value = SHARP.rt.texture; SHARP.mat.uniforms.px.value.set(1 / w, 1 / h); }
+  renderer.setRenderTarget(SHARP.rt); renderer.render(sc, cam); renderer.setRenderTarget(null); renderer.render(SHARP.sc, SHARP.cam);
+}
+
+/* ---- Central ---- */
+function s7CentralTop() {
+  let h = ''; const me = ccMe();
+  if (GB.inv) h += `<div class="card"><h4>⚔️ ${esc(GB.inv.name)} te desafiou para uma batalha de grafite</h4><p class="muted">Cada um paga $ 100 e pinta a sua arte na mesma parede. Quem passa vota por 90 s e o vencedor leva $ 300.</p><div class="row"><button class="btn sm" data-act="cc-gb-sim" ${cashNow() < 100 ? 'disabled' : ''}>Aceitar</button><button class="btn ghost sm" data-act="cc-gb-nao">Recusar</button></div></div>`;
+  if (GB.b && GB.b.st === 'pintando') h += `<div class="card"><h4>⚔️ Batalha: ${esc(GB.b.an)} × ${esc(GB.b.bn)}</h4><p>${GB.b.done[me] ? 'Sua arte está pronta. Esperando a outra pessoa.' : 'Vá até a parede (GPS) e aperte Ação para pintar a sua arte.'}</p></div>`;
+  if (GB.b && GB.b.st === 'votacao') h += `<div class="card"><h4>⚔️ Votação da sua batalha</h4><p class="muted">${Object.keys(GB.b.votes).length} votos até agora · termina em ${Math.max(0, Math.ceil((GB.b.until - Date.now()) / 1000))} s.</p></div>`;
+  const V = GB.open; if (V && !(GB.b && GB.b.id === V.id) && Math.hypot(V.x - P.x, V.z - P.z) < 60) h += `<div class="card"><h4>🗳️ Batalha de grafite aqui perto!</h4><p class="muted">Olhe as duas artes na parede e vote na melhor: à esquerda ${esc(V.an)}, à direita ${esc(V.bn)}.</p>${GB.voted[V.id] ? '<p>✅ Você já votou.</p>' : `<div class="row"><button class="btn sm" data-act="cc-gb-voto" data-v="a">🎨 ${esc(V.an)}</button><button class="btn sm" data-act="cc-gb-voto" data-v="b">🎨 ${esc(V.bn)}</button></div>`}</div>`;
+  const E = RC.ev; if (E && E.host !== me) h += `<div class="card"><h4>🏆 Rachão de ${esc(E.name)}</h4>${E.st === 'insc' ? (RC.mine ? '<p>✅ Inscrito(a). Esperando a largada.</p>' : `<p class="muted">Inscrição $ ${E.fee} · ${Math.round(Math.hypot(E.x - P.x, E.z - P.z))} m · 60 s de manobras, quem fizer mais pontos leva o prêmio.</p><button class="btn sm" data-act="cc-rc-insc" ${E.fee && cashNow() < E.fee ? 'disabled' : ''}>Inscrever</button>`) : RC.mine ? `<p>Valendo! Seus pontos: <b>${fmt(RC.mine.pts)}</b></p>` : '<p class="muted">Em andamento.</p>'}</div>`;
+  const R = RL.ev; if (R && R.host !== me && R.st === 'insc') h += `<div class="card"><h4>🛹 Rolê em grupo com ${esc(R.name)}</h4><p class="muted">${R.pts.map(p => esc(p[2])).join(' → ')} · quem completar ganha $ 120 e 80 XP.</p>${RL.mine ? '<p>✅ Você está no rolê.</p>' : '<button class="btn sm" data-act="cc-rl-entra">Entrar no rolê</button>'}</div>`;
+  if (RL.mine && R && R.st === 'andando') h += `<div class="card"><h4>🛹 Rolê: pico ${Math.min(R.pts.length, (R.i || 0) + 1)}/${R.pts.length}</h4><p class="muted">Siga o GPS e fique perto do instrutor. Picos feitos: ${RL.mine.ok}.</p></div>`;
+  return h;
+}
+function s7CentralJob() {
+  const id = S.shift, me = ccMe(); let h = '';
+  if (id === 'grafiteiro' && NET.online && !GB.b) { const G = Object.entries(NET.peers).filter(([, p]) => p.job === 'grafiteiro' && Math.hypot(p.x - P.x, p.z - P.z) < 40); h += `<div class="card"><h4>⚔️ Batalha de grafite</h4>${G.length ? G.map(([pid, p]) => `<div class="row"><span>🎨 ${esc(p.name || 'Grafiteiro')}</span><button class="btn sm" data-act="cc-gb-conv" data-id="${esc(pid)}" ${cashNow() < 100 ? 'disabled' : ''}>Desafiar ($ 100)</button></div>`).join('') : '<p class="muted">Nenhum grafiteiro de serviço por perto (até 40 m).</p>'}<p class="muted">Desafie perto de uma parede: as duas artes ficam lado a lado e quem passa vota.</p></div>`; }
+  if (id === 'instrutor' && NET.online) {
+    const E = RC.ev && RC.ev.host === me ? RC.ev : null, R = RL.ev && RL.ev.host === me ? RL.ev : null;
+    if (!E) h += `<div class="card"><h4>🏆 Organizar rachão</h4><div class="row" style="gap:6px"><select id="rc-fee"><option value="0">Inscrição grátis</option><option value="50">Inscrição $ 50</option><option value="100">Inscrição $ 100</option></select><button class="btn sm" data-act="cc-rc-abre">Abrir inscrições</button></div><p class="muted" style="margin-top:4px">O vencedor leva 90% das inscrições + $ 150 da Skate Shop. Você fica com 10% e o cachê de organização.</p></div>`;
+    else h += `<div class="card"><h4>🏆 Seu rachão</h4><p>${E.st === 'insc' ? `${Object.keys(RC.list).length} inscritos: ${Object.values(RC.list).map(esc).join(', ') || '—'}` : `Valendo · ${Math.max(0, Math.ceil((E.end - Date.now()) / 1000))} s · ${Object.keys(E.res || {}).length} resultados`}</p>${E.st === 'insc' ? `<button class="btn sm" data-act="cc-rc-go" ${Object.keys(RC.list).length < 2 ? 'disabled' : ''}>Dar a largada (60 s)</button>` : ''}</div>`;
+    if (!R) h += `<div class="card"><h4>🛹 Rolê em grupo</h4><p class="muted">Leve a galera por 4 picos da cidade. Quem completar ganha $ 120 e XP; você ganha por pessoa que completar.</p><button class="btn sm" data-act="cc-rl-abre">Abrir o rolê</button></div>`;
+    else h += `<div class="card"><h4>🛹 Seu rolê</h4><p>${R.st === 'insc' ? `${Object.keys(RL.list).length} na galera: ${Object.values(RL.list).map(esc).join(', ') || '—'}` : `Pico ${Math.min(R.pts.length, (R.i || 0) + 1)}/${R.pts.length}: ${esc((R.pts[R.i] || ['', '', 'fim'])[2])}`}</p>${R.st === 'insc' ? `<button class="btn sm" data-act="cc-rl-go" ${Object.keys(RL.list).length ? '' : 'disabled'}>Partiu!</button>` : ''}</div>`;
+  }
+  if (id === 'mecanico' && CC.take && CC.take.tow && CC.take.tow.st !== 'entregue' && CC.take.orc && CC.take.orc.ok) h += `<div class="card"><h4>🛻 Guincho</h4><p>${CC.take.tow.st === 'buscar' ? 'Pegue o Guincho na base (Agência) e vá até o carro do cliente (GPS). Chegando perto, o carro engata sozinho.' : 'Carro engatado: leve até o cliente.'}</p></div>`;
+  return h;
+}
+function onS7(d) {
+  if (!d || !S) return; const me = ccMe(); if (d.to && d.to !== me) return;
+  if (d.k === 'tow_eng') onTowEng(); else if (d.k === 'tow_solto') onTowSolto(d);
+  else if (d.k === 'gb_conv') { if (S.shift !== 'grafiteiro' || GB.b) return; GB.inv = d; toast(`⚔️ ${d.name} te desafiou para uma batalha de grafite! Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'gb_nao') { GB.pend = null; toast(`${d.name} recusou a batalha.`, 'pink'); }
+  else if (d.k === 'gb_ok') { if (cashNow() < 100) return toast('Sem dinheiro para a inscrição da batalha.', 'bad'); payCash(100); persist(); updateHUD(); GB.b = d.b; GB.pend = null; setGps(d.b.wall.x, d.b.wall.z, '⚔️ Batalha de grafite'); toast(`⚔️ ${d.b.bn} aceitou! Vá até a parede e pinte a sua arte (lado esquerdo).`, 'good'); sfx('level'); }
+  else if (d.k === 'gb_arte') { if (GB.b && GB.b.id === d.id) { GB.b.done[d.by] = 1; gbCheck(); } }
+  else if (d.k === 'gb_vot') { GB.open = d; if (GB.b && GB.b.id === d.id) { GB.b.st = 'votacao'; GB.b.until = d.until; } else if (Math.hypot(d.x - P.x, d.z - P.z) < 60) { toast(`🗳️ Batalha de grafite aqui perto: ${d.an} × ${d.bn}. Vote em 📞 Chamados!`, 'pink'); sfx('ui'); } }
+  else if (d.k === 'gb_voto') { const B = GB.b; if (B && B.id === d.id && B.a === me && B.st === 'votacao' && d.from !== B.a && d.from !== B.b) B.votes[d.from] = d.v === 'b' ? 'b' : 'a'; }
+  else if (d.k === 'gb_fim') onGbFim(d);
+  else if (d.k === 'rc_abre') { RC.ev = d; RC.mine = null; toast(`🏆 ${d.name} abriu um rachão de skate (inscrição $ ${d.fee})! Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'rc_insc') { if (RC.ev && RC.ev.id === d.id && RC.ev.host === me) { RC.list[d.from] = d.name; toast(`🏆 ${d.name} se inscreveu no rachão.`, 'good'); } }
+  else if (d.k === 'rc_go') { if (RC.ev && RC.ev.id === d.id) { RC.ev.st = 'valendo'; RC.ev.end = d.end; if (RC.mine) { RC.mine.pts = 0; toast('🏆 Valendo! 60 segundos: faça o máximo de pontos nas manobras!', 'pink'); sfx('level'); } } }
+  else if (d.k === 'rc_pts') { if (RC.ev && RC.ev.id === d.id && RC.ev.host === me && RC.list[d.from]) RC.ev.res[d.from] = d.pts; }
+  else if (d.k === 'rc_fim') onRcFim(d);
+  else if (d.k === 'rl_abre') { RL.ev = d; RL.mine = null; toast(`🛹 ${d.name} está chamando a galera para um rolê de skate! Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'rl_entra') { if (RL.ev && RL.ev.id === d.id && RL.ev.host === me) { RL.list[d.from] = d.name; toast(`🛹 ${d.name} entrou no rolê.`, 'good'); } }
+  else if (d.k === 'rl_go') { if (RL.ev && RL.ev.id === d.id) { RL.ev.st = 'andando'; RL.ev.i = 0; if (RL.mine) { const p = RL.ev.pts[0]; setGps(p[0], p[1], `🛹 ${p[2]}`); toast(`🛹 Partiu! Primeiro pico: ${p[2]}.`, 'pink'); } else if (RL.ev.host !== me) RL.ev = null; } }
+  else if (d.k === 'rl_pt') onRlPt(d);
+  else if (d.k === 'rl_done') { if (d.all) { const g = earn(jobPay('instrutor', 40)); const r = jobRec('instrutor'); r.real = (r.real || 0) + 1; ccRankCheck(); toast(`🛹 ${'Mais um'} completou o rolê: +$ ${fmt(g)}.`, 'good'); } }
+  else if (d.k === 'lixo_dupla') { S.coins += d.amt; persist(); updateHUD(); feed(`🚛 Dupla com ${d.name}: +$ ${fmt(d.amt)}`); }
+  ccRefresh();
+}
+function s7Act(act, ds) {
+  if (act === 'cc-gb-conv') return gbInvite(ds.id); if (act === 'cc-gb-sim') return gbAccept(true); if (act === 'cc-gb-nao') return gbAccept(false); if (act === 'cc-gb-voto') return gbVote(ds.v);
+  if (act === 'cc-rc-abre') return rcOpen(); if (act === 'cc-rc-insc') return rcJoin(); if (act === 'cc-rc-go') return rcGo();
+  if (act === 'cc-rl-abre') return rlOpen(); if (act === 'cc-rl-entra') return rlJoin(); if (act === 'cc-rl-go') return rlGo();
+  return false;
+}
+function s7Near() {
+  const B = GB.b; if (!B || B.st !== 'pintando' || B.done[ccMe()] || WORK.j || P.drive) return null;
+  const w = gbWallPair(B.wall)[B.a === ccMe() ? 0 : 1]; if (Math.hypot(w.x - P.x, w.z - P.z) < 3.2) return { type: 'xtra', label: '⚔️ Pintar sua arte na batalha', fn: gbPaint, nd: 0 };
+  return null;
+}
+function s7Tick(now) { try { mecTowTick(now); gbTick(now); rcTick(now); rlTick(now); } catch (e) { console.warn('s7', e); } }
 
 /* ---- rádio ---- */
 function ccRadioSend(txt, loc) {
@@ -15693,7 +15948,7 @@ function ccTick() {
   if (CC.mine && CC.mine.svc === 'taxi' && CC.mine.st === 'a caminho' && !CC.mine.near && !P.ride) { const q = ccPeer(CC.mine.byId); if (q && q.t && q.t.vh && Math.hypot(q.x - P.x, q.z - P.z) < 12) { CC.mine.near = true; toast('🚕 Seu táxi chegou! Abra 📞 Chamados e toque em "Entrar no táxi".', 'good'); sfx('level'); ccRefresh(); } }
   if (CC.mine) {
     if (now - CC.mine.t > 5 * 60000 && !CC.mine.byId) { CC.mine = null; toast('Seu chamado expirou sem resposta.', 'pink'); ccRefresh(); }
-    else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t, sus: CC.mine.sus, dest: CC.mine.dest, item: CC.mine.item, fire: CC.mine.fire, art: CC.mine.art, wall: CC.mine.wall, dmg: CC.mine.dmg, vn: CC.mine.vn, g: CC.mine.g }); }
+    else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t, sus: CC.mine.sus, dest: CC.mine.dest, item: CC.mine.item, fire: CC.mine.fire, art: CC.mine.art, wall: CC.mine.wall, dmg: CC.mine.dmg, vn: CC.mine.vn, g: CC.mine.g, vid: CC.mine.vid, vc: CC.mine.vc, vl: CC.mine.vl, car: CC.mine.car, far: CC.mine.far }); }
   }
   const T = CC.take; if (T) {
     const p = ccPeer(T.c.from); if (!p) return ccDrop('A pessoa saiu da cidade.');
@@ -15706,7 +15961,7 @@ function ccTick() {
   }
   if (now - CC.rs > 5000) { CC.rs = now; ccRankCheck(); ccDot(); }
   try { ctTick(now); correTick(now); } catch (e) { }
-  s5Tick(now);
+  s5Tick(now); s7Tick(now);
 }
 
 /* ---- tela da central ---- */
@@ -15726,7 +15981,7 @@ function PANEL_CENTRAL() {
   }
   if (EMP.offer) { const o = EMP.offer; h += `<div class="card"><h4>📄 Proposta de emprego</h4><p>${esc(o.oName)} quer te contratar como <b>${EMP_ROLES[o.role].i} ${EMP_ROLES[o.role].n}</b> no <b>${esc(o.bizName)}</b>: $ ${o.sal} por minuto trabalhado + 5% de comissão nas vendas.</p><div class="row"><button class="btn sm" data-act="cc-emp-yes">Aceitar</button><button class="btn ghost sm" data-act="cc-emp-no">Recusar</button></div></div>`; }
   if (EMP.job) { const J = EMP.job; h += `<div class="card"><h4>💼 ${EMP_ROLES[J.role].i} ${EMP_ROLES[J.role].n} no ${esc(J.bizName)}</h4><p class="muted">Patrão: ${esc(J.oName)} · $ ${J.sal}/min · ganho até agora: $ ${fmt(J.earned)} · ${J.on ? '<span class="pill on">ponto batido</span>' : 'vá até o comércio para bater o ponto'}</p><div class="row"><button class="btn ghost sm" data-act="cc-emp-quit">Pedir demissão</button></div></div>`; }
-  h += s6CentralTop();
+  h += s6CentralTop() + s7CentralTop();
   if (CC.aula) h += `<div class="card"><h4>🛹 Aula com ${esc(CC.aula.prof)}</h4><p>${CC.aula.trick ? `Faça um <b>${esc(TRK[CC.aula.trick].name)}</b> (${CC.aula.i + 1}/${CC.aula.n}).` : 'Boa! Espere a próxima manobra.'}</p></div>`;
   const svcMe = S.shift && ccSvcOf(S.shift);
   if (S.shift) {
@@ -15739,7 +15994,7 @@ function PANEL_CENTRAL() {
       h += L.length ? L.map(c => `<div class="row"><span>👤 <b>${esc(c.name)}</b> · "${esc(c.why)}" · ${ccDist(c)} m${c.sus ? ` · <b style="color:#ff7088">suspeito: ${esc(c.sus.name)}</b>` : ''}</span><button class="btn sm" data-act="cc-take" data-id="${esc(c.id)}" ${CC.take ? 'disabled' : ''}>Aceitar</button></div>`).join('') : '<p class="muted">Nenhum chamado de jogador agora. Os chamados de figurantes continuam chegando pela missão do turno.</p>';
     }
     if (svcMe === 'bombeiro') { const F = Object.values(CC.calls).filter(c => c.fire && c.by && c.by !== ccMe() && !(S.mission && S.mission.cc === c.id)); if (F.length) h += `<h3>🔥 Incêndios precisando de apoio</h3>` + F.map(c => `<div class="row"><span>🔥 Chamado de <b>${esc(c.name)}</b> · ${ccDist(c)} m</span><button class="btn sm" data-act="cc-fire" data-id="${esc(c.id)}">Ajudar</button></div>`).join(''); }
-    h += s6CentralJob();
+    h += s6CentralJob() + s7CentralJob();
     if (S.shift === 'grafiteiro') h += grafPanelHtml();
     if (S.shift === 'catador') { const SJ = Object.values(SUJ.spots), PX = Object.values(GRAF.rows).filter(g => g.autorizado === false);
       h += `<h3>🗑️ Sujeira na cidade</h3>` + (SJ.length ? SJ.map(d => `<div class="row"><span>🗑️ ${esc(d.why)} · ${d.bags.filter(Boolean).length} sacos · ${Math.round(Math.hypot(d.x - P.x, d.z - P.z))} m</span><button class="btn sm" data-act="cc-go" data-x="${d.x}" data-z="${d.z}" data-n="Sujeira">📍 Ir</button></div>`).join('') : '<p class="muted">Rua limpa por enquanto. Depois de festa, incêndio ou movimento na praça, aparece aqui.</p>') + '<p class="muted">Em dupla (outro gari a até 25 m) cada saco paga 30% a mais.</p>';
@@ -15778,6 +16033,7 @@ function ccAct(act, ds) {
   if (act === 'cc-fire') { const c = CC.calls[ds.id]; if (c) fireJoin(c, false); return; }
   if (act === 'ct-new') return ctNew();
   if (s6Act(act, ds) !== false) return;
+  if (s7Act(act, ds) !== false) return;
   if (act === 'cc-emp-hire') return empHire(ds.id);
   if (act === 'cc-emp-fire') return empFire(ds.id);
   if (act === 'cc-emp-promo') return empPromo(ds.id);
@@ -15855,7 +16111,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
-    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
@@ -15974,7 +16230,7 @@ function netTick(dt, t) {
   if ((NET.sendT -= dt) <= 0) {
     NET.sendT = 0.12;
     const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, sg: S.skateGuardado ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, vc: P.drive && P.drive.V.tc ? P.drive.V.tc : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), fk: (isAdm() || hasKids()) && S.filhas && S.filhas.comigo ? 1 : 0, pv: myParked(), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, sg: S.skateGuardado ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, vc: P.drive && P.drive.V.tc ? P.drive.V.tc : 0, vlo: P.drive && P.drive.V.low ? 1 : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), fk: (isAdm() || hasKids()) && S.filhas && S.filhas.comigo ? 1 : 0, pv: myParked(), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
   }
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
@@ -15993,7 +16249,7 @@ function netTick(dt, t) {
     } else if (!d.vh && !p.g.visible && p.seen) p.g.visible = true;
     // veículo do outro jogador
     if (d.vh && VEH[d.vh]) {
-      if (!p.veh || p.vehId !== d.vh || (p.vehC || 0) !== (d.vc || 0)) { if (p.veh) city.scene.remove(p.veh); p.veh = makeVehicleMesh(d.vc ? Object.assign({}, VEH[d.vh], { color: d.vc }) : VEH[d.vh]); p.vehId = d.vh; p.vehC = d.vc || 0; city.scene.add(p.veh); }
+      if (!p.veh || p.vehId !== d.vh || (p.vehC || 0) !== (d.vc || 0) + (d.vlo ? 0.5 : 0)) { if (p.veh) city.scene.remove(p.veh); p.veh = makeVehicleMesh(vehTunedNet(d.vh, d.vc, d.vlo)); p.vehId = d.vh; p.vehC = (d.vc || 0) + (d.vlo ? 0.5 : 0); city.scene.add(p.veh); }
       p.veh.position.set(p.x, VEH[d.vh].heli ? p.y : groundH(p.x, p.z), p.z); p.veh.rotation.y = p.h; const vu = p.veh.userData; vu.spin = (vu.spin || 0) + d.v * dt / 0.35; for (const w of vu.wheels) w.children[0].rotation.x = vu.spin; vehLightsTick(p.veh, d.vl, d.bk, t);
       if (VEH[d.vh].kind === 'car' || VEH[d.vh].heli) { p.g.visible = false; if (vu.rotor) { vu.rotor.rotation.y += dt * 28; vu.trotor.rotation.x += dt * 40; } } else { p.g.visible = true; p.g.position.y = groundH(p.x, p.z) + vu.seatY - 1.07; if (vu.crank) vu.crank.rotation.x = vu.spin * 0.45; animSkater(p.g, { pedal: vu.bike ? vu.spin || 0 : null, ride: true, walk: true, v: 0, fallT: 0 }, t); }
       tickBubble(p.g, dt); continue;
@@ -16281,6 +16537,7 @@ let last = performance.now();
 /* desenha a cena; se algum material ficou com textura inválida, conserta e segue (não trava o quadro) */
 const MAP_KEYS = ['map', 'alphaMap', 'normalMap', 'bumpMap', 'emissiveMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'lightMap', 'specularMap', 'displacementMap'];
 function safeRender(sc, cam) {
+  if (sharpOn()) { try { return sharpRender(sc, cam); } catch (e) { SHARP.fail = true; renderer.setRenderTarget(null); console.warn('nitidez desligada', e); } }
   try { renderer.render(sc, cam); }
   catch (e) {
     let n = 0; sc.traverse(o => { if (!o.material) return; for (const m of [].concat(o.material)) for (const k of MAP_KEYS) { const t = m[k]; if (t && !(t.isTexture && t.matrix)) { m[k] = null; m.needsUpdate = true; n++; } } });
