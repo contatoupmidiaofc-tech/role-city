@@ -794,3 +794,8 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - **Feminino:** **Box braids longas**, **Tranças nagô** (com as tranças caindo nas costas), **Puffs** (dois coquinhos afro), **Rabo baixo**, **Cacheado curtinho**, **Dreads longos**.
     - Os filhos e o barbeiro também têm as opções novas.
   - 🎮 **Coleção Gamer (em alta nos jogos):** camisetas **GG Neon**, **Smile Derretendo**, **Raio**, **Headshot** (mira), **Pixel +1 Vida / GAME OVER**, moletom **Fogo Azul** e **AFK Nunca**; jerseys de basquete neon e roxo-dourado, corta-vento rosa e preto, camuflada urbana, galáxia; calça cargo tática, calça camuflada urbana, bermuda tactel neon, jogger rosa; tênis cano alto vermelho e neon rosa; bandanas e boné aba reta neon.
+
+### Build 2026.10.15-78 (Chamados pelo celular; bares e brega só no mapa)
+  - 📱 **Os chamados agora são pelo celular:** o botão "Chamados" saiu da tela. Para pedir polícia, SAMU, bombeiros, táxi, mecânico etc., abra o **celular** e toque no app **📞 Chamados** (no celular simples, opção "3 Chamados (190, 192, 193...)"). Quando chega um chamado novo para a sua profissão, a **bolinha vermelha aparece no botão do celular**.
+  - 🍻 **Bares, brega e sorveteria só no mapa:** o atalho "Bares e Brega" saiu da tela. No **mapa** eles aparecem com ícone e nome; tocando neles no mapa, o GPS leva até a porta.
+  - Os avisos do jogo agora dizem "📱 Celular › Chamados" em vez do botão antigo.

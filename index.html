@@ -644,13 +644,12 @@ canvas.swatch{background:#333}
     <span id="h-hp" aria-label="Vida"><i></i><b>100%</b></span>
   </button>
   <div class="hud-tr collapsed" id="hud-tr">
-    <button class="hud-btn" id="hb-role" data-act="open-role" aria-label="Bares e brega"><span style="font-size:17px">🍻</span><span class="lbl">Bares e Brega</span></button>
     <button class="hud-btn" id="hb-med" data-act="open-meds" aria-label="Tomar remédio" hidden style="background:#1d4d33;border-color:#3ddc84"><span style="font-size:17px">💊</span><span class="lbl">Remédio</span></button>
     <button class="hud-btn" id="hb-tropa" data-act="tropa-liberar" aria-label="Liberar a tropa" hidden style="background:#15161a;border-color:#ffcf3a"><span style="font-size:17px">🫡</span><span class="lbl">Liberar tropa</span></button>
     <button class="hud-btn" id="hb-skate" data-act="skate-toggle" aria-label="Guardar ou pegar o skate" hidden><span style="font-size:17px">🛹</span><span class="lbl">Guardar skate</span></button>
     <button class="hud-btn" id="hb-menu" data-act="hud-menu" aria-label="Abrir as opções" aria-expanded="false"><span class="hm-ico">☰</span><i class="hm-dot" hidden></i></button>
     <button class="hud-btn" id="hb-sair" style="background:#d6304a;border-color:#ff7088" data-act="sair-local" aria-label="Sair deste lugar" hidden><span style="font-size:17px">🚪</span><span class="lbl">Sair</span></button>
-    <button class="hud-btn" data-act="phone-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="lbl">Celular</span></button>
+    <button class="hud-btn" id="hb-phone" data-act="phone-toggle" style="position:relative"><i id="cc-dot" hidden style="position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;background:#ff4f7b;box-shadow:0 0 0 2px #15161a"></i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="lbl">Celular</span></button>
     <button class="hud-btn" data-act="open-social"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lbl">Social</span></button>
     <button class="hud-btn" data-act="open-crew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4.5"/></svg><span class="lbl">Crew</span></button>
     <button class="hud-btn" id="hb-veh" data-act="open-garagem" aria-label="Escolher o carro" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 15l2-6h14l2 6v4H3z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="lbl">Carros</span></button>
@@ -665,7 +664,6 @@ canvas.swatch{background:#333}
     <button class="hud-btn" id="hb-canhao" data-act="tank-fire" aria-label="Disparar o canhão" hidden style="background:#3b4a2a;border-color:#c9e07a"><span style="font-size:17px">💥</span><span class="lbl">Canhão</span></button>
     <button class="hud-btn" id="hb-tiro" data-act="heist-tiro" aria-label="Atirar nas viaturas" hidden style="background:#15161a;border-color:#ff7088"><span style="font-size:17px">🔫</span><span class="lbl">Atirar</span></button>
     <button class="hud-btn" id="hb-seg" data-act="open-seg" aria-label="Seguranças" hidden><span style="font-size:17px">🕶️</span><span class="lbl">Seguranças</span></button>
-    <button class="hud-btn" id="hb-cc" data-act="open-central" aria-label="Central de chamados" style="position:relative"><span style="font-size:17px">📞</span><span class="lbl">Chamados</span><i id="cc-dot" hidden style="position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;background:#ff4f7b;box-shadow:0 0 0 2px #15161a"></i></button>
     <button class="hud-btn" data-act="qchat" aria-label="Bate-papo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span class="lbl">Falar</span></button>
     <button class="hud-btn" data-act="radio" aria-label="Rádio do grupo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M9 8 15 3M9 13h6M9 17h3"/></svg><span class="lbl">Rádio</span></button>
     <button class="hud-btn" id="hb-mic" aria-label="Segure para mandar áudio (tecla B)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="lbl">Áudio</span></button>
@@ -770,7 +768,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-77';
+const BUILD = '2026.10.15-78';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -4382,7 +4380,8 @@ function bigmapClick(e) {
   const x = (px - cv.width / 2) / s, z = (pz - cv.height / 2) / s;
   let label = 'Ponto no mapa';
   const d = city.doors.reduce((b, d) => { const k = Math.hypot(d.x - x, d.z - z); return k < b[0] ? [k, d] : b; }, [12, null])[1];
-  if (d) { setGps(d.x, d.z, d.label); } else if (inMorro(x, z, 2)) setGps(x, z, MORRO_NAME[cityId()]); else setGps(clamp(x, -OUT_N + 5, OUT_N - 5), clamp(z, -OUT_N + 5, outZMax() - 2), label);
+  const rs = (() => { try { return roleSpots().reduce((b, o) => { const k = Math.hypot(o.x - x, o.z - z); return k < b[0] ? [k, o] : b; }, [14, null])[1]; } catch (e) { return null; } })();
+  if (rs) setGps(rs.x, rs.z, `${rs.i} ${rs.n}`); else if (d) { setGps(d.x, d.z, d.label); } else if (inMorro(x, z, 2)) setGps(x, z, MORRO_NAME[cityId()]); else setGps(clamp(x, -OUT_N + 5, OUT_N - 5), clamp(z, -OUT_N + 5, outZMax() - 2), label);
   drawCityMapOn(cv, 0, 0, Rad);
   if (city.taxiPick) { city.taxiPick = false; setTimeout(() => { openPanel('central'); const el = $('cc-dest'); if (el) el.value = '0'; }, 350); } // volta para a Central com o ponto escolhido
 }
@@ -5040,6 +5039,9 @@ function drawCityMapOn(cv, cx, cz, Rad, mini) {
   const dr = Math.max(5, W * 0.035);
   for (const k of city.kiosks) { g.fillStyle = '#ff8a3d'; g.fillRect(X(k.x) - 3, Z(k.z) - 3, 6, 6); }
   for (const d of city.doors) { g.fillStyle = DOOR_COL[d.kind]; g.strokeStyle = '#15161a'; g.lineWidth = 2; g.beginPath(); g.arc(X(d.x), Z(d.z), dr, 0, TAU); g.fill(); g.stroke(); }
+  // bares, brega e sorveteria: só no mapa (toque no mapa marca o GPS até a porta)
+  try { for (const r of roleSpots()) { const c = /Brega/.test(r.n) ? '#a62bd9' : /Sorvet/.test(r.n) ? '#4fc3ff' : '#d8312f'; g.fillStyle = c; g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.beginPath(); g.arc(X(r.x), Z(r.z), dr * 0.9, 0, TAU); g.fill(); g.stroke();
+    if (!mini) { g.textAlign = 'center'; g.font = `${Math.round(dr * 1.7)}px sans-serif`; g.fillText(r.i, X(r.x), Z(r.z) - dr * 1.3); g.font = `700 ${Math.max(11, Math.round(W * 0.02))}px "Barlow Condensed", sans-serif`; g.lineWidth = 3; g.strokeStyle = '#15161a'; g.strokeText(r.n, X(r.x), Z(r.z) + dr * 2.6); g.fillStyle = '#ffffff'; g.fillText(r.n, X(r.x), Z(r.z) + dr * 2.6); g.textAlign = 'start'; } } } catch (e) { }
   for (const o of city.bots) { g.fillStyle = S.crew && S.crew.members.includes(o.b.id) ? '#3ddc84' : S.contacts.includes(o.b.id) ? '#ffe9a3' : '#c9cfdb'; g.beginPath(); g.arc(X(o.x), Z(o.z), Math.max(2.5, W * 0.014), 0, TAU); g.fill(); }
   for (const id in NET.peers) { const p = NET.peers[id]; g.fillStyle = '#7fe3ff'; g.strokeStyle = '#15161a'; g.lineWidth = 2; g.beginPath(); g.arc(X(p.x), Z(p.z), Math.max(4, W * 0.022), 0, TAU); g.fill(); g.stroke(); }
   if (city.route && city.route.length > 1) { g.strokeStyle = 'rgba(21,22,26,.8)'; g.lineWidth = Math.max(5, W * 0.016); g.lineJoin = 'round'; g.beginPath(); city.route.forEach((p, k) => k ? g.lineTo(X(p[0]), Z(p[1])) : g.moveTo(X(p[0]), Z(p[1]))); g.stroke(); g.strokeStyle = '#4fc3ff'; g.lineWidth = Math.max(3, W * 0.009); g.stroke(); }
@@ -6868,7 +6870,7 @@ function toHospital(by) {
     P.x = HOSP.x + HOSP_WAKE[0] + 0.9; P.z = HOSP.z + HOSP_WAKE[1] + 1.6; P.y = 0; P.v = 0; P.h = 0; city.hospIn = true; city.camYaw = 0; city.camSnap = true; city.zoom = 0.7;
     toast(`Você acordou no Hospital (trazido pelo ${by}). Vida 70%. Atendimento pelo SUS: de graça!`, 'pink');
     if (city.nurse) bubble(city.nurse, 'Que bom que acordou! Já pode ir, mas vai com calma.', 5);
-    try { if (NET.online && ccOnDuty('consulta')) setTimeout(() => toast('🩺 Tem médico de plantão: peça uma consulta em 📞 Chamados para sair com 100% de vida.', 'pink'), 2500); } catch (e) { }
+    try { if (NET.online && ccOnDuty('consulta')) setTimeout(() => toast('🩺 Tem médico de plantão: peça uma consulta em 📱 Celular › Chamados para sair com 100% de vida.', 'pink'), 2500); } catch (e) { }
   });
 }
 function leaveHospital() {
@@ -15615,9 +15617,9 @@ function renderPhone() {
   const back = `<button class="ph-back" data-act="ph-go" data-s="home">${tier === 0 ? '< Voltar' : '‹ Início'}</button>`;
   let body = '';
   if (ps.screen === 'home') {
-    if (tier === 0) body = `<div class="ph-title">MENU</div><button class="ph-item" data-act="ph-go" data-s="call">1 Ligar</button><button class="ph-item" data-act="ph-go" data-s="msgs">2 Mensagens</button><div class="ph-item" style="opacity:.6">3 Cobrinha (quebrado)</div>`;
+    if (tier === 0) body = `<div class="ph-title">MENU</div><button class="ph-item" data-act="ph-go" data-s="call">1 Ligar</button><button class="ph-item" data-act="ph-go" data-s="msgs">2 Mensagens</button><button class="ph-item" data-act="ph-go" data-s="chamados">3 Chamados (190, 192, 193...)</button><div class="ph-item" style="opacity:.6">4 Cobrinha (quebrado)</div>`;
     else {
-      const apps = [['call', 'Ligar', '#3ddc84', '☎'], ['msgs', 'Mensagens', '#4fc3ff', '✉'], ['map', 'Mapa', '#ff8a3d', 'M'], ['mission', 'Missão', '#ffcf3a', '!'], ['tokens', 'Tokens', '#ff4f7b', 'T']];
+      const apps = [['chamados', 'Chamados', '#d8312f', '📞'], ['call', 'Ligar', '#3ddc84', '☎'], ['msgs', 'Mensagens', '#4fc3ff', '✉'], ['map', 'Mapa', '#ff8a3d', 'M'], ['mission', 'Missão', '#ffcf3a', '!'], ['tokens', 'Tokens', '#ff4f7b', 'T']];
       if (tier >= 2) apps.push(['gps', 'GPS Pro', '#c9a24a', 'G']);
       body = `<div class="apps">${apps.map(([s, n, c, i]) => `<button class="app" data-act="ph-go" data-s="${s}"><i style="background:${c}">${i}</i>${n}</button>`).join('')}</div>`;
     }
@@ -15810,7 +15812,7 @@ function act(a, ds, el) {
     case 'sound': S.settings.sound = ds.on === '1'; persist(); renderPanel(); break;
     case 'reset-ask': $('reset-zone').innerHTML = `<div class="warn-inline"><span>Isso apaga personagem, grana, tokens e itens deste navegador.</span><div class="row"><button class="btn danger sm" data-act="reset-do">Apagar tudo</button><button class="btn ghost sm" data-act="panel-close">Cancelar</button></div></div>`; break;
     case 'reset-do': wipeSave(); location.reload(); break;
-    case 'ph-go': phoneState.screen = ds.s; if (ds.s === 'tokens') { togglePhone(false); city.checkout = null; openPanel('tokens'); } else renderPhone(); break;
+    case 'ph-go': phoneState.screen = ds.s; if (ds.s === 'chamados') { togglePhone(false); openPanel('central'); break; } if (ds.s === 'tokens') { togglePhone(false); city.checkout = null; openPanel('tokens'); } else renderPhone(); break;
     case 'ph-chat': phoneState.screen = 'chat'; phoneState.contact = ds.id; renderPhone(); break;
     case 'ph-call': {
       phoneState.screen = 'callon'; phoneState.contact = ds.id; phoneState.answered = false; renderPhone();
@@ -15968,7 +15970,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && NET
 
 /* =========================================================
    CENTRAL DE CHAMADOS (190, 192, 193, táxi, entrega e advogado), RÁDIO DA EQUIPE E CARGOS
-   - Qualquer jogador pede ajuda pelo botão 📞 Chamados; quem está de serviço naquela profissão recebe na hora e aceita.
+   - Qualquer jogador pede ajuda pelo 📱 celular (app Chamados); quem está de serviço naquela profissão recebe na hora e aceita.
    - O primeiro que aceitar leva: o GPS aponta para quem chamou (acompanhando a pessoa), e quem chamou vê quem está a caminho.
    - Chegou perto: quem chamou dá de 1 a 5 estrelas e, se quiser, gorjeta. Chamado de jogador real paga mais que o de figurante.
    - Rádio da equipe: só quem está de serviço na mesma área (segurança, saúde, transporte...) ouve; códigos de um toque.
@@ -16076,7 +16078,7 @@ function ccTreat(p) { // médico atende o paciente do chamado: exame de 2,5 s e 
 function onCura(d) { if (!NET.user || d.to !== NET.user.id) return; P.hp = 100; P.down = false; renderHp(); const f = payCash(d.fee || 0); persist(); ccSend0('cura_ok', { to: d.from, fee: f }); toast(`🩺 ${d.rank} ${d.by} cuidou de você: vida 100%.${f ? ` Consulta: $ ${fmt(f)}.` : ''}`, 'good'); sfx('level'); }
 function onCuraOk(d) { if (d.to !== ccMe() || !d.fee) return; S.coins += d.fee; persist(); updateHUD(); toast(`🩺 Consulta paga: +$ ${fmt(d.fee)}.`, 'good'); }
 // a vítima de assalto guarda quem foi (para o chamado da polícia) e é avisada da prisão
-function ccRobbedBy(d) { CC.lastRob = { id: d.id, name: d.by, t: Date.now() }; setTimeout(() => toast(`🚓 Chame a polícia em 📞 Chamados: ${d.by} vai como suspeito no chamado.`, 'pink'), 1500); }
+function ccRobbedBy(d) { CC.lastRob = { id: d.id, name: d.by, t: Date.now() }; setTimeout(() => toast(`🚓 Chame a polícia em 📱 Celular › Chamados: ${d.by} vai como suspeito no chamado.`, 'pink'), 1500); }
 function ccArrestHook(p) { // policial prendeu alguém: se for o suspeito do chamado, bônus e aviso para a vítima
   if (CC.den2 && CC.den2[p.id] && Date.now() - CC.den2[p.id].t < 60000) { const g = earn(Math.round(120 * rankMult('policial'))); toast(`🚓 Apreensão! Era a denúncia anônima: bônus +$ ${fmt(g)}.`, 'good'); delete CC.den2[p.id]; }
   const T = CC.take; if (!T || !T.c.sus || T.c.sus.id !== p.id) return; const g = earn(Math.round(150 * rankMult('policial'))); toast(`🚓 Suspeito do chamado preso! Bônus +$ ${fmt(g)}.`, 'good');
@@ -16168,9 +16170,9 @@ function ctSettle(c) { // conclui: vendedor recebe, veículo muda de dono
 }
 function onCT(d) {
   const me = ccMe(); let c = CT.list[d.id];
-  if (d.op === 'new') { if (![d.buyer, d.adv].includes(me)) return; CT.list[d.id] = c = Object.assign({}, d); delete c.op; toast(d.buyer === me ? `📝 ${d.sName} quer te vender: ${d.txt} por $ ${fmt(d.price)}. Veja em 📞 Chamados.` : `⚖️ Você foi chamado(a) para garantir um contrato entre ${d.sName} e ${d.bName}.`, 'pink'); sfx('ui'); }
+  if (d.op === 'new') { if (![d.buyer, d.adv].includes(me)) return; CT.list[d.id] = c = Object.assign({}, d); delete c.op; toast(d.buyer === me ? `📝 ${d.sName} quer te vender: ${d.txt} por $ ${fmt(d.price)}. Veja em 📱 Celular › Chamados.` : `⚖️ Você foi chamado(a) para garantir um contrato entre ${d.sName} e ${d.bName}.`, 'pink'); sfx('ui'); }
   else if (!c) return;
-  else if (d.op === 'pago') { c.st = c.adv ? 'garantia' : 'pago'; c.payT = Date.now(); if (!c.adv) ctSettle(c); else if (c.adv === me) toast(`⚖️ ${c.bName} pagou $ ${fmt(c.price)}. Valide o contrato em 📞 Chamados.`, 'pink'); }
+  else if (d.op === 'pago') { c.st = c.adv ? 'garantia' : 'pago'; c.payT = Date.now(); if (!c.adv) ctSettle(c); else if (c.adv === me) toast(`⚖️ ${c.bName} pagou $ ${fmt(c.price)}. Valide o contrato em 📱 Celular › Chamados.`, 'pink'); }
   else if (d.op === 'validado') ctSettle(c);
   else if (d.op === 'recusado') { c.st = 'recusado'; if (c.seller === me) toast(`📝 ${c.bName} recusou a proposta.`, 'pink'); }
   else if (d.op === 'devolvido') { c.st = 'devolvido'; }
@@ -16199,7 +16201,7 @@ function correTick(now) {
   const pol = Object.values(NET.peers).find(p => p.job === 'policial' && Math.hypot(p.x - P.x, p.z - P.z) < 60);
   if (pol && (!CC.cont || now - CC.cont > 15000)) { CC.cont = now; toast('🚨 Contenção: viatura por perto! Disfarça ou corre.', 'bad'); tone('square', 600, 900, 0.08, 0.05); }
 }
-function onDenuncia(d) { if (S.shift !== 'policial') return; const old = CC.den2 && CC.den2[d.id]; (CC.den2 = CC.den2 || {})[d.id] = d; if (!old || d.t - old.t > 60000) { toast('📢 Denúncia anônima: movimentação suspeita na área. Veja em 📞 Chamados.', 'pink'); sfx('ui'); } ccRefresh(); }
+function onDenuncia(d) { if (S.shift !== 'policial') return; const old = CC.den2 && CC.den2[d.id]; (CC.den2 = CC.den2 || {})[d.id] = d; if (!old || d.t - old.t > 60000) { toast('📢 Denúncia anônima: movimentação suspeita na área. Veja em 📱 Celular › Chamados.', 'pink'); sfx('ui'); } ccRefresh(); }
 /* ---- etapa 5: Empresário com funcionários, grafite que fica na parede, Gari e Instrutor com jogador real ---- */
 const s5Send = (k, d) => ccSend0('s5', Object.assign({ k }, d));
 const s5Hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
@@ -16254,7 +16256,7 @@ function staffTick(now) {
 }
 function onStaff(d) {
   const me = ccMe(); if (d.to !== me) return; const now = Date.now();
-  if (d.op === 'oferta') { EMP.offer = d; toast(`📄 ${d.oName} quer te contratar como ${EMP_ROLES[d.role].n} no ${d.bizName}: $ ${d.sal} por minuto. Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  if (d.op === 'oferta') { EMP.offer = d; toast(`📄 ${d.oName} quer te contratar como ${EMP_ROLES[d.role].n} no ${d.bizName}: $ ${d.sal} por minuto. Veja em 📱 Celular › Chamados.`, 'pink'); sfx('ui'); }
   else if (d.op === 'aceito') { const r = myBizHere().find(b => b.id === d.biz); EMP.staff[d.from] = { name: d.name, role: d.role, sal: d.sal, biz: d.biz, bizName: r ? r.nome : '', last: 0, paid: 0 }; toast(`🤝 ${d.name} aceitou: agora é ${EMP_ROLES[d.role].n} do seu comércio.`, 'good'); sfx('level'); }
   else if (d.op === 'recusado') toast(`${d.name} recusou a vaga.`, 'pink');
   else if (d.op === 'saiu') { if (EMP.staff[d.from]) { delete EMP.staff[d.from]; toast(`${d.name} pediu demissão.`, 'pink'); } }
@@ -16375,7 +16377,7 @@ function sujBag(d, k) { const r = mulberry32(s5Hash(d.id) + k * 97), a = r() * T
 function onSujeira(d) {
   if (SUJ.spots[d.id] || !city.scene) return; SUJ.spots[d.id] = d; d.ms = [];
   d.bags.forEach((b, k) => { if (!b) return d.ms.push(null); const [x, z] = sujBag(d, k), m = new THREE.Mesh(SPH(0.32, 7, 5), lam(k % 2 ? 0x15161a : 0x2b5f3a)); m.scale.set(1, 1.25, 1); m.position.set(x, groundH(x, z) + 0.36, z); city.scene.add(m); d.ms.push(m); });
-  if (S.shift === 'catador') { toast(`🗑️ Sujeira na rua: ${d.why}. Veja em 📞 Chamados.`, 'pink'); sfx('ui'); } ccRefresh();
+  if (S.shift === 'catador') { toast(`🗑️ Sujeira na rua: ${d.why}. Veja em 📱 Celular › Chamados.`, 'pink'); sfx('ui'); } ccRefresh();
 }
 function sujPick(id, k) { const d = SUJ.spots[id]; if (!d || !d.bags[k]) return false; d.bags[k] = 0; if (d.ms[k]) city.scene.remove(d.ms[k]); if (d.bags.every(b => !b)) { delete SUJ.spots[id]; ccRefresh(); } return true; }
 function sujTick(now) {
@@ -17295,17 +17297,17 @@ function s6CentralJob() {
 }
 function onS6(d) {
   if (!d || !S) return; const me = ccMe(); if (d.to && d.to !== me) return; const T = CC.take;
-  if (d.k === 'mec_orc') { MEC.orc = d; toast(`🔧 ${d.by} mandou o orçamento: $ ${fmt(d.total)}. Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  if (d.k === 'mec_orc') { MEC.orc = d; toast(`🔧 ${d.by} mandou o orçamento: $ ${fmt(d.total)}. Veja em 📱 Celular › Chamados.`, 'pink'); sfx('ui'); }
   else if (d.k === 'mec_sim') { if (T && T.orc) { T.orc.ok = true; if (T.orc.it.includes('guinc') && T.c.car) T.tow = { st: 'buscar' }; toast('🔧 Orçamento aprovado! Toque em "Começar o serviço" na Central.', 'good'); sfx('ui'); } }
   else if (d.k === 'mec_nao') { if (T) T.orc = null; toast('O cliente recusou o orçamento.', 'pink'); }
   else if (d.k === 'mec_feito') onMecFeito(d);
   else if (d.k === 'mec_pago' || d.k === 'bb_pago') { if (d.fee) { S.coins += d.fee; persist(); updateHUD(); toast(`${d.k === 'mec_pago' ? '🔧 Orçamento' : '💈 Serviço'} recebido: +$ ${fmt(d.fee)}.`, 'good'); sfx('coin'); } }
-  else if (d.k === 'bb_orc') { BB.orc = d; toast(`💈 ${d.by} propôs: ${bbDesc(d)} por $ ${fmt(d.total)}. Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'bb_orc') { BB.orc = d; toast(`💈 ${d.by} propôs: ${bbDesc(d)} por $ ${fmt(d.total)}. Veja em 📱 Celular › Chamados.`, 'pink'); sfx('ui'); }
   else if (d.k === 'bb_sim') { if (T && T.orc) { T.orc.ok = true; toast('💈 Cliente topou! Toque em "Começar o corte" na Central.', 'good'); sfx('ui'); } }
   else if (d.k === 'bb_nao') { if (T) T.orc = null; toast('O cliente recusou a proposta.', 'pink'); }
   else if (d.k === 'bb_feito') onBbFeito(d);
   else if (d.k === 'cor_vis') { COR.visita = d; COR.fechar = null; setGps(d.x, d.z, `🏡 ${d.n}`); toast(`🏡 ${d.by} vai te mostrar a ${d.n}. O GPS aponta para lá.`, 'pink'); sfx('ui'); }
-  else if (d.k === 'cor_fecha') { COR.fechar = d; toast(`📝 ${d.n}: ${d.modo === 'compra' ? 'compra' : 'aluguel'} por $ ${fmt(d.price)}. Feche em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'cor_fecha') { COR.fechar = d; toast(`📝 ${d.n}: ${d.modo === 'compra' ? 'compra' : 'aluguel'} por $ ${fmt(d.price)}. Feche em 📱 Celular › Chamados.`, 'pink'); sfx('ui'); }
   else if (d.k === 'cor_nao') toast('O cliente preferiu não fechar agora.', 'pink');
   else if (d.k === 'cor_ok') onCorOk(d);
   else if (d.k === 'dj_ped') { if (S.shift !== 'dj') return; DJ.reqs.push(d); DJ.reqs = DJ.reqs.slice(-8); toast(`🎧 ${d.name} pediu ${FM.list && FM.list[d.i] ? FM.list[d.i].n : 'uma música'}${d.tip ? ` (gorjeta $ ${d.tip})` : ''}.`, 'pink'); sfx('ui'); }
@@ -17598,19 +17600,19 @@ function s7CentralJob() {
 function onS7(d) {
   if (!d || !S) return; const me = ccMe(); if (d.to && d.to !== me) return;
   if (d.k === 'tow_eng') onTowEng(); else if (d.k === 'tow_solto') onTowSolto(d);
-  else if (d.k === 'gb_conv') { if (S.shift !== 'grafiteiro' || GB.b) return; GB.inv = d; toast(`⚔️ ${d.name} te desafiou para uma batalha de grafite! Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'gb_conv') { if (S.shift !== 'grafiteiro' || GB.b) return; GB.inv = d; toast(`⚔️ ${d.name} te desafiou para uma batalha de grafite! Veja em 📱 Celular › Chamados.`, 'pink'); sfx('ui'); }
   else if (d.k === 'gb_nao') { GB.pend = null; toast(`${d.name} recusou a batalha.`, 'pink'); }
   else if (d.k === 'gb_ok') { if (cashNow() < 100) return toast('Sem dinheiro para a inscrição da batalha.', 'bad'); payCash(100); persist(); updateHUD(); GB.b = d.b; GB.pend = null; setGps(d.b.wall.x, d.b.wall.z, '⚔️ Batalha de grafite'); toast(`⚔️ ${d.b.bn} aceitou! Vá até a parede e pinte a sua arte (lado esquerdo).`, 'good'); sfx('level'); }
   else if (d.k === 'gb_arte') { if (GB.b && GB.b.id === d.id) { GB.b.done[d.by] = 1; gbCheck(); } }
-  else if (d.k === 'gb_vot') { GB.open = d; if (GB.b && GB.b.id === d.id) { GB.b.st = 'votacao'; GB.b.until = d.until; } else if (Math.hypot(d.x - P.x, d.z - P.z) < 60) { toast(`🗳️ Batalha de grafite aqui perto: ${d.an} × ${d.bn}. Vote em 📞 Chamados!`, 'pink'); sfx('ui'); } }
+  else if (d.k === 'gb_vot') { GB.open = d; if (GB.b && GB.b.id === d.id) { GB.b.st = 'votacao'; GB.b.until = d.until; } else if (Math.hypot(d.x - P.x, d.z - P.z) < 60) { toast(`🗳️ Batalha de grafite aqui perto: ${d.an} × ${d.bn}. Vote em 📱 Celular › Chamados!`, 'pink'); sfx('ui'); } }
   else if (d.k === 'gb_voto') { const B = GB.b; if (B && B.id === d.id && B.a === me && B.st === 'votacao' && d.from !== B.a && d.from !== B.b) B.votes[d.from] = d.v === 'b' ? 'b' : 'a'; }
   else if (d.k === 'gb_fim') onGbFim(d);
-  else if (d.k === 'rc_abre') { RC.ev = d; RC.mine = null; toast(`🏆 ${d.name} abriu um rachão de skate (inscrição $ ${d.fee})! Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'rc_abre') { RC.ev = d; RC.mine = null; toast(`🏆 ${d.name} abriu um rachão de skate (inscrição $ ${d.fee})! Veja em 📱 Celular › Chamados.`, 'pink'); sfx('ui'); }
   else if (d.k === 'rc_insc') { if (RC.ev && RC.ev.id === d.id && RC.ev.host === me) { RC.list[d.from] = d.name; toast(`🏆 ${d.name} se inscreveu no rachão.`, 'good'); } }
   else if (d.k === 'rc_go') { if (RC.ev && RC.ev.id === d.id) { RC.ev.st = 'valendo'; RC.ev.end = d.end; if (RC.mine) { RC.mine.pts = 0; toast('🏆 Valendo! 60 segundos: faça o máximo de pontos nas manobras!', 'pink'); sfx('level'); } } }
   else if (d.k === 'rc_pts') { if (RC.ev && RC.ev.id === d.id && RC.ev.host === me && RC.list[d.from]) RC.ev.res[d.from] = d.pts; }
   else if (d.k === 'rc_fim') onRcFim(d);
-  else if (d.k === 'rl_abre') { RL.ev = d; RL.mine = null; toast(`🛹 ${d.name} está chamando a galera para um rolê de skate! Veja em 📞 Chamados.`, 'pink'); sfx('ui'); }
+  else if (d.k === 'rl_abre') { RL.ev = d; RL.mine = null; toast(`🛹 ${d.name} está chamando a galera para um rolê de skate! Veja em 📱 Celular › Chamados.`, 'pink'); sfx('ui'); }
   else if (d.k === 'rl_entra') { if (RL.ev && RL.ev.id === d.id && RL.ev.host === me) { RL.list[d.from] = d.name; toast(`🛹 ${d.name} entrou no rolê.`, 'good'); } }
   else if (d.k === 'rl_go') { if (RL.ev && RL.ev.id === d.id) { RL.ev.st = 'andando'; RL.ev.i = 0; if (RL.mine) { const p = RL.ev.pts[0]; setGps(p[0], p[1], `🛹 ${p[2]}`); toast(`🛹 Partiu! Primeiro pico: ${p[2]}.`, 'pink'); } else if (RL.ev.host !== me) RL.ev = null; } }
   else if (d.k === 'rl_pt') onRlPt(d);
@@ -17670,7 +17672,7 @@ function onCC(ev, d) {
   if (!d || !S) return; const me = ccMe();
   if (ev === 'cc_new') {
     if (d.from === me || Date.now() - d.t > 5 * 60000) return; const old = CC.calls[d.id]; CC.calls[d.id] = Object.assign(old || {}, d);
-    if (!old && S.shift && CC_SVC[d.svc] && CC_SVC[d.svc].jobs.includes(S.shift) && !CC.take) { sfx('ui'); toast(`📞 ${CC_SVC[d.svc].tel} · ${d.name}: "${d.why}" (${ccDist(d)} m). Toque em 📞 Chamados para aceitar.`, 'pink'); }
+    if (!old && S.shift && CC_SVC[d.svc] && CC_SVC[d.svc].jobs.includes(S.shift) && !CC.take) { sfx('ui'); toast(`📞 ${CC_SVC[d.svc].tel} · ${d.name}: "${d.why}" (${ccDist(d)} m). Toque em 📱 Celular › Chamados para aceitar.`, 'pink'); }
   } else if (ev === 'cc_take') {
     if (CC.mine && d.id === CC.mine.id && !CC.mine.byId) { CC.mine.byId = d.by; CC.mine.by = `${d.rank} ${d.name}`; CC.mine.st = 'a caminho'; ccSend0('cc_conf', { id: d.id, by: d.by, name: d.name }); toast(`🚨 ${CC.mine.by} aceitou e está a caminho.`, 'good'); sfx('ui'); }
   } else if (ev === 'cc_conf') {
@@ -17682,7 +17684,7 @@ function onCC(ev, d) {
   } else if (ev === 'cc_cancel') {
     delete CC.calls[d.id]; if (CC.take && CC.take.id === d.id) ccDrop('A pessoa cancelou o chamado.');
   } else if (ev === 'cc_arrive') {
-    if (CC.mine && d.id === CC.mine.id) { CC.mine.st = 'chegou'; toast(`👋 ${CC.mine.by} chegou até você. Abra 📞 Chamados para avaliar.`, 'good'); sfx('level'); }
+    if (CC.mine && d.id === CC.mine.id) { CC.mine.st = 'chegou'; toast(`👋 ${CC.mine.by} chegou até você. Abra 📱 Celular › Chamados para avaliar.`, 'good'); sfx('level'); }
   } else if (ev === 'cc_done') {
     delete CC.calls[d.id]; if (CC.take && CC.take.id === d.id && d.to === me) ccFinishPay(d.stars, d.tip);
   } else if (ev === 'cc_preso') {
@@ -17698,7 +17700,7 @@ function onCC(ev, d) {
 function ccTick() {
   const now = Date.now(); if (now - CC.t < 500) return; CC.t = now;
   for (const k in CC.calls) if (now - CC.calls[k].t > 5 * 60000) delete CC.calls[k];
-  if (CC.mine && CC.mine.svc === 'taxi' && CC.mine.st === 'a caminho' && !CC.mine.near && !P.ride) { const q = ccPeer(CC.mine.byId); if (q && q.t && q.t.vh && Math.hypot(q.x - P.x, q.z - P.z) < 12) { CC.mine.near = true; toast('🚕 Seu táxi chegou! Abra 📞 Chamados e toque em "Entrar no táxi".', 'good'); sfx('level'); ccRefresh(); } }
+  if (CC.mine && CC.mine.svc === 'taxi' && CC.mine.st === 'a caminho' && !CC.mine.near && !P.ride) { const q = ccPeer(CC.mine.byId); if (q && q.t && q.t.vh && Math.hypot(q.x - P.x, q.z - P.z) < 12) { CC.mine.near = true; toast('🚕 Seu táxi chegou! Abra 📱 Celular › Chamados e toque em "Entrar no táxi".', 'good'); sfx('level'); ccRefresh(); } }
   if (CC.mine) {
     if (now - CC.mine.t > 5 * 60000 && !CC.mine.byId) { CC.mine = null; toast('Seu chamado expirou sem resposta.', 'pink'); ccRefresh(); }
     else if (CC.mine.st === 'aberto' && now - CC.mine.rs > 15000) { CC.mine.rs = now; Object.assign(CC.mine, { x: Math.round(P.x * 10) / 10, z: Math.round(P.z * 10) / 10 }); ccSend0('cc_new', { id: CC.mine.id, from: CC.mine.from, name: CC.mine.name, svc: CC.mine.svc, why: CC.mine.why, x: CC.mine.x, z: CC.mine.z, t: CC.mine.t, sus: CC.mine.sus, dest: CC.mine.dest, item: CC.mine.item, fire: CC.mine.fire, art: CC.mine.art, wall: CC.mine.wall, dmg: CC.mine.dmg, vn: CC.mine.vn, g: CC.mine.g, vid: CC.mine.vid, vc: CC.mine.vc, vl: CC.mine.vl, car: CC.mine.car, far: CC.mine.far }); }
