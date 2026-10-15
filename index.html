@@ -9466,7 +9466,8 @@ function car22Tick(dt, t) {
     if ((p.cheer -= dt) < -6 - (p.ph % 5)) p.cheer = 2.2;
     p.g.position.set(p.x, groundH(p.x, p.z), p.z); p.g.rotation.y = p.h != null ? p.h : s[2];
     const far = Math.hypot(p.x - P.x, p.z - P.z) > 90; if (far && Math.floor(t * 20 + p.ph) % 3) continue;
-    animSkater(p.g, { walk: true, v: d > 0.3 ? Math.min(sp, 4) : 0, fallT: 0, wpHold: p.flag ? 'bandeira22' : null, emote: p.cheer > 0 && !p.flag ? 'cheer' : null }, t + p.ph);
+    const ao = { walk: true, v: d > 0.3 ? Math.min(sp, 4) : 0, fallT: 0, wpHold: p.flag ? 'bandeira22' : null, emote: p.cheer > 0 && !p.flag ? 'cheer' : null };
+    animSkater(p.g, ao, t + p.ph);
   }
   if (CAR22.from === ccMe() && t - CAR22.lastSend > 10 && NET.ch && NET.online) { CAR22.lastSend = t; ccSend0('carreata', { on: true, from: ccMe(), cid: cityId() }); }
 }
