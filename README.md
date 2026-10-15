@@ -762,3 +762,11 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
 ### Build 2026.10.15-73 (Correção: avião "batendo no nada")
   - 🐛 **O avião acusava batida o tempo todo no chão e não saía do lugar.** O teste de prédio comparava a altura do telhado (0 quando não tem prédio) com a altura do avião menos 0,4 m; com o avião na pista (a 0,06 m), dava sempre "bateu". Agora só conta prédio de verdade.
   - 🐛 **Voando baixo, o avião e o helicóptero batiam em banco, lixeira, hidrante e poste** (o teste de quem anda a pé, num raio de 2 m, sem olhar a altura). Agora, a mais de 3 m do chão, só os prédios (pela altura do telhado) contam; rente ao chão, só paredes e casas grandes.
+
+### Build 2026.10.15-74 (Viajar de barco entre o Rio e Salvador, com GPS)
+  - ⛵ **Viagem de barco Rio ↔ Salvador pelo mar**, saindo da **Marina**:
+    - **Passagem na escuna** ($ 600): vai no piloto automático e você desembarca no cais da marina de destino.
+    - **Pilotando o seu jet-ski ou lancha**: você mesmo leva o barco (Acelerar, Frear, Esquerda, Direita e 🤖 piloto automático). Chegando, o barco aparece na marina da outra cidade com você no comando.
+  - 🧭 **GPS do mar:** boias amarelas marcam o canal de navegação o caminho todo. Se sair do canal, o GPS avisa e não deixa encalhar na costa. O painel mostra por onde você está passando, a próxima cidade e quantos km faltam.
+  - No caminho, a **costa de verdade** com Mata Atlântica: Niterói e a saída da Baía de Guanabara, Campos dos Goytacazes, Vitória (ES), o **Arquipélago de Abrolhos**, Porto Seguro, Ilhéus e a **Baía de Todos os Santos**; outros barcos e navios passando.
+  - Na **Rodoviária** (Rio e Salvador) tem a opção "De barco" com **GPS até a Marina**.

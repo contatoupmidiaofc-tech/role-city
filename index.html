@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-73';
+const BUILD = '2026.10.15-74';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -8169,9 +8169,9 @@ function tripHud(on) {
 }
 function tripHudTick() {
   const T = TRIP, el = $('trip-hud'); if (!T || !el) return;
-  const ic = T.air ? (T.V.heli ? '🚁' : '✈️') : T.how === 'bus' ? '🚌' : T.V && T.V.kind === 'moto' ? '🏍️' : '🚗';
-  const left = Math.max(0, Math.round(T.km * (1 - T.prog))), sp = T.air ? (T.V.heli ? 230 : T.V.linha || T.V.pm === 'airliner' ? 850 : T.V.pm === 'jato' ? 780 : 320) : T.how === 'bus' ? 90 : 100, hrs = left / sp;
-  el.querySelector('.tr-t').textContent = T.scenic ? `${ic} Passeio aéreo sobre ${CITY_DEFS[T.from].name}` : `${ic} ${CITY_DEFS[T.from].name} → ${CITY_DEFS[T.dest].name}${T.air ? '' : ' · ' + brOf(T.from, T.dest)}`;
+  const ic = T.sea ? (T.V.bm === 'jet' ? '🚤' : '⛵') : T.air ? (T.V.heli ? '🚁' : '✈️') : T.how === 'bus' ? '🚌' : T.V && T.V.kind === 'moto' ? '🏍️' : '🚗';
+  const left = Math.max(0, Math.round(T.km * (1 - T.prog))), sp = T.sea ? 45 : T.air ? (T.V.heli ? 230 : T.V.linha || T.V.pm === 'airliner' ? 850 : T.V.pm === 'jato' ? 780 : 320) : T.how === 'bus' ? 90 : 100, hrs = left / sp;
+  el.querySelector('.tr-t').textContent = T.scenic ? `${ic} Passeio aéreo sobre ${CITY_DEFS[T.from].name}` : `${ic} ${CITY_DEFS[T.from].name} → ${CITY_DEFS[T.dest].name}${T.air ? '' : T.sea ? ' · pelo mar, seguindo a costa' : ' · ' + brOf(T.from, T.dest)}`;
   el.querySelector('.tr-bar i').style.width = (T.prog * 100).toFixed(1) + '%';
   el.querySelector('.tr-s').textContent = T.scenic ? (T.label || '') : `${T.label || ''}${T.label ? ' · ' : ''}faltam ${fmt(left)} km · chegada em ~${hrs >= 1 ? Math.floor(hrs) + 'h' : ''}${String(Math.round((hrs % 1) * 60)).padStart(2, '0')}min`;
   el.querySelector('.tr-fast').hidden = !!T.noFast;
@@ -8181,6 +8181,7 @@ function updateTrip(dt, t) {
   if (T.phase === 'road') { roadTick(dt, t); if (T.heist) try { heistTripTick(dt, t); } catch (e) { console.warn('fuga br', e); } }
   else if (T.phase === 'path') pathTick(dt, t);
   else if (T.phase === 'cruise') routeTick(dt, t);
+  else if (T.phase === 'sea') seaTick(dt, t);
   if ((T.hudT = (T.hudT || 0) - dt) <= 0) { T.hudT = 0.25; tripHudTick(); }
 }
 function endTrip() {
@@ -8462,6 +8463,7 @@ function flightPad(on) {
     const set = v => e => { const f = e.target.closest('button'); if (!f || !TRIP) return; e.preventDefault(); const k = f.dataset.f; if (k === 'auto') { if (v) { TRIP.auto = !TRIP.auto; toast(TRIP.auto ? '🤖 Piloto automático ligado: ele segue a BR até o destino.' : '🕹️ Você está pilotando! Siga a estrada ou vá olhando o caminho.', 'pink'); } return; } TRIP.pad = TRIP.pad || {}; TRIP.pad[k] = v; if (v && TRIP.auto) TRIP.auto = false; };
     el.addEventListener('pointerdown', set(true)); el.addEventListener('pointerup', set(false)); el.addEventListener('pointerleave', e => { if (TRIP) TRIP.pad = {}; });
   }
+  const lb = (k, t2) => { const b2 = el.querySelector(`[data-f=${k}] small`); if (b2) b2.textContent = t2; }; const sea = !!(TRIP && TRIP.sea); lb('up', sea ? 'Acelerar' : 'Subir'); lb('down', sea ? 'Frear' : 'Descer');
   el.hidden = !on;
 }
 function routeTick(dt, t) {
@@ -15243,6 +15245,7 @@ const PANELS = {
     html += Object.entries(CITY_DEFS).map(([id, C]) => `<div class="card ${id === cur ? 'locked' : ''}"><h4>${esc(C.name)}</h4><p>${{ sp: 'Avenida Paulista, MASP, prédios altos e a Ponte Estaiada.', rj: 'Praia, calçadão de ondas, Cristo Redentor, Pão de Açúcar e o morro.', ssa: 'Casarões coloridos do Pelourinho, Elevador Lacerda e o Farol da Barra.' }[id]}</p>
       <div class="row">${id === cur ? '<span class="pill on">Você está aqui</span>' : `${hasV ? `<button class="btn" data-act="travel" data-id="${id}" data-how="veh">Ir de ${VEH[S.veh].kind === 'car' ? 'carro' : 'moto'}</button>` : ''}<button class="btn ghost" data-act="travel" data-id="${id}" data-how="bus" ${S.coins < 150 ? 'disabled' : ''}>Ônibus ($ 150)</button>`}</div></div>`).join('');
     if (!hasV) html += `<p class="muted">Compre um carro ou moto na Concessionária para viajar de graça.</p>`;
+    if (beachCity()) html += `<div class="card"><h4>⛵ De barco (Rio ↔ Salvador)</h4><p>Pelo mar, seguindo a costa, na escuna ($ ${fmt(BOAT_FARE)}) ou pilotando o seu jet-ski ou lancha. Sai da Marina na praia.</p><div class="row"><button class="btn ghost sm" data-act="gps-marina">📍 GPS até a Marina</button></div></div>`;
     html += `<div class="card"><h4>✈️ Aeroporto e Hangar AJBZ</h4><p>Voos para ${Object.keys(CITY_DEFS).filter(k => k !== cur).map(k => CITY_DEFS[k].name).join(' e ')} passando por cima das cidades. No Hangar AJBZ tem avião e helicóptero à venda.</p><div class="row"><button class="btn" data-act="go-airport">Ir ao aeroporto</button>${Object.keys(CITY_DEFS).filter(k => k !== cur).map(k => `<button class="btn ghost" data-act="trip" data-id="${k}" data-how="voo" ${S.coins < airFare(k) ? 'disabled' : ''}>✈️ ${CITY_DEFS[k].name} $ ${fmt(airFare(k))}</button>`).join('')}</div></div>`;
     html += `<div class="card"><h4>🗺️ Pontos turísticos</h4><p>${{ sp: 'MASP, Ponte Estaiada, Ibirapuera, Catedral da Sé e Theatro Municipal.', rj: 'Cristo Redentor, Pão de Açúcar, Maracanã, Selarón e Arcos da Lapa.', ssa: 'Pelourinho, Elevador Lacerda, Farol da Barra, Mercado Modelo, Bonfim e Dique do Tororó.' }[cur]} Taxa do Bonde do AJBZ.</p><div class="row"><button class="btn" data-act="open-turismo">Ver pontos turísticos</button></div></div>`;
     return { title: 'Rodoviária', html };
@@ -15592,6 +15595,8 @@ function act(a, ds, el) {
     case 'open-base': openPanel('base'); break;
     case 'boat-buy': boatBuy(ds.id, ds.cur); break;
     case 'boat-rent': boatRent(); break;
+    case 'boat-trip': startBoatTrip(ds.d, ds.id); break;
+    case 'gps-marina': { closePanel(); const d = city.doors.find(d => d.kind === 'marina'); if (d) setGps(d.x, d.z, 'Marina'); else toast('Esta cidade não tem mar: barco só no Rio e em Salvador.', 'bad'); break; }
     case 'boat-use': closePanel(); spawnBoat(VEH[ds.id], 'marina'); break;
     case 'jveh': takeJobVeh(ds.id); break;
     case 'floor': goFloor(+ds.n); break;
@@ -16682,6 +16687,8 @@ PANELS.marina = function () {
   html += `<h3>Comprar o seu</h3><div class="grid-items">${BOATS.map(V => { const own = (S.boats || []).includes(V.id);
     const act = own ? `<button class="btn sm" data-act="boat-use" data-id="${V.id}">⚓ Colocar na água</button>` : `<button class="btn sm" data-act="boat-buy" data-id="${V.id}" data-cur="c" ${S.coins < V.c ? 'disabled' : ''}>$ ${fmt(V.c)}</button> <button class="btn tok sm" data-act="boat-buy" data-id="${V.id}" data-cur="t" ${S.tokens < V.t ? 'disabled' : ''}>${fmt(V.t)} T</button>`;
     return `<div class="item-card r-${V.r}"><div class="swatch ico" style="--sw:${hex(V.color)}">${V.bm === 'jet' ? '🚤' : '🛥️'}</div><div class="item-info"><b>${esc(V.name)}</b><span class="muted">${esc(V.desc)} Até ${V.top * 4} km/h.</span><div class="row">${act}</div></div></div>`; }).join('')}</div>`;
+  const other = Object.keys(CITY_DEFS).find(c => c !== cityId() && seaRouteOK(cityId(), c));
+  if (other) html += `<div class="card"><h4>🧭 Viajar de barco para ${esc(CITY_DEFS[other].name)}</h4><p>Pelo mar, seguindo a costa (${fmt(seaGeo(cityId(), other).km)} km), com <b>GPS</b>: boias amarelas marcam o canal de navegação. No caminho: Vitória, o Arquipélago de Abrolhos, Porto Seguro e Ilhéus.</p><div class="row"><button class="btn sm" data-act="boat-trip" data-id="escuna" data-d="${other}" ${S.coins < BOAT_FARE ? 'disabled' : ''}>⛵ Passagem na escuna $ ${fmt(BOAT_FARE)}</button>${(S.boats || []).map(id => `<button class="btn ghost sm" data-act="boat-trip" data-id="${id}" data-d="${other}">🧭 Pilotando: ${esc(VEH[id].name)}</button>`).join('')}</div></div>`;
   html += `<p class="muted">Dica: no mar, toque em Pular para <b>mergulhar</b> e ver os peixes. Cuidado com a área do tubarão (bandeiras vermelhas)!</p>`;
   return { title: '⚓ Marina', html };
 };
@@ -16693,6 +16700,93 @@ function boatBuy(id, cur) {
 function boatRent() {
   if (S.coins < MARINA_RENT) return toast('Grana insuficiente.', 'bad');
   S.coins -= MARINA_RENT; S.boatRent = { until: Date.now() + MARINA_MIN * 60000 }; persist(); updateHUD(); closePanel(); spawnBoat(VEH.b_aluguel, 'marina');
+}
+
+/* =========================================================
+   VIAGEM DE BARCO ENTRE CIDADES (Rio ↔ Salvador, pelo mar), com GPS: boias amarelas marcam o canal de navegação
+   ========================================================= */
+// t = 0 no Rio, 1 em Salvador; a terra fica à esquerda (lado -1) de quem sobe a costa
+const SEA_ROUTE = { 'rj-ssa': { km: 1650, towns: [[0.04, 'Niterói e a saída da Baía de Guanabara'], [0.14, 'Campos dos Goytacazes'], [0.3, 'Vitória (ES)'], [0.62, 'Porto Seguro'], [0.76, 'Ilhéus'], [0.95, 'Baía de Todos os Santos']], isl: [[0.48, 'Arquipélago de Abrolhos']] } };
+const BOAT_FARE = 600;
+const seaRouteOK = (a, b) => !!(SEA_ROUTE[a + '-' + b] || SEA_ROUTE[b + '-' + a]);
+function seaGeo(from, dest) {
+  const G = SEA_ROUTE[from + '-' + dest]; if (G) return { km: G.km, land: -1, towns: G.towns, isl: G.isl };
+  const R = SEA_ROUTE[dest + '-' + from]; return { km: R.km, land: 1, towns: R.towns.map(([t, n]) => [1 - t, n]).sort((a, b) => a[0] - b[0]), isl: R.isl.map(([t, n]) => [1 - t, n]) };
+}
+function startBoatTrip(dest, id) {
+  if (TRIP || dest === cityId()) return; const from = cityId(); if (!seaRouteOK(from, dest)) return toast('🌊 De barco só dá entre o Rio de Janeiro e Salvador (as cidades com mar).', 'bad');
+  let V, pax = false;
+  if (id === 'escuna') { if (S.coins < BOAT_FARE) return toast(`A passagem de barco custa $ ${fmt(BOAT_FARE)}.`, 'bad'); S.coins -= BOAT_FARE; V = Object.assign({}, VEH.b_lancha, { id: 'escuna', name: 'Escuna de passageiros', color: 0x8a5a2f }); pax = true; }
+  else { V = VEH[id]; if (!V || !V.boat || !((S.boats || []).includes(id) || (V.job && S.shift === V.job))) return toast('Esse barco não é seu.', 'bad'); }
+  persist(); updateHUD(); closePanel(); if (P.drive) exitVehicle(true); if (city.myVeh && isBoat(city.myVeh.V)) { city.scene.remove(city.myVeh.m); city.myVeh = null; }
+  netLeavePlaza();
+  const G = seaGeo(from, dest);
+  TRIP = { from, dest, how: 'barco', V, sea: true, pax, km: G.km, t: 0, prog: 0, fast: false, geo: G };
+  $('hud').hidden = true; $('touch').hidden = true; $('beachbar') && ($('beachbar').hidden = true); tripHud(true); camera.far = 2600; camera.updateProjectionMatrix();
+  fadeTo(() => { buildSeaRoute(); mode = 'trip'; toast(pax ? '⛵ Boa viagem! A escuna segue o canal de navegação sozinha.' : '🧭 GPS ligado: siga as boias amarelas pelo canal de navegação. 🤖 liga o piloto automático.', 'pink'); });
+}
+function buildSeaRoute() {
+  const T = TRIP, G = T.geo, sc = new THREE.Scene(), Lz = Math.round(2200 + T.km * 3.2); T.sc = sc; T.phase = 'sea'; T.Lz = Lz;
+  sc.background = new THREE.Color(0x8fc4ee); sc.fog = new THREE.Fog(0xb5d8f2, 260, 1500);
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 0.95)); const sun = new THREE.DirectionalLight(0xfff2d8, 1.1); sun.position.set(100, 300, 50); sc.add(sun);
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(6000, Lz + 3000), new THREE.MeshLambertMaterial({ color: 0x2a7fb8 })); sea.rotation.x = -Math.PI / 2; sea.position.set(0, 0, Lz / 2); sc.add(sea);
+  // a costa (terra com praia) sempre do mesmo lado, acompanhando o canal
+  const coastD = z => 330 + 60 * Math.sin(z / 400) + 30 * Math.sin(z / 133), land = [], sand = [], li = [], si = []; let i = 0;
+  for (let z = -1500; z <= Lz + 1500; z += 40, i++) { const xc = routeX(z) + sideX(G.land, coastD(z)), xf = routeX(z) + sideX(G.land, 3000), xs = routeX(z) + sideX(G.land, coastD(z) - 24); land.push(xc, 0.4, z, xf, 0.4, z); sand.push(xs, 0.45, z, xc, 0.45, z); if (i) { const q = (i - 1) * 2; li.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); si.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); } }
+  const mk = (pos, idx, col) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); sc.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: col, side: THREE.DoubleSide }))); };
+  mk(land, li, 0x4f7a3a); mk(sand, si, 0xe8d3a0);
+  // morros verdes da Mata Atlântica na costa
+  const N = Math.round(Lz / 22), im = new THREE.InstancedMesh(new THREE.ConeGeometry(1, 1, 7), new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), N), M4 = new THREE.Matrix4(), c = new THREE.Color();
+  for (let k = 0; k < N; k++) { const z = Math.random() * Lz, h = rand(30, 110), r = h * rand(0.9, 1.4), x = routeX(z) + sideX(G.land, coastD(z) + 60 + Math.random() * 500); M4.compose(new THREE.Vector3(x, h / 2, z), new THREE.Quaternion(), new THREE.Vector3(r, h, r)); im.setMatrixAt(k, M4); im.setColorAt(k, c.setHex(pick([0x3f6a32, 0x4f7a3a, 0x5e7c4a, 0x2e5a28]))); }
+  sc.add(im);
+  // GPS: boias amarelas a cada 120 m marcando o canal (com a seta para o destino)
+  T.buoys = []; const bm = new THREE.InstancedMesh(new THREE.SphereGeometry(1.4, 10, 8), new THREE.MeshLambertMaterial({ color: 0xffd23f }), Math.ceil(Lz / 120) * 2 + 2); let nb = 0;
+  for (let z = 120; z < Lz; z += 120) for (const s of [-1, 1]) { M4.compose(new THREE.Vector3(routeX(z) + s * 60, 0.5, z), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1)); bm.setMatrixAt(nb++, M4); }
+  bm.count = nb; sc.add(bm);
+  // cidades da costa (prédios na beira-mar com o nome) e ilhas
+  T.marks = []; const bb = new THREE.InstancedMesh(boxGeo(1, 1, 1), new THREE.MeshLambertMaterial({ color: 0xffffff }), G.towns.length * 40), cc = new THREE.Color(); let n = 0;
+  for (const [t, nm] of G.towns) { const z = t * Lz, cx = routeX(z) + sideX(G.land, coastD(z) + 70);
+    for (let k = 0; k < 40; k++) { const h = rand(8, k < 8 ? 70 : 30); M4.compose(new THREE.Vector3(cx + rand(-70, 70), h / 2, z + rand(-110, 110)), new THREE.Quaternion(), new THREE.Vector3(rand(10, 20), h, rand(10, 20))); bb.setMatrixAt(n, M4); bb.setColorAt(n++, cc.setHex(pick([0xe8e4dc, 0xd9d2c3, 0xf2efe6, 0xc46a4a, 0xa8c9e8, 0xf2c94c]))); }
+    const lb = textSprite('📍 ' + nm.toUpperCase(), { bg: '#15161a', fg: '#ffcf3a', size: 44, scale: [80, 11, 1] }); lb.position.set(cx, 95, z); sc.add(lb); T.marks.push([z, nm]); }
+  bb.count = n; sc.add(bb);
+  for (const [t, nm] of G.isl) { const z = t * Lz, cx = routeX(z) + sideX(-G.land, 260); for (let k = 0; k < 6; k++) { const isl = new THREE.Mesh(SPH(1, 10, 6), new THREE.MeshLambertMaterial({ color: 0x5f8a45 })); isl.scale.set(rand(14, 34), rand(5, 12), rand(14, 34)); isl.position.set(cx + rand(-90, 90), 0, z + rand(-110, 110)); sc.add(isl); }
+    const lb = textSprite('🏝️ ' + nm.toUpperCase(), { bg: '#1e5b3a', fg: '#fff', size: 44, scale: [80, 11, 1] }); lb.position.set(cx, 50, z); sc.add(lb); T.marks.push([z, nm]); }
+  T.marks.sort((a, b) => a[0] - b[0]);
+  const dl = textSprite(`⚓ ${CITY_DEFS[T.dest].name.toUpperCase()}`, { bg: '#1f8fbf', fg: '#fff', size: 46, scale: [100, 15, 1] }); dl.position.set(routeX(Lz), 70, Lz + 150); sc.add(dl);
+  // outros barcos no caminho
+  T.ships = []; for (let k = 0; k < 8; k++) { const m = k % 3 ? makeBoatMesh(VEH.b_lancha) : navyShipMesh('C' + (20 + k)); const z = rand(300, Lz - 300); m.position.set(routeX(z) + rand(-260, 260) * (k % 2 ? 1 : -1) * 0.6, 0, z); m.rotation.y = Math.random() < 0.5 ? 0 : Math.PI; sc.add(m); T.ships.push(m); }
+  T.m = makeBoatMesh(T.V); sc.add(T.m); T.fx = routeX(0); T.fz = 0; T.fyaw = 0; T.thr = 1; T.auto = !!T.pax; T.spdK = T.pax ? 52 : Math.max(46, (T.V.top || 20) * 2.6); city.camSnap = true;
+  flightPad(!T.pax);
+}
+function seaTick(dt, t) {
+  const T = TRIP, sp = T.fast ? 2.6 : 1, pad = T.pad || {}, h = input.held, m = T.m, u = m.userData;
+  let ax = (h.KeyD || h.ArrowRight || pad.right ? 1 : 0) - (h.KeyA || h.ArrowLeft || pad.left ? 1 : 0), ay = (h.KeyW || h.ArrowUp || pad.up ? 1 : 0) - (h.KeyS || h.ArrowDown || pad.down ? 1 : 0);
+  if ((ax || ay) && T.auto && !T.pax) { T.auto = false; toast('🕹️ Você assumiu o leme. (🤖 liga o piloto automático de novo)', 'pink'); }
+  if (T.auto) { const d = Math.atan2(routeX(T.fz + 160) - T.fx, 160); ax = clamp((T.fyaw - d) * 3, -1, 1); ay = T.thr < 1 ? 1 : 0; }
+  // fora do canal: o GPS avisa e não deixa encalhar na costa
+  const off = T.fx - routeX(T.fz); if (Math.abs(off) > 220) { ax = Math.sign(off) * (T.fyaw * Math.sign(off) > -0.5 ? 1 : 0); if (!T.warnOff) { T.warnOff = 1; toast('🧭 GPS: você saiu do canal de navegação! Volte para as boias amarelas.', 'bad'); } } else if (Math.abs(off) < 120) T.warnOff = 0;
+  T.thr = clamp(T.thr + ay * 0.5 * dt, 0.25, 1);
+  T.fyaw = clamp(T.fyaw - ax * 0.6 * dt, -0.9, 0.9); if (!ax) T.fyaw *= 1 - Math.min(1, dt * 0.2);
+  const v = T.spdK * T.thr * sp; T.fz += Math.cos(T.fyaw) * v * dt; T.fx += Math.sin(T.fyaw) * v * dt;
+  const jet = T.V.bm === 'jet', hop = jet && T.thr > 0.8 ? Math.max(0, Math.sin(t * 3.1)) * 0.3 : 0;
+  m.rotation.order = 'YXZ'; m.position.set(T.fx, Math.sin(t * 1.6) * 0.1 + hop, T.fz); m.rotation.set(-0.08 * T.thr + Math.sin(t * 1.3) * 0.02, T.fyaw, -ax * (jet ? 0.35 : 0.12));
+  if (u.body && u.siren) u.siren[0].visible = Math.floor(t * 3) % 2 === 0;
+  if ((T.foamT = (T.foamT || 0) - dt) <= 0) { T.foamT = 0.08; const L2 = (u.len || 4) / 2, fm = new THREE.Mesh(SPH(jet ? 0.2 : 0.3, 6, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 })); fm.position.set(T.fx - Math.sin(T.fyaw) * L2 + rand(-0.5, 0.5), 0.1, T.fz - Math.cos(T.fyaw) * L2); T.sc.add(fm); (T.foam = T.foam || []).push({ m: fm, life: 1.2 }); }
+  for (const f of T.foam || []) { f.life -= dt; f.m.scale.setScalar(1 + (1.2 - f.life) * 2); f.m.material.opacity = Math.max(0, f.life / 1.2) * 0.8; if (f.life <= 0) T.sc.remove(f.m); } if (T.foam) T.foam = T.foam.filter(f => f.life > 0);
+  for (const s of T.ships) { s.position.z += (s.rotation.y ? -1 : 1) * 6 * dt; s.position.y = Math.sin(t + s.position.x) * 0.15; }
+  const cd = (u.camD || 8) + 6, cam = new THREE.Vector3(T.fx - Math.sin(T.fyaw) * cd, 4 + cd * 0.3, T.fz - Math.cos(T.fyaw) * cd);
+  camera.position.lerp(cam, city.camSnap ? 1 : 1 - Math.exp(-2.5 * dt)); city.camSnap = false; camera.lookAt(T.fx + Math.sin(T.fyaw) * 20, 1, T.fz + Math.cos(T.fyaw) * 20);
+  const k = clamp(T.fz / T.Lz, 0, 1); T.prog = k; const kmPer = T.km / T.Lz;
+  const here = T.marks.slice().reverse().find(q => Math.abs(q[0] - T.fz) < 200), nx = T.marks.find(q => q[0] > T.fz + 20 && (!here || q[1] !== here[1]));
+  T.label = (here ? `Passando por: ${here[1]}` : T.auto ? '🤖 Piloto automático · 🧭 GPS' : '🧭 GPS: siga as boias amarelas') + (nx ? ` · próximo: ${nx[1]} em ${Math.max(1, Math.round((nx[0] - T.fz) * kmPer))} km` : ` · chegando em ${CITY_DEFS[T.dest].name}`);
+  if (here && T.saidMark !== here[1]) { T.saidMark = here[1]; feed(`⚓ Passando por ${here[1]}`); }
+  if (k >= 1 && !T.fading) { T.fading = true; flightPad(false); fadeTo(() => boatArrive(T)); }
+}
+function boatArrive(T) {
+  loadDestCity(T.dest); endTrip();
+  const q = (city.piers || []).find(q => q.kind === 'marina') || (city.piers || [])[0];
+  if (T.pax || !q) { if (q) { P.x = q.px; P.z = q.z1 - 3; P.y = q.y; } toast(`⚓ Chegou em ${CITY_DEFS[T.dest].name}! Desembarque na marina.`, 'good'); return; }
+  spawnBoat(T.V, 'marina'); const mv = city.myVeh; if (mv) { P.x = mv.x; P.z = mv.z; enterVehicle(); } toast(`⚓ Chegou em ${CITY_DEFS[T.dest].name} de ${T.V.name}! A marina fica do lado.`, 'good');
 }
 
 /* ---- trampo com figurantes: ir até o ponto e segurar Ação ---- */
