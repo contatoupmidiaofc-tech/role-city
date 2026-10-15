@@ -633,3 +633,6 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - Os objetos ficam longe das portas e das árvores, têm colisão e não atrapalham o caminho dos pedestres.
   - Aparecem nas 3 cidades. Na praça central não há objetos.
   - ⚡ **Desempenho:** cada tipo de objeto é desenhado num lote só. A cidade inteira ganhou +13 chamadas de desenho (469 → 482).
+
+### Build 2026.10.15-63 (Sem motos figurantes)
+  - 🏍️ **Retiradas as motos figurantes do trânsito:** o piloto era feito de blocos simples e destoava do resto da cidade. Saíram só elas: os carros do trânsito, o táxi, a viatura e as motos dos jogadores (inclusive a de motoboy) continuam iguais.

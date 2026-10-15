@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-62';
+const BUILD = '2026.10.15-63';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2856,11 +2856,7 @@ function buildCity() {
     const base = pick(VEHICLES.filter(v => v.kind === 'car' && v.model !== 'super')), m = makeVehicleMesh(Object.assign({}, base, { color: pick([0x2f6db5, 0xe74c3c, 0xf1c40f, 0xecf0f1, 0x27ae60, 0x8e44ad, 0x15161a, 0x9aa3ad]) }));
     sc.add(m); city.cars.push({ m, r: r + (dir > 0 ? 2.8 : -2.8), dir, u: ph * 8 * r, x: 0, z: 0, h: 0, spd: 11, lights: [] });
   });
-  // motos (mais rápidas, costuram no trânsito)
-  [[21, -1, 0.1], [63, 1, 0.4], [105, -1, 0.2], [105, 1, 0.7], [63, 1, 0.9]].forEach(([r, dir, ph]) => {
-    const m = makeMoto(pick([0xd8312f, 0x15161a, 0x2f6db5, 0xffcf3a, 0xffffff])); sc.add(m);
-    city.cars.push({ m, r: r + (dir > 0 ? 1.6 : -1.6), dir, u: ph * 8 * r, x: 0, z: 0, h: 0, spd: 15, moto: true });
-  });
+  // (as motos figurantes do trânsito foram retiradas: o piloto era simples demais perto do resto)
 
   // bots
   const pool = shuffle(BOTS).slice(0, 12);
