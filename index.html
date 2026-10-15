@@ -773,7 +773,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-88';
+const BUILD = '2026.10.15-89';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1139,7 +1139,32 @@ function migrate(s) {
   return bankInstall(s);
 }
 function loadSave() { try { const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
-function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } if (typeof NET !== 'undefined') NET.dirty = true; }
+/* GUARDA DA ECONOMIA: tokens só sobem por compra aprovada no servidor (ou bônus do próprio jogo) e o dinheiro não pode
+   dar saltos impossíveis. Quem muda S.tokens / S.coins pelo console vê o valor voltar na hora. */
+const ECO = (() => {
+  let ref = null, okTok = 0, last = null, grant = 0, prev = null;
+  const num = v => Number.isFinite(+v) ? Math.max(0, Math.floor(+v)) : 0;
+  const tot = s => num(s.coins) + num(s.wallet) + num(s.bank);
+  return Object.freeze({
+    give(n) { grant += num(n); }, // créditos legítimos de tokens (compra aprovada, caixa lendária)
+    check() {
+      if (!S || typeof S !== 'object') return;
+      for (const k of ['coins', 'tokens', 'wallet', 'bank']) if (S[k] != null && (!Number.isFinite(+S[k]) || +S[k] < 0)) S[k] = 0;
+      const snap = () => { last = tot(S); prev = { coins: S.coins, wallet: S.wallet, bank: S.bank }; };
+      if (ref !== S) { ref = S; okTok = num(S.tokens); grant = 0; snap(); return; } // save novo (login/carregar): vira a base
+      if (isAdm()) { okTok = num(S.tokens); grant = 0; snap(); return; }
+      okTok += grant; grant = 0;
+      if (num(S.tokens) > okTok) { S.tokens = okTok; try { toast('🛡️ Tokens bloqueados: só entram por compra aprovada.', 'bad'); } catch (e) { } }
+      okTok = num(S.tokens);
+      const t = tot(S);
+      if (t - last > 2e7 && prev) { Object.assign(S, prev); try { toast('🛡️ Dinheiro bloqueado: valor impossível.', 'bad'); } catch (e) { } } // volta exatamente para o valor de antes
+      if (num(S.coins) > 1e10) S.coins = 1e10;
+      snap();
+    },
+  });
+})();
+setInterval(() => { try { ECO.check(); } catch (e) { } }, 1000);
+function persist() { try { ECO.check(); } catch (e) { } try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { } if (typeof NET !== 'undefined') NET.dirty = true; }
 function wipeSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } }
 const needXP = lv => 100 + lv * 60;
 function addXP(n) {
@@ -1901,14 +1926,32 @@ function animWalk(u, o, t) {
 const trickUnlocked = id => isAdm() || S.stats.missions >= TRK[id].need;
 /* conta de administrador (criador do jogo): tudo liberado. Só o hash do e-mail fica no código. */
 const ADM_HASH = 'e5dbdf40026e65e6db8263242375130d629eebf526f848d00245fc6f188d04d4';
-const isAdm = () => typeof NET !== 'undefined' && !!NET.admin;
+/* PROTEÇÃO DO ADM: o e-mail é conferido no servidor da Supabase (auth.getUser valida o login de verdade) e a marca de ADM
+   fica fechada aqui dentro: mudar NET.admin pelo console do navegador não liga nada. */
+const ADMQ = Object.freeze((() => {
+  let on = false; const H = sha256hex, HASH = ADM_HASH;
+  return {
+    async check(sb) {
+      on = false; if (!sb) return false;
+      for (let i = 0; i < 3; i++) {
+        try { const r = await sb.auth.getUser(); const em = r && r.data && r.data.user && r.data.user.email; on = !!em && H(String(em).trim().toLowerCase()) === HASH; return on; }
+        catch (e) { await new Promise(ok => setTimeout(ok, 1500 * (i + 1))); }
+      }
+      return on;
+    },
+    get on() { return on; },
+    dev() { if (location.hostname === 'local.test') on = true; }, // só no ambiente de testes local
+  };
+})());
+const isAdm = () => ADMQ.on;
+/* PROTEÇÃO DOS AVISOS ONLINE: quem recebe confere distância, intervalo e valores (um jogador mexendo no console não
+   consegue assaltar à distância, mandar ordem em massa nem inflar dinheiro com valores absurdos) */
+const RXG = {};
+function rxOk(kind, from, gapMs) { const k = kind + ':' + (from || '?'), now = Date.now(); if (RXG[k] && now - RXG[k] < gapMs) return false; RXG[k] = now; return true; }
+function peerNear(id, maxD) { const p = NET.peers[id]; return !!(p && p.seen && Math.hypot(p.x - P.x, p.z - P.z) <= maxD); }
+const rxAmt = (v, max) => { v = Math.floor(+v || 0); return Number.isFinite(v) ? Math.max(0, Math.min(max, v)) : 0; };
 const lvlLock = n => !isAdm() && S.level < n;
-async function checkAdmin() {
-  NET.admin = false;
-  const em = NET.user && NET.user.email; if (!em) return false;
-  NET.admin = sha256hex(em.trim().toLowerCase()) === ADM_HASH;
-  return NET.admin;
-}
+async function checkAdmin() { return ADMQ.check(NET.sb); }
 function sha256hex(str) {
   const K = [], H = [], isP = n => { for (let f = 2; f * f <= n; f++) if (n % f === 0) return false; return true; }, fr = x => ((x - Math.floor(x)) * 4294967296) | 0;
   for (let n = 2, k = 0; k < 64; n++) if (isP(n)) { if (k < 8) H[k] = fr(Math.pow(n, 1 / 2)); K[k++] = fr(Math.pow(n, 1 / 3)); }
@@ -5045,7 +5088,7 @@ function openCrate(type) {
   const rar = 'comum', pool = ITEMS.filter(i => i.r === 'comum' && i.slot !== 'phone' && i.c && !S.owned.includes(i.id));
   if (pool.length && Math.random() < 0.7) { const it = pick(pool); S.owned.push(it.id); city.crateResult = { item: it }; }
   else { const c = type === 'lendaria' ? 2500 : 600; addCoins(c); city.crateResult = { coins: c, rar }; }
-  if (type === 'lendaria') { S.tokens += 25; toast('+25 tokens de bônus da caixa lendária', 'pink'); }
+  if (type === 'lendaria') { ECO.give(25); S.tokens += 25; toast('+25 tokens de bônus da caixa lendária', 'pink'); }
   persist(); sfx('coin');
 }
 function postFeed(text, replayId) { S.posts.unshift({ id: Date.now() + Math.random(), text, at: Date.now(), replay: replayId || null }); S.posts = S.posts.slice(0, 20); persist(); }
@@ -6342,6 +6385,7 @@ function robNpc(o) {
 }
 function onRobbed(d) {
   if (!NET.user || d.to !== NET.user.id) return;
+  if (!peerNear(d.id, 6) || !rxOk('rob', d.id, 30000)) return; // só quem está do lado, e no máximo um assalto a cada 30 s
   if (isAdm()) { NET.ch.send({ type: 'broadcast', event: 'assalto_ok', payload: { to: d.id, amt: 0, chief: 1 } }); toast(`${d.by} tentou te assaltar, mas desistiu quando viu quem era.`, 'pink'); return; }
   const amt = Math.min(600, Math.floor(cashNow() * 0.08)); S.wallet = cashNow() - amt; persist(); updateHUD();
   NET.ch.send({ type: 'broadcast', event: 'assalto_ok', payload: { to: d.id, amt } }); toast(`${d.by} te assaltou e levou $ ${fmt(amt)}!`, 'bad'); sfx('hit'); try { ccRobbedBy(d); } catch (e) { }
@@ -7209,7 +7253,7 @@ function buyBiz(slot, idx) {
   if (special === 'lavar' && city.myVeh) toast('Veículo limpinho e revisado!', 'pink');
   if (NET.ch && NET.online && NET.user && r.dono !== NET.user.id) NET.ch.send({ type: 'broadcast', event: 'venda', payload: { owner: r.dono, biz: r.id, price, amt: Math.round(price * 0.6), item: name, buyer: S.name, loja: r.nome } });
 }
-function onSale(d) { if (!NET.user || d.owner !== NET.user.id) return; S.bizSales = (S.bizSales || 0) + 1; const bn = (d.biz ? empSaleBonus(d) : 0) + Math.round((d.price || d.amt / 0.6) * 0.05 * bizRank()); if (bn) { d.amt += bn; d.item += ` (equipe: +$ ${bn})`; } S.coins += d.amt; persist(); updateHUD(); toast(`💰 ${d.buyer} comprou ${d.item} no ${d.loja}: +$ ${d.amt}`, 'good'); sfx('coin'); }
+function onSale(d) { if (!NET.user || d.owner !== NET.user.id || !rxOk('venda', d.by || d.buyer, 1000)) return; d.amt = rxAmt(d.amt, 1e6); d.price = rxAmt(d.price, 1e6); S.bizSales = (S.bizSales || 0) + 1; const bn = (d.biz ? empSaleBonus(d) : 0) + Math.round((d.price || d.amt / 0.6) * 0.05 * bizRank()); if (bn) { d.amt += bn; d.item += ` (equipe: +$ ${bn})`; } S.coins += d.amt; persist(); updateHUD(); toast(`💰 ${d.buyer} comprou ${d.item} no ${d.loja}: +$ ${d.amt}`, 'good'); sfx('coin'); }
 async function openBiz() {
   const name = (($('biz-name') || {}).value || '').trim().slice(0, 30), tipo = city.bizTipo || 'lanchonete', slot = city.bizSlot;
   if (!certOk('comerciante')) return startJobTest('comerciante');
@@ -9211,7 +9255,7 @@ function pixSend(pid) {
   if (p.g) bubble(p.g, `Valeu pelos $ ${fmt(v)}!`, 3);
 }
 function onPix(d) {
-  if (!NET.user || d.to !== NET.user.id) return; const v = Math.max(0, Math.floor(+d.amt || 0)); if (!v) return;
+  if (!NET.user || d.to !== NET.user.id || !rxOk('pix', d.by, 2000)) return; const v = rxAmt(d.amt, 5e6); if (!v) return;
   S.coins += v; persist(); updateHUD(); sfx('coin'); toast(`💸 ${d.by} te deu $ ${fmt(v)}!`, 'good'); feed(`${d.by} te deu $ ${fmt(v)}`);
 }
 /* =========================================================
@@ -9481,6 +9525,7 @@ function carreataToggle() {
 function carreataStop() { CAR22.on = false; CAR22.from = null; car22Clear(); car22Music(false); }
 function onCarreata(d) {
   if (!d || d.from === ccMe() || d.cid !== cityId()) return;
+  if (d.on && !(NET.peers[d.from] && NET.peers[d.from].adm)) return; // carreata só vale vinda do ADM que está online na cidade
   if (d.on && !CAR22.on) { CAR22.on = true; CAR22.from = d.from; car22Build(); car22Music(true); toast('🇧🇷 Tem carreata do 22 passando na cidade! Siga o som.', 'pink'); }
   else if (!d.on && CAR22.from === d.from) carreataStop();
 }
@@ -14226,7 +14271,7 @@ function dlgOrdem(o) {
 }
 function dlgNome(o) { const el = document.getElementById('dlg-nome'), n = el && el.value.trim(); if (!n || !iAmDelegado()) return; netSend('ordem', { o, n, c: cityId(), by: S.name }); if (o === 'soltar') city.prisoners = (city.prisoners || []).filter(p => p.name.toLowerCase() !== n.toLowerCase()); toast(o === 'prender' ? `🔗 Mandado de prisão contra ${n} expedido.` : `🔓 Alvará de soltura para ${n}.`, 'good'); renderPanel(); }
 function onOrdem(d) {
-  if (!d || d.c !== cityId()) return;
+  if (!d || d.c !== cityId() || !rxOk('ordem_' + d.o, d.by, 60000)) return;
   if (d.o === 'morro') { city.raidForce = Date.now(); if (city.raid) { try { endRaid(); } catch (e) { } } toast(`🚨 O Delegado ${d.by} mandou operação no morro!`, 'bad'); }
   else if (d.o === 'prender' && d.n && S.name.toLowerCase() === d.n.toLowerCase()) { P.wanted = 3; P.wantedCalm = 600; P.crimes = (P.crimes || []).concat('mandado de prisão'); toast(`🚨 O Delegado ${d.by} expediu mandado de prisão contra você!`, 'bad'); }
   else if (d.o === 'soltar' && d.n) { city.prisoners = (city.prisoners || []).filter(p => p.name.toLowerCase() !== d.n.toLowerCase()); if (P.jailT > 0 && S.name.toLowerCase() === d.n.toLowerCase()) { toast(`🔓 Alvará de soltura do Delegado ${d.by}.`, 'good'); releaseJail(false); } }
@@ -16600,6 +16645,7 @@ document.addEventListener('submit', e => {
 const SUPA_URL = 'https://ndcahlwnkynphfilvenw.supabase.co';
 const SUPA_KEY = 'sb_publishable_OEhCG-PCfsbqoyoecWTocQ_kDKsWgk0';
 const NET = { sb: null, user: null, ch: null, online: false, peers: {}, sendT: 0, dirty: false, rank: null, trackT: null, saving: false };
+Object.defineProperty(NET, 'admin', { get: () => ADMQ.on, set(v) { if (v === true) ADMQ.dev(); }, enumerable: true });
 function netInit() {
   if (NET.sb) return true;
   if (!window.supabase || !window.supabase.createClient) return false;
@@ -16760,7 +16806,7 @@ function ccTreat(p) { // médico atende o paciente do chamado: exame de 2,5 s e 
   setTimeout(() => { if (CC.take !== T) return; const fee = 60 + 20 * jobRank('medico'); ccSend0('cura', { to: CC.take.c.from, from: ccMe(), by: S.name, rank: rankName('medico'), fee }); T.arr = Date.now(); T.job = S.shift; ccSend0('cc_arrive', { id: T.id, to: T.c.from }); const g = earn(jobPay('medico', 180)); addXP(40); toast(`Paciente ${p.name} tratado! +$${fmt(g)} (a consulta e a avaliação vêm em seguida).`, 'good'); sfx('level'); }, 2500);
 }
 function onCura(d) { if (!NET.user || d.to !== NET.user.id) return; P.hp = 100; P.down = false; renderHp(); const f = payCash(d.fee || 0); persist(); ccSend0('cura_ok', { to: d.from, fee: f }); toast(`🩺 ${d.rank} ${d.by} cuidou de você: vida 100%.${f ? ` Consulta: $ ${fmt(f)}.` : ''}`, 'good'); sfx('level'); }
-function onCuraOk(d) { if (d.to !== ccMe() || !d.fee) return; S.coins += d.fee; persist(); updateHUD(); toast(`🩺 Consulta paga: +$ ${fmt(d.fee)}.`, 'good'); }
+function onCuraOk(d) { if (d.to !== ccMe() || !d.fee || !rxOk('cura_ok', '', 5000)) return; d.fee = rxAmt(d.fee, 20000); S.coins += d.fee; persist(); updateHUD(); toast(`🩺 Consulta paga: +$ ${fmt(d.fee)}.`, 'good'); }
 // a vítima de assalto guarda quem foi (para o chamado da polícia) e é avisada da prisão
 function ccRobbedBy(d) { CC.lastRob = { id: d.id, name: d.by, t: Date.now() }; setTimeout(() => toast(`🚓 Chame a polícia em 📱 Celular › Chamados: ${d.by} vai como suspeito no chamado.`, 'pink'), 1500); }
 function ccArrestHook(p) { // policial prendeu alguém: se for o suspeito do chamado, bônus e aviso para a vítima
@@ -16808,10 +16854,10 @@ function ccDeliver(p) { // entregador na frente do cliente
   const g = earn(jobPay(S.shift, 40)); addXP(25); toast(`📦 ${it.n} entregue para ${p.name}! +$${fmt(g)} (a taxa e a gorjeta vêm em seguida)`, 'good'); sfx('level');
 }
 function onEntrega(d) { if (!NET.user || d.to !== NET.user.id) return; const tot = payCash((d.item.p || 0) + (d.fee || 0)); P.hp = Math.min(100, P.hp + 15); renderHp(); persist(); ccSend0('entrega_ok', { to: d.from, fee: Math.min(d.fee || 0, tot) }); toast(`${d.item.i || '📦'} Chegou seu ${d.item.n}! Pago $ ${fmt(tot)} (com a entrega). Vida +15%.`, 'good'); sfx('coin'); }
-function onEntregaOk(d) { if (d.to !== ccMe() || !d.fee) return; S.coins += d.fee; persist(); updateHUD(); toast(`🛵 Taxa de entrega: +$ ${fmt(d.fee)}.`, 'good'); }
+function onEntregaOk(d) { if (d.to !== ccMe() || !d.fee || !rxOk('entrega_ok', '', 5000)) return; d.fee = rxAmt(d.fee, 20000); S.coins += d.fee; persist(); updateHUD(); toast(`🛵 Taxa de entrega: +$ ${fmt(d.fee)}.`, 'good'); }
 function onTaxiM(d) { if (!NET.user || d.to !== NET.user.id || !P.ride) return; ccMeter(`🚕 Taxímetro $ ${fmt(d.fare)} · ${d.l} a ${d.d} m`); }
 function onTaxiFim(d) { if (!NET.user || d.to !== NET.user.id) return; ccMeter(''); const f = payCash(d.fare || 0); persist(); if (P.ride) endRide(true); ccSend0('taxi_pago', { to: d.from, fare: f }); toast(`🏁 Chegou em ${d.l}. Corrida paga: $ ${fmt(f)}.`, 'good'); sfx('coin'); }
-function onTaxiPago(d) { if (d.to !== ccMe() || !d.fare) return; S.coins += d.fare; persist(); updateHUD(); toast(`🚕 Corrida recebida: +$ ${fmt(d.fare)}.`, 'good'); sfx('coin'); }
+function onTaxiPago(d) { if (d.to !== ccMe() || !d.fare || !rxOk('taxi_pago', '', 5000)) return; d.fare = rxAmt(d.fare, 20000); S.coins += d.fare; persist(); updateHUD(); toast(`🚕 Corrida recebida: +$ ${fmt(d.fare)}.`, 'good'); sfx('coin'); }
 /* ---- etapa 4: incêndio em equipe, contratos com advogado, denúncia anônima ---- */
 function fireJoin(c, taker) { // cria (ou entra no) incêndio do chamado: todos os bombeiros no mesmo fogo
   if (S.mission && S.mission.cc === c.id) return toast('Você já está nesse incêndio.');
@@ -18986,7 +19032,7 @@ async function mpResgatar(silencio) {
   try {
     const { data, error } = await NET.sb.rpc('resgatar_tokens'); const n = error ? 0 : (+data || 0);
     if (n > 0) {
-      S.tokens += n; S.purchases = S.purchases || []; S.purchases.push(`${new Date().toLocaleDateString('pt-BR')} · +${fmt(n)} T · Mercado Pago`);
+      ECO.give(n); S.tokens += n; S.purchases = S.purchases || []; S.purchases.push(`${new Date().toLocaleDateString('pt-BR')} · +${fmt(n)} T · Mercado Pago`);
       persist(); try { updateHUD(); } catch (e) { } try { await cloudSave(); } catch (e) { }
       if (typeof toast === 'function' && mode !== 'menu') { toast(`💰 Pagamento aprovado! +${fmt(n)} tokens na sua conta.`, 'pink'); try { sfx('level'); } catch (e) { } }
       else MP.pend += n;

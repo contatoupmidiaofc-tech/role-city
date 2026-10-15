@@ -861,6 +861,17 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - **Amarela** com letras verdes: "FLÁVIO BOLSONARO" e o **22** grande na frente; "FLÁVIO" e o **22** grande nas costas.
     - **Verde** com letras amarelas, mesmo desenho.
 
+### Build 2026.10.15-89 (Proteções contra trapaça — etapa 1, sem mexer no banco)
+
+- **ADM verificado no servidor:** o e-mail do login é conferido pela Supabase (`auth.getUser`) e a marca de ADM fica fechada dentro do jogo (`ADMQ`). Mudar `NET.admin` pelo console do navegador não liga mais nada.
+- **Guarda da economia (`ECO`):** tokens só sobem por compra aprovada no servidor ou pelo bônus da caixa lendária; dinheiro com salto impossível (mais de $ 20 milhões de uma vez) volta para o valor de antes; valores inválidos ou negativos viram 0.
+- **Avisos online conferidos por quem recebe:**
+  - assalto só vale se o ladrão estiver do lado (até 6 m), no máximo um a cada 30 s;
+  - pix, corrida de táxi, entrega, consulta e vendas têm valor máximo e intervalo mínimo;
+  - ordens do delegado (prisão/operação) no máximo uma por minuto por pessoa;
+  - carreata só aparece se vier do ADM que está online na cidade.
+- **Limite honesto:** como o progresso ainda é salvo pelo próprio jogo, quem souber programar ainda consegue burlar. A proteção completa (dinheiro e compras controlados pelo servidor) é a etapa 2 e precisa de mudança no banco.
+
 ### Build 2026.10.15-88 (Boné, bandeira de mão e Carreata 22)
   - 🧢 **Boné Flávio Bolsonaro 22** (amarelo com 22 verde, ou verde com 22 amarelo), $ 220, e 🇧🇷 **Bandeira de mão Flávio 22** (verde e amarela, com o 22), $ 150, na loja de roupas. A bandeira é um acessório: equipada, o personagem anda com ela na mão direita.
   - 🇧🇷 **Botão "Carreata" (só o ADM)**, no canto direito embaixo do Fone. Ao tocar:
