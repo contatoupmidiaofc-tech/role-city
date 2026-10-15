@@ -652,3 +652,22 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - **Centro cirúrgico**, com mesa, foco de luz, monitor e instrumentos.
     - Equipe trabalhando: um socorrista do SAMU circula pelos setores e a equipe olha para você e conversa.
     - Placas por setor, faixas coloridas no chão (vermelha para a emergência, azul para a enfermaria) e garagem do SAMU (veículo da profissão) no corredor.
+
+### Build 2026.10.15-65 (Correções: paredes, golpes e arma na mão)
+  - 🧱 **Ninguém atravessa mais parede ou casa:**
+    - **Carro e moto:** a colisão vale para o contorno inteiro do veículo (frente, traseira e laterais), não só para o meio. O veículo também não gira a lataria para dentro da parede.
+    - **Avião e helicóptero:** batem em prédios, casas, árvores e postes quando estão voando baixo. Antes o avião atravessava tudo.
+    - **A pé:** quem ficava "preso" dentro de uma parede (empurrado numa batida, por exemplo) conseguia atravessar o prédio inteiro. Agora é empurrado para o lugar livre mais perto.
+    - **Figurantes de skate** desviam das paredes em vez de entrar nelas.
+    - **Outros jogadores:** a previsão de movimento entre uma mensagem e outra não empurra mais ninguém para dentro de parede.
+  - 💥 **Bater tem dano:**
+    - o veículo amassa (perde força e pode parar o motor);
+    - quem dirige se machuca na batida forte (de moto machuca mais);
+    - a tela pisca de vermelho.
+  - 👊 **Golpes:** o 1º e o 2º soco ou facada desequilibram (a pessoa cambaleia para trás) e tiram vida. A pessoa só cai no **3º golpe**, e a contagem zera depois de 6 s sem apanhar. Vale para figurantes e para jogadores.
+  - 🔫 **Segurar a arma do jeito certo:** a arma agora fica presa ao corpo, na posição real, e os braços são calculados para as duas mãos pegarem nela. Vale para o jogador, os policiais, os traficantes e os assaltantes.
+    - **Pistola mirando:** braços à frente, mão direita no cabo e mão esquerda apoiando.
+    - **Pistola em descanso:** na mão direita, apontada para baixo.
+    - **Fuzil e escopeta mirando:** coronha no ombro, na altura do rosto, com a mão esquerda segurando a frente da arma.
+    - **Fuzil e escopeta em descanso:** atravessados na frente do corpo, apontados para baixo.
+    - O tiro sai da ponta do cano.

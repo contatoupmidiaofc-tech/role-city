@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-64';
+const BUILD = '2026.10.15-65';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2362,7 +2362,14 @@ function updateCityFx(dt) {
   city.bananas = city.bananas.filter(b => { if (b.t <= 0) { city.scene.remove(b.m); return false; } return true; });
 }
 /* arma na mão na hora de usar */
+const FIREARMS = ['pistola', 'revolver', 'taser', 'escopeta', 'fuzil'];
 function showWeaponProp(u, kind) {
+  if (FIREARMS.includes(kind) && u.R && u.R.B.RightArm && u.R.B.LeftArm && u.root) {
+    if (u.wpM) { u.wpM.parent.remove(u.wpM); u.wpM = null; u.wpK = null; }
+    if (u.gunK !== kind) { if (u.gunM) { u.gunM.parent.remove(u.gunM); u.gunM = null; } u.gunK = kind; u.gunM = gunMesh(kind); u.root.add(u.gunM); }
+    return;
+  }
+  if (u.gunM) { u.gunM.parent.remove(u.gunM); u.gunM = null; u.gunK = null; }
   if (u.wpK !== kind) {
     if (u.wpM) { u.wpM.parent.remove(u.wpM); u.wpM = null; }
     u.wpK = kind; const hb = u.R.B.RightHand; if (!kind || !hb) return;
@@ -2378,6 +2385,74 @@ function showWeaponProp(u, kind) {
     else if (kind === 'escopeta' || kind === 'fuzil') { const c = kind === 'fuzil' ? 0x2e3328 : 0x3a2a1c; m(boxGeo(0.05, 0.08, 0.5), c, 0, 0.1, 0.18); m(CYL(0.015, 0.015, 0.45, 8), 0x15161a, 0, 0.12, 0.62, Math.PI / 2); m(boxGeo(0.045, 0.1, 0.22), c, 0, 0.06, -0.15); if (kind === 'fuzil') m(boxGeo(0.035, 0.16, 0.05), 0x15161a, 0, 0.0, 0.2, 0.3); }
     g.scale.setScalar(1 / ws); hb.add(g); u.wpM = g;
   }
+}
+/* arma de fogo: cano para +z, para cima +y, origem no cabo (onde a mão direita segura) */
+function gunMesh(kind) {
+  const g = new THREE.Group(), long = kind === 'fuzil' || kind === 'escopeta';
+  const m = (geo, c, x, y, z, rx = 0, r = 0.5, mt = 0.25) => { const k = new THREE.Mesh(geo, std(c, r, mt)); k.position.set(x, y, z); k.rotation.x = rx; k.castShadow = true; g.add(k); return k; };
+  if (!long) { const c = kind === 'taser' ? 0xffcf3a : 0x22252b;
+    m(boxGeo(0.032, 0.1, 0.045), c, 0, -0.02, -0.005, -0.28); m(boxGeo(0.034, 0.045, 0.19), c, 0, 0.045, 0.06, 0, 0.35, 0.5); m(boxGeo(0.008, 0.03, 0.035), c, 0, 0.0, 0.035);
+    if (kind === 'revolver') { m(CYL(0.026, 0.026, 0.055, 8), 0x6d717a, 0, 0.04, 0.02, Math.PI / 2, 0.3, 0.7); m(CYL(0.009, 0.009, 0.1, 6), 0x6d717a, 0, 0.05, 0.12, Math.PI / 2, 0.3, 0.7); }
+    g.userData = { grip: [0, 0, 0], sup: [0.032, -0.02, 0.0], len: 0.2 }; }
+  else { const c = kind === 'fuzil' ? 0x2e3328 : 0x3a2a1c, wood = kind === 'escopeta';
+    m(boxGeo(0.05, 0.075, 0.42), c, 0, 0.05, 0.13, 0, 0.5, 0.3); m(CYL(0.013, 0.013, 0.4, 8), 0x15161a, 0, 0.065, 0.53, Math.PI / 2, 0.3, 0.7);
+    m(boxGeo(0.045, 0.085, 0.24), wood ? 0x6b4a2f : 0x1e2126, 0, 0.03, -0.17, 0.12); m(boxGeo(0.03, 0.1, 0.04), 0x15161a, 0, -0.03, 0.0, -0.3);
+    if (kind === 'fuzil') { m(boxGeo(0.035, 0.15, 0.05), 0x15161a, 0, -0.05, 0.12, 0.25); m(boxGeo(0.03, 0.04, 0.12), 0x15161a, 0, 0.11, 0.08); }
+    else m(boxGeo(0.05, 0.05, 0.2), 0x6b4a2f, 0, 0.0, 0.36);
+    g.userData = { grip: [0, 0, 0], sup: [0, 0.02, 0.36], butt: [0, 0.03, -0.29], len: 0.73 }; }
+  return g;
+}
+/* braço calculado (IK de 2 ossos): ombro, cotovelo e mão vão até o alvo; o cotovelo aponta para "pole" */
+const _ik = { a: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Vector3(), d: new THREE.Vector3(), e: new THREE.Vector3(), q: new THREE.Quaternion(), q2: new THREE.Quaternion(), q3: new THREE.Quaternion() };
+function boneAim(bone, child, to) {
+  const I = _ik; bone.getWorldPosition(I.a); child.getWorldPosition(I.b); I.c.subVectors(I.b, I.a).normalize(); I.d.subVectors(to, I.a).normalize();
+  if (I.c.lengthSq() < 1e-6 || I.d.lengthSq() < 1e-6) return; I.q.setFromUnitVectors(I.c, I.d);
+  bone.getWorldQuaternion(I.q2); I.q2.premultiply(I.q); bone.parent.getWorldQuaternion(I.q3); bone.quaternion.copy(I.q3.invert().multiply(I.q2)); bone.updateMatrixWorld(true);
+}
+function armIK(B, side, target, pole) {
+  const up = B[side + 'Arm'], fo = B[side + 'ForeArm'], ha = B[side + 'Hand']; if (!up || !fo || !ha) return;
+  const s0 = up.getWorldPosition(new THREE.Vector3()), e0 = fo.getWorldPosition(new THREE.Vector3()), h0 = ha.getWorldPosition(new THREE.Vector3());
+  const l1 = s0.distanceTo(e0), l2 = e0.distanceTo(h0), dv = new THREE.Vector3().subVectors(target, s0), d = clamp(dv.length(), Math.abs(l1 - l2) + 0.01, l1 + l2 - 0.005); dv.normalize();
+  const a = (l1 * l1 - l2 * l2 + d * d) / (2 * d), hh = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+  const pv = new THREE.Vector3().subVectors(pole, s0); pv.sub(dv.clone().multiplyScalar(pv.dot(dv))).normalize();
+  const elbow = s0.clone().addScaledVector(dv, a).addScaledVector(pv, hh), tgt = s0.clone().addScaledVector(dv, d);
+  boneAim(up, fo, elbow); boneAim(fo, ha, tgt);
+}
+/* mão alinhada com a arma: dedos para a frente da arma, palma para dentro */
+function handAlign(hand, fwd, up) {
+  const I = _ik; const m = new THREE.Matrix4(), x = new THREE.Vector3().crossVectors(up, fwd).normalize(), y = fwd.clone().normalize(), z = new THREE.Vector3().crossVectors(x, y).normalize();
+  m.makeBasis(x, y, z); I.q.setFromRotationMatrix(m); hand.parent.getWorldQuaternion(I.q3); hand.quaternion.copy(I.q3.invert().multiply(I.q)); hand.updateMatrixWorld(true);
+}
+/* posição da arma no corpo + as duas mãos nela (mirando, ou em descanso apontada para baixo) */
+function gunIK(u, o) {
+  const G = u.gunM, B = u.R && u.R.B; if (!G || !B || !B.RightArm || !B.LeftArm) return;
+  const root = u.root; root.updateMatrixWorld(true);
+  const SR = root.worldToLocal(B.RightArm.getWorldPosition(new THREE.Vector3())), SL = root.worldToLocal(B.LeftArm.getWorldPosition(new THREE.Vector3()));
+  const long = u.gunK === 'fuzil' || u.gunK === 'escopeta', aim = !!o.wpProp, pitch = clamp(o.aimP || 0, -0.7, 0.8), D = G.userData, mid = SR.clone().add(SL).multiplyScalar(0.5), side = Math.sign(SR.x - SL.x) || -1;
+  G.rotation.order = 'YXZ';
+  if (long && aim) { // coronha no ombro direito, cano para a frente (segue a mira)
+    G.rotation.set(-pitch, 0.06 * side, 0); G.updateMatrix();
+    const butt = new THREE.Vector3(...D.butt).applyEuler(G.rotation); G.position.set(SR.x - side * 0.07, SR.y + 0.04, SR.z + 0.05).sub(butt);
+  } else if (long) { // em descanso: atravessada na frente do corpo, cano para baixo e para a esquerda
+    G.rotation.set(0.42, -0.55 * side, 0.2 * side); G.position.set(mid.x + side * 0.1, SR.y - 0.36, SR.z + 0.27);
+  } else if (aim) { // pistola com as duas mãos, braços quase esticados na altura dos olhos
+    G.rotation.set(-pitch, 0.02 * side, 0); G.position.set(mid.x + side * 0.06, SR.y + 0.02 + Math.sin(-pitch) * 0.1, SR.z + 0.46 * Math.cos(pitch));
+  } else { // pistola em descanso: mão direita na frente do quadril, cano para baixo
+    G.rotation.set(1.15, -0.2 * side, 0); G.position.set(SR.x - side * 0.02, SR.y - 0.5, SR.z + 0.2);
+  }
+  G.updateMatrixWorld(true);
+  const W = v => G.localToWorld(new THREE.Vector3(...v)), fwd = new THREE.Vector3(0, 0, 1).transformDirection(G.matrixWorld), gup = new THREE.Vector3(0, 1, 0).transformDirection(G.matrixWorld);
+  const down = new THREE.Vector3(0, -1, 0), back = new THREE.Vector3(0, 0, -1).transformDirection(root.matrixWorld), sideW = new THREE.Vector3(side, 0, 0).transformDirection(root.matrixWorld);
+  const sR = B.RightArm.getWorldPosition(new THREE.Vector3()), sL = B.LeftArm.getWorldPosition(new THREE.Vector3());
+  // mão direita no cabo (cotovelo para baixo e um pouco para fora)
+  const gR = W(D.grip).addScaledVector(gup, -0.01).addScaledVector(sideW, 0.025);
+  armIK(B, 'Right', gR, sR.clone().addScaledVector(down, 1).addScaledVector(sideW, 0.5).addScaledVector(back, 0.4));
+  if (B.RightHand) handAlign(B.RightHand, fwd.clone().addScaledVector(gup, -0.35).normalize(), sideW.clone().negate());
+  // mão esquerda: apoia a pistola por baixo ou segura a frente do fuzil
+  if (long || aim) { const gL = W(D.sup).addScaledVector(gup, long ? -0.035 : 0).addScaledVector(sideW, long ? -0.02 : -0.03);
+    armIK(B, 'Left', gL, sL.clone().addScaledVector(down, 1).addScaledVector(sideW, -0.6).addScaledVector(back, 0.2));
+    if (B.LeftHand) handAlign(B.LeftHand, long ? fwd.clone().addScaledVector(sideW, 0.6).normalize() : fwd.clone().addScaledVector(gup, -0.3).normalize(), long ? gup.clone().negate() : sideW.clone()); }
+  u.hR = 0.85; if (long || aim) u.hL = 0.8;
 }
 let _phoneGeo = null;
 function handProp(u) {
@@ -2459,6 +2534,7 @@ function animReal(u, o, t) {
   u.rider.position.z += (rz - u.rider.position.z) * k;
   rigPose(u.R, smoothPose(u, p, dt, rate));
   mocapLayer(u, o, t, dt, e);
+  if (u.gunM) { if (!(o.wpProp || o.wpHold) || down || o.climb != null) u.gunM.visible = false; else { u.gunM.visible = true; try { gunIK(u, o); } catch (er) { } } }
   const kh = 1 - Math.exp(-12 * dt); u.hL = lerp(u.hL ?? 0.3, hands.L, kh); u.hR = lerp(u.hR ?? 0.3, hands.R, kh);
   fingerPose(u.R, 'L', u.hL, false, false); fingerPose(u.R, 'R', u.hR, hands.pointR, hands.thumbR); mocapFingers(u);
   faceLayer(u, t, dt);
@@ -4053,6 +4129,16 @@ function exitVehicle(silent) {
   let x = P.x + Math.cos(P.h) * 1.8, z = P.z - Math.sin(P.h) * 1.8; if (collide(x, z, 0.5)) { x = P.x - Math.cos(P.h) * 1.8; z = P.z + Math.sin(P.h) * 1.8; }
   P.x = x; P.z = z; P.y = groundH(x, z); if (!silent) sfx('ui');
 }
+/* contorno do veículo (frente, traseira, laterais): quantos pontos encostam em parede/casa/árvore */
+function vehFootHits(x, z, h, L, R) {
+  const s = Math.sin(h), c = Math.cos(h), hl = Math.max(0.3, L / 2 - 0.15), hw = Math.max(0.2, R - 0.25); let n = 0;
+  for (const [a, b] of [[0, 0], [hl, 0], [-hl, 0], [hl, hw], [hl, -hw], [-hl, hw], [-hl, -hw], [hl * 0.5, hw], [hl * 0.5, -hw], [-hl * 0.5, hw], [-hl * 0.5, -hw]]) if (collide(x + s * a + c * b, z + c * a - s * b, 0.1)) n++;
+  return n;
+}
+/* obstáculo para quem voa baixo: prédios/casas/árvores da cidade, ou casas dos bairros de fora */
+const lowObstacle = (x, z, r) => (typeof inInner !== 'function' || inInner(x, z)) ? collide(x, z, r) : oColHit(x, z, r);
+/* batida forte machuca quem está dirigindo (moto machuca mais) */
+function crashHurt(sp, moto) { const k = moto ? 9 : 14; if (sp > k) hurt(Math.round((sp - k) * (moto ? 2.4 : 1.6)), 'batida'); }
 /* física do carro/moto na cidade */
 function updateDriving(dt, ax, blocked) {
   const d = P.drive, V = d.V, moto = V.kind === 'moto';
@@ -4063,10 +4149,13 @@ function updateDriving(dt, ax, blocked) {
   else if (thr < -0.1) P.v -= (P.v > 0.5 ? 20 : V.acc * 0.4) * -thr * dt;
   P.v -= P.v * (thr > 0.1 ? 0.08 : 0.45) * dt; P.v = clamp(P.v, -6, V.top * vehDmgMul());
   const steerK = (moto ? 2.4 : 1.9) * Math.min(1, Math.abs(P.v) / 5) / (1 + Math.abs(P.v) * 0.025);
+  const r = d.m.userData.radius, VL = d.m.userData.len || 4, h0 = P.h, here0 = vehFootHits(P.x, P.z, h0, VL, r);
   P.h -= st * steerK * dt * Math.sign(P.v || 1);
-  const r = d.m.userData.radius, nx = P.x + Math.sin(P.h) * P.v * dt, nz = P.z + Math.cos(P.h) * P.v * dt;
-  if (!collide(nx, nz, r) && !(beachCity() && nz > SEA_Z - 2)) { P.x = nx; P.z = nz; }
-  else { if (Math.abs(P.v) > 8) { sfx('hit'); toast('Bateu!', 'bad'); vehHit(Math.abs(P.v)); } P.v *= -0.25; }
+  if (vehFootHits(P.x, P.z, P.h, VL, r) > here0) P.h = h0; // não gira a lataria para dentro da parede
+  const nx = P.x + Math.sin(P.h) * P.v * dt, nz = P.z + Math.cos(P.h) * P.v * dt, here = vehFootHits(P.x, P.z, P.h, VL, r), there = vehFootHits(nx, nz, P.h, VL, r);
+  if ((there === 0 || there < here) && !(beachCity() && nz > SEA_Z - 2)) { P.x = nx; P.z = nz; }
+  else { const sp = Math.abs(P.v); if (sp > 5 && !(d.wallT > 0)) { d.wallT = 0.8; sfx('hit'); toast(sp > 14 ? '💥 Bateu feio na parede!' : '💥 Bateu!', 'bad'); vehHit(sp); crashHurt(sp, moto); city.hurtFlash = Math.max(city.hurtFlash || 0, Math.min(0.6, sp / 30)); } P.v *= -0.25; }
+  d.wallT = (d.wallT || 0) - dt;
   for (const o of [...city.bots, ...city.peds]) { const dd = Math.hypot(o.x - P.x, o.z - P.z); if (dd < r + 0.8 && Math.abs(P.v) > 3 && !(o.fallT > 0)) { o.fallT = 1.6; scream(0, o.g.userData.k === 'f'); bubble(o.g, pick(['Ô barbeiro!', 'Olha a faixa!', 'Quase me atropela!']), 3); P.v *= 0.7; sfx('hit'); } }
   for (const c of city.cars) { const dx = P.x - c.x, dz = P.z - c.z; if (Math.hypot(dx, dz) < (c.moto ? 1.6 : 2.6) + r * 0.5) { P.v *= -0.3; P.x += dx * 0.1; P.z += dz * 0.1; if (!d.crashT || d.crashT < 0) { sfx('hit'); d.crashT = 1; if (Math.abs(P.v) > 4) vehHit(Math.abs(P.v) * 0.7); } } }
   d.crashT = (d.crashT || 0) - dt;
@@ -4387,6 +4476,7 @@ function nextWaypoint(o) {
   if (o.iz > 0) opts.push([o.ix, o.iz - 1]); if (o.iz < 5) opts.push([o.ix, o.iz + 1]);
   [o.ix, o.iz] = pick(opts); o.tx = ROADS[o.ix]; o.tz = ROADS[o.iz];
 }
+function freeSpotNear(x, z, r) { for (let d = 0.4; d <= 6; d += 0.4) for (let i = 0; i < 16; i++) { const a = i / 16 * TAU, px = x + Math.sin(a) * d, pz = z + Math.cos(a) * d; if (!collide(px, pz, r)) return [px, pz]; } return null; }
 function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if ((city.tour || city.helipad || city.homePad) && walkAreaY(x, z, r) != null) return false; if ((city.interior || city.jail || city.hospIn || city.shopIn) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return outerBlocked(x, z, r); }
 function inRamp(x, z) { return city.ramps.some(c => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1); }
 
@@ -4461,11 +4551,12 @@ function updateCity(dt, t) {
   if (P.grind) grindTick(dt);
   else if (!driving) {
   const nx = P.x + Math.sin(P.h) * P.v * dt, nz = P.z + Math.cos(P.h) * P.v * dt;
-  const stuck = collide(P.x, P.z, 0.55); // se nasceu dentro de algo (móvel, parede), deixa sair andando
+  let stuck = collide(P.x, P.z, 0.55); // se nasceu dentro de algo (móvel, parede): empurra para o lugar livre mais perto
+  if (stuck && !P.sitAt && Math.abs(P.v) > 0.05) { const f = freeSpotNear(P.x, P.z, 0.55); if (f) { P.x = f[0]; P.z = f[1]; stuck = false; } }
   if (obstHit(P.x, P.z, nx, nz)) { obstBump(); }
   else {
-  if (stuck || !collide(nx, P.z, 0.55)) P.x = nx; else P.v *= 0.4;
-  if (stuck || !collide(P.x, nz, 0.55)) P.z = nz; else P.v *= 0.4;
+  if (!collide(nx, P.z, 0.55) || (stuck && !collide(nx, P.z, 0.3))) P.x = nx; else P.v *= 0.4;
+  if (!collide(P.x, nz, 0.55) || (stuck && !collide(P.x, nz, 0.3))) P.z = nz; else P.v *= 0.4;
   }
   }
   morroGate(dt);
@@ -4499,7 +4590,7 @@ function updateCity(dt, t) {
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
-  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: skateOut() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow(), wpProp: P.wpShowT > 0 ? handNow() : null, emote: P.emote && P.emote.id }, t);
+  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: skateOut() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow(), wpProp: P.wpShowT > 0 ? handNow() : null, aimP: P.aim ? clamp(-city.camPitch * 0.9, -0.7, 0.8) : 0, emote: P.emote && P.emote.id }, t);
   if (!driving && !P.ride) beachPose(g); else g.rotation.x = 0;
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
@@ -4663,7 +4754,9 @@ function updateCityBot(o, dt, t) {
     o.idleT -= dt; o.v = lerp(o.v, 0, dt * 2); o.h += dt * 0.3;
     if (o.idleT < 0 && !o.air) { o.idleT = rand(2, 5); o.vy = 7.5; o.air = true; o.plan = Math.random() < 0.75 ? pick(['kickflip', 'heelflip', 'shove', 'varial', 'tre']) : null; }
   }
-  o.x += Math.sin(o.h) * o.v * dt; o.z += Math.cos(o.h) * o.v * dt;
+  { const bx = o.x + Math.sin(o.h) * o.v * dt, bz = o.z + Math.cos(o.h) * o.v * dt;
+    if (Math.abs(o.v) > 0.05 && collide(bx, bz, 0.35) && !collide(o.x, o.z, 0.35)) { o.h += (o.turnS || (o.turnS = Math.random() < 0.5 ? 1 : -1)) * Math.min(1, dt * 5); o.v *= 0.5; }
+    else { o.x = bx; o.z = bz; } }
   if (o.air) {
     o.vy -= 22 * dt; o.y += o.vy * dt;
     if (o.plan && !o.trick && o.vy < 5) { startTrick(o, o.plan, 1.15); o.plan = null; }
@@ -5522,7 +5615,9 @@ function gunFx(x0, y0, z0, x1, y1, z1, kind) {
 }
 /* ponta do cano da arma na mão do personagem (o tiro sai daqui) */
 function muzzlePos() {
-  const u = city.player && city.player.userData; if (!u || !u.wpM) return null;
+  const u = city.player && city.player.userData; if (!u) return null;
+  if (u.gunM && u.gunM.visible) { city.player.updateMatrixWorld(true); const D = u.gunM.userData, v = u.gunM.localToWorld(new THREE.Vector3(0, D.len > 0.5 ? 0.065 : 0.05, D.len > 0.5 ? D.len : 0.16)); return Number.isFinite(v.x) && Math.hypot(v.x - P.x, v.z - P.z) < 2.5 ? v : null; }
+  if (!u.wpM) return null;
   city.player.updateMatrixWorld(true); const k = u.wpK, off = (k === 'fuzil' || k === 'escopeta') ? new THREE.Vector3(0, 0.12, 0.86) : new THREE.Vector3(0, 0.13, 0.19);
   const v = u.wpM.localToWorld(off); return Number.isFinite(v.x) && Math.hypot(v.x - P.x, v.z - P.z) < 2.5 ? v : null;
 }
@@ -5548,7 +5643,12 @@ function shootGun(G) {
 }
 function onPeerShot(d) {
   if (!NET.user || d.to !== NET.user.id) return;
-  if (P.drive || P.down) return; city.lastShooter = d.id; shootoutNear(P.x, P.z); hurt(d.dmg || 25, `tiro de ${d.by}`); if (P.down) return; P.fallT = Math.max(P.fallT, 1.2); P.v = 0; toast(`${d.by} acertou você! Vida ${Math.round(P.hp)}%`, 'bad'); sfx('hit');
+  if (P.drive || P.down) return; city.lastShooter = d.id;
+  if (d.m) { hurt(d.dmg || 12, `golpe de ${d.by}`); if (P.down) return; const n = meleeCount(P); sfx('hit');
+    if (n < 3) { P.stagT = 0.6; P.v = -1.6; city.hurtFlash = Math.max(city.hurtFlash || 0, 0.3); toast(`👊 ${d.by} te acertou (${n}/3). Vida ${Math.round(P.hp)}%`, 'bad'); }
+    else { P.fallT = Math.max(P.fallT, 2); P.v = 0; toast(`👊 ${d.by} te derrubou! Vida ${Math.round(P.hp)}%`, 'bad'); }
+    return; }
+  shootoutNear(P.x, P.z); hurt(d.dmg || 25, `tiro de ${d.by}`); if (P.down) return; P.fallT = Math.max(P.fallT, 1.2); P.v = 0; toast(`${d.by} acertou você! Vida ${Math.round(P.hp)}%`, 'bad'); sfx('hit');
   if (S.mission && S.mission.type === 'job_corre') failMission('derrubaram você e levaram a encomenda.');
 }
 
@@ -6218,10 +6318,19 @@ function shootAimed(G) {
   applyShot(r.best, r.kind, G);
 }
 /* o que acontece com quem leva o tiro (usado pela mira e pelo tiro automático) */
+/* golpe (soco/faca): o 1º e o 2º só desequilibram; cai no 3º (a contagem zera depois de 6 s sem apanhar) */
+function meleeCount(o) { const now = performance.now(); if (!o.hitAt || now - o.hitAt > 6000) o.hits = 0; o.hitAt = now; o.hits = (o.hits || 0) + 1; const n = o.hits; if (n >= 3) o.hits = 0; return n; }
+const STAG = { list: new Set() };
+function stagger(o) { o.stagT = 0.6; STAG.list.add(o); }
+function staggerTick(dt) {
+  for (const o of STAG.list) { o.stagT -= dt; const g = o.g; if (!g) { STAG.list.delete(o); continue; }
+    if (o.stagT <= 0 || o.fallT > 0 || o.dead) { g.rotation.x = 0; g.rotation.z = 0; STAG.list.delete(o); continue; }
+    const k = Math.sin((1 - o.stagT / 0.6) * Math.PI); g.rotation.order = 'YXZ'; g.rotation.x = -k * 0.32; g.rotation.z = Math.sin(o.stagT * 18) * 0.06 * k; }
+}
 function applyShot(best, kind, G) {
   const dmg = G.dmg || 25; shootoutNear(P.x, P.z);
   if (kind === 'peer') {
-    NET.ch && NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: best.p.id, by: S.name, k: G.knock, dmg } });
+    NET.ch && NET.ch.send({ type: 'broadcast', event: 'tiro', payload: { id: NET.user.id, to: best.p.id, by: S.name, k: G.knock, dmg, m: G.melee ? 1 : 0 } });
     dmgPop(best.p.x, (best.p.y || groundH(best.p.x, best.p.z)) + 2.1, best.p.z, dmg);
     if (!(S.shift === 'policial' && best.p.t && best.p.t.wd > 0)) addWanted(1, 'atirou em alguém'); toast(`Acertou ${best.p.name}! (-${dmg})`); return;
   }
@@ -6230,7 +6339,8 @@ function applyShot(best, kind, G) {
   // cada tiro certeiro tira vida (barrinha em cima da cabeça); com a vida zerada, morre
   if (npcDamage(best, dmg)) { feed(`💀 ${kind === 'cop' ? 'Policial' : kind === 'thug' ? 'Traficante' : 'Figurante'} morto`); if (kind === 'cop' && best.chase) best.chase = false; if (S.shift !== 'policial' && kind !== 'robber') addWanted(2, 'homicídio'); }
   else if (kind === 'cop' || kind === 'thug') { if (best.g) bubble(best.g, pick(['Ai!', 'Tô ferido!', 'Revida!']), 1.5); if (kind === 'thug') best.hostT = Math.max(best.hostT || 0, 18); }
-  else { best.fallT = G.knock + (kind === 'robber' ? 3 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2); }
+  else if (G.melee && meleeCount(best) < 3) { stagger(best); if (best.g) bubble(best.g, pick(['Ai!', 'Ei! Para!', 'Tá maluco?!', 'Para com isso!']), 1.6); }
+  else { best.fallT = G.knock + (kind === 'robber' ? 3 : 0) + (G.melee ? 0.8 : 0); if (best.g) bubble(best.g, pick(['Ai!', 'Socorro!', 'Para com isso!']), 2); }
   if (kind === 'robber') return;
   if (kind === 'cop') addWanted(2, 'atacou um policial');
   else if (kind === 'thug') { if (S.shift !== 'policial') addWanted(1, 'tiroteio no morro'); }
@@ -7684,7 +7794,7 @@ function renderBeachBar() {
 function beachPose(g) {
   g.rotation.order = 'YXZ';
   if (P.lie) { g.rotation.x = -Math.PI / 2; g.position.y = P.y + 0.16; }
-  else { g.rotation.x = 0; if (P.swim) g.position.y = P.y - 1.15; }
+  else { if (P.stagT > 0) { const k = Math.sin((1 - P.stagT / 0.6) * Math.PI); g.rotation.x = -k * 0.3; g.rotation.z = Math.sin(P.stagT * 18) * 0.05 * k; } else { g.rotation.x = 0; g.rotation.z = 0; } if (P.swim) g.position.y = P.y - 1.15; }
 }
 /* =========================================================
    TEMPO: sol, nublado, chuva e temporal com raios e trovões (o mesmo para todo mundo na cidade)
@@ -7768,7 +7878,8 @@ function updateFlying(dt, ax, blocked) {
   P.v = lerp(P.v, air ? thr * V_HELI_MAX : 0, 1 - Math.exp(-1.1 * dt));
   if (air || Math.abs(st) > 0) P.h -= st * (air ? 1.3 : 0.5) * dt;
   const RB = city.skyRoute ? 900 : 450, nx = clamp(P.x + Math.sin(P.h) * P.v * dt, -RB, RB), nz = clamp(P.z + Math.cos(P.h) * P.v * dt, -RB, RB);
-  if (air) { if (roofH(nx, nz) > P.y - 0.2) { P.v *= -0.3; } else { P.x = nx; P.z = nz; } }
+  if (air) { if (roofH(nx, nz) > P.y - 0.2 || (P.y - gnd < 7 && lowObstacle(nx, nz, 1.8))) { const sp = Math.abs(P.v); if (sp > 5 && !(d.wallT > 0)) { d.wallT = 1; sfx('hit'); toast('💥 O helicóptero bateu!', 'bad'); crashHurt(sp * 1.2, false); } P.v *= -0.3; } else { P.x = nx; P.z = nz; } }
+  d.wallT = (d.wallT || 0) - dt;
   if (!air && !d.roofMsg && P.y > 2.5) { d.roofMsg = true; toast('🚁 Pousou no telhado! Aperte Sair para descer pelo prédio.', 'pink'); } if (air) d.roofMsg = false;
   m.rotation.order = 'YXZ'; m.position.set(P.x, P.y, P.z); m.rotation.y = P.h;
   m.rotation.x = lerp(m.rotation.x, (P.v / V_HELI_MAX) * 0.22, 1 - Math.exp(-3 * dt)); m.rotation.z = lerp(m.rotation.z, air ? -st * 0.25 : 0, 1 - Math.exp(-3 * dt));
@@ -11616,13 +11727,13 @@ function meleeHit(knife) {
   const [o, kind] = best;
   setTimeout(() => {
     sfx('hit'); if (knife) noiseHit(0.08, 'highpass', 3200, 0.08);
-    const G = { dmg: knife ? 34 : 12, knock: knife ? 2 : 1.2 };
+    const G = { dmg: knife ? 34 : 12, knock: knife ? 2 : 1.2, melee: true };
     applyShot(o, kind, G);
     if (kind === 'peer') toast(`${knife ? '🔪 Facada' : '👊 Soco'} em ${o.p.name} (-${G.dmg})`);
   }, 120);
 }
 function meleeTick(dt) {
-  P.meleeCd = (P.meleeCd || 0) - dt;
+  P.meleeCd = (P.meleeCd || 0) - dt; if (P.stagT > 0) P.stagT -= dt; staggerTick(dt);
   if (P.meleeT > 0) { P.meleeT -= dt; if (!P.sport) { P.fpc = P.meleeK; P.fp = fpPose(P.meleeK, 1 - P.meleeT / 0.28); } if (P.meleeT <= 0 && !P.sport) { P.fp = null; P.fpc = 0; } }
 }
 const myKnife = () => S.equip && S.equip.gun === 'gun_faca' && S.owned.includes('gun_faca');
@@ -12572,8 +12683,11 @@ function updateFlyingPlane(dt, ax, blocked) {
   P.y = clamp(P.y + d.vy * dt, gnd, 260); if (P.y - gnd > 2) d.flew = true; if (P.y <= gnd + 0.001) { d.vy = Math.max(0, d.vy); if (d.flew) { d.flew = false; const A = city.airport, rw = A && Math.abs(P.x - A.rx) < 15.5 && Math.abs(P.z) < 136; if (rw) { P.v *= 0.7; toast('🛬 Pouso perfeito na pista!', 'good'); landClear(); } else { P.v = 0; P.hp = Math.max(1, P.hp - 25); try { renderHp(); } catch (e) { } sfx('hit'); toast('💥 Pouso forçado fora da pista! Avião tem que pousar na pista do aeroporto.', 'bad'); } } }
   P.h -= st * (air ? 0.7 : 0.35 * clamp(P.v / 8, 0, 1)) * dt;
   if (air && city.tour) { city.tour = null; city.tourSpots = null; city.zoom = 1.6; }
-  const R = city.skyRoute ? 900 : 700;
-  P.x = clamp(P.x + Math.sin(P.h) * P.v * dt, -R, R); P.z = clamp(P.z + Math.cos(P.h) * P.v * dt, -R, R);
+  const R = city.skyRoute ? 900 : 700, pnx = clamp(P.x + Math.sin(P.h) * P.v * dt, -R, R), pnz = clamp(P.z + Math.cos(P.h) * P.v * dt, -R, R);
+  if (P.v > 0.5 && (roofH(pnx, pnz) > P.y - 0.4 || (P.y - gnd < 7 && lowObstacle(pnx, pnz, 2.2)))) {
+    const sp = P.v; P.v = 0; d.vy = 0; if (!(d.wallT > 0)) { d.wallT = 1.5; sfx('hit'); noiseHit(0.4, 'lowpass', 900, 0.4); toast(sp > 20 ? '💥 O avião bateu! Você se machucou.' : '💥 O avião encostou no obstáculo.', 'bad'); crashHurt(sp, false); city.hurtFlash = 0.6; P.x -= Math.sin(P.h) * 0.6; P.z -= Math.cos(P.h) * 0.6; }
+  } else { P.x = pnx; P.z = pnz; }
+  d.wallT = (d.wallT || 0) - dt;
   m.rotation.order = 'YXZ'; m.position.set(P.x, P.y, P.z); m.rotation.y = P.h;
   m.rotation.x = lerp(m.rotation.x, -clamp(d.vy / 25, -0.4, 0.4), 1 - Math.exp(-3 * dt)); m.rotation.z = lerp(m.rotation.z, air ? -st * 0.55 : 0, 1 - Math.exp(-2.5 * dt));
   for (const pr of u.props || []) pr.rotation.z += dt * (8 + P.v * 1.5);
@@ -16645,7 +16759,7 @@ function netTick(dt, t) {
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
     const p = NET.peers[id], d = p.t; if (!d) continue;
-    const age = d.rd || Math.abs(d.v || 0) < 0.4 ? 0 : Math.min(0.35, (performance.now() - (p.tAt || 0)) / 1000), tx = d.x + Math.sin(d.h) * d.v * age, tz = d.z + Math.cos(d.h) * d.v * age; // prevê o movimento entre uma mensagem e outra
+    const age = d.rd || Math.abs(d.v || 0) < 0.4 ? 0 : Math.min(0.35, (performance.now() - (p.tAt || 0)) / 1000), tx0 = d.x + Math.sin(d.h) * d.v * age, tz0 = d.z + Math.cos(d.h) * d.v * age, wallP = age > 0 && collide(tx0, tz0, 0.3) && !collide(d.x, d.z, 0.3), tx = wallP ? d.x : tx0, tz = wallP ? d.z : tz0; // prevê o movimento entre uma mensagem e outra (sem atravessar parede)
     p.x = lerp(p.x, tx, k); p.y = lerp(p.y, d.y, k); p.z = lerp(p.z, tz, k);
     p.h += Math.atan2(Math.sin(d.h - p.h), Math.cos(d.h - p.h)) * k;
     p.g.position.set(p.x, p.y, p.z); p.g.rotation.y = p.h;
