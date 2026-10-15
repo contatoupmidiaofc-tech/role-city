@@ -758,3 +758,7 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - Segurança: se ficar baixo demais perto de uma serra, o avião sobe sozinho; se sair muito da rota, ele volta para perto da BR.
   - Chegando, você continua pilotando: o avião aparece alinhado com a pista (anéis verdes para pousar) e o helicóptero pousa onde você quiser.
   - Os voos de linha (passagem) usam o mesmo caminho, no piloto automático: dá para ir olhando a paisagem.
+
+### Build 2026.10.15-73 (Correção: avião "batendo no nada")
+  - 🐛 **O avião acusava batida o tempo todo no chão e não saía do lugar.** O teste de prédio comparava a altura do telhado (0 quando não tem prédio) com a altura do avião menos 0,4 m; com o avião na pista (a 0,06 m), dava sempre "bateu". Agora só conta prédio de verdade.
+  - 🐛 **Voando baixo, o avião e o helicóptero batiam em banco, lixeira, hidrante e poste** (o teste de quem anda a pé, num raio de 2 m, sem olhar a altura). Agora, a mais de 3 m do chão, só os prédios (pela altura do telhado) contam; rente ao chão, só paredes e casas grandes.

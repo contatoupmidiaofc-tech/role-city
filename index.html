@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-72';
+const BUILD = '2026.10.15-73';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -8019,7 +8019,7 @@ function updateFlying(dt, ax, blocked) {
   P.v = lerp(P.v, air ? thr * V_HELI_MAX : 0, 1 - Math.exp(-1.1 * dt));
   if (air || Math.abs(st) > 0) P.h -= st * (air ? 1.3 : 0.5) * dt;
   const RB = city.skyRoute ? 900 : 450, nx = clamp(P.x + Math.sin(P.h) * P.v * dt, -RB, RB), nz = clamp(P.z + Math.cos(P.h) * P.v * dt, -RB, RB);
-  if (air) { if (roofH(nx, nz) > P.y - 0.2 || (P.y - gnd < 7 && lowObstacle(nx, nz, 1.8))) { const sp = Math.abs(P.v); if (sp > 5 && !(d.wallT > 0)) { d.wallT = 1; sfx('hit'); toast('💥 O helicóptero bateu!', 'bad'); crashHurt(sp * 1.2, false); } P.v *= -0.3; } else { P.x = nx; P.z = nz; } }
+  if (air) { if (planeHit(nx, nz, P.y - gnd)) { const sp = Math.abs(P.v); if (sp > 5 && !(d.wallT > 0)) { d.wallT = 1; sfx('hit'); toast('💥 O helicóptero bateu!', 'bad'); crashHurt(sp * 1.2, false); } P.v *= -0.3; } else { P.x = nx; P.z = nz; } }
   d.wallT = (d.wallT || 0) - dt;
   if (!air && !d.roofMsg && P.y > 2.5) { d.roofMsg = true; toast('🚁 Pousou no telhado! Aperte Sair para descer pelo prédio.', 'pink'); } if (air) d.roofMsg = false;
   m.rotation.order = 'YXZ'; m.position.set(P.x, P.y, P.z); m.rotation.y = P.h;
@@ -13065,6 +13065,15 @@ function flyPlaneHere(id) {
   P.x = x + 6; P.z = z; P.y = 0.06;
   toast(`✈️ ${V.name} na cabeceira da pista. Chegue perto e aperte Ação para pilotar.`, 'pink');
 }
+/* o avião só bate no que é alto de verdade: prédios (pela altura do telhado) e, rente ao chão, paredes e casas grandes.
+   Banco, lixeira, hidrante, orelhão e poste não contam (antes contavam num raio de 2 m e acusavam batida "no nada"). */
+function planeHit(x, z, hAbove) {
+  const rh = roofH(x, z); if (rh > 0.5 && rh > P.y - 0.4) return true; // sem prédio, roofH é 0: no chão isso dava "batida" o tempo todo
+  if (hAbove > 3) return false;
+  if (typeof inInner === 'function' && !inInner(x, z)) return oColHit(x, z, 1.2);
+  for (const c of city.colliders) { if ((c.x1 - c.x0) * (c.z1 - c.z0) < 4 || c.boat) continue; if (x > c.x0 - 1.2 && x < c.x1 + 1.2 && z > c.z0 - 1.2 && z < c.z1 + 1.2 && !(c.maxY != null && P.y > c.maxY)) return true; }
+  return false;
+}
 function updateFlyingPlane(dt, ax, blocked) {
   const d = P.drive, V = d.V, m = d.m, u = m.userData, HI = HELI_IN;
   if (!d.lbl) { d.lbl = true; heliLabels(true); toast(IS_TOUCH ? '✈️ Frente acelera · Subir/Descer no manche · ◀ ▶ vira. Velocidade acima de 25 para decolar.' : '✈️ W acelera · S freia · Espaço sobe · Shift desce · A/D vira. Passe de 25 m/s para decolar.', 'pink'); }
@@ -13078,7 +13087,7 @@ function updateFlyingPlane(dt, ax, blocked) {
   P.h -= st * (air ? 0.7 : 0.35 * clamp(P.v / 8, 0, 1)) * dt;
   if (air && city.tour) { city.tour = null; city.tourSpots = null; city.zoom = 1.6; }
   const R = city.skyRoute ? 900 : 700, pnx = clamp(P.x + Math.sin(P.h) * P.v * dt, -R, R), pnz = clamp(P.z + Math.cos(P.h) * P.v * dt, -R, R);
-  if (P.v > 0.5 && (roofH(pnx, pnz) > P.y - 0.4 || (P.y - gnd < 7 && lowObstacle(pnx, pnz, 2.2)))) {
+  if (P.v > 0.5 && planeHit(pnx, pnz, P.y - gnd)) {
     const sp = P.v; P.v = 0; d.vy = 0; if (!(d.wallT > 0)) { d.wallT = 1.5; sfx('hit'); noiseHit(0.4, 'lowpass', 900, 0.4); toast(sp > 20 ? '💥 O avião bateu! Você se machucou.' : '💥 O avião encostou no obstáculo.', 'bad'); crashHurt(sp, false); city.hurtFlash = 0.6; P.x -= Math.sin(P.h) * 0.6; P.z -= Math.cos(P.h) * 0.6; }
   } else { P.x = pnx; P.z = pnz; }
   d.wallT = (d.wallT || 0) - dt;
