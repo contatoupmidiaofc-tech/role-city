@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-60';
+const BUILD = '2026.10.15-61';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2845,6 +2845,7 @@ function buildCity() {
     city.colliders.push({ x0: x - .2, x1: x + .2, z0: z - .2, z1: z + .2 });
   });
   poles.castShadow = arms.castShadow = true; sc.add(poles); sc.add(arms); sc.add(heads);
+  cityDetail(sc, ground, texCache, rng);
 
   // praça de skate
   buildPlaza(sc);
@@ -3150,6 +3151,62 @@ function updateCritters(dt, t) {
   }
 }
 
+/* ---- cidade mais real (fase 3): grão e rachaduras no chão, sujeira de chuva nas paredes, ar-condicionado, canos e bueiros ----
+   Texturas pequenas que se repetem pelo mundo (calculadas na placa de vídeo pela posição) + objetos repetidos num lote só (1 desenho cada). */
+let _det = null;
+function detTexs() {
+  if (_det) return _det; const r = mulberry32(31), mk = (w, h, fn) => { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; };
+  _det = {
+    ground: mk(256, 256, (g, w, h) => { // grão do asfalto/concreto, manchas e rachaduras
+      const id = g.createImageData(w, h); for (let i = 0; i < w * h; i++) { const v = 200 + r() * 55; id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = v; id.data[i * 4 + 3] = 255; } g.putImageData(id, 0, 0);
+      for (let k = 0; k < 16; k++) { g.globalAlpha = 0.1 + r() * 0.12; g.fillStyle = r() < 0.65 ? '#303030' : '#f0f0f0'; g.beginPath(); g.ellipse(r() * w, r() * h, 6 + r() * 30, 4 + r() * 18, r() * 3, 0, TAU); g.fill(); }
+      g.globalAlpha = 0.55; g.strokeStyle = '#3a3a3a'; g.lineWidth = 1;
+      for (let k = 0; k < 7; k++) { let x = r() * w, y = r() * h; g.beginPath(); g.moveTo(x, y); for (let q = 0; q < 9; q++) { x += (r() - 0.5) * 20; y += (r() - 0.5) * 20; g.lineTo(x, y); } g.stroke(); }
+      g.globalAlpha = 1;
+    }),
+    wall: mk(128, 256, (g, w, h) => { // escorrido de chuva e manchas de umidade
+      g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+      for (let k = 0; k < 40; k++) { const x = r() * w, len = 30 + r() * 160, y = r() * (h - len), a = 0.08 + r() * 0.22, gr = g.createLinearGradient(0, y, 0, y + len); gr.addColorStop(0, `rgba(40,40,40,${a})`); gr.addColorStop(1, 'rgba(40,40,40,0)'); g.fillStyle = gr; g.fillRect(x, y, 1 + r() * 4, len); }
+      for (let k = 0; k < 10; k++) { g.globalAlpha = 0.08 + r() * 0.1; g.fillStyle = '#404040'; g.beginPath(); g.ellipse(r() * w, r() * h, 8 + r() * 20, 10 + r() * 30, 0, 0, TAU); g.fill(); } g.globalAlpha = 1;
+    }),
+  };
+  return _det;
+}
+function detPatch(m, kind) { // injeta a textura de detalhe pela posição no mundo (não depende das coordenadas do modelo)
+  const T = detTexs();
+  m.onBeforeCompile = sh => {
+    sh.uniforms.detT = { value: kind === 'ground' ? T.ground : T.wall };
+    sh.vertexShader = 'varying vec3 vWd;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vWd = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = 'uniform sampler2D detT; varying vec3 vWd;\n' + sh.fragmentShader.replace('#include <map_fragment>', kind === 'ground'
+      ? '#include <map_fragment>\n  vec3 dg = texture2D(detT, vWd.xz * 0.21).rgb * texture2D(detT, vWd.xz * 0.029 + 0.37).rgb; diffuseColor.rgb *= clamp(dg * 1.2, 0.0, 1.12);'
+      : '#include <map_fragment>\n  float gw = texture2D(detT, vec2((vWd.x + vWd.z) * 0.07, vWd.y * 0.031)).r; diffuseColor.rgb *= (0.56 + 0.44 * gw) * (1.0 - smoothstep(3.2, 0.3, vWd.y) * 0.35);');
+  };
+  m.customProgramCacheKey = () => 'det_' + kind; m.needsUpdate = true; return m;
+}
+function cityDetail(sc, ground, wallMats, rng) {
+  try { detPatch(ground.material, 'ground'); for (const k in wallMats) detPatch(wallMats[k], 'wall'); } catch (e) { console.warn('detalhe', e); }
+  // ar-condicionado embaixo das janelas e cano de descida na quina, só nas fachadas viradas para a rua
+  const acs = [], pipes = [], Q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), M = new THREE.Matrix4(), S1 = new THREE.Vector3(1, 1, 1);
+  for (const b of city.blds || []) {
+    const sides = [[b.z1, 'z', 1], [b.z0, 'z', -1], [b.x1, 'x', 1], [b.x0, 'x', -1]];
+    for (const [e, ax, sg] of sides) {
+      const edge = ax === 'z' ? b.bz + sg * 13 : b.bx + sg * 13; if (Math.abs(e - edge) > 2.2) continue; // não é fachada de rua
+      const len = ax === 'z' ? b.x1 - b.x0 : b.z1 - b.z0, a0 = ax === 'z' ? b.x0 : b.z0, rot = ax === 'z' ? (sg > 0 ? 0 : Math.PI) : (sg > 0 ? Math.PI / 2 : -Math.PI / 2);
+      for (let fl = 1; fl * 2 + 1 < b.h - 1; fl++) for (let i = 0; i < Math.floor(len / 2); i++) { if (rng() > 0.12 || acs.length > 700) continue; const t = a0 + 1.0 + i * 2, y = fl * 2 + 0.25; acs.push(ax === 'z' ? [t, y, e + sg * 0.28, rot] : [e + sg * 0.28, y, t, rot]); }
+      if (pipes.length < 300 && rng() < 0.7) { const t = rng() < 0.5 ? a0 + 0.35 : a0 + len - 0.35; pipes.push(ax === 'z' ? [t, b.h, e + sg * 0.12] : [e + sg * 0.12, b.h, t]); }
+    }
+  }
+  if (acs.length) { const im = new THREE.InstancedMesh(boxGeo(0.85, 0.55, 0.45), lam(0xc4c7cc), acs.length); acs.forEach(([x, y, z, ro], i) => { Q.setFromAxisAngle(Y, ro); im.setMatrixAt(i, M.compose(new THREE.Vector3(x, y, z), Q, S1)); }); sc.add(im);
+    const gr = new THREE.InstancedMesh(boxGeo(0.6, 0.38, 0.02), lam(0x4a4d53), acs.length); acs.forEach(([x, y, z, ro], i) => { Q.setFromAxisAngle(Y, ro); const off = new THREE.Vector3(0, 0, 0.235).applyQuaternion(Q); gr.setMatrixAt(i, M.compose(new THREE.Vector3(x + off.x, y, z + off.z), Q, S1)); }); sc.add(gr); }
+  if (pipes.length) { const im = new THREE.InstancedMesh(CYL(0.07, 0.07, 1, 6), lam(0x6d7076), pipes.length); pipes.forEach(([x, h, z], i) => im.setMatrixAt(i, M.compose(new THREE.Vector3(x, h / 2, z), Q.identity(), new THREE.Vector3(1, h, 1)))); sc.add(im); }
+  // bueiros no meio das quadras, nas duas mãos da rua
+  if (cityId() !== 'ssa') {
+    const tex = canvasTex(64, 64, g => { g.fillStyle = '#3a3b3f'; g.beginPath(); g.arc(32, 32, 31, 0, TAU); g.fill(); g.strokeStyle = '#26272b'; g.lineWidth = 2; for (let k = -24; k <= 24; k += 6) { g.beginPath(); g.moveTo(32 + k, 4); g.lineTo(32 + k, 60); g.stroke(); g.beginPath(); g.moveTo(4, 32 + k); g.lineTo(60, 32 + k); g.stroke(); } g.strokeStyle = '#55575c'; g.lineWidth = 3; g.beginPath(); g.arc(32, 32, 29, 0, TAU); g.stroke(); });
+    const pts = []; for (const rr of ROADS) for (const bk of BLOCKS) { pts.push([bk + 5, rr + 2.6]); pts.push([rr - 2.6, bk - 5]); }
+    const im = new THREE.InstancedMesh(new THREE.CircleGeometry(0.5, 14).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: tex, polygonOffset: true, polygonOffsetFactor: -1 }), pts.length);
+    pts.forEach(([x, z], i) => im.setMatrixAt(i, M.makeTranslation(x, 0.015, z))); im.receiveShadow = true; sc.add(im);
+  }
+}
 /* ---- dia e noite (relógio global: todos os jogadores veem a mesma hora) ---- */
 function buildDayNight(sc) {
   const dn = city.dn = { night: 0, hour: 12 };

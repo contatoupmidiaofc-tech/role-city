@@ -615,3 +615,11 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - O Barbeiro também pode fazer ou tirar a barba ($ 25).
     - Alguns figurantes da rua agora têm barba.
   - 🙂 **Formato do rosto:** Fino, Normal ou Largo, em Perfil → Aparência. Todo mundo vê.
+
+### Build 2026.10.15-61 (Gráficos, fase 3: cidade)
+  - 🛣️ **Asfalto com textura:** grão fino, manchas de desgaste e rachaduras, em duas escalas para não aparecer repetição.
+  - 🧱 **Paredes com marcas de chuva:** escorridos verticais e a base das paredes mais suja, perto da calçada.
+  - ❄️ **Ar-condicionado nas fachadas:** aparelhos com grade embaixo das janelas que dão para a rua.
+  - 🚰 **Calhas** descendo pelos prédios.
+  - ⚫ **Bueiros** nas ruas.
+  - ⚡ **Desempenho:** tudo é feito de um jeito leve, com uma textura pequena aplicada direto pela placa de vídeo e os objetos desenhados em lote. A cidade inteira ganhou só +3 chamadas de desenho (466 → 469).
