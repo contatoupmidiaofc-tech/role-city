@@ -843,3 +843,7 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 🟫 **Pisos de verdade:** madeira escura nas casas, lojas de roupa, skate, móveis, imobiliária e estúdio; **porcelanato cinza escuro** nas lojas de celular, tokens, concessionária e rodoviária; **granito** no banco, prefeitura, delegacia e agência; **xadrez preto e bege** nos bares, brega e sorveteria; **cimento queimado** na oficina, loja de armas e garagem; **terracota** em outros comércios.
   - O teto deixou de ser branco puro (creme), o guarda-roupa da casa virou madeira, e as fachadas brancas de casas no bairro, no Rio e em Salvador viraram cores (terracota e verde-água).
   - Quem quiser ainda pode mudar a cor das paredes no **🛋️ Decorar**.
+
+### Build 2026.10.15-85 (Paredes com cor forte de verdade)
+  - 🎨 **Paredes bem mais fortes:** a luz da cidade também entrava nas salas e deixava qualquer tinta clarinha. Agora a tinta é compensada e a cor aparece forte como deveria (vinho na Drip Store, azul forte na CelZap, verde, terracota, azul petróleo, mostarda, vinho... nas casas).
+  - Vale também para as cores escolhidas no **🛋️ Decorar**: a cor que você escolhe é a que aparece na parede.

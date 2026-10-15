@@ -771,7 +771,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-84';
+const BUILD = '2026.10.15-85';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -4407,13 +4407,13 @@ function buildInterior(hid) {
   // piso de madeira, paredes, rodapé e teto
   const wt = woodTex().clone(); wt.needsUpdate = true; wt.wrapS = wt.wrapT = THREE.RepeatWrapping; wt.repeat.set(W / 3, D / 3);
   const floor = add(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ color: 0xa07a58, map: wt, roughness: 0.5 }), 0, 0.01, 0); floor.rotation.x = -Math.PI / 2;
-  const wallC = { quarto: 0xc9875f, kitnet: 0x6f9a8a, casa: 0xb98a5a, mansao: 0x8e6a7a }[hid] || 0xc9875f; it.wallM = null; const wm = new THREE.MeshStandardMaterial({ color: wallC, roughness: 0.95, side: THREE.DoubleSide });
+  const wallC = { quarto: 0xb5653a, kitnet: 0x3f7f6a, casa: 0xa86a32, mansao: 0x7a3f5a }[hid] || 0xb5653a; it.wallM = null; const wm = new THREE.MeshStandardMaterial({ color: new THREE.Color(wallC).multiplyScalar(WALL_K), roughness: 0.95, side: THREE.DoubleSide, envMapIntensity: 0.15 });
   for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [0, D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) { add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry); box(ry ? 0.04 : w, 0.12, ry ? w : 0.04, 0xf2f2f0, x * 0.995, 0.06, z * 0.995); }
   col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
   const ceil = add(new THREE.PlaneGeometry(W, D), std(0xd8d0c4, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
   const lampM = new THREE.MeshBasicMaterial({ color: 0xfff4d8 }); add(CYL(0.35, 0.35, 0.06, 16), lampM, 0, H - 0.04, 0);
   const light = roomFill(); light.position.set(0, H - 0.4, 0); g.add(light);
-  const amb = poolHemi(0xfff6ea, 0x6a5a48, 1.05); amb.position.set(0, H, 0); g.add(amb);
+  const amb = poolHemi(0xfff6ea, 0x6a5a48, 0.55); amb.position.set(0, H, 0); g.add(amb);
   // janelas com vista (claras de dia, escuras à noite)
   it.winM = new THREE.MeshBasicMaterial({ color: 0xbfe3ff });
   for (const x of [-W / 4, W / 4]) { add(new THREE.PlaneGeometry(1.4, 1.1), it.winM, x, 1.7, -D / 2 + 0.02); box(1.55, 0.08, 0.08, 0xffffff, x, 1.15, -D / 2 + 0.05); box(1.55, 0.08, 0.08, 0xffffff, x, 2.25, -D / 2 + 0.05); box(0.06, 1.1, 0.06, 0xffffff, x, 1.7, -D / 2 + 0.05); }
@@ -6964,10 +6964,13 @@ const floorFor = k => SHOP_FLOOR[k] || ['terra', 'porc', 'cimento', 'granito'][(
 let _tileT = null;
 function tileTex() { return _tileT || (_tileT = (() => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#d8d3c8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2; for (let k = 0; k <= w; k += 32) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })()); }
 /* cor da parede do comércio: a cor da marca puxada para um tom médio (nada de parede branca) */
+/* as luzes da cidade também entram nas salas e clareiam a tinta: a parede recebe a cor já escurecida para aparecer como a cor escolhida */
+const WALL_K = 0.3;
+function paintWall(m, hex) { if (m) m.color.set(hex).multiplyScalar(WALL_K); }
 function shopWallColor(c, k) {
-  if (k === 'igreja') return new THREE.Color(0xd9c7a0);
-  const col = new THREE.Color(c).lerp(new THREE.Color(0x9a8e7c), k.startsWith('mansao') ? 0.15 : 0.4), hsl = {}; col.getHSL(hsl);
-  if (hsl.l > 0.62) col.setHSL(hsl.h, Math.max(hsl.s, 0.35), 0.58); if (hsl.l < 0.28) col.setHSL(hsl.h, hsl.s, 0.34); return col;
+  if (k === 'igreja') return new THREE.Color(0xc4a46a);
+  const col = new THREE.Color(c).lerp(new THREE.Color(0x7a6e5c), 0.15), hsl = {}; col.getHSL(hsl);
+  col.setHSL(hsl.h, Math.max(hsl.s, 0.5), clamp(hsl.l, 0.3, 0.46)); return col;
 }
 function buildShopInterior(d) {
   const k = d.kind, BT = k === 'biz' && d.biz ? (BIZ_TYPES[d.biz.tipo] || BIZ_TYPES.loja) : null, info = BT ? { color: BT.c, label: `${BT.i} ${d.biz.nome}`, css: '#' + BT.c.toString(16).padStart(6, '0') } : k.startsWith('mansao') ? { color: k === 'mansao4' ? 0xff8fc8 : 0xffc83d, label: MANSAO_FLOORS[+k.slice(6) - 1] || '👧 Quarto das meninas', css: k === 'mansao4' ? '#ff8fc8' : '#ffc83d' } : Object.values(SPECIAL).find(s => s.kind === k) || (typeof EXTRA_SHOPS !== 'undefined' && EXTRA_SHOPS[k]) || { color: 0xcccccc, label: d.label };
@@ -6983,12 +6986,12 @@ function buildShopInterior(d) {
   // piso, paredes com a cor da loja, teto e luz
   const floorT = floorTex(floorFor(k)).clone(); floorT.needsUpdate = true; floorT.repeat.set(W / 4, D / 4);
   const wood = ['roupas', 'skate', 'igreja', 'imobiliaria', 'moveis', 'estudio'].includes(k) || k.startsWith('mansao'), fl = add(new THREE.PlaneGeometry(W, D), wood ? new THREE.MeshStandardMaterial({ color: 0x9a7656, map: (() => { const t = woodTex().clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W / 3, D / 3); return t; })(), roughness: 0.55 }) : floorT ? new THREE.MeshStandardMaterial({ map: floorT, roughness: 0.5 }) : std(0x6d717a, 0.9), 0, 0.01, 0); fl.rotation.x = -Math.PI / 2;
-  const wc = shopWallColor(info.color, k), wm = new THREE.MeshStandardMaterial({ color: wc, roughness: 0.95, side: THREE.DoubleSide });
+  const wc = shopWallColor(info.color, k).multiplyScalar(WALL_K), wm = new THREE.MeshStandardMaterial({ color: wc, roughness: 0.95, side: THREE.DoubleSide, envMapIntensity: 0.15 });
   for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [0, D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry);
   col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
   const ceil = add(new THREE.PlaneGeometry(W, D), std(0xcfc8bc, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
   for (const x of [-W / 4, W / 4]) for (const z of [-D / 4, D / 4]) add(boxGeo(1.2, 0.05, 0.3), new THREE.MeshBasicMaterial({ color: 0xfffbea }), x, H - 0.03, z);
-  const lt = roomFill(); lt.position.set(0, H - 0.4, 0); g.add(lt); g.add(poolHemi(0xffffff, 0x7a6a5a, 1.2));
+  const lt = roomFill(); lt.position.set(0, H - 0.4, 0); g.add(lt); g.add(poolHemi(0xffffff, 0x7a6a5a, 0.6));
   box(1.6, 2.4, 0.1, 0x6b4a2f, 0, 1.2, D / 2 - 0.06); // porta
   const sign = textSprite(info.label.toUpperCase(), { bg: info.css || '#15161a', fg: '#15161a', size: 54, scale: [Math.min(W * 0.5, 7), 0.9, 1] }); sign.position.set(0, H - 0.8, -D / 2 + 0.12); g.add(sign);
   spot('Sair', 0, D / 2 - 0.9, exitShop);
@@ -12732,7 +12735,7 @@ const decoData = key => { S.deco = S.deco || {}; return S.deco[key] = S.deco[key
 function decoApply(room, data, base) {
   if (!room || !data) return; if (room.decoG) { room.g.remove(room.decoG); city.colliders = city.colliders.filter(c => !c.deco); }
   const G = room.decoG = new THREE.Group(); room.g.add(G);
-  if (data.wall != null && room.wallM) room.wallM.color.setHex(data.wall);
+  if (data.wall != null && room.wallM) paintWall(room.wallM, data.wall);
   for (const p of data.items || []) { const D = FURN[p.id]; if (!D) continue; const m = furnMesh(p.id); m.position.set(p.x, p.y || 0, p.z); m.rotation.y = p.r || 0; G.add(m);
     if (!D.wall && !D.flat && D.w) { const s = Math.abs(Math.sin(p.r || 0)) > 0.5, w = s ? D.d : D.w, d = s ? D.w : D.d; city.colliders.push({ x0: base.x + p.x - w / 2, x1: base.x + p.x + w / 2, z0: base.z + p.z - d / 2, z1: base.z + p.z + d / 2, deco: true, inside: !!city.interior, shop: !!city.shopIn }); } }
 }
@@ -12802,8 +12805,8 @@ EXTRA_INT.moveis = (h) => {
 
 const bizDecoKey = b => 'biz:' + (b.id || b.slot || b.nome);
 /* cor padrão diferente em cada casa (antes de o dono escolher) */
-const HOUSE_WALLS = [0xc9875f, 0x7a9e7e, 0x5f7f9f, 0xd2a24c, 0x9a5a66, 0xb07d5a, 0x7d8a5a, 0x8f7fb0, 0x5f9a96, 0xc0706a];
-function decoDefaultWall(it, key) { if (!it || !it.wallM || !key) return; let h = 0; for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; it.wallM.color.setHex(HOUSE_WALLS[h % HOUSE_WALLS.length]); }
+const HOUSE_WALLS = [0xb5653a, 0x4f8a5a, 0x2f5f8f, 0xc98f1f, 0x8a2f45, 0x9a5a2a, 0x5f7a2f, 0x6a4f9a, 0x2f8a85, 0xb5463f];
+function decoDefaultWall(it, key) { if (!it || !it.wallM || !key) return; let h = 0; for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; paintWall(it.wallM, HOUSE_WALLS[h % HOUSE_WALLS.length]); }
 /* entrando em casa: aplica a decoração salva (ou a cor padrão daquela casa) */
 function decoEnter() {
   const it = city.interior; if (!it) return; if (city.casaOut && city.casaOut.key) decoDefaultWall(it, city.casaOut.key);
