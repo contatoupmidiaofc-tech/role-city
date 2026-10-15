@@ -799,3 +799,10 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 📱 **Os chamados agora são pelo celular:** o botão "Chamados" saiu da tela. Para pedir polícia, SAMU, bombeiros, táxi, mecânico etc., abra o **celular** e toque no app **📞 Chamados** (no celular simples, opção "3 Chamados (190, 192, 193...)"). Quando chega um chamado novo para a sua profissão, a **bolinha vermelha aparece no botão do celular**.
   - 🍻 **Bares, brega e sorveteria só no mapa:** o atalho "Bares e Brega" saiu da tela. No **mapa** eles aparecem com ícone e nome; tocando neles no mapa, o GPS leva até a porta.
   - Os avisos do jogo agora dizem "📱 Celular › Chamados" em vez do botão antigo.
+
+### Build 2026.10.15-79 (Conversa por voz: fone liga e desliga)
+  - 🎧 **Botão Fone** sempre na tela (canto direito, embaixo do ☰): **toque uma vez e ele fica ligado** — você fala e ouve ao vivo quem também está com o fone ligado na mesma cidade, sem precisar ficar segurando nada. **Toque de novo e desliga**: você fica mudo e sai da conversa (o microfone é desligado de verdade).
+  - O botão fica **verde** quando ligado e mostra com quantas pessoas você está conectado (ex.: "Fone · 2").
+  - **Volume pela distância**, como na vida real: perto se ouve alto, longe vai sumindo (a partir de uns 80 m não se ouve mais).
+  - Ligação direta entre os aparelhos (WebRTC); o som não passa por servidor. Precisa permitir o microfone no navegador. Em algumas redes (certas redes 4G ou de empresa) a ligação direta pode não conectar; o jogo avisa quando isso acontece.
+  - Mudando de cidade, o fone desliga sozinho (é só ligar de novo lá). O botão antigo de **segurar para mandar áudio** continua no menu ☰.

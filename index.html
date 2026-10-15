@@ -217,6 +217,8 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #mic-rec{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translateX(-50%);z-index:30;background:rgba(21,22,26,.92);border:2px solid #ff5a5a;border-radius:999px;padding:8px 16px;font-family:var(--cond);font-weight:700;text-transform:uppercase;display:flex;gap:8px;align-items:center;pointer-events:none}
 #mic-rec i{width:12px;height:12px;border-radius:50%;background:#ff5a5a;animation:blink .8s steps(1) infinite}
 .hud-btn.rec{border-color:#ff5a5a;background:rgba(200,30,40,.9)}
+.hud-btn.vc-on{border-color:#3ddc84;background:rgba(30,140,80,.92)}
+#hb-fone{position:fixed;top:calc(env(safe-area-inset-top) + 64px);right:calc(env(safe-area-inset-right) + 12px);z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;height:48px;padding:2px 6px}#hb-fone .lbl{font-size:9px;line-height:1}
 .install-btn{width:100%;margin:6px 0 10px}
 #crosshair{position:fixed;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;color:#fff;filter:drop-shadow(0 0 2px #000);pointer-events:none;z-index:14}
 #crosshair.hit{color:#ff4040}
@@ -670,6 +672,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" data-act="face-cam" aria-label="Câmera de rosto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="lbl">Rosto</span></button>
     <button class="hud-btn" data-act="open-config" aria-label="Configurações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
   </div>
+  <button class="hud-btn" id="hb-fone" data-act="vc-toggle" aria-label="Fone: conversa por voz (liga e desliga)" aria-pressed="false"><span style="font-size:17px">🎧</span><span class="lbl">Fone</span></button>
   <div id="mission-box" hidden></div>
   <div id="jail-box" hidden></div>
   <div id="waypoint" hidden><svg viewBox="0 0 40 40"><path d="M20 3 34 34 20 26 6 34Z" fill="#ffcf3a" stroke="#15161a" stroke-width="2.5" stroke-linejoin="round"/></svg><span id="wp-dist"></span></div>
@@ -768,7 +771,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-78';
+const BUILD = '2026.10.15-79';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -15711,6 +15714,7 @@ function act(a, ds, el) {
     case 'boat-buy': boatBuy(ds.id, ds.cur); break;
     case 'boat-rent': boatRent(); break;
     case 'kid-wear': kidWear(+ds.i, +ds.l); break;
+    case 'vc-toggle': vcToggle(); break;
     case 'mil-op': milOpOpen(ds.t); break;
     case 'mil-join': milOpJoin(); break;
     case 'mil-leave': milOpLeave(); break;
@@ -17867,7 +17871,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
-    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 'mil' }, ({ payload }) => onMil(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'samu_emb' }, ({ payload }) => onSamuEmb(payload)).on('broadcast', { event: 'samu_hosp' }, ({ payload }) => onSamuHosp(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 'mil' }, ({ payload }) => onMil(payload)).on('broadcast', { event: 'vc' }, ({ payload }) => onVC(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'samu_emb' }, ({ payload }) => onSamuEmb(payload)).on('broadcast', { event: 'samu_hosp' }, ({ payload }) => onSamuHosp(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
@@ -17980,6 +17984,56 @@ function onPeerVoice(d) {
     el.addEventListener('mouseup', () => voiceStop()); el.addEventListener('mouseleave', () => voiceStop());
   }
 })();
+/* ---------------- CONVERSA POR VOZ (fone): toque para ligar e falar/ouvir ao vivo com quem também está de fone ligado;
+   toque de novo para desligar (fica mudo). Ligação direta entre os aparelhos (WebRTC); o volume diminui com a distância. ---------------- */
+const VC = { on: false, st: null, pcs: {}, city: null, warned: {} };
+const VC_ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+const vcSend = (k, d) => ccSend0('vc', Object.assign({ k, from: ccMe(), c: cityId(), name: S.name }, d));
+function vcBtn() { const b = $('hb-fone'); if (!b) return; const n = Object.values(VC.pcs).filter(x => x.ok).length; b.classList.toggle('vc-on', VC.on); b.querySelector('.lbl').textContent = VC.on ? (n ? `Fone · ${n}` : 'Fone ligado') : 'Fone'; b.setAttribute('aria-pressed', VC.on); }
+async function vcToggle() {
+  if (VC.on) return vcOff(false);
+  if (!NET.user || !NET.online) return toast('Entre com sua conta e fique online para conversar por voz.', 'bad');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.RTCPeerConnection) return toast('Seu navegador não deixa conversar por voz.', 'bad');
+  try { VC.st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+  catch (e) { return toast('Sem permissão para o microfone. Libere o microfone nas configurações do navegador.', 'bad'); }
+  VC.on = true; VC.city = cityId(); vcBtn(); sfx('ui');
+  toast('🎧 Fone ligado! Quem também está de fone ligado perto de você te ouve e você ouve. Toque de novo para desligar.', 'good');
+  vcSend('hi', {});
+}
+function vcOff(silent) {
+  if (!VC.on) return; VC.on = false; for (const id in VC.pcs) vcClose(id); if (VC.st) VC.st.getTracks().forEach(t => t.stop()); VC.st = null;
+  vcSend('bye', {}); vcBtn(); if (!silent) { sfx('ui'); toast('🔇 Fone desligado: você ficou mudo e saiu da conversa.', 'pink'); }
+}
+function vcClose(id) { const x = VC.pcs[id]; if (!x) return; try { x.pc.close(); } catch (e) { } if (x.a) { x.a.srcObject = null; x.a.remove(); } delete VC.pcs[id]; vcBtn(); }
+function vcPc(id, name) {
+  if (VC.pcs[id]) return VC.pcs[id];
+  const pc = new RTCPeerConnection({ iceServers: VC_ICE }), x = VC.pcs[id] = { pc, q: [], name: name || 'alguém', ok: false };
+  for (const t of VC.st.getTracks()) pc.addTrack(t, VC.st);
+  pc.onicecandidate = e => { if (e.candidate) vcSend('ice', { to: id, cand: e.candidate.toJSON() }); };
+  pc.ontrack = e => { if (!x.a) { x.a = document.createElement('audio'); x.a.autoplay = true; x.a.playsInline = true; x.a.style.display = 'none'; document.body.appendChild(x.a); } x.a.srcObject = e.streams[0] || new MediaStream([e.track]); x.a.play().catch(() => { }); };
+  pc.onconnectionstatechange = () => { const s = pc.connectionState; if (s === 'connected') { x.ok = true; vcBtn(); if (!x.said) { x.said = 1; feed(`🎧 Conversando por voz com ${x.name}`); } } else if (s === 'failed') { if (!VC.warned[id]) { VC.warned[id] = 1; toast(`🎧 Não deu para conectar a voz com ${x.name} (a rede de um dos dois bloqueia).`, 'bad'); } vcClose(id); } else if (s === 'closed' || s === 'disconnected') { x.ok = false; vcBtn(); } };
+  return x;
+}
+async function vcFlush(x) { for (const c of x.q.splice(0)) try { await x.pc.addIceCandidate(c); } catch (e) { } }
+async function vcCall(id, name) { const x = vcPc(id, name); if (ccMe() < id && !x.offered) { x.offered = true; const o = await x.pc.createOffer(); await x.pc.setLocalDescription(o); vcSend('offer', { to: id, sdp: x.pc.localDescription.toJSON() }); } }
+async function onVC(d) {
+  if (!d || !S || !VC.on || d.c !== cityId() || d.from === ccMe() || (d.to && d.to !== ccMe())) return;
+  try {
+    if (d.k === 'hi' || d.k === 'hi2') { if (d.k === 'hi') vcSend('hi2', { to: d.from }); await vcCall(d.from, d.name); }
+    else if (d.k === 'offer') { const x = vcPc(d.from, d.name); await x.pc.setRemoteDescription(d.sdp); await vcFlush(x); const a = await x.pc.createAnswer(); await x.pc.setLocalDescription(a); vcSend('answer', { to: d.from, sdp: x.pc.localDescription.toJSON() }); }
+    else if (d.k === 'answer') { const x = VC.pcs[d.from]; if (x) { await x.pc.setRemoteDescription(d.sdp); await vcFlush(x); } }
+    else if (d.k === 'ice') { const x = VC.pcs[d.from] || vcPc(d.from, d.name); if (x.pc.remoteDescription) await x.pc.addIceCandidate(d.cand).catch(() => { }); else x.q.push(d.cand); }
+    else if (d.k === 'bye') vcClose(d.from);
+  } catch (e) { console.warn('voz', e); }
+}
+/* volume pela distância (perto = alto, longe some) e quem saiu da cidade sai da conversa */
+function vcTick() {
+  if (!VC.on) return; if (VC.city !== cityId() || !NET.online) { vcOff(true); toast('🎧 O fone desligou porque você mudou de lugar. Toque de novo para conversar aqui.', 'pink'); return; }
+  for (const id in VC.pcs) { const x = VC.pcs[id], p = NET.peers[id]; if (!p) { x.gone = (x.gone || 0) + 1; if (x.gone > 40) vcClose(id); continue; } x.gone = 0;
+    if (x.a) { const dd = Math.hypot(p.x - P.x, p.z - P.z); x.a.volume = dd < 10 ? 1 : dd > 80 ? 0 : 1 - (dd - 10) / 70; }
+  }
+}
+setInterval(() => { try { vcTick(); } catch (e) { } }, 250);
 /* chamado todo quadro na cidade: envia posição ~8x por segundo e anima quem está online */
 /* ---- economia do online: a posição vai menos vezes, só quando muda, e em ritmo rápido só para quem está na mesma área da cidade ----
    Cada mensagem recebida por cada jogador conta no plano do Supabase; parado = 1 a cada 2,5 s; andando = 4 por segundo só para a vizinhança. */
