@@ -847,3 +847,11 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
 ### Build 2026.10.15-85 (Paredes com cor forte de verdade)
   - 🎨 **Paredes bem mais fortes:** a luz da cidade também entrava nas salas e deixava qualquer tinta clarinha. Agora a tinta é compensada e a cor aparece forte como deveria (vinho na Drip Store, azul forte na CelZap, verde, terracota, azul petróleo, mostarda, vinho... nas casas).
   - Vale também para as cores escolhidas no **🛋️ Decorar**: a cor que você escolhe é a que aparece na parede.
+
+### Build 2026.10.15-86 (Quartel e Base Naval por dentro: recepção, inteligência e celas federais)
+  - 🪖⚓ **Agora dá para entrar** no Quartel do Exército e na Base Naval da Marinha. Por dentro, como as bases militares dos servidores de RP:
+    - **Recepção (portaria):** balcão com o **Cabo da Guarda** (é onde se entra em serviço, pega missões e vê a carreira), **detector de metais** na entrada (a luz fica vermelha se a pessoa passa armada), catraca, cadeiras de espera, bandeira do Brasil, brasão e quadro de avisos.
+    - **Sala de briefing:** mesa comprida com cadeiras e **telão com o mapa tático** da cidade (abre as operações).
+    - **🛰️ Sala de Inteligência (acesso restrito):** parede de vidro, terminais com 3 monitores, telão de situação, **quadro de investigação** (fotos ligadas por fio vermelho), servidores e um analista. **Só militar em serviço (e o ADM) entra**; quem não é, é barrado na porta. O computador mostra os **procurados online** com estrelas, distância e GPS, os presos federais da base e a operação em andamento.
+    - **⛓️ Celas para presos federais:** 3 celas com grade e fechadura, iguais às da Delegacia.
+  - 🚨 **Militar em serviço também aborda e prende** (como a polícia): aborda, pede documento, revista, algema e leva até as **celas federais** do quartel/base (o GPS marca). O preso federal pega **pena 50% maior** e o militar ganha o pagamento da própria carreira (conta como missão do dia).

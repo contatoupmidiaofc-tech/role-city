@@ -771,7 +771,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-85';
+const BUILD = '2026.10.15-86';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -4741,7 +4741,7 @@ function updateCity(dt, t) {
   // céu e sol acompanham
   city.sky.position.copy(camera.position);
   for (const c of city.clouds.children) { c.position.x += c.userData.v * dt; if (c.position.x > 340) c.position.x = -340; }
-  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); updateShopIn(dt, t); hospTick(dt, t); try { ofiTick(dt, t); } catch (e) { console.warn('oficina', e); } updatePolice(dt, t); updateBeach(dt, t); updateWeather(dt, t); updateLife(dt, t); updateRP20(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
+  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); try { milBaseTick(dt); } catch (e) { } updateHealth(dt); updateShopIn(dt, t); hospTick(dt, t); try { ofiTick(dt, t); } catch (e) { console.warn('oficina', e); } updatePolice(dt, t); updateBeach(dt, t); updateWeather(dt, t); updateLife(dt, t); updateRP20(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
   const sd = city.dn ? city.dn.sunDir : [40, 80, 30]; city.sun.position.set(P.x + sd[0], sd[1], P.z + sd[2]); city.sun.target.position.set(P.x, 0, P.z);
   for (const d of city.doors) if (d.ring) d.ring.rotation.y += dt;
   updateHomeDoor(dt); if (city.seaTex) { city.seaTex.offset.x += dt * 0.01; city.seaTex.offset.y += dt * 0.02; city.foam.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.3; }
@@ -4810,7 +4810,7 @@ function updateCity(dt, t) {
   if (city.myVeh && !P.drive) { const k = Math.hypot(city.myVeh.x - P.x, city.myVeh.z - P.z); if (k < (city.myVeh.V.heli || city.myVeh.V.plane ? 6.5 : 3.6) && k < nd + 0.5) { nd = k; near = { type: 'veh' }; } }
   if (!P.drive && !P.ride) for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen || (p.t.rm || '') !== roomKey()) continue; const k = Math.hypot(p.x - P.x, p.z - P.z);
     if (p.t.vh && S.shift !== 'policial' && k < 3.8 && k < nd + 0.5) { nd = k; near = { type: 'carona', p }; }
-    else if (S.shift === 'policial' && !city.abord && !p.adm && k < (p.t.vh ? 4 : 3) && k < nd + 0.5) { nd = k; near = { type: 'abordarP', p }; } }
+    else if ((S.shift === 'policial' || milOn()) && !city.abord && !p.adm && k < (p.t.vh ? 4 : 3) && k < nd + 0.5) { nd = k; near = { type: 'abordarP', p }; } }
   if (city.hospIn) { const k = Math.hypot(HOSP.x - P.x, HOSP.z + HOSP.D / 2 - 1 - P.z); if (k < 2.5) { nd = k; near = { type: 'hospexit' }; } }
   if (city.tourSpots) for (const sp of city.tourSpots) { const k = Math.hypot(sp.x - P.x, sp.z - P.z); if (k < 2 && k < nd) { nd = k; near = { type: 'shopspot', s: sp }; } }
   if (city.shopIn) for (const sp of city.shopIn.spots) { const k = Math.hypot(sp.x - P.x, sp.z - P.z); if (k < (sp.label === 'Sair' ? 1.3 : 2.1) && k < nd) { nd = k; near = { type: 'shopspot', s: sp }; } }
@@ -4818,7 +4818,7 @@ function updateCity(dt, t) {
   if (['entregador', 'motoboy'].includes(S.shift) && typeof CC !== 'undefined' && CC.take && CC.take.c.svc === 'entrega' && CC.take.ph === 'cliente' && !CC.take.arr) { const p = NET.peers[CC.take.c.from]; if (p && Math.hypot(p.x - P.x, p.z - P.z) < (P.drive ? 4 : 2.8)) { near = { type: 'entregar', p: Object.assign({}, p, { name: CC.take.c.name }) }; nd = 0; } }
   if (S.shift === 'socorrista' && !P.drive) for (const id in NET.peers) { const p = NET.peers[id]; if (p.t && p.t.dn && Math.hypot(p.x - P.x, p.z - P.z) < 2.6) { near = { type: 'socorrer', p }; nd = 0; } }
   if (!P.drive && !P.ride && !(P.jailT > 0)) {
-    if (S.shift === 'policial') { if (!city.abord) { for (const o of abordCandidates()) { const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.6 && k < nd) { nd = k; near = { type: 'abordar', o }; } } } else if (!city.shopIn) { const tp = abordTarget(city.abord); if (tp && Math.hypot(tp.x - P.x, tp.z - P.z) < 3) { nd = 0; near = { type: 'abordPanel' }; } } }
+    if (S.shift === 'policial' || milOn()) { if (!city.abord) { for (const o of abordCandidates()) { const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.6 && k < nd) { nd = k; near = { type: 'abordar', o }; } } } else if (!city.shopIn) { const tp = abordTarget(city.abord); if (tp && Math.hypot(tp.x - P.x, tp.z - P.z) < 3) { nd = 0; near = { type: 'abordPanel' }; } } }
     else if (myGun()) { for (const o of [...city.peds, ...city.bots]) { if (o.off || o.role || o.fallT > 0) continue; const k = Math.hypot(o.x - P.x, o.z - P.z); if (k < 2.2 && k < nd) { nd = k; near = { type: 'assalto', o }; } }
       for (const id in NET.peers) { const p = NET.peers[id]; if (!p.t || !p.seen || p.t.vh) continue; const k = Math.hypot(p.x - P.x, p.z - P.z); if (k < 2.2 && k < nd) { nd = k; near = { type: 'assaltoP', p }; } } }
   }
@@ -5139,6 +5139,7 @@ function interact(n) {
     const k = n.d.kind;
     if (k === 'mansao') { enterMansion(n.d); return; }
     if (k === 'hangar') { openPanel('hangar'); return; }
+    if ((k === 'quartel' || k === 'naval') && !n.d.inside) { enterShop(Object.assign({}, n.d, { kind: k === 'quartel' ? 'base_ex' : 'base_mar', label: n.d.label, out: [P.x, P.z, P.h + Math.PI] })); return; }
     if (k === 'elevadorCasa') { goHomePad(); return; }
     if (k === 'biz' && !n.d.inside) { enterBiz(n.d); return; }
     if (k === 'hospital' && !n.d.inside) { enterHospital(); return; }
@@ -5775,9 +5776,9 @@ function updateWanted(dt) {
   if (P.wanted > 0 && !carrying) { P.wantedCalm = (P.wantedCalm || 45) - dt; if (P.wantedCalm <= 0) { P.wanted--; P.wantedCalm = 45; if (!P.wanted) { P.crimes = []; toast('A polícia perdeu você de vista.', 'good'); } } }
   const el = $('h-wanted'); if (el) { el.hidden = !P.wanted; el.textContent = '★'.repeat(P.wanted || 0); }
 }
-function getArrested(by) {
+function getArrested(by, k = 1) {
   if (city.arrestT > 0 || P.jailT > 0 || isAdm()) return; city.arrestT = 3;
-  S.lastCrimes = (P.crimes || []).slice(); jailPlayer(penaDe(P.crimes, P.wanted), by);
+  S.lastCrimes = (P.crimes || []).slice(); jailPlayer(penaDe(P.crimes, P.wanted) * k, by);
 }
 
 /* ---------- armas de fogo ---------- */
@@ -6919,7 +6920,7 @@ function raceHurt(n) {
    LOJAS E PRÉDIOS POR DENTRO: entra pela porta, anda lá dentro e fala no balcão
    ========================================================= */
 const SHOPIN = { x: 950, z: 600 };
-const INSIDE_KINDS = ['armas', 'roupas', 'skate', 'celular', 'arena', 'tokens', 'crew', 'agencia', 'imobiliaria', 'viagem', 'concessionaria', 'delegacia', 'bombeiros', 'reciclagem', 'hospital', 'prefeitura', 'igreja', 'moveis', 'estudio'];
+const INSIDE_KINDS = ['armas', 'roupas', 'skate', 'celular', 'arena', 'tokens', 'crew', 'agencia', 'imobiliaria', 'viagem', 'concessionaria', 'delegacia', 'bombeiros', 'reciclagem', 'hospital', 'prefeitura', 'igreja', 'moveis', 'estudio', 'base_ex', 'base_mar'];
 function doorPanel(k) {
   if (k === 'armas') openPanel('armas');
   else if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
@@ -6927,7 +6928,7 @@ function doorPanel(k) {
   else if (k === 'qg') { openPanel('faccao'); gangsFetch(); }
   else openPanel(k);
 }
-const ROOM_SIZE = { armas: [14, 16], concessionaria: [26, 18], igreja: [14, 24], bombeiros: [18, 14], viagem: [20, 14], arena: [18, 14], moveis: [22, 16], estudio: [22, 16] };
+const ROOM_SIZE = { armas: [14, 16], concessionaria: [26, 18], igreja: [14, 24], bombeiros: [18, 14], viagem: [20, 14], arena: [18, 14], moveis: [22, 16], estudio: [22, 16], base_ex: [26, 20], base_mar: [26, 20] };
 /* retângulo do cômodo atual (casa, loja, hospital, cadeia) para a câmera não sair pela parede */
 function inRoomXZ(x, z) {
   let r = null;
@@ -6959,7 +6960,7 @@ function floorTex(kind) {
     const step = kind === 'terra' ? 32 : 64; g.strokeStyle = kind === 'terra' ? 'rgba(60,25,10,.55)' : 'rgba(0,0,0,.35)'; g.lineWidth = kind === 'cimento' ? 1 : 2; for (let k = 0; k <= w; k += step) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); }
   }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return _floorT[kind] = t;
 }
-const SHOP_FLOOR = { bar: 'xadrez', brega: 'xadrez', sorveteria: 'xadrez', barbearia: 'xadrez', banco: 'granito', agencia: 'granito', prefeitura: 'granito', delegacia: 'granito', emprestimo: 'granito', celular: 'porc', tokens: 'porc', arena: 'porc', viagem: 'porc', concessionaria: 'porc', armas: 'cimento', mecanica: 'cimento', crew: 'cimento', bombeiros: 'cimento', reciclagem: 'cimento', hospital: 'porc' };
+const SHOP_FLOOR = { base_ex: 'granito', base_mar: 'porc', bar: 'xadrez', brega: 'xadrez', sorveteria: 'xadrez', barbearia: 'xadrez', banco: 'granito', agencia: 'granito', prefeitura: 'granito', delegacia: 'granito', emprestimo: 'granito', celular: 'porc', tokens: 'porc', arena: 'porc', viagem: 'porc', concessionaria: 'porc', armas: 'cimento', mecanica: 'cimento', crew: 'cimento', bombeiros: 'cimento', reciclagem: 'cimento', hospital: 'porc' };
 const floorFor = k => SHOP_FLOOR[k] || ['terra', 'porc', 'cimento', 'granito'][(k.length * 7 + k.charCodeAt(0)) % 4];
 let _tileT = null;
 function tileTex() { return _tileT || (_tileT = (() => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#d8d3c8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2; for (let k = 0; k <= w; k += 32) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })()); }
@@ -7338,7 +7339,7 @@ function abordarNpc(o) {
 function abordarPeer(p) {
   if (city.abord) return openPanel('abordagem');
   if (p.adm) return toast(`É o chefe ${CHIEF}. Liberado!`, 'pink');
-  if (!NET.ch) return; apito(); bubble(city.player, 'Parado! Polícia! Mão na cabeça!', 2.5);
+  if (!NET.ch) return; apito(); bubble(city.player, milOn() ? (S.shift === 'marinha' ? 'Parado! Marinha do Brasil! Mão na cabeça!' : 'Parado! Exército! Mão na cabeça!') : 'Parado! Polícia! Mão na cabeça!', 2.5);
   NET.ch.send({ type: 'broadcast', event: 'abord', payload: { to: p.id, by: S.name, byId: NET.user.id, st: 'parar' } });
   city.abord = { pid: p.id, name: p.name, st: 'parado', doc: null, rev: false }; openPanel('abordagem');
 }
@@ -7354,8 +7355,8 @@ function abordAlgema() {
   const A = city.abord; if (!A || !abordCrimes(A).length) return; A.st = 'algemado'; clank();
   if (A.o) { A.o.held = { cuff: true }; bubble(A.o.g, pick(['Ai, tá apertado!', 'Eu sou inocente!', 'Chama meu advogado!']), 2.5); } else abordSend('algema');
   S.stats.algemas = (S.stats.algemas || 0) + 1; persist();
-  const dl = city.doors.find(d => d.kind === 'delegacia'); if (dl) setGps(dl.x, dl.z, 'Delegacia');
-  closePanel(); toast(`🔗 ${A.doc.name} algemado. Leve até a Delegacia (GPS marcado) e coloque na cela.`, 'good');
+  const fed = milOn(), dl = city.doors.find(d => d.kind === (fed ? JOB_BASE[S.shift] : 'delegacia')), onde = fed ? (S.shift === 'marinha' ? 'Base Naval' : 'Quartel') : 'Delegacia'; if (dl) setGps(dl.x, dl.z, onde);
+  closePanel(); toast(`🔗 ${A.doc.name} algemado. Leve até ${fed ? 'as celas federais do ' + onde : 'a Delegacia'} (GPS marcado) e coloque na cela.`, 'good');
 }
 function abordSolta() {
   const A = city.abord; if (!A) return; city.abord = null;
@@ -7374,6 +7375,7 @@ function onAbord(d) {
   else if (d.st === 'algema') { P.cuffBy = { id: d.byId, name: d.by }; P.stopT = 0; clank(); toast(`🔗 Você foi algemado por ${d.by}. Ele vai levar você para a Delegacia.`, 'bad'); }
   else if (d.st === 'solta') { P.stopT = 0; P.cuffBy = null; toast('O policial liberou você.', 'good'); }
   else if (d.st === 'cela') { P.cuffBy = null; P.stopT = 0; city.arrestT = 0; P.wanted = Math.max(1, P.wanted || 0); getArrested('o policial ' + d.by); }
+  else if (d.st === 'cela_fed') { P.cuffBy = null; P.stopT = 0; city.arrestT = 0; P.wanted = Math.max(1, P.wanted || 0); getArrested(d.by + ' (preso federal)', 1.5); }
 }
 /* celas dentro da Delegacia (chamado pelo buildShopInterior) */
 function delegaciaCells(it, h) {
@@ -7410,9 +7412,9 @@ function lockInCell(i) {
   if (c.who) return toast('Essa cela está ocupada. Use outra.', 'bad');
   const name = A.doc ? A.doc.name : A.name;
   if (A.o) { A.o.held = { jailed: true, cellXZ: [c.x, c.z] }; city.jailedN = city.jailedN || []; city.jailedN.push({ o: A.o, name, t: penaDe(abordCrimes(A), 1) }); A.o.x = c.x; A.o.z = c.z; c.m = A.o.g; bubble(A.o.g, pick(['Vou sair rapidinho…', 'Isso é injustiça!', 'Me tira daqui!']), 3); }
-  else abordSend('cela');
-  const pena = penaDe(abordCrimes(A), 1); c.who = name; c.tgt = 0; clank(); addPrisoner(name, pena); city.abord = null; toast(`⏱️ Pena: ${Math.round(pena / 60)} min (veja o Manual do Policial).`, 'pink');
-  const crimes = abordCrimes(A).length, g = earn(jobPay('policial', 200 + crimes * 60)); addXP(45); S.stats.prisoes = (S.stats.prisoes || 0) + 1; persist();
+  else abordSend(city.fedLocking ? 'cela_fed' : 'cela');
+  const pena = penaDe(abordCrimes(A), 1) * (city.fedLocking ? 1.5 : 1); c.who = name; c.tgt = 0; clank(); addPrisoner(name, pena); city.abord = null; toast(`⏱️ Pena: ${Math.round(pena / 60)} min (veja o Manual do Policial).`, 'pink');
+  const crimes = abordCrimes(A).length, g = earn(jobPay(city.fedLocking && milOn() ? S.shift : 'policial', 200 + crimes * 60)); if (city.fedLocking && milOn()) try { milDutyMark && milDutyMark('missoes'); } catch (e) { } addXP(45); S.stats.prisoes = (S.stats.prisoes || 0) + 1; persist();
   toast(`🔒 ${name} trancado na cela ${i + 1}! Ocorrência registrada. +$${fmt(g)}`, 'good'); sfx('coin');
   if (S.mission && S.mission.job === 'policial') { S.mission = null; nextJobTask(); }
 }
@@ -12821,7 +12823,7 @@ function shopDecoEnter(it) {
 }
 /* todo comércio fica mais de verdade: quadros nas paredes e plantas na entrada */
 function shopDecoBasics(it, add, W, D, H, k) {
-  if (k.startsWith('mansao') || k === 'igreja' || k === 'moveis' || k === 'estudio') return;
+  if (k.startsWith('mansao') || k === 'igreja' || k === 'moveis' || k === 'estudio' || k === 'base_ex' || k === 'base_mar') return;
   const pics = ['q_abstrato', 'q_mar', 'q_cristo', 'q_pelo', 'q_role', 'q_familia'], h = k.length * 7 + k.charCodeAt(0);
   const put = (id, x, y, z, r) => { const m = furnMesh(id); m.position.set(x, y, z); m.rotation.y = r; it.g.add(m); };
   put(pics[h % 6], -W / 2 + 0.05, Math.min(2.1, H - 0.9), D / 2 - 3.2, Math.PI / 2); put(pics[(h + 2) % 6], W / 2 - 0.05, Math.min(2.1, H - 0.9), D / 2 - 3.2, -Math.PI / 2);
@@ -12968,6 +12970,96 @@ PANELS_MOV.estudio = function () {
   html += `<h3>💿 Minhas faixas desta sessão (${ST.takes.length})</h3>${ST.takes.length ? ST.takes.map((T, i) => `<div class="item-card r-comum"><div class="item-info"><b>${esc(T.t)}</b><span class="muted">${esc(BEATS[T.g].n)} · ${T.bpm} BPM · ${T.dur}s${T.pub ? ' · lançada' : ''}</span><div class="row"><button class="btn sm" data-act="st-ouvir" data-i="${i}">▶ Ouvir</button><button class="btn ghost sm" data-act="st-nome" data-i="${i}">✏️ Nome</button><button class="btn ghost sm" data-act="st-baixar" data-i="${i}">💾 Baixar</button>${T.pub ? '' : `<button class="btn ghost sm" data-act="st-lancar" data-i="${i}">🚀 Lançar no feed</button>`}<button class="btn ghost sm" data-act="st-apagar" data-i="${i}">🗑️</button></div></div></div>`).join('') : '<p class="muted">Nenhuma faixa ainda. As faixas ficam até você sair do jogo: baixe as que quiser guardar.</p>'}`;
   html += `<p class="muted">Músicas lançadas: <b>${S.musicas || 0}</b>.</p>`;
   return { title: '🎛️ Estúdio Rolê Records', html };
+};
+
+
+/* =========================================================
+   QUARTEL E BASE NAVAL POR DENTRO (como as bases militares dos servidores de RP):
+   recepção com cabo da guarda e detector de metais, sala de briefing com telão, sala de inteligência
+   (só militares em serviço e o ADM) e celas para presos federais.
+   ========================================================= */
+EXTRA_SHOPS.base_ex = { kind: 'base_ex', label: 'Quartel do Exército', sub: 'EXÉRCITO', color: 0x4b5a2a, css: '#6b8e23' };
+EXTRA_SHOPS.base_mar = { kind: 'base_mar', label: 'Base Naval da Marinha', sub: 'MARINHA', color: 0x1f3a6b, css: '#2f6db5' };
+const MILB_INTEL = { x0: 3, x1: 13, z0: -10, z1: -1 }; // sala de inteligência (relativo ao centro da sala)
+const tacTex = (mar) => canvasTex(256, 144, (g, w, h) => {
+  g.fillStyle = mar ? '#06243f' : '#0f2412'; g.fillRect(0, 0, w, h); g.strokeStyle = mar ? 'rgba(79,195,255,.35)' : 'rgba(61,220,132,.35)'; g.lineWidth = 1;
+  for (let x = 0; x <= w; x += 16) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); } for (let y = 0; y <= h; y += 16) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+  g.fillStyle = mar ? 'rgba(79,195,255,.25)' : 'rgba(61,220,132,.22)'; for (let i = 0; i < 5; i++) for (let j = 0; j < 4; j++) g.fillRect(40 + i * 36, 18 + j * 28, 26, 20);
+  if (mar) { g.fillStyle = 'rgba(30,110,200,.6)'; g.fillRect(0, 118, w, 26); }
+  g.fillStyle = '#ff3b3b'; for (const [x, y] of [[70, 40], [150, 90], [200, 30], [110, 110]]) { g.beginPath(); g.arc(x, y, 4, 0, TAU); g.fill(); }
+  g.strokeStyle = '#ffcf3a'; g.lineWidth = 2; g.beginPath(); g.moveTo(20, 130); g.lineTo(70, 40); g.lineTo(150, 90); g.stroke();
+  g.fillStyle = mar ? '#4fc3ff' : '#3ddc84'; g.font = 'bold 10px monospace'; g.fillText(mar ? 'COMANDO NAVAL · SITUAÇÃO' : 'CENTRO DE OPERAÇÕES · SITUAÇÃO', 6, 11);
+});
+const termTex = (mar) => canvasTex(128, 80, (g, w, h) => { g.fillStyle = '#0b0f0b'; g.fillRect(0, 0, w, h); g.fillStyle = mar ? '#4fc3ff' : '#3ddc84'; g.font = '8px monospace'; const L = ['> BUSCA: FICHA CRIMINAL', '> ALVO LOCALIZADO', '> RÁDIO: CANAL 3 OK', '> SATÉLITE: ON', '> RELATÓRIO 0427', '> ACESSO: RESTRITO']; L.forEach((t, i) => g.fillText(t, 4, 12 + i * 11)); });
+const corkTex = () => canvasTex(128, 96, (g, w, h) => {
+  g.fillStyle = '#a8794a'; g.fillRect(0, 0, w, h); const P = [[14, 10], [70, 8], [40, 50], [92, 52], [10, 60]];
+  g.strokeStyle = '#d8202f'; g.lineWidth = 1.5; g.beginPath(); P.forEach(([x, y], i) => { i ? g.lineTo(x + 12, y + 10) : g.moveTo(x + 12, y + 10); }); g.lineTo(P[0][0] + 12, P[0][1] + 10); g.stroke();
+  P.forEach(([x, y], i) => { g.fillStyle = '#f4f2ec'; g.fillRect(x, y, 24, 28); g.fillStyle = ['#7a4a2a', '#c98a5a', '#3a2a1a', '#e0b080', '#5a3d26'][i]; g.beginPath(); g.arc(x + 12, y + 11, 6, 0, TAU); g.fill(); g.fillRect(x + 5, y + 18, 14, 8); g.fillStyle = '#d8202f'; g.beginPath(); g.arc(x + 12, y + 2, 2.5, 0, TAU); g.fill(); });
+});
+function milBaseInt(h, mar) {
+  const { add, box, solid, npc, spot, col, W, D, H, it } = h, job = mar ? 'marinha' : 'exercito', cx = SHOPIN.x, cz = SHOPIN.z;
+  const farda = (i) => roleLook(job, i), M = mar ? 0x1f3a6b : 0x4b5a2a;
+  // ---- recepção (portaria): balcão do cabo da guarda, detector de metais, catraca, cadeiras de espera, bandeira e brasão
+  solid(4.2, 1.1, 0.9, 0x3a3f46, 5.5, 0.55, 5.6); box(4.3, 0.06, 1.0, 0x2a2d34, 5.5, 1.12, 5.6, 0, 0.3); box(0.5, 0.35, 0.35, 0x15161a, 4.6, 1.32, 5.5);
+  npc(farda(1), mar ? 'Cabo da Guarda (Marinha)' : 'Cabo da Guarda', 5.5, 4.6, 0);
+  spot(`🪪 Recepção: falar com o cabo da guarda`, 5.5, 6.9, () => openPanel('militar', job));
+  for (const s of [-1, 1]) box(0.25, 2.3, 0.4, 0x9aa3ad, s * 0.75, 1.15, 7.4, 0, 0.3, 0.7); box(1.75, 0.25, 0.4, 0x9aa3ad, 0, 2.35, 7.4, 0, 0.3, 0.7); // detector de metais
+  const det = add(new THREE.PlaneGeometry(0.6, 0.15), new THREE.MeshBasicMaterial({ color: 0x3ddc84 }), 0, 2.35, 7.62); it.detLed = det;
+  for (const s of [-1, 1]) { solid(0.3, 1, 0.5, 0x6d717a, s * 1.6, 0.5, 7.4); }
+  for (let k = 0; k < 4; k++) { box(0.55, 0.08, 0.55, 0x2a2d34, -9 + k * 0.7, 0.48, 8.2); box(0.55, 0.55, 0.06, 0x2a2d34, -9 + k * 0.7, 0.75, 8.47); } col(-7.95, 8.3, 3, 0.7);
+  add(new THREE.PlaneGeometry(1.8, 1.25), new THREE.MeshLambertMaterial({ map: brFlagTex(), side: THREE.DoubleSide }), 9.5, 2.1, 9.93, Math.PI);
+  const bras = textSprite(mar ? '⚓ MARINHA DO BRASIL' : '🪖 EXÉRCITO BRASILEIRO', { bg: mar ? '#1f3a6b' : '#3d4a24', fg: '#ffdf00', size: 46, scale: [4.6, 0.7, 1] }); bras.position.set(5.5, 2.75, 3.9); it.g.add(bras);
+  add(new THREE.PlaneGeometry(1.6, 1.1), new THREE.MeshBasicMaterial({ map: canvasTex(96, 64, (g, w, hh) => { g.fillStyle = '#a8794a'; g.fillRect(0, 0, w, hh); for (let i = 0; i < 5; i++) { g.fillStyle = '#f4f2ec'; g.fillRect(6 + (i % 3) * 30, 6 + Math.floor(i / 3) * 30, 24, 24); g.fillStyle = '#333'; for (let l = 0; l < 4; l++) g.fillRect(9 + (i % 3) * 30, 11 + Math.floor(i / 3) * 30 + l * 4, 16, 1.5); } }) }), -W / 2 + 0.05, 1.8, 6.5, Math.PI / 2);
+  const rcp = textSprite('RECEPÇÃO · IDENTIFIQUE-SE', { bg: '#15161a', fg: '#ffffff', size: 40, scale: [3.6, 0.45, 1] }); rcp.position.set(5.5, 2.05, 4.0); it.g.add(rcp);
+  // ---- celas para presos federais (parede da esquerda), com as mesmas fechaduras da Delegacia
+  const sv = [city.jailedN, city.prisoners]; city.jailedN = city.fedN || []; city.prisoners = city.fedP || [];
+  const n0 = it.spots.length; try { delegaciaCells(it, h); } finally { city.fedN = city.jailedN; city.fedP = city.prisoners; city.jailedN = sv[0]; city.prisoners = sv[1]; }
+  it.spots.slice(n0).forEach((s, i) => { s.fn = () => fedLock(i); }); it.fedCells = true;
+  const cs = textSprite('⛓️ CELAS · PRESOS FEDERAIS', { bg: '#7a1f1f', fg: '#ffffff', size: 44, scale: [4.2, 0.6, 1] }); cs.position.set(-W / 2 + 2.2, 3.05, 2.6); it.g.add(cs);
+  // ---- sala de briefing (meio do fundo): mesa comprida, cadeiras e telão com o mapa tático
+  solid(6, 0.08, 1.6, 0x3a2a1a, -2.5, 0.76, -6.5); for (const s of [-1, 1]) for (let k = 0; k < 4; k++) { box(0.5, 0.08, 0.5, 0x15161a, -4.75 + k * 1.5, 0.46, -6.5 + s * 1.25); box(0.5, 0.55, 0.06, 0x15161a, -4.75 + k * 1.5, 0.75, -6.5 + s * 1.5); }
+  add(new THREE.PlaneGeometry(5.4, 3), new THREE.MeshBasicMaterial({ map: tacTex(mar) }), -2.5, 2.0, -D / 2 + 0.06);
+  const bf = textSprite('SALA DE BRIEFING', { bg: '#15161a', fg: '#ffcf3a', size: 40, scale: [2.8, 0.4, 1] }); bf.position.set(-2.5, 3.65, -D / 2 + 0.2); it.g.add(bf);
+  spot('🗺️ Telão do briefing (operações)', -2.5, -4.6, () => openPanel('militar', job));
+  // ---- sala de inteligência (fundo à direita): parede de vidro, terminais, quadro de investigação, servidores
+  const I = MILB_INTEL, glass = new THREE.MeshStandardMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.25, roughness: 0.05 });
+  solid(0.2, H, I.z1 - I.z0, 0x3a3f46, I.x0, H / 2, (I.z0 + I.z1) / 2);
+  add(boxGeo(I.x1 - I.x0 - 1.6, H - 0.3, 0.08), glass, (I.x0 + 1.6 + I.x1) / 2, (H - 0.3) / 2, I.z1); col((I.x0 + 1.6 + I.x1) / 2, I.z1, I.x1 - I.x0 - 1.6, 0.25);
+  box(0.12, H, 0.25, 0x3a3f46, I.x0 + 1.6, H / 2, I.z1);
+  const it2 = textSprite('🔒 INTELIGÊNCIA · ACESSO RESTRITO', { bg: '#7a1f1f', fg: '#ffffff', size: 40, scale: [4.4, 0.5, 1] }); it2.position.set((I.x0 + I.x1) / 2, H - 0.35, I.z1 + 0.15); it.g.add(it2);
+  add(new THREE.PlaneGeometry(6, 2.8), new THREE.MeshBasicMaterial({ map: tacTex(mar) }), (I.x0 + I.x1) / 2, 2.0, I.z0 + 0.06);
+  for (let k = 0; k < 3; k++) { const x = I.x0 + 2 + k * 2.6, z = I.z0 + 3.6; solid(2.2, 0.08, 0.9, 0x2a2d34, x, 0.76, z); for (const o of [-0.6, 0, 0.6]) { add(new THREE.PlaneGeometry(0.55, 0.36), new THREE.MeshBasicMaterial({ map: termTex(mar) }), x + o, 1.1, z - 0.32, -o * 0.4); box(0.58, 0.39, 0.03, 0x15161a, x + o, 1.1, z - 0.345, -o * 0.4); } box(0.5, 0.08, 0.5, 0x15161a, x, 0.46, z + 0.8); }
+  add(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshBasicMaterial({ map: corkTex() }), I.x1 - 0.05, 1.7, I.z0 + 4.5, -Math.PI / 2);
+  for (let k = 0; k < 3; k++) { solid(0.7, 2.1, 0.8, 0x15161a, I.x1 - 0.5, 1.05, I.z1 - 1.0 - k * 0.85); for (let l = 0; l < 7; l++) box(0.02, 0.03, 0.03, [0x3ddc84, 0x4fc3ff, 0xffcf3a][(l + k) % 3], I.x1 - 0.88, 0.4 + l * 0.25, I.z1 - 1.0 - k * 0.85); }
+  npc(farda(4), mar ? 'Analista da Marinha' : 'Analista de Inteligência', I.x0 + 2, I.z0 + 4.5, Math.PI);
+  spot('🛰️ Computador da Inteligência', I.x0 + 4.6, I.z0 + 5.2, () => { if (!(milOn() || isAdm())) return toast('🔒 Acesso restrito: só militares em serviço.', 'bad'); openPanel('intel'); });
+  // o piso escuro e a parede com a cor da força
+  it.intelRect = [cx + I.x0, cx + I.x1, cz + I.z0, cz + I.z1];
+}
+EXTRA_INT.base_ex = (h) => milBaseInt(h, false);
+EXTRA_INT.base_mar = (h) => milBaseInt(h, true);
+/* trancar o preso numa cela federal: a mesma rotina da Delegacia, mas a lista é a dos presos federais */
+function fedLock(i) {
+  const sv = [city.jailedN, city.prisoners]; city.jailedN = city.fedN || []; city.prisoners = city.fedP || []; city.fedLocking = true;
+  try { lockInCell(i); } finally { city.fedLocking = false; city.fedN = city.jailedN; city.fedP = city.prisoners; city.jailedN = sv[0]; city.prisoners = sv[1]; }
+}
+/* quem não é militar não entra na sala de inteligência; e as penas dos presos federais correm */
+function milBaseTick(dt) {
+  for (const p of city.fedP || []) p.t -= dt; if (city.fedP) city.fedP = city.fedP.filter(p => p.t > 0);
+  const it = city.shopIn; if (!it || !it.intelRect) return; const [x0, x1, z0, z1] = it.intelRect;
+  if (P.x > x0 && P.x < x1 && P.z > z0 && P.z < z1 && !(milOn() || isAdm())) { P.z = z1 + 0.6; P.v = 0; if ((it.denyT || 0) < performance.now()) { it.denyT = performance.now() + 3000; toast('🔒 Sala de Inteligência: acesso só para militares em serviço.', 'bad'); } }
+  if (it.detLed) it.detLed.material.color.setHex(Math.abs(P.x - SHOPIN.x) < 0.8 && Math.abs(P.z - (SHOPIN.z + 7.4)) < 0.6 ? (myGun() ? 0xff3b3b : 0x3ddc84) : 0x3ddc84);
+}
+PANELS_MOV.intel = function () {
+  if (!(milOn() || isAdm())) return { title: '🛰️ Inteligência', html: '<p class="muted">Acesso restrito: só militares em serviço.</p>' };
+  const ps = Object.values(NET.peers).filter(p => p.t && p.seen && p.t.wd > 0).sort((a, b) => b.t.wd - a.t.wd);
+  const sh = city.shopIn, presos = sh && sh.cells ? sh.cells.filter(c => c.who) : [], op = typeof MILO !== 'undefined' && MILO.op;
+  let html = `<p class="muted">Central de inteligência ${cityId() === 'sp' ? 'do Comando Militar do Sudeste' : cityId() === 'rj' ? 'do Comando Militar do Leste' : 'do Comando Militar do Nordeste'}. Monitoramento da cidade em tempo real.</p>`;
+  html += `<h3>🎯 Procurados agora (${ps.length})</h3>${ps.length ? ps.map(p => `<p><b>${esc(p.name || 'Desconhecido')}</b> <span style="color:#ff6b6b">${'★'.repeat(p.t.wd)}</span> · a ${Math.round(Math.hypot(p.x - P.x, p.z - P.z))} m <button class="btn ghost sm" data-act="gps-door" data-x="${Math.round(p.x)}" data-z="${Math.round(p.z)}" data-l="Alvo: ${esc(p.name || '')}">📍 GPS</button></p>`).join('') : '<p class="muted">Nenhum procurado online na cidade agora.</p>'}`;
+  html += `<h3>⛓️ Presos federais nesta base (${presos.length})</h3>${presos.length ? presos.map(c => `<p>Cela ${c.i + 1}: <b>${esc(c.who)}</b></p>`).join('') : '<p class="muted">Celas vazias.</p>'}`;
+  html += `<h3>📻 Operação</h3><p>${op ? `Em andamento: <b>${op.type === 'comboio' ? '🚚 Comboio' : '🧭 Patrulha'}</b> (${Object.keys(op.members || {}).length} militar(es))` : 'Nenhuma operação aberta. Abra pelo telão do briefing.'}</p>`;
+  html += `<p class="muted">Para prender: aborde o suspeito (igual à polícia), algeme e traga até as <b>celas federais</b> desta base.</p>`;
+  return { title: '🛰️ Sala de Inteligência', html };
 };
 
 EXTRA_INT.sorveteria = (h) => {
