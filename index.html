@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-65';
+const BUILD = '2026.10.15-66';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2340,7 +2340,7 @@ const myWpKind = () => { const it = ITEM[S.equip.weapon]; return it && it.wp !==
 /* arma na cidade: aparece na mão e dá para usar (efeitos de brincadeira, sem gastar) */
 function cityWeapon() {
   const G = myGun(); if (G) return shootGun(G);
-  const k = myWpKind(); if (!k) return toast('Você não tem arma. Compre no Terminal Mundial → Arsenal.', 'bad');
+  const k = myWpKind(); if (!k) return toast('Você não tem arma. Compre na 🔫 Loja de Armas do AJBZ (ou no Arsenal do Terminal Mundial).', 'bad');
   if (P.wpCd > 0) return; P.wpCd = 2.2; P.wpShowT = 1; P.emote = null;
   const fx = Math.sin(P.h), fz = Math.cos(P.h);
   const ahead = (range, cone) => { let best = null, bd = range; for (const o of [...city.bots, ...city.peds]) { const dx = o.x - P.x, dz = o.z - P.z, d = Math.hypot(dx, dz); if (d < bd && d > 0.3 && (dx * fx + dz * fz) / d > cone && !(o.fallT > 0)) { bd = d; best = o; } } return best; };
@@ -2362,11 +2362,12 @@ function updateCityFx(dt) {
   city.bananas = city.bananas.filter(b => { if (b.t <= 0) { city.scene.remove(b.m); return false; } return true; });
 }
 /* arma na mão na hora de usar */
-const FIREARMS = ['pistola', 'revolver', 'taser', 'escopeta', 'fuzil'];
+const FIREARMS = ['pistola', 'revolver', 'taser', 'escopeta', 'fuzil', 'smg', 'sniper'];
+const LONG_GUNS = ['fuzil', 'escopeta', 'smg', 'sniper'];
 function showWeaponProp(u, kind) {
   if (FIREARMS.includes(kind) && u.R && u.R.B.RightArm && u.R.B.LeftArm && u.root) {
     if (u.wpM) { u.wpM.parent.remove(u.wpM); u.wpM = null; u.wpK = null; }
-    if (u.gunK !== kind) { if (u.gunM) { u.gunM.parent.remove(u.gunM); u.gunM = null; } u.gunK = kind; u.gunM = gunMesh(kind); u.root.add(u.gunM); }
+    const md = u.root === city.player ? (myGun() || {}).md : null; if (u.gunK !== kind || u.gunMd !== md) { if (u.gunM) { u.gunM.parent.remove(u.gunM); u.gunM = null; } u.gunK = kind; u.gunMd = md; u.gunM = gunMesh(kind, md); u.root.add(u.gunM); }
     return;
   }
   if (u.gunM) { u.gunM.parent.remove(u.gunM); u.gunM = null; u.gunK = null; }
@@ -2387,19 +2388,38 @@ function showWeaponProp(u, kind) {
   }
 }
 /* arma de fogo: cano para +z, para cima +y, origem no cabo (onde a mão direita segura) */
-function gunMesh(kind) {
-  const g = new THREE.Group(), long = kind === 'fuzil' || kind === 'escopeta';
+function gunMesh(kind, md) {
+  const g = new THREE.Group(), long = LONG_GUNS.includes(kind);
   const m = (geo, c, x, y, z, rx = 0, r = 0.5, mt = 0.25) => { const k = new THREE.Mesh(geo, std(c, r, mt)); k.position.set(x, y, z); k.rotation.x = rx; k.castShadow = true; g.add(k); return k; };
-  if (!long) { const c = kind === 'taser' ? 0xffcf3a : 0x22252b;
-    m(boxGeo(0.032, 0.1, 0.045), c, 0, -0.02, -0.005, -0.28); m(boxGeo(0.034, 0.045, 0.19), c, 0, 0.045, 0.06, 0, 0.35, 0.5); m(boxGeo(0.008, 0.03, 0.035), c, 0, 0.0, 0.035);
-    if (kind === 'revolver') { m(CYL(0.026, 0.026, 0.055, 8), 0x6d717a, 0, 0.04, 0.02, Math.PI / 2, 0.3, 0.7); m(CYL(0.009, 0.009, 0.1, 6), 0x6d717a, 0, 0.05, 0.12, Math.PI / 2, 0.3, 0.7); }
-    g.userData = { grip: [0, 0, 0], sup: [0.032, -0.02, 0.0], len: 0.2 }; }
-  else { const c = kind === 'fuzil' ? 0x2e3328 : 0x3a2a1c, wood = kind === 'escopeta';
-    m(boxGeo(0.05, 0.075, 0.42), c, 0, 0.05, 0.13, 0, 0.5, 0.3); m(CYL(0.013, 0.013, 0.4, 8), 0x15161a, 0, 0.065, 0.53, Math.PI / 2, 0.3, 0.7);
-    m(boxGeo(0.045, 0.085, 0.24), wood ? 0x6b4a2f : 0x1e2126, 0, 0.03, -0.17, 0.12); m(boxGeo(0.03, 0.1, 0.04), 0x15161a, 0, -0.03, 0.0, -0.3);
-    if (kind === 'fuzil') { m(boxGeo(0.035, 0.15, 0.05), 0x15161a, 0, -0.05, 0.12, 0.25); m(boxGeo(0.03, 0.04, 0.12), 0x15161a, 0, 0.11, 0.08); }
+  const BLK = 0x15161a, GUN = 0x22252b, CHR = 0xc0c4ca, WOOD = 0x8a5a2b;
+  if (!long) {
+    const c = kind === 'taser' ? 0xffcf3a : md === 'deagle' ? CHR : GUN, sl = md === 'deagle' ? 0.24 : md === '380' ? 0.15 : 0.19, sh = md === 'deagle' ? 0.055 : 0.045;
+    m(boxGeo(0.032, 0.1, 0.045), md === '380' ? 0x3a2a1c : GUN, 0, -0.02, -0.005, -0.28); m(boxGeo(0.034, sh, sl), md === '380' ? 0x9aa0a8 : c, 0, 0.045, sl / 2 - 0.035, 0, 0.3, md === 'deagle' || md === '380' ? 0.8 : 0.5); m(boxGeo(0.008, 0.03, 0.035), GUN, 0, 0.0, 0.035);
+    if (kind === 'revolver') { const L = md === 'magnum' ? 0.17 : 0.1, rc = md === 'magnum' ? CHR : 0x6d717a; m(CYL(0.026, 0.026, 0.055, 8), rc, 0, 0.04, 0.02, Math.PI / 2, 0.3, 0.8); m(CYL(0.009, 0.009, L, 6), rc, 0, 0.05, 0.05 + L / 2, Math.PI / 2, 0.3, 0.8); }
+    g.userData = { grip: [0, 0, 0], sup: [0.032, -0.02, 0.0], len: md === 'deagle' ? 0.22 : kind === 'revolver' && md === 'magnum' ? 0.24 : 0.17 };
+  } else if (kind === 'sniper') {
+    m(boxGeo(0.05, 0.08, 0.5), 0x3b4232, 0, 0.05, 0.15, 0, 0.6, 0.2); m(CYL(0.014, 0.016, 0.62, 8), BLK, 0, 0.065, 0.71, Math.PI / 2, 0.3, 0.7);
+    m(boxGeo(0.05, 0.11, 0.3), 0x3b4232, 0, 0.02, -0.22, 0.08); m(boxGeo(0.03, 0.1, 0.04), BLK, 0, -0.03, 0.0, -0.3); m(boxGeo(0.03, 0.06, 0.06), BLK, 0, -0.04, 0.14);
+    m(CYL(0.03, 0.03, 0.32, 10), BLK, 0, 0.14, 0.12, Math.PI / 2, 0.2, 0.6); m(CYL(0.038, 0.038, 0.05, 10), BLK, 0, 0.14, 0.29, Math.PI / 2, 0.2, 0.6); m(CYL(0.034, 0.034, 0.04, 10), BLK, 0, 0.14, -0.04, Math.PI / 2, 0.2, 0.6);
+    for (const sx of [-0.03, 0.03]) { const b = m(boxGeo(0.01, 0.2, 0.01), BLK, sx, -0.06, 0.62, 0.3); b.rotation.z = sx * 6; }
+    g.userData = { grip: [0, 0, 0], sup: [0, 0.02, 0.34], butt: [0, 0.03, -0.37], len: 1.02 };
+  } else if (kind === 'smg') {
+    const uzi = md === 'uzi';
+    m(boxGeo(0.05, 0.08, uzi ? 0.26 : 0.34), uzi ? GUN : BLK, 0, 0.05, uzi ? 0.06 : 0.1, 0, 0.5, 0.3); m(CYL(0.012, 0.012, uzi ? 0.06 : 0.1, 8), BLK, 0, 0.06, uzi ? 0.22 : 0.31, Math.PI / 2, 0.3, 0.7);
+    m(boxGeo(0.03, uzi ? 0.2 : 0.1, 0.035), BLK, 0, uzi ? -0.07 : -0.03, 0.0, uzi ? 0 : -0.3); if (!uzi) m(boxGeo(0.03, 0.16, 0.045), BLK, 0, -0.05, 0.11, 0.3);
+    m(boxGeo(0.02, 0.02, uzi ? 0.18 : 0.2), BLK, 0, 0.05, uzi ? -0.14 : -0.18); m(boxGeo(0.045, 0.07, 0.03), BLK, 0, 0.03, uzi ? -0.23 : -0.28);
+    g.userData = { grip: [0, 0, 0], sup: [0, 0.02, uzi ? 0.13 : 0.2], butt: [0, 0.03, uzi ? -0.24 : -0.29], len: uzi ? 0.26 : 0.36 };
+  } else {
+    const ak = md === 'ak', m4 = md === 'm4', c = kind === 'fuzil' ? (ak ? 0x2a2420 : m4 ? 0x1e2024 : 0x2e3328) : 0x3a2a1c, wood = kind === 'escopeta' || ak;
+    m(boxGeo(0.05, 0.075, 0.42), c, 0, 0.05, 0.13, 0, 0.5, 0.3); m(CYL(0.013, 0.013, 0.4, 8), BLK, 0, 0.065, 0.53, Math.PI / 2, 0.3, 0.7);
+    m(boxGeo(0.045, 0.085, 0.24), wood ? (ak ? WOOD : 0x6b4a2f) : 0x1e2126, 0, 0.03, -0.17, 0.12); m(boxGeo(0.03, 0.1, 0.04), BLK, 0, -0.03, 0.0, -0.3);
+    if (kind === 'fuzil') { m(boxGeo(0.035, 0.17, 0.05), BLK, 0, -0.06, 0.13, ak ? 0.45 : 0.2);
+      if (ak) m(boxGeo(0.052, 0.06, 0.2), WOOD, 0, 0.04, 0.36);
+      else if (m4) { m(boxGeo(0.03, 0.02, 0.3), BLK, 0, 0.1, 0.18); m(boxGeo(0.04, 0.05, 0.07), BLK, 0, 0.13, 0.08); m(boxGeo(0.03, 0.03, 0.005), 0x3ddc84, 0, 0.14, 0.04); m(boxGeo(0.05, 0.06, 0.2), BLK, 0, 0.05, 0.36); }
+      else m(boxGeo(0.03, 0.04, 0.12), BLK, 0, 0.11, 0.08); }
     else m(boxGeo(0.05, 0.05, 0.2), 0x6b4a2f, 0, 0.0, 0.36);
-    g.userData = { grip: [0, 0, 0], sup: [0, 0.02, 0.36], butt: [0, 0.03, -0.29], len: 0.73 }; }
+    g.userData = { grip: [0, 0, 0], sup: [0, 0.02, 0.36], butt: [0, 0.03, -0.29], len: 0.73 };
+  }
   return g;
 }
 /* braço calculado (IK de 2 ossos): ombro, cotovelo e mão vão até o alvo; o cotovelo aponta para "pole" */
@@ -2428,7 +2448,7 @@ function gunIK(u, o) {
   const G = u.gunM, B = u.R && u.R.B; if (!G || !B || !B.RightArm || !B.LeftArm) return;
   const root = u.root; root.updateMatrixWorld(true);
   const SR = root.worldToLocal(B.RightArm.getWorldPosition(new THREE.Vector3())), SL = root.worldToLocal(B.LeftArm.getWorldPosition(new THREE.Vector3()));
-  const long = u.gunK === 'fuzil' || u.gunK === 'escopeta', aim = !!o.wpProp, pitch = clamp(o.aimP || 0, -0.7, 0.8), D = G.userData, mid = SR.clone().add(SL).multiplyScalar(0.5), side = Math.sign(SR.x - SL.x) || -1;
+  const long = LONG_GUNS.includes(u.gunK), aim = !!o.wpProp, pitch = clamp(o.aimP || 0, -0.7, 0.8), D = G.userData, mid = SR.clone().add(SL).multiplyScalar(0.5), side = Math.sign(SR.x - SL.x) || -1;
   G.rotation.order = 'YXZ';
   if (long && aim) { // coronha no ombro direito, cano para a frente (segue a mira)
     G.rotation.set(-pitch, 0.06 * side, 0); G.updateMatrix();
@@ -2488,6 +2508,7 @@ function animReal(u, o, t) {
     else if (e === 'cheer') { Object.assign(p, { lArmDown: -1.3, rArmDown: -1.3, lElbow: 0.1, rElbow: 0.1 }); ry = Math.abs(Math.sin(t * 7)) * 0.18; }
     else if (e === 'dance') { const d = Math.sin(t * 8); Object.assign(p, { twist: d * 0.45, side: d * 0.1, headY: -d * 0.4, lArmFwd: 1.0 + d * 0.5, rArmFwd: 1.0 - d * 0.5, lElbow: 1.4, rElbow: 1.4, lThigh: 0.15 + Math.max(0, d) * 0.3, rThigh: 0.15 + Math.max(0, -d) * 0.3, lKnee: 0.35 + Math.max(0, d) * 0.5, rKnee: 0.35 + Math.max(0, -d) * 0.5, lSpread: 0.08, rSpread: 0.08 }); ry = -0.04 + Math.abs(d) * 0.05; rate = 24; }
     else if (e === 'sit') { sitLife(u, o, t, dt, p); ry = -0.42; }
+    else if (e && EMOTES[e] && !EMOTES[e].free) { const yy = emoteBody(e, t, p); if (yy != null) ry = yy; }
     if (o.fp) Object.assign(p, o.fp); if (o.armL) Object.assign(p, o.armL); if (o.armR) Object.assign(p, o.armR);
     u.board.visible = !!o.carry && e !== 'sit';
     if (o.carry) { u.board.position.set(0, 1.2, -0.2); u.board.rotation.set(Math.PI / 2, 0, 0); }
@@ -2534,6 +2555,7 @@ function animReal(u, o, t) {
   u.rider.position.z += (rz - u.rider.position.z) * k;
   rigPose(u.R, smoothPose(u, p, dt, rate));
   mocapLayer(u, o, t, dt, e);
+  if (e && o.walk && !down && EMOTE_IK.includes(e) && !(o.wpProp || o.wpHold)) { try { emoteIK(u, e, t); } catch (er) { } }
   if (u.gunM) { if (!(o.wpProp || o.wpHold) || down || o.climb != null) u.gunM.visible = false; else { u.gunM.visible = true; try { gunIK(u, o); } catch (er) { } } }
   const kh = 1 - Math.exp(-12 * dt); u.hL = lerp(u.hL ?? 0.3, hands.L, kh); u.hR = lerp(u.hR ?? 0.3, hands.R, kh);
   fingerPose(u.R, 'L', u.hL, false, false); fingerPose(u.R, 'R', u.hR, hands.pointR, hands.thumbR); mocapFingers(u);
@@ -2740,6 +2762,7 @@ const SPECIAL = {
   '0,-84': { kind: 'viagem', label: 'Rodoviária', sub: 'VIAGENS', color: 0x1e88e5, css: '#1e88e5' },
   '-84,0': { kind: 'concessionaria', label: 'Concessionária', sub: 'CARROS E MOTOS', color: 0xe53935, css: '#e53935' },
 };
+SPECIAL['84,84'] = { kind: 'armas', label: 'Armas do AJBZ', sub: 'LOJA DE ARMAS', color: 0x8b1e1e, css: '#c62828' };
 /* cada cidade tem as lojas em quarteirões diferentes e as suas comunidades (favelas) */
 const CITY_SHOPS = {
   rj: { roupas: '42,-42', skate: '-42,42', celular: '42,0', arena: '0,-42', tokens: '0,42', crew: '-42,0', agencia: '42,42', imobiliaria: '-42,-42', viagem: '84,0', concessionaria: '0,84' },
@@ -4999,7 +5022,8 @@ function interact(n) {
     if (k === 'biz' && !n.d.inside) { enterBiz(n.d); return; }
     if (k === 'hospital' && !n.d.inside) { enterHospital(); return; }
     if (INSIDE_KINDS.includes(k) && !n.d.inside) { enterShop(n.d); return; }
-    if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
+    if (k === 'armas') openPanel('armas');
+  else if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
     else if (k === 'arena') openPanel('arena');
     else if (k === 'tokens') openPanel('tokens');
     else if (k === 'crew') openPanel('crew');
@@ -5011,6 +5035,7 @@ function interact(n) {
     else if (k === 'viagem') openPanel('viagem');
     else if (k === 'concessionaria') openPanel('concessionaria');
     else if (k === 'qg') { openPanel('faccao'); gangsFetch(); }
+    else if (k === 'armas') openPanel('armas');
     else if (k === 'hospital' || k === 'prefeitura' || k === 'igreja') openPanel(k);
     else if (k === 'delegacia') openPanel('delegacia');
     else if (k === 'bombeiros' || k === 'reciclagem') openPanel('agencia');
@@ -5441,16 +5466,27 @@ Object.assign(JOBS, {
   medico: { name: 'Médico', desc: 'Atenda os pacientes que chegam no Hospital: segure Ação em cada um para examinar e tratar.', base: 240, need: 4, icon: '🩺' },
   traficante: { name: 'Traficante', desc: 'Só para quem está numa facção. Pegue a encomenda na boca do morro e entregue sem ser pego: você fica procurado pela polícia enquanto carrega.', base: 300, need: 3, gang: true, icon: '💼' },
 });
-// armas de fogo: só com tokens (dinheiro real)
+// armas de fogo: com dinheiro do jogo ou tokens (na Loja de Armas do AJBZ)
 const GUNS = [
-  I('gun', 'gun_faca', 'Faca', 0x9aa3ad, 60, null, 'comum', { gun: 'faca', dmg: 34, rng: 1.9, cd: 0.55, mag: 1, rel: 0, knock: 2, melee: true, desc: 'Arma branca: o botão Bater vira facada (-34 de vida).' }),
+  I('gun', 'gun_faca', 'Faca', 0x9aa3ad, 60, 5, 'comum', { gun: 'faca', dmg: 34, rng: 1.9, cd: 0.55, mag: 1, rel: 0, knock: 2, melee: true, desc: 'Arma branca: o botão Bater vira facada (-34 de vida).' }),
   I('gun', 'gun_none', 'Sem arma de fogo', 0x555555, 0, null, 'comum', { gun: 'none', desc: 'Mãos livres.' }),
-  I('gun', 'gun_taser', 'Taser', 0xffcf3a, null, 80, 'raro', { dmg: 10, gun: 'taser', rng: 9, cd: 0.5, mag: 1, rel: 2.2, knock: 4, desc: '1 disparo por cartucho (recarga 2,2 s). Choque de perto: derruba por 4 s.' }),
-  I('gun', 'gun_38', 'Revólver .38', 0x6d717a, null, 120, 'raro', { dmg: 35, gun: 'revolver', rng: 22, cd: 0.45, mag: 6, rel: 3.2, knock: 4, desc: 'Tambor de 6 tiros, recarga lenta (3,2 s).' }),
-  I('gun', 'gun_9mm', 'Pistola 9mm', 0x2a2d34, null, 160, 'raro', { dmg: 25, gun: 'pistola', rng: 26, cd: 0.22, mag: 17, rel: 1.8, knock: 4, desc: 'Carregador de 17 tiros, semiautomática (recarga 1,8 s).' }),
-  I('gun', 'gun_12', 'Escopeta 12', 0x5a3d26, null, 280, 'lendario', { dmg: 55, gun: 'escopeta', rng: 14, cd: 0.85, mag: 8, rel: 4, knock: 6, cone: 0.78, pellets: 8, desc: '8 cartuchos de chumbo que espalha, pump (recarga 4 s).' }),
-  I('gun', 'gun_fuzil', 'Fuzil', 0x3b4232, null, 420, 'lendario', { dmg: 30, gun: 'fuzil', rng: 40, cd: 0.1, mag: 30, rel: 2.6, auto: true, knock: 5, desc: 'Carregador de 30 tiros, automático: segure para rajada (recarga 2,6 s).' }),
+  I('gun', 'gun_taser', 'Taser', 0xffcf3a, 2500, 80, 'raro', { dmg: 10, gun: 'taser', rng: 9, cd: 0.5, mag: 1, rel: 2.2, knock: 4, desc: '1 disparo por cartucho (recarga 2,2 s). Choque de perto: derruba por 4 s.' }),
+  I('gun', 'gun_38', 'Revólver .38', 0x6d717a, 4500, 120, 'raro', { dmg: 35, gun: 'revolver', rng: 22, cd: 0.45, mag: 6, rel: 3.2, knock: 4, desc: 'Tambor de 6 tiros, recarga lenta (3,2 s).' }),
+  I('gun', 'gun_9mm', 'Pistola 9mm', 0x2a2d34, 6000, 160, 'raro', { dmg: 25, gun: 'pistola', rng: 26, cd: 0.22, mag: 17, rel: 1.8, knock: 4, desc: 'Carregador de 17 tiros, semiautomática (recarga 1,8 s).' }),
+  I('gun', 'gun_12', 'Escopeta 12', 0x5a3d26, 28000, 280, 'lendario', { dmg: 55, gun: 'escopeta', rng: 14, cd: 0.85, mag: 8, rel: 4, knock: 6, cone: 0.78, pellets: 8, desc: '8 cartuchos de chumbo que espalha, pump (recarga 4 s).' }),
+  I('gun', 'gun_fuzil', 'Fuzil', 0x3b4232, 50000, 420, 'lendario', { dmg: 30, gun: 'fuzil', rng: 40, cd: 0.1, mag: 30, rel: 2.6, auto: true, knock: 5, desc: 'Carregador de 30 tiros, automático: segure para rajada (recarga 2,6 s).' }),
 ];
+// armas novas da Loja de Armas do AJBZ (dinheiro ou tokens); md = modelo 3D
+GUNS.push(
+  I('gun', 'gun_380', 'Pistola .380', 0x9aa0a8, 3500, 60, 'comum', { dmg: 20, gun: 'pistola', md: '380', rng: 22, cd: 0.25, mag: 12, rel: 1.6, knock: 3, desc: 'Compacta e leve: 12 tiros (recarga 1,6 s).' }),
+  I('gun', 'gun_deagle', 'Desert Eagle .50', 0xc0c4ca, 18000, 240, 'lendario', { dmg: 48, gun: 'pistola', md: 'deagle', rng: 30, cd: 0.45, mag: 7, rel: 2.2, knock: 5, desc: 'A pistola mais forte: 7 tiros pesados (recarga 2,2 s).' }),
+  I('gun', 'gun_357', 'Revólver .357 Magnum', 0xb8bcc2, 9000, 140, 'raro', { dmg: 42, gun: 'revolver', md: 'magnum', rng: 26, cd: 0.5, mag: 6, rel: 3.2, knock: 5, desc: 'Cano longo cromado: 6 tiros fortes (recarga 3,2 s).' }),
+  I('gun', 'gun_uzi', 'Submetralhadora Uzi', 0x2a2d34, 22000, 260, 'raro', { dmg: 15, gun: 'smg', md: 'uzi', rng: 20, cd: 0.07, mag: 32, rel: 2.2, auto: true, knock: 3, desc: 'Rajada rápida de perto: 32 tiros, automática (recarga 2,2 s).' }),
+  I('gun', 'gun_mp5', 'Submetralhadora MP5', 0x15161a, 30000, 320, 'raro', { dmg: 19, gun: 'smg', md: 'mp5', rng: 26, cd: 0.08, mag: 30, rel: 2.4, auto: true, knock: 3, desc: 'Precisa e automática: 30 tiros (recarga 2,4 s).' }),
+  I('gun', 'gun_ak', 'Fuzil AK-47', 0x8a5a2b, 60000, 520, 'lendario', { dmg: 34, gun: 'fuzil', md: 'ak', rng: 42, cd: 0.11, mag: 30, rel: 2.8, auto: true, knock: 5, desc: 'Coronha de madeira e carregador curvo: 30 tiros, automático (recarga 2,8 s).' }),
+  I('gun', 'gun_m4', 'Fuzil M4', 0x2a2d34, 65000, 560, 'lendario', { dmg: 31, gun: 'fuzil', md: 'm4', rng: 46, cd: 0.09, mag: 30, rel: 2.4, auto: true, knock: 5, desc: 'Com mira holográfica: 30 tiros, automático (recarga 2,4 s).' }),
+  I('gun', 'gun_sniper', 'Fuzil de Precisão .308', 0x3b4232, 120000, 900, 'lendario', { dmg: 95, gun: 'sniper', md: 'sniper', rng: 90, cd: 1.3, mag: 5, rel: 3.5, knock: 8, desc: 'Luneta com zoom ao mirar: 5 tiros de longe (recarga 3,5 s).' })
+);
 GUNS.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 SLOT_NAMES.gun = 'Armas de fogo';
 const myGun = () => { const it = ITEM[S.equip.gun]; if (it && it.gun && it.gun !== 'none' && S.owned.includes(it.id)) return it; return S.shift === 'policial' ? ITEM.gun_9mm : null; }; // policial em serviço usa a pistola da corporação
@@ -5483,7 +5519,7 @@ function bodyButtons(cur) {
 }
 function renderBodySel() { const b = bodyButtons(selBody); if ($('b-hs')) { $('b-hs').innerHTML = b.hs; $('b-w').innerHTML = b.w; $('b-h').innerHTML = b.h; } }
 function nextGun() {
-  const L = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)); if (!L.length) return toast('Você não tem armas de fogo. Compre no Arsenal com tokens.', 'bad');
+  const L = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)); if (!L.length) return toast('Você não tem armas de fogo. Compre na 🔫 Loja de Armas do AJBZ.', 'bad');
   const i = L.findIndex(g => g.id === S.equip.gun), n = L[(i + 1) % L.length]; S.equip.gun = n.id; persist(); netTrack(); toast(`Arma: ${n.name}`); sfx('ui');
 }
 const myHandKind = () => { if (P.jailT > 0) return null; const g = myGun(); return g ? g.gun : myWpKind(); };
@@ -6296,7 +6332,7 @@ function collideHard(x, z) { for (const c of city.colliders) if (x > c.x0 && x <
 function updateAim(dt) {
   const on = aimOn(); if (!on && P.aim) setAim(false); if (!on) { if (camera.fov !== 62) { camera.fov = 62; camera.updateProjectionMatrix(); } return; }
   P.h = city.camYaw; P.v = 0; P.wpShowT = 0.2;
-  const want = 40; if (Math.abs(camera.fov - want) > 0.3) { camera.fov = lerp(camera.fov, want, 1 - Math.exp(-10 * dt)); camera.updateProjectionMatrix(); }
+  const GG = myGun(), want = GG && GG.gun === 'sniper' ? 15 : 40; if (Math.abs(camera.fov - want) > 0.3) { camera.fov = lerp(camera.fov, want, 1 - Math.exp(-10 * dt)); camera.updateProjectionMatrix(); }
   if ((city.aimT = (city.aimT || 0) - dt) <= 0) { city.aimT = 0.1; const G = myGun(), r = aimRay(G ? G.rng * 1.4 : 30); $('crosshair').classList.toggle('hit', !!r.best); }
 }
 /* câmera de mira (chamada no lugar da câmera normal) */
@@ -6744,14 +6780,15 @@ function raceHurt(n) {
    LOJAS E PRÉDIOS POR DENTRO: entra pela porta, anda lá dentro e fala no balcão
    ========================================================= */
 const SHOPIN = { x: 950, z: 600 };
-const INSIDE_KINDS = ['roupas', 'skate', 'celular', 'arena', 'tokens', 'crew', 'agencia', 'imobiliaria', 'viagem', 'concessionaria', 'delegacia', 'bombeiros', 'reciclagem', 'hospital', 'prefeitura', 'igreja'];
+const INSIDE_KINDS = ['armas', 'roupas', 'skate', 'celular', 'arena', 'tokens', 'crew', 'agencia', 'imobiliaria', 'viagem', 'concessionaria', 'delegacia', 'bombeiros', 'reciclagem', 'hospital', 'prefeitura', 'igreja'];
 function doorPanel(k) {
-  if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
+  if (k === 'armas') openPanel('armas');
+  else if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
   else if (k === 'bombeiros' || k === 'reciclagem') openPanel('agencia');
   else if (k === 'qg') { openPanel('faccao'); gangsFetch(); }
   else openPanel(k);
 }
-const ROOM_SIZE = { concessionaria: [26, 18], igreja: [14, 24], bombeiros: [18, 14], viagem: [20, 14], arena: [18, 14] };
+const ROOM_SIZE = { armas: [14, 16], concessionaria: [26, 18], igreja: [14, 24], bombeiros: [18, 14], viagem: [20, 14], arena: [18, 14] };
 /* retângulo do cômodo atual (casa, loja, hospital, cadeia) para a câmera não sair pela parede */
 function inRoomXZ(x, z) {
   let r = null;
@@ -6860,6 +6897,20 @@ function buildShopInterior(d) {
   } else if (k === 'reciclagem') {
     counter(-D / 2 + 1.8, 'Cooperativa');
     [[0x2f6db5, 'PAPEL'], [0xd8312f, 'PLÁSTICO'], [0x2e7d4f, 'VIDRO'], [0xf2c12e, 'METAL']].forEach(([c, n], i) => { const x = -5 + i * 3.3; solid(1.2, 1.4, 1.2, c, x, 0.7, 2.5); const s = textSprite(n, { bg: '#15161a', fg: '#fff', size: 40, scale: [1.4, 0.35, 1] }); s.position.set(x, 1.8, 2.5); g.add(s); for (let j = 0; j < 3; j++) solid(1.4, 1, 1.4, c, x + (j - 1) * 0.1, 0.5 + j, -1.5); });
+  } else if (k === 'armas') {
+    // vitrine de armas: painéis nas paredes com cada arma em tamanho grande e iluminada, com nome e preço
+    const L = GUNS.filter(i => i.gun !== 'none' && !i.melee);
+    for (const sx of [-1, 1]) { box(0.08, 2.5, D - 3, 0xe4e7ea, sx * (W / 2 - 0.05), 1.55, -0.6, 0, 0.9); box(0.1, 0.08, D - 3, 0xc62828, sx * (W / 2 - 0.08), 2.85, -0.6, 0, 0.4); box(0.1, 0.08, D - 3, 0xc62828, sx * (W / 2 - 0.08), 0.32, -0.6, 0, 0.4); for (let r = 0; r < 6; r++) add(boxGeo(0.02, 1.9, 1.35), new THREE.MeshBasicMaterial({ color: 0xfffaf0 }), sx * (W / 2 - 0.1), 1.55, -D / 2 + 2.0 + r * 1.6); }
+    L.forEach((it, i) => { const sx = i % 2 ? 1 : -1, row = Math.floor(i / 2), z = -D / 2 + 2.0 + (row % 6) * 1.6, y = row >= 6 ? 1.05 : 1.95, lg = LONG_GUNS.includes(it.gun);
+      const gm = gunMesh(it.gun, it.md); gm.scale.setScalar(lg ? 1.45 : 2.8); gm.rotation.y = -sx * Math.PI / 2; gm.position.set(sx * (W / 2 - 0.25), y, z + (lg ? -0.45 : 0)); g.add(gm);
+      const lb = textSprite(`${it.name} · $ ${fmt(it.c)}`, { bg: '#15161a', fg: '#ffd23f', size: 30, scale: [1.9, 0.2, 1] }); lb.position.set(sx * (W / 2 - 0.45), y - 0.36, z); g.add(lb); });
+    // balcão de vidro com as pistolas e o vendedor
+    solid(5, 1.0, 0.9, 0x15161a, 0, 0.5, -D / 2 + 2.6); add(boxGeo(5.1, 0.04, 1.0), new THREE.MeshStandardMaterial({ color: 0xbfe3ff, transparent: true, opacity: 0.35, roughness: 0.05 }), 0, 1.02, -D / 2 + 2.6);
+    L.filter(i => !LONG_GUNS.includes(i.gun)).slice(0, 5).forEach((it, i) => { const gm = gunMesh(it.gun, it.md); gm.scale.setScalar(1.6); gm.rotation.set(-Math.PI / 2, 0, Math.PI / 2); gm.position.set(-1.9 + i * 0.95, 0.94, -D / 2 + 2.6); g.add(gm); });
+    npc(lookOf({ shirt: 'shirt_black', pants: 'pants_black', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), 'm'), 'Vendedor do AJBZ', 0, -D / 2 + 1.5, 0);
+    npc(lookOf({ shirt: 'shirt_black', pants: 'pants_black', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), 'm'), 'Segurança', W / 2 - 1.4, D / 2 - 1.6, Math.PI);
+    const banner = textSprite(`🔫 ARMAS DO ${CHIEF.toUpperCase()} · NO DINHEIRO OU NO TOKEN`, { bg: '#c62828', fg: '#fff', size: 40, scale: [6.5, 0.5, 1] }); banner.position.set(0, 2.95, -D / 2 + 0.15); g.add(banner);
+    spot('🔫 Comprar armas (dinheiro ou tokens)', 0, -D / 2 + 3.6, () => openPanel('armas'));
   } else if (k === 'hospital') {
     counter(-D / 2 + 1.8, 'Recepção do hospital', lookOf({ shirt: 'uni_med', pants: 'uni_med_p', shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), 'f'), 'Recepcionista');
     for (const x of [-4, 4]) { solid(1.1, 0.6, 2.1, 0xcfd8dc, x, 0.35, 1.5); box(1, 0.12, 2, 0xffffff, x, 0.68, 1.5); box(0.06, 1.8, 2.2, 0x80cbc4, x + 0.8, 0.9, 1.5); }
@@ -9666,8 +9717,8 @@ function mocapLayer(u, o, t, dt, e) {
   const S = u.mc || (u.mc = { w: 0, ph: Math.random(), acc: new Float32Array(M.nb * 4), aw: new Float32Array(M.nb), tw: 0, fw: 0, y: 0, ic: null, it: 0, pc: null, pt: 0, pf: 0, dc: null, dt: 0, oL: 0, oR: 0, rest: {}, seed: Math.random() });
   const B = u.R.B, MD = MODELS[u.k], hipH = (MD && MD.hipH) || 0.95;
   // quando o movimento gravado entra (a pé, normal) e quando sai (skate, carro, nadar, algemado, caído, sentado)
-  const dance = e === 'dance' && o.walk && M.dance.length;
-  const on = !!o.walk && o.climb == null && !o.ride && o.pedal == null && !o.air && !(o.fallT > 0) && !o.pose && e !== 'sit' && !o.fp;
+  const EM = e && EMOTES[e], dance = (e === 'dance' || (EM && EM.clip != null)) && o.walk && M.dance.length;
+  const on = !!o.walk && o.climb == null && !o.ride && o.pedal == null && !o.air && !(o.fallT > 0) && !o.pose && e !== 'sit' && !o.fp && !(EM && !EM.free && EM.clip == null);
   S.w = lerp(S.w, on ? 1 : 0, 1 - Math.exp(-(on ? 7 : 14) * dt)); if (S.w < 0.01 && !on) { if (S.w > 0 || S.dirty) { for (const n in S.rest) if (B[n]) B[n].quaternion.copy(S.rest[n]); S.dirty = false; } S.w = 0; return; } S.dirty = true;
   // braços por cima (arma apontada, spray, soco, celular, cigarro, aceno...)
   const gest = u.gest && ARM_GEST.includes(u.gest.id), femTalk = u.k === 'f' && u.talkT > 0 && !dance;
@@ -9678,7 +9729,8 @@ function mocapLayer(u, o, t, dt, e) {
   S.acc.fill(0); S.aw.fill(0); S.tw = 0; S.fw = 0; S.y = 0;
   const sv = Math.abs(o.v || 0);
   if (dance) {
-    if (!S.dc) { S.dc = M.dance[Math.floor(S.seed * M.dance.length)]; S.dt = S.seed * 5; }
+    if (S.dcE !== e) { S.dc = null; S.dcE = e; }
+    if (!S.dc) { S.dc = EM && EM.clip != null ? M.dance[EM.clip % M.dance.length] : M.dance[Math.floor(S.seed * M.dance.length)]; S.dt = EM && EM.clip != null ? 0 : S.seed * 5; }
     S.dt += dt; mcAdd(S, S.dc, S.dt, 1);
   } else {
     S.dc = null;
@@ -11710,6 +11762,70 @@ function updateFamily27(dt, t) {
    RP28 · vida na rua: bater e faca, dar o toque, sentar, PM de verdade, helicóptero Águia,
    banco por dentro com movimento
    ========================================================= */
+/* =========================================================
+   MOVIMENTOS (emotes): toque no seu personagem para abrir. Os básicos são de graça;
+   os outros você compra com o dinheiro dos trabalhos e missões ou com tokens.
+   Gestos com as mãos usam o mesmo braço calculado da arma (as mãos vão no lugar certo do corpo);
+   as danças são movimentos gravados de verdade (captura de movimento).
+   ========================================================= */
+const EMOTES = {
+  wave: { n: 'Acenar', i: '👋', free: true }, cheer: { n: 'Comemorar', i: '🙌', free: true }, dance: { n: 'Dançar', i: '💃', free: true }, sit: { n: 'Sentar', i: '🪑', free: true },
+  palmas: { n: 'Bater palmas', i: '👏', c: 800, t: 12 }, apontar: { n: 'Apontar', i: '👉', c: 800, t: 12 }, cintura: { n: 'Mão na cintura', i: '💁', c: 900, t: 14 },
+  cruza: { n: 'Braços cruzados', i: '🙅', c: 1000, t: 15 }, pensando: { n: 'Pensativo', i: '🤔', c: 1000, t: 15 }, continencia: { n: 'Continência', i: '🫡', c: 1200, t: 18 },
+  facepalm: { n: 'Mão na cara', i: '🤦', c: 1200, t: 18 }, rezar: { n: 'Rezar', i: '🙏', c: 1500, t: 22 }, agachar: { n: 'Agachar', i: '🧎', c: 1500, t: 22 },
+  coracao: { n: 'Coração com as mãos', i: '🫶', c: 2000, t: 30 }, musculo: { n: 'Mostrar o muque', i: '💪', c: 2500, t: 35 }, polichinelo: { n: 'Polichinelo', i: '🤸', c: 2500, t: 35 },
+  dance1: { n: 'Dança: Passinho', i: '🕺', c: 4000, t: 50, clip: 0 }, dance2: { n: 'Dança: Funk', i: '🎶', c: 5000, t: 60, clip: 1 }, dance3: { n: 'Dança: Rebolado', i: '🍑', c: 6000, t: 70, clip: 2 },
+  dance4: { n: 'Dança: Charme', i: '✨', c: 7000, t: 80, clip: 3 }, dance5: { n: 'Dança: Quebradeira', i: '🔥', c: 9000, t: 100, clip: 4 },
+};
+const emoteOwned = id => !!(EMOTES[id] && (EMOTES[id].free || (S.emotes || []).includes(id)));
+// corpo e pernas de cada gesto (o resto dos braços é calculado em emoteIK)
+function emoteBody(e, t, p) {
+  if (e === 'agachar') { Object.assign(p, { lThigh: 1.95, rThigh: 1.95, lKnee: 2.45, rKnee: 2.45, lSpread: 0.25, rSpread: 0.25, lean: 0.35, headX: -0.15, lArmDown: 1.3, rArmDown: 1.3, lArmFwd: 0.9, rArmFwd: 0.9, lElbow: 0.4, rElbow: 0.4 }); return -0.58; }
+  if (e === 'polichinelo') { const k = (Math.sin(t * 7) + 1) / 2; Object.assign(p, { lArmDown: 1.24 - k * 2.6, rArmDown: 1.24 - k * 2.6, lArmFwd: 0, rArmFwd: 0, lElbow: 0.1, rElbow: 0.1, lSpread: 0.05 + k * 0.32, rSpread: 0.05 + k * 0.32, lThigh: 0, rThigh: 0, lKnee: 0.05, rKnee: 0.05 }); return Math.abs(Math.sin(t * 7)) * 0.08; }
+  if (e === 'rezar') p.headX = (p.headX || 0) + 0.35; else if (e === 'facepalm') p.headX = (p.headX || 0) + 0.3; else if (e === 'pensando') { p.headX = (p.headX || 0) + 0.1; p.headY = (p.headY || 0) + 0.2; } else if (e === 'coracao') p.headX = (p.headX || 0) - 0.05;
+  else if (e === 'cintura') Object.assign(p, { side: 0.06, lKnee: 0.25, lThigh: 0.12 }); else if (e === 'musculo') p.lean = (p.lean || 0) - 0.04;
+  return null;
+}
+const EMOTE_IK = ['palmas', 'apontar', 'cintura', 'cruza', 'pensando', 'continencia', 'facepalm', 'rezar', 'coracao', 'musculo'];
+function emoteIK(u, e, t) {
+  const B = u.R && u.R.B; if (!B || !B.RightArm || !B.LeftArm || !B.Head) return; const root = u.root; root.updateMatrixWorld(true);
+  const L = b => root.worldToLocal(b.getWorldPosition(new THREE.Vector3())), SR = L(B.RightArm), SL = L(B.LeftArm), HD = L(B.Head), side = Math.sign(SR.x - SL.x) || -1, mx = (SR.x + SL.x) / 2, sy = (SR.y + SL.y) / 2, sz = (SR.z + SL.z) / 2;
+  const W = (x, y, z) => root.localToWorld(new THREE.Vector3(x, y, z)), out = s => W(mx + s * side * 1.2, sy - 0.6, sz - 0.2), dn = s => W(mx + s * side * 0.5, sy - 1.2, sz - 0.3);
+  const ik = (s, x, y, z, pole) => armIK(B, s > 0 ? 'Right' : 'Left', W(x, y, z), pole || dn(s));
+  const both = (fn, pR, pL) => { const r = fn(1), l = fn(-1); ik(1, ...r, pR && pR(1)); ik(-1, ...l, pL && pL(-1)); };
+  if (e === 'palmas') { const k = (Math.sin(t * 11) + 1) / 2; both(s => [mx + s * side * (0.03 + 0.13 * k), sy - 0.2, sz + 0.32], out, out); u.hR = u.hL = 0.15; }
+  else if (e === 'apontar') { ik(1, SR.x + side * 0.02, SR.y + 0.08, SR.z + 0.75, out(1)); u.hR = 0.6; }
+  else if (e === 'cintura') { both(s => [(s > 0 ? SR.x : SL.x) + s * side * 0.08, sy - 0.48, sz + 0.03], s => W(mx + s * side * 1.4, sy - 0.2, sz - 0.6), s => W(mx + s * side * 1.4, sy - 0.2, sz - 0.6)); u.hR = u.hL = 0.5; }
+  else if (e === 'cruza') { ik(1, mx - side * 0.13, sy - 0.3, sz + 0.2, out(1)); ik(-1, mx + side * 0.13, sy - 0.26, sz + 0.24, out(-1)); u.hR = u.hL = 0.55; }
+  else if (e === 'pensando') { ik(1, HD.x + side * 0.02, HD.y - 0.1, HD.z + 0.12, W(mx + side * 0.6, sy - 1, sz + 0.2)); ik(-1, mx + side * 0.1, sy - 0.34, sz + 0.18, out(-1)); u.hR = 0.7; u.hL = 0.5; }
+  else if (e === 'continencia') { ik(1, HD.x + side * 0.08, HD.y + 0.07, HD.z + 0.1, W(mx + side * 1.4, sy + 0.1, sz)); u.hR = 0.05; }
+  else if (e === 'facepalm') { ik(1, HD.x + side * 0.01, HD.y + 0.02, HD.z + 0.12, W(mx + side * 0.6, sy - 1, sz + 0.3)); u.hR = 0.15; }
+  else if (e === 'rezar') { both(s => [mx + s * side * 0.025, sy - 0.17, sz + 0.24], out, out); u.hR = u.hL = 0.05; }
+  else if (e === 'coracao') { both(s => [mx + s * side * 0.07, HD.y + 0.3, HD.z + 0.08], s => W(mx + s * side * 1.4, sy + 0.4, sz), s => W(mx + s * side * 1.4, sy + 0.4, sz)); u.hR = u.hL = 0.35; }
+  else if (e === 'musculo') { both(s => [(s > 0 ? SR.x : SL.x) + s * side * 0.3, sy + 0.26, sz + 0.02], s => W(mx + s * side * 1.6, sy - 0.25, sz - 0.1), s => W(mx + s * side * 1.6, sy - 0.25, sz - 0.1)); u.hR = u.hL = 0.95; }
+}
+function doEmote(id) {
+  if (!emoteOwned(id)) return openPanel('movimentos');
+  if (P.drive || P.ride) return toast('Desça do veículo para fazer o movimento.', 'bad');
+  if (P.onBoard && id !== 'cheer') P.onBoard = false; P.sitAt && standUp(); P.emote = { id, t: id === 'sit' ? 60 : 30 }; P.v = 0; closePanel(); if (id === 'wave') bubble(city.player, 'Salve!', 2.5); sfx('ui'); netTrack && netTrack();
+}
+function buyEmote(id, cur) {
+  const E = EMOTES[id]; if (!E || emoteOwned(id)) return;
+  if (cur === 't') { if (S.tokens < E.t) { toast('Tokens insuficientes.', 'bad'); return openPanel('tokens'); } S.tokens -= E.t; }
+  else { if (S.coins < E.c) return toast('Grana insuficiente: faça trabalhos e missões para juntar.', 'bad'); S.coins -= E.c; }
+  S.emotes = S.emotes || []; S.emotes.push(id); persist(); updateHUD(); sfx('coin'); toast(`${E.i} Movimento liberado: ${E.n}!`, 'good'); renderPanel();
+}
+/* toque/clique em cima do seu personagem abre os movimentos */
+const TAPCH = { x: 0, y: 0, t: 0 };
+function tapOnPlayer(cx, cy) {
+  if (mode !== 'city' || P.drive || P.ride || P.aim || !city.player || (typeof uiBlocking === 'function' && uiBlocking())) return false;
+  const r = $('gl').getBoundingClientRect(), pr = (y) => { const v = new THREE.Vector3(P.x, P.y + y, P.z).project(camera); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height, v.z]; };
+  const a = pr(0.1), b = pr(1.75); if (a[2] > 1 || b[2] > 1) return false;
+  const h = Math.hypot(b[0] - a[0], b[1] - a[1]), w = Math.max(26, h * 0.22), dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, k = clamp(((cx - a[0]) * dx + (cy - a[1]) * dy) / L2, 0, 1);
+  return Math.hypot(cx - (a[0] + dx * k), cy - (a[1] + dy * k)) < w;
+}
+addEventListener('pointerdown', ev => { if (ev.target === $('gl')) { TAPCH.x = ev.clientX; TAPCH.y = ev.clientY; TAPCH.t = performance.now(); } }, { passive: true });
+addEventListener('pointerup', ev => { if (ev.target !== $('gl') || !TAPCH.t) return; const ok = performance.now() - TAPCH.t < 350 && Math.hypot(ev.clientX - TAPCH.x, ev.clientY - TAPCH.y) < 10; TAPCH.t = 0; if (ok && tapOnPlayer(ev.clientX, ev.clientY)) { openPanel('movimentos'); sfx('ui'); } }, { passive: true });
 // ---------- bater (soco) e faca: funciona andando pela cidade ----------
 function meleeTargets() {
   const L = [];
@@ -14624,7 +14740,7 @@ function itemCard(it) {
   return `<div class="item-card r-${it.r} ${on ? 'is-on' : ''} ${isWear(it) ? 'has-thumb' : ''}">${sw}<div class="item-info"><b>${esc(it.name)}</b>${rarBadge(it)}${extra}</div><div class="item-actions">${act}</div></div>`;
 }
 function paintPrintSwatches() { setTimeout(() => { document.querySelectorAll('canvas[data-print]').forEach(c => { const g = c.getContext('2d'); drawDeck(g, c.width, c.height, 0x3a3f4a, c.dataset.print); }); document.querySelectorAll('canvas[data-pat]').forEach(c => patSwatch(c, c.dataset.pat, +c.dataset.col)); }, 0); }
-const ICONS = { 'cap:none': '∅', 'glasses:none': '∅', 'acc:none': '∅', 'weapon:none': '∅', 'cap:cap': '🧢', 'cap:flat': '🧢', 'cap:beanie': '🧶', 'cap:bandana': '🏴‍☠️', 'cap:bucket': '👒', 'cap:straw': '👒', 'cap:visor': '🕶', 'cap:crown': '👑', 'glasses:dark': '🕶', 'glasses:round': '👓', 'glasses:heart': '😍', 'glasses:sport': '🥽', 'glasses:neon': '🥽', 'glasses:aviator': '🕶', 'acc:backpack': '🎒', 'acc:chain': '📿', 'acc:phones': '🎧', 'acc:wings': '🪽', 'acc:medal': '🥇', 'acc:colete': '🦺', 'weapon:banana': '🍌', 'weapon:sling': '🎯', 'weapon:smoke': '💨', 'weapon:spray': '🎨', 'weapon:rocket': '🚀', shoes_chinelo: '🩴', shoes_sandal: '🩴', shoes_bota: '🥾' };
+const ICONS = { gun_faca: '🔪', gun_taser: '⚡', gun_38: '🔫', gun_357: '🔫', gun_380: '🔫', gun_9mm: '🔫', gun_deagle: '🔫', gun_uzi: '💥', gun_mp5: '💥', gun_12: '💣', gun_fuzil: '🪖', gun_ak: '🪖', gun_m4: '🪖', gun_sniper: '🎯', 'cap:none': '∅', 'glasses:none': '∅', 'acc:none': '∅', 'weapon:none': '∅', 'cap:cap': '🧢', 'cap:flat': '🧢', 'cap:beanie': '🧶', 'cap:bandana': '🏴‍☠️', 'cap:bucket': '👒', 'cap:straw': '👒', 'cap:visor': '🕶', 'cap:crown': '👑', 'glasses:dark': '🕶', 'glasses:round': '👓', 'glasses:heart': '😍', 'glasses:sport': '🥽', 'glasses:neon': '🥽', 'glasses:aviator': '🕶', 'acc:backpack': '🎒', 'acc:chain': '📿', 'acc:phones': '🎧', 'acc:wings': '🪽', 'acc:medal': '🥇', 'acc:colete': '🦺', 'weapon:banana': '🍌', 'weapon:sling': '🎯', 'weapon:smoke': '💨', 'weapon:spray': '🎨', 'weapon:rocket': '🚀', shoes_chinelo: '🩴', shoes_sandal: '🩴', shoes_bota: '🥾' };
 const PANELS = {
   shop(kind) {
     city.lastShop = kind;
@@ -14784,7 +14900,7 @@ const PANELS = {
       html += `<p class="muted">Os 6 melhores combos (150+ pontos) ficam gravados aqui. Assista em câmera lenta e poste no Rolêgram.</p>`;
       html += S.replays.length ? S.replays.map(r => `<div class="item-card"><div class="swatch" style="--sw:linear-gradient(135deg,#ff4f7b,#ffcf3a)"></div><div class="item-info"><b>${esc(r.name)}</b><small>${fmt(r.pts)} pts · ${new Date(r.at).toLocaleDateString('pt-BR')}</small></div><div class="item-actions"><button class="btn sm" data-act="replay" data-id="${r.id}">Assistir</button><button class="btn ghost sm" data-act="post-replay" data-id="${r.id}">Postar</button></div></div>`).join('') : '<p class="muted">Nenhum replay ainda. Faça um combo de 150 pontos ou mais.</p>';
     } else {
-      html += `<p class="muted">Emotes funcionam a pé (o Comemorar funciona no skate também). Andar cancela o emote.</p><div class="emotes">${[['wave', 'Acenar'], ['dance', 'Dançar'], ['cheer', 'Comemorar'], ['sit', 'Sentar']].map(([k, n]) => `<button class="btn ghost" data-act="emote" data-k="${k}">${n}</button>`).join('')}</div>`;
+      html += `<p class="muted">Toque em cima do seu personagem para abrir os movimentos. Andar cancela.</p><div class="emotes">${Object.keys(EMOTES).filter(emoteOwned).map(k => `<button class="btn ghost" data-act="emote" data-k="${k}">${EMOTES[k].i} ${esc(EMOTES[k].n)}</button>`).join('')}<button class="btn" data-act="open-mov">🕺 Ver todos</button></div>`;
     }
     return { title: 'Social', html };
   },
@@ -15006,6 +15122,21 @@ const PANELS = {
   oferta() {
     const d = city.morroOffer; if (!d) return { title: 'Oferta', html: '<p class="muted">Nenhuma oferta no momento.</p>' };
     return { title: '👑 Oferta do chefe', html: `<div class="card"><h4>🏚️ ${esc(d.n)}</h4><p>O chefe <b>${esc(d.de)}</b> está vendendo este morro para você por <b>$ ${fmt(d.preco)}</b>.</p><div class="row"><button class="btn" data-act="morro-aceita" ${S.coins < d.preco ? 'disabled' : ''}>Aceitar e pagar</button><button class="btn ghost" data-act="morro-recusa">Recusar</button></div></div>` };
+  },
+  movimentos() {
+    const L = Object.entries(EMOTES), own = L.filter(([k]) => emoteOwned(k)), lock = L.filter(([k]) => !emoteOwned(k));
+    let html = `<p class="muted">Toque num movimento para fazer. Andar cancela. Os bloqueados você libera com o dinheiro dos trabalhos e missões ou com tokens.</p>`;
+    html += `<div class="emotes">${own.map(([k, E]) => `<button class="btn ghost" data-act="emote" data-k="${k}">${E.i} ${esc(E.n)}</button>`).join('')}</div>`;
+    if (lock.length) html += `<h3>🔒 Para liberar</h3><div class="grid-items">${lock.map(([k, E]) => `<div class="item-card"><div class="swatch ico" style="--sw:#2a2d34">${E.i}</div><div class="item-info"><b>${esc(E.n)}</b>${E.clip != null ? '<small>Dança gravada de verdade</small>' : '<small>Gesto</small>'}</div><div class="item-actions"><button class="btn sm" data-act="emote-buy" data-k="${k}" data-cur="c" ${S.coins < E.c ? 'disabled' : ''}>$ ${fmt(E.c)}</button><button class="btn tok sm" data-act="emote-buy" data-k="${k}" data-cur="t">${fmt(E.t)} T</button></div></div>`).join('')}</div>`;
+    return { title: '🕺 Movimentos', html };
+  },
+  armas() {
+    const G = myGun(), L = GUNS.filter(i => i.gun !== 'none');
+    let html = `<div class="note">🔫 <b>Loja de Armas do ${CHIEF}</b>. Todo mundo pode comprar, com o <b>dinheiro do jogo</b> (trabalhos e missões) ou com <b>tokens</b>. Use com o botão Arma (tecla G) e mire para acertar. Atirar em quem não deve te deixa <b>procurado</b>.</div>`;
+    html += `<p>Na mão: <b>${G ? esc(G.name) : 'nenhuma'}</b>${L.filter(i => S.owned.includes(i.id)).length > 1 ? ' · troque no botão de troca de arma' : ''}</p>`;
+    for (const [tt, f] of [['Pistolas e revólveres', i => ['pistola', 'revolver', 'taser'].includes(i.gun) || i.melee], ['Submetralhadoras', i => i.gun === 'smg'], ['Fuzis e escopetas', i => ['fuzil', 'escopeta', 'sniper'].includes(i.gun)]])
+      html += `<h3>${tt}</h3><div class="grid-items">${L.filter(f).map(itemCard).join('')}</div>`;
+    return { title: `🔫 Armas do ${CHIEF}`, html };
   },
   hospital() {
     let html = `<p class="muted">Hospital Municipal e base do SAMU (192). Atendimento pelo SUS, de graça. Quando a vida chega a 0% o SAMU busca você e você acorda aqui.</p>`;
@@ -15294,7 +15425,9 @@ function act(a, ds, el) {
     case 'replay': playReplay(ds.id); break;
     case 'post-replay': { const r = S.replays.find(x => String(x.id) === ds.id); if (r) { postFeed(`Olha esse ${r.name}: ${fmt(r.pts)} pontos!`, r.id); toast('Replay postado no Rolêgram!', 'good'); panelArg = 'feed'; renderPanel(); } break; }
     case 'summon': { const o = city.bots.find(x => x.b.id === ds.id); if (o) { o.summon = true; o.talkT = 0; toast(`${o.b.name}: Tô indo aí!`, 'good'); closePanel(); } break; }
-    case 'emote': { if (P.onBoard && ds.k !== 'cheer') P.onBoard = false; P.emote = { id: ds.k, t: ds.k === 'sit' ? 60 : 5 }; P.v = 0; closePanel(); if (ds.k === 'wave') bubble(city.player, 'Salve!', 2.5); break; }
+    case 'emote': doEmote(ds.k); break;
+    case 'emote-buy': buyEmote(ds.k, ds.cur); break;
+    case 'open-mov': openPanel('movimentos'); break;
     case 'attr': if (S.attrPts > 0 && S.attr[ds.k] < 10) { S.attr[ds.k]++; S.attrPts--; persist(); sfx('coin'); renderPanel(); } break;
     case 'special': S.special = ds.id; persist(); renderPanel(); break;
     case 'crate': openCrate(ds.k); renderPanel(); break;

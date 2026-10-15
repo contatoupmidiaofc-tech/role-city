@@ -671,3 +671,16 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - **Fuzil e escopeta mirando:** coronha no ombro, na altura do rosto, com a mão esquerda segurando a frente da arma.
     - **Fuzil e escopeta em descanso:** atravessados na frente do corpo, apontados para baixo.
     - O tiro sai da ponta do cano.
+
+### Build 2026.10.15-66 (Loja de Armas do AJBZ e Movimentos)
+  - 🔫 **Loja de Armas do AJBZ:** prédio novo no quarteirão 84,84 de São Paulo, Rio e Salvador.
+    - **Por dentro:** paredes claras com as armas expostas em tamanho grande, cada uma com nome e preço; balcão de vidro com as pistolas; vendedor e segurança.
+    - **Compra:** todo mundo pode comprar, com o **dinheiro do jogo** (trabalhos e missões) ou com **tokens**. As armas que antes eram só por tokens agora também saem no dinheiro.
+    - **8 armas novas, cada uma com modelo próprio:** Pistola .380, Desert Eagle .50 (cromada), Revólver .357 Magnum (cano longo), Submetralhadora Uzi, Submetralhadora MP5, Fuzil AK-47 (madeira e carregador curvo), Fuzil M4 (com mira) e Fuzil de Precisão .308 (com luneta: dá zoom ao mirar).
+    - As submetralhadoras e os fuzis seguram do jeito certo, com coronha no ombro e as duas mãos.
+  - 🕺 **Movimentos:** **toque em cima do seu personagem** para abrir. Acenar, Comemorar, Dançar e Sentar continuam de graça.
+    - **Para liberar** com o dinheiro dos trabalhos e missões ou com tokens:
+      - **Gestos:** Bater palmas, Apontar, Mão na cintura, Braços cruzados, Pensativo, Continência, Mão na cara, Rezar, Agachar, Coração com as mãos, Mostrar o muque e Polichinelo.
+      - **Danças gravadas de verdade:** Passinho, Funk, Rebolado, Charme e Quebradeira.
+    - As mãos vão no lugar certo do corpo, porque usam o mesmo cálculo de braço da arma.
+    - Todo mundo online vê o movimento que você faz.
