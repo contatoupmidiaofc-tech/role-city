@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-63';
+const BUILD = '2026.10.15-64';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2233,6 +2233,31 @@ function lookTarget(u) {
   return best ? _lw.set(best.x, best.y + 1.6, best.z) : null;
 }
 /* sobrepõe na pose: olhar, gesto parado, fala; devolve a pose da mão */
+/* sentado com vida: troca de postura de tempos em tempos (mãos nas coxas, perna cruzada, inclinado para frente,
+   celular, recostado) com transição suave, respiração, olhadas para os lados e o pé batendo */
+const SIT_POSES = {
+  maos: { lThigh: 1.5, rThigh: 1.5, lKnee: 1.55, rKnee: 1.55, lSpread: 0.1, rSpread: 0.1, lArmDown: 1.24, rArmDown: 1.24, lArmFwd: 0.7, rArmFwd: 0.7, lElbow: 0.5, rElbow: 0.5, lean: 0.05, headX: 0 },
+  cruza: { lThigh: 1.5, rThigh: 1.9, lKnee: 1.5, rKnee: 1.0, lSpread: 0.04, rSpread: -0.42, lArmDown: 1.24, rArmDown: 1.24, lArmFwd: 0.8, rArmFwd: 0.85, lElbow: 0.8, rElbow: 0.9, lean: 0.0, headX: -0.04 },
+  apoia: { lThigh: 1.45, rThigh: 1.45, lKnee: 1.7, rKnee: 1.7, lSpread: 0.26, rSpread: 0.26, lArmDown: 1.24, rArmDown: 1.24, lArmFwd: 0.5, rArmFwd: 0.5, lElbow: 0.35, rElbow: 0.35, lean: 0.3, headX: -0.18 },
+  celular: { lThigh: 1.5, rThigh: 1.5, lKnee: 1.55, rKnee: 1.55, lSpread: 0.12, rSpread: 0.12, lArmDown: 1.24, rArmDown: 1.15, lArmFwd: 0.7, rArmFwd: 0.75, lElbow: 0.6, rElbow: 2.0, lean: 0.06, headX: 0.12 },
+  recosta: { lThigh: 1.38, rThigh: 1.38, lKnee: 1.25, rKnee: 1.25, lSpread: 0.22, rSpread: 0.22, lArmDown: 1.24, rArmDown: 1.24, lArmFwd: 0.45, rArmFwd: 0.45, lElbow: 0.3, rElbow: 0.3, lean: -0.16, headX: -0.08 }
+};
+const SIT_ORDER = ['maos', 'cruza', 'apoia', 'celular', 'recosta', 'maos', 'cruza', 'recosta'];
+function sitLife(u, o, t, dt, p) {
+  const S = u.sitL || (u.sitL = { id: 'maos', left: rand(3, 7), cur: Object.assign({}, SIT_POSES.maos), look: 0, lookT: rand(1, 3), lookTo: 0, tapT: 0 });
+  if ((S.left -= dt) <= 0) { let nx; do nx = SIT_ORDER[Math.floor(Math.random() * SIT_ORDER.length)]; while (nx === S.id); S.id = nx; S.left = rand(6, 13); }
+  const tg = SIT_POSES[S.id], k = 1 - Math.exp(-2.2 * dt);
+  for (const key in tg) S.cur[key] = lerp(S.cur[key] ?? tg[key], tg[key], k);
+  Object.assign(p, S.cur);
+  // respiração e um leve balanço do tronco
+  p.lean += Math.sin(t * 1.7) * 0.018; p.side = Math.sin(t * 0.37) * 0.025;
+  // olhadas para os lados (menos quando está no celular)
+  if ((S.lookT -= dt) <= 0) { S.lookT = rand(1.8, 5); S.lookTo = S.id === 'celular' ? rand(-0.12, 0.12) : Math.random() < 0.4 ? 0 : rand(-0.85, 0.85); }
+  S.look = lerp(S.look, S.lookTo, 1 - Math.exp(-3 * dt)); p.headY = (p.headY || 0) + S.look; p.twist = (p.twist || 0) + S.look * 0.15;
+  // pé batendo de vez em quando (quando as duas pernas estão no chão)
+  if (S.id === 'maos' || S.id === 'apoia') { if ((S.tapT -= dt) < -4) S.tapT = rand(1.5, 3); if (S.tapT > 0) p.rKnee += Math.max(0, Math.sin(t * 11)) * 0.12; }
+  u.sitPhone = S.id === 'celular' && S.cur.rElbow > 1.6;
+}
 function lifeLayer(u, o, t, dt, p, walking) {
   const hands = { L: walking ? 0.32 : 0.5, R: walking ? 0.32 : 0.5, pointR: false, thumbR: false };
   // virada do corpo: inclina para dentro da curva e a cabeça vai na frente
@@ -2276,7 +2301,7 @@ function lifeLayer(u, o, t, dt, p, walking) {
     }
     if (G.t >= G.dur) u.gest = null;
   }
-  if (!u.gest || u.gest.id !== 'celular') u.phoneOut = false;
+  if (o.emote === 'sit' && u.sitPhone) u.phoneOut = true; else if (!u.gest || u.gest.id !== 'celular') u.phoneOut = false;
   // falando: gestos de mão e boca mexendo
   if (u.talkT > 0) {
     u.talkT -= dt;
@@ -2387,7 +2412,7 @@ function animReal(u, o, t) {
     if (e === 'wave') Object.assign(p, { rArmDown: -1.0, rElbow: 0.5 + Math.sin(t * 10) * 0.45 });
     else if (e === 'cheer') { Object.assign(p, { lArmDown: -1.3, rArmDown: -1.3, lElbow: 0.1, rElbow: 0.1 }); ry = Math.abs(Math.sin(t * 7)) * 0.18; }
     else if (e === 'dance') { const d = Math.sin(t * 8); Object.assign(p, { twist: d * 0.45, side: d * 0.1, headY: -d * 0.4, lArmFwd: 1.0 + d * 0.5, rArmFwd: 1.0 - d * 0.5, lElbow: 1.4, rElbow: 1.4, lThigh: 0.15 + Math.max(0, d) * 0.3, rThigh: 0.15 + Math.max(0, -d) * 0.3, lKnee: 0.35 + Math.max(0, d) * 0.5, rKnee: 0.35 + Math.max(0, -d) * 0.5, lSpread: 0.08, rSpread: 0.08 }); ry = -0.04 + Math.abs(d) * 0.05; rate = 24; }
-    else if (e === 'sit') { Object.assign(p, { lThigh: 1.5, rThigh: 1.5, lKnee: 1.55, rKnee: 1.55, lArmFwd: 0.7, rArmFwd: 0.7, lElbow: 0.5, rElbow: 0.5 }); ry = -0.42; }
+    else if (e === 'sit') { sitLife(u, o, t, dt, p); ry = -0.42; }
     if (o.fp) Object.assign(p, o.fp); if (o.armL) Object.assign(p, o.armL); if (o.armR) Object.assign(p, o.armR);
     u.board.visible = !!o.carry && e !== 'sit';
     if (o.carry) { u.board.position.set(0, 1.2, -0.2); u.board.rotation.set(Math.PI / 2, 0, 0); }
@@ -3830,7 +3855,7 @@ let _aoT = null;
 function carAO(L, W) {
   _aoT = _aoT || canvasTex(64, 128, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, h / 2); gr.addColorStop(0, 'rgba(0,0,0,.62)'); gr.addColorStop(0.55, 'rgba(0,0,0,.45)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.save(); g.scale(1, 1); g.fillRect(0, 0, w, h); g.restore(); });
   const m = new THREE.Mesh(new THREE.PlaneGeometry(W * 1.3, L * 1.12), new THREE.MeshBasicMaterial({ map: _aoT, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
-  m.rotation.x = -Math.PI / 2; m.position.y = 0.035; m.renderOrder = 1; return m;
+  m.rotation.x = -Math.PI / 2; m.position.y = 0.035; m.renderOrder = 1; m.userData.ao = true; return m;
 }
 function carBodyMat(M, color) {
   const key = 'body_' + M + '_' + color; if (VMAT[key]) return VMAT[key];
@@ -4484,7 +4509,7 @@ function updateCity(dt, t) {
   // céu e sol acompanham
   city.sky.position.copy(camera.position);
   for (const c of city.clouds.children) { c.position.x += c.userData.v * dt; if (c.position.x > 340) c.position.x = -340; }
-  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); updateShopIn(dt, t); updatePolice(dt, t); updateBeach(dt, t); updateWeather(dt, t); updateLife(dt, t); updateRP20(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
+  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); updateHealth(dt); updateShopIn(dt, t); hospTick(dt, t); updatePolice(dt, t); updateBeach(dt, t); updateWeather(dt, t); updateLife(dt, t); updateRP20(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
   const sd = city.dn ? city.dn.sunDir : [40, 80, 30]; city.sun.position.set(P.x + sd[0], sd[1], P.z + sd[2]); city.sun.target.position.set(P.x, 0, P.z);
   for (const d of city.doors) if (d.ring) d.ring.rotation.y += dt;
   updateHomeDoor(dt); if (city.seaTex) { city.seaTex.offset.x += dt * 0.01; city.seaTex.offset.y += dt * 0.02; city.foam.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.3; }
@@ -4879,6 +4904,7 @@ function interact(n) {
     if (k === 'hangar') { openPanel('hangar'); return; }
     if (k === 'elevadorCasa') { goHomePad(); return; }
     if (k === 'biz' && !n.d.inside) { enterBiz(n.d); return; }
+    if (k === 'hospital' && !n.d.inside) { enterHospital(); return; }
     if (INSIDE_KINDS.includes(k) && !n.d.inside) { enterShop(n.d); return; }
     if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
     else if (k === 'arena') openPanel('arena');
@@ -6418,35 +6444,176 @@ function updateSamu(dt) {
   }
 }
 function clearSamu() { const S2 = city.samu; if (!S2) return; if (S2.m) city.scene.remove(S2.m); for (const md of S2.medics || []) city.scene.remove(md.g); city.samu = null; }
-/* hospital: quarto com leitos onde você acorda */
-const HOSP = { x: 800, z: 600, W: 16, D: 12 };
+/* hospital por dentro (parecido com o do One State): recepção com sala de espera e senha, farmácia,
+   emergência (pronto-socorro) com triagem e leitos com cortina, enfermaria (onde você acorda), raio-X e centro cirúrgico.
+   Equipe de figurantes trabalhando; a emergência atende de verdade (sentado na maca, o médico cuida e você sai com 100%). */
+const HOSP = { x: 800, z: 600, W: 36, D: 28 };
+const HOSP_WAKE = [2.6, -10.6]; // leito 1 da enfermaria (local)
 function buildHospital() {
   if (city.hospG) return; const g = new THREE.Group(), cx = HOSP.x, cz = HOSP.z, W = HOSP.W, D = HOSP.D, H = 3.2; g.position.set(cx, 0, cz); city.scene.add(g); city.hospG = g;
   const add = (geo, m, x, y, z, ry = 0) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.y = ry; k.castShadow = k.receiveShadow = true; g.add(k); return k; };
+  const box = (w, h, d, c, x, y, z, ry = 0, r = 0.8, mt = 0) => add(boxGeo(w, h, d), std(c, r, mt), x, y, z, ry);
   const col = (x, z, w, d) => city.colliders.push({ x0: cx + x - w / 2, x1: cx + x + w / 2, z0: cz + z - d / 2, z1: cz + z + d / 2, hosp: true });
-  const fl = add(new THREE.PlaneGeometry(W, D), std(0xdfe7ea, 0.6), 0, 0.01, 0); fl.rotation.x = -Math.PI / 2;
-  const wm = new THREE.MeshStandardMaterial({ color: 0xeef4f6, roughness: 0.9, side: THREE.DoubleSide });
-  for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [0, D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry);
-  col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
+  const solid = (w, h, d, c, x, y, z, r, mt) => { const k = box(w, h, d, c, x, y, z, 0, r, mt); col(x, z, w, d); return k; };
+  const sign = (txt, bg, x, y, z, ry = 0, sw = 3.4) => { const s = textSprite(txt, { bg, fg: '#fff', size: 40, scale: [sw, 0.42, 1] }); s.position.set(x, y, z); g.add(s); return s; };
+  const floor = (w, d, c, x, z) => { const f = add(new THREE.PlaneGeometry(w, d), std(c, 0.55), x, 0.01, z); f.rotation.x = -Math.PI / 2; return f; };
+  const stripe = (w, d, c, x, z) => { const f = add(new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ color: c }), x, 0.02, z); f.rotation.x = -Math.PI / 2; };
+  // pisos por setor e faixas-guia no chão (vermelha: emergência; azul: enfermaria)
+  floor(W, 11, 0xe9e5dc, 0, 8.5); floor(18, 17, 0xdce8ee, -9, -5.5); floor(8.5, 8, 0xe4e7ea, 4.25, -1); floor(7.5, 8, 0xcfe5dc, 14.25, -1); floor(18, 9, 0xe6eef1, 9, -9.5); floor(2, 8, 0xd8dde0, 9.5, -1);
+  stripe(0.18, 9.5, 0xd8312f, -9.3, 3.6); stripe(0.18, 9.5, 0x2f6db5, 9.5, 3.6); stripe(0.18, 7, 0x2f6db5, 9.5, -1.5);
+  // paredes externas, teto e luminárias
+  const wm = new THREE.MeshStandardMaterial({ color: 0xe3eaec, roughness: 0.9, side: THREE.DoubleSide });
+  const band = new THREE.MeshStandardMaterial({ color: 0x5fb8ad, roughness: 0.7, side: THREE.DoubleSide }), bandB = new THREE.MeshStandardMaterial({ color: 0x4f86c6, roughness: 0.7, side: THREE.DoubleSide });
+  for (const [x, z, w, ry, m] of [[0, -D / 2 + 0.02, W, 0, band], [-W / 2 + 0.02, 0, D, Math.PI / 2, band], [W / 2 - 0.02, 0, D, Math.PI / 2, band], [-10.5, D / 2 - 0.02, 15, 0, bandB], [10.5, D / 2 - 0.02, 15, 0, bandB]]) add(new THREE.PlaneGeometry(w, 1.05), m, x, 0.53, z, ry);
+  for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry);
+  for (const [x, w] of [[-10.5, 15], [10.5, 15]]) add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, D / 2); add(new THREE.PlaneGeometry(6, H - 2.6), wm, 0, H - (H - 2.6) / 2, D / 2);
+  col(0, -D / 2 - 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D); col(-10.5, D / 2 + 0.2, 15, 0.4); col(10.5, D / 2 + 0.2, 15, 0.4);
   const ceil = add(new THREE.PlaneGeometry(W, D), std(0xffffff, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
-  const lt = new THREE.PointLight(0xffffff, 1.3, 30, 1.5); lt.position.set(0, H - 0.3, 0); g.add(lt); g.add(new THREE.HemisphereLight(0xffffff, 0x9fb8c0, 0.5));
-  for (let i = 0; i < 4; i++) { const x = -6 + i * 4; add(boxGeo(1.1, 0.55, 2.1), std(0xcfd8dc, 0.4, 0.5), x, 0.35, -D / 2 + 1.4); add(boxGeo(1, 0.12, 2), std(0xffffff, 0.9), x, 0.68, -D / 2 + 1.4); add(boxGeo(0.7, 0.12, 0.4), std(0xe3f2fd, 0.9), x, 0.78, -D / 2 + 0.6); add(boxGeo(0.06, 1.8, 2.2), std(0x80cbc4, 0.9), x + 1.5, 0.9, -D / 2 + 1.4); col(x, -D / 2 + 1.4, 1.1, 2.1); }
-  const cross = new THREE.Group(); for (const [w, h] of [[0.9, 0.3], [0.3, 0.9]]) { const k = new THREE.Mesh(boxGeo(w, h, 0.05), new THREE.MeshBasicMaterial({ color: 0xe53935 })); cross.add(k); } cross.position.set(0, 2.4, D / 2 - 0.05); g.add(cross);
-  add(boxGeo(2.6, 1.05, 0.8), std(0xb0bec5, 0.6), 4.5, 0.52, D / 2 - 2); col(4.5, D / 2 - 2, 2.6, 0.8);
-  const nurse = makeSkater(lookOf({ shirt: 'uni_med', pants: 'uni_med_p', shoes: 'shoes_white' in ITEM ? 'shoes_white' : 'shoes_basic' }, pick(SKINS), pick(HAIRS), 'f'), 'Enfermeira', '#8fd3ff'); nurse.position.set(cx + 4.5, 0, cz + D / 2 - 3); nurse.rotation.y = 0; city.scene.add(nurse); city.nurse = nurse;
-  const s = textSprite('HOSPITAL MUNICIPAL', { bg: '#e53935', fg: '#fff', size: 44, scale: [4.5, 0.6, 1] }); s.position.set(0, 2.9, -D / 2 + 0.1); g.add(s);
+  const panel = new THREE.MeshBasicMaterial({ color: 0xf7fbff }); for (let x = -15; x <= 15; x += 6) for (let z = -11; z <= 11; z += 5.5) add(boxGeo(1.6, 0.04, 0.6), panel, x, H - 0.03, z);
+  const lt = new THREE.PointLight(0xfff8ee, 0.9, 60, 1); lt.position.set(0, H - 0.3, 0); g.add(lt); g.add(new THREE.HemisphereLight(0xf4f8ff, 0x8aa3ad, 0.55));
+  // porta de vidro da entrada (sul)
+  const glass = new THREE.MeshStandardMaterial({ color: 0x9fd3e6, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.35 });
+  for (const x of [-1.5, 1.5]) add(boxGeo(2.9, 2.6, 0.06), glass, x * 1.02, 1.3, D / 2 - 0.05);
+  sign('🚪 SAÍDA', '#2e7d4f', 0, 2.85, D / 2 - 0.2, 0, 1.8);
+  // paredes internas (com vãos de passagem)
+  const wall = (x0, z0, x1, z1) => { const w = Math.max(Math.abs(x1 - x0), 0.2), d = Math.max(Math.abs(z1 - z0), 0.2), x = (x0 + x1) / 2, z = (z0 + z1) / 2; box(w, H, d, 0xe3eaec, x, H / 2, z, 0, 0.9); box(w + 0.03, 1.05, d + 0.03, 0x5fb8ad, x, 0.53, z, 0, 0.7); col(x, z, w, d); };
+  wall(-18, 3, -11, 3); wall(-7, 3, 8.5, 3); wall(10.5, 3, 18, 3); // recepção | fundos
+  wall(0, -14, 0, 3); // emergência | lado leste
+  wall(8.5, -5, 8.5, -2); wall(8.5, 0, 8.5, 3); wall(10.5, -5, 10.5, -2); wall(10.5, 0, 10.5, 3); // corredor
+  wall(0, -5, 8.5, -5); wall(10.5, -5, 18, -5); // enfermaria
+  sign('🚑 EMERGÊNCIA · PRONTO-SOCORRO', '#d8312f', -9, 2.75, 3.15, 0, 4.2); sign('🛏️ ENFERMARIA · RAIO-X · CIRURGIA', '#2f6db5', 9.5, 2.75, 3.15, 0, 4.2);
+  sign('🩻 RAIO-X', '#455a64', 8.35, 2.6, -1, -Math.PI / 2, 2); sign('😷 CENTRO CIRÚRGICO', '#2e7d4f', 10.65, 2.6, -1, Math.PI / 2, 3);
+  sign('🛏️ ENFERMARIA', '#2f6db5', 9.5, 2.75, -4.85, 0, 2.6);
+  // ---- recepção ----
+  solid(6, 1.1, 0.8, 0xffffff, 0, 0.55, 6.4, 0.4); box(6.2, 0.06, 1.0, 0x2f6db5, 0, 1.13, 6.45, 0, 0.3); box(0.8, 1.1, 2.4, 0xffffff, -3.4, 0.55, 5.6, 0, 0.4); col(-3.4, 5.6, 0.8, 2.4);
+  for (const x of [-1.6, 1.6]) { box(0.5, 0.32, 0.04, 0x15161a, x, 1.38, 6.05, 0, 0.3); box(0.46, 0.26, 0.01, 0x5fb3ff, x, 1.38, 6.08); }
+  sign('🏥 RECEPÇÃO', '#e53935', 0, 2.75, 6.4, 0, 2.6);
+  const senha = sign('SENHA 042 · GUICHÊ 1', '#15161a', -6.5, 2.5, 3.2, 0, 3.2); city.hospSenha = { s: senha, n: 42, t: 0 };
+  // sala de espera: cadeiras em fileiras (dá para sentar) e uma TV na parede
+  const chairs = [];
+  for (const [x0, z] of [[-16, 9.4], [-16, 11.6], [5.2, 9.4], [5.2, 11.6]]) { for (let i = 0; i < 6; i++) chairs.push([x0 + i * 0.62, z]); box(6 * 0.62, 0.06, 0.12, 0x9aa0a8, x0 + 2.5 * 0.62, 0.3, z + 0.2); col(x0 + 2.5 * 0.62, z, 6 * 0.62, 0.6); }
+  const seatC = std(0x2f6db5, 0.6);
+  const hs = [];
+  for (const [x, z] of chairs) { add(boxGeo(0.5, 0.06, 0.46), seatC, x, 0.45, z); add(boxGeo(0.5, 0.5, 0.06), seatC, x, 0.72, z + 0.22); const s = addSeat(x, z, Math.PI, 0.45, '🪑 Sentar na sala de espera'); s.x += cx; s.z += cz; const xs = city.xspots[city.xspots.length - 1]; xs.x += cx; xs.z += cz; xs.hosp = true; hs.push(s); }
+  const tv = add(boxGeo(2.2, 1.25, 0.08), std(0x15161a, 0.3), -17.9, 2.1, 10.5, Math.PI / 2);
+  const tvS = canvasTex(256, 144, c => { const gr = c.createLinearGradient(0, 0, 256, 144); gr.addColorStop(0, '#1e88e5'); gr.addColorStop(1, '#0d47a1'); c.fillStyle = gr; c.fillRect(0, 0, 256, 144); c.fillStyle = '#fff'; c.font = 'bold 22px sans-serif'; c.fillText('SAÚDE EM DIA', 18, 40); c.font = '15px sans-serif'; c.fillText('Lave as mãos · Beba água', 18, 72); c.fillText('Vacinação: sala 3', 18, 96); c.fillStyle = '#e53935'; c.fillRect(0, 118, 256, 26); c.fillStyle = '#fff'; c.font = 'bold 14px sans-serif'; c.fillText('SAMU 192 · BOMBEIROS 193 · POLÍCIA 190', 8, 136); });
+  add(new THREE.PlaneGeometry(2.05, 1.12), new THREE.MeshBasicMaterial({ map: tvS }), -17.85, 2.1, 10.5, Math.PI / 2);
+  for (const [x, z] of [[-17.2, 4], [17.2, 4], [-17.2, 13.2], [3.8, 13.2]]) { box(0.5, 0.5, 0.5, 0x8d6e63, x, 0.25, z); const p = add(new THREE.IcosahedronGeometry(0.55, 0), new THREE.MeshLambertMaterial({ color: 0x3f8f3a, flatShading: true }), x, 0.95, z); p.scale.y = 1.3; col(x, z, 0.6, 0.6); }
+  box(1.2, 1.7, 0.6, 0x1e88e5, 16.9, 0.85, 12.6, 0, 0.4); box(0.9, 0.9, 0.02, 0xbfe3ff, 16.6, 1.15, 12.6, Math.PI / 2, 0.2); col(16.9, 12.6, 1.2, 0.6); // máquina de água/café
+  // farmácia do hospital (balcão a leste)
+  solid(0.8, 1.1, 4, 0xffffff, 14.6, 0.55, 8.2, 0.4); box(1.0, 0.06, 4.2, 0x3ddc84, 14.6, 1.13, 8.2, 0, 0.3);
+  for (let i = 0; i < 3; i++) { box(0.4, 2.2, 4, 0xdfe6e9, 17.6, 1.1, 8.2); for (let k = 0; k < 4; k++) box(0.3, 0.18, 0.5, [0xe53935, 0x2f6db5, 0x3ddc84, 0xffcf3a][(i + k) & 3], 17.3, 0.5 + i * 0.6, 6.8 + k * 0.95); }
+  col(17.6, 8.2, 0.4, 4); sign('💊 FARMÁCIA', '#2e7d4f', 14.6, 2.6, 8.2, -Math.PI / 2, 2.2);
+  // ---- emergência (pronto-socorro) ----
+  const beds = city.hospBeds = [];
+  const bed = (x, z, ry, curtain) => {
+    const rot = ry; const o = new THREE.Group(); o.position.set(x, 0, z); o.rotation.y = rot; g.add(o);
+    const m = (geo, c, px, py, pz, r = 0.6, mt = 0) => { const k = new THREE.Mesh(geo, std(c, r, mt)); k.position.set(px, py, pz); k.castShadow = true; o.add(k); return k; };
+    m(boxGeo(1.0, 0.1, 2.0), 0x90a4ae, 0, 0.5, 0, 0.4, 0.5); m(boxGeo(0.92, 0.14, 1.9), 0xffffff, 0, 0.62, 0, 0.9); m(boxGeo(0.7, 0.12, 0.38), 0xe3f2fd, 0, 0.74, -0.7, 0.9);
+    for (const sx of [-0.42, 0.42]) for (const sz of [-0.85, 0.85]) m(CYL(0.03, 0.03, 0.5, 6), 0x9aa0a8, sx, 0.25, sz, 0.4, 0.6);
+    m(boxGeo(1.0, 0.45, 0.05), 0x90a4ae, 0, 0.82, -1.0, 0.4, 0.5);
+    // monitor de sinais vitais e suporte de soro
+    m(CYL(0.025, 0.025, 1.6, 6), 0x9aa0a8, 0.75, 0.8, -0.8, 0.3, 0.7); m(boxGeo(0.42, 0.3, 0.08), 0x263238, 0.75, 1.55, -0.8, 0.3); const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.24), new THREE.MeshBasicMaterial({ map: hospEcgTex() })); scr.position.set(0.75, 1.55, -0.755); o.add(scr);
+    m(CYL(0.02, 0.02, 1.9, 6), 0x9aa0a8, -0.7, 0.95, -0.9, 0.3, 0.7); const bag = new THREE.Mesh(boxGeo(0.14, 0.22, 0.05), new THREE.MeshStandardMaterial({ color: 0xe3f2fd, transparent: true, opacity: 0.7, roughness: 0.2 })); bag.position.set(-0.7, 1.75, -0.9); o.add(bag);
+    if (curtain) { const cm = new THREE.MeshStandardMaterial({ color: 0x80cbc4, roughness: 0.95, side: THREE.DoubleSide }); for (const sx of [-1.3, 1.3]) { const c = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.1), cm); c.rotation.y = Math.PI / 2; c.position.set(sx, 1.15, -0.1); o.add(c); } m(CYL(0.015, 0.015, 2.6, 4), 0xb0bec5, 1.3, 2.22, -0.1).rotation.x = Math.PI / 2; }
+    // colisão e lugar para sentar na maca (de lado, virado para o corredor)
+    const wx = cx + x, wz = cz + z; city.colliders.push({ x0: wx - (Math.abs(Math.sin(rot)) > 0.5 ? 1.0 : 0.5), x1: wx + (Math.abs(Math.sin(rot)) > 0.5 ? 1.0 : 0.5), z0: wz - (Math.abs(Math.sin(rot)) > 0.5 ? 0.5 : 1.0), z1: wz + (Math.abs(Math.sin(rot)) > 0.5 ? 0.5 : 1.0), hosp: true });
+    const sx = wx + Math.cos(rot) * 0.25, sz = wz - Math.sin(rot) * 0.25, seat = { x: sx, z: sz, h: rot + Math.PI / 2, y: 0.72, label: '🛏️ Maca' };
+    const b = { x: wx, z: wz, rot, seat, o }; beds.push(b); return b;
+  };
+  for (let i = 0; i < 4; i++) bed(-15.5 + i * 4, -12.2, 0, true).er = true;
+  solid(0.6, 0.9, 0.45, 0xd8312f, -1.0, 0.45, -8.5, 0.5); sign('❤️ DESFIBRILADOR', '#d8312f', -1.0, 1.4, -8.5, -Math.PI / 2, 1.8); // carrinho de parada
+  solid(2.2, 0.9, 0.7, 0xffffff, -15, 0.45, -1.2, 0.4); box(2.3, 0.05, 0.8, 0xd8312f, -15, 0.92, -1.2, 0, 0.4); sign('TRIAGEM', '#ff8f00', -15, 2.2, -1.2, 0, 1.6);
+  sign('🟥 Vermelho: emergência · 🟨 Amarelo: urgente · 🟩 Verde: pouco urgente', '#263238', -9, 2.6, -13.85, 0, 7.5);
+  // ---- enfermaria (leste, ao norte) ----
+  for (let i = 0; i < 6; i++) bed(2.6 + i * 2.75, -12.2, 0, i < 5);
+  // ---- raio-X ----
+  solid(1.0, 0.75, 2.2, 0xe0e0e0, 4, 0.38, -1.5, 0.5); box(0.9, 0.06, 2.0, 0xffffff, 4, 0.78, -1.5, 0, 0.9);
+  box(0.25, 2.6, 0.25, 0xcfd8dc, 2.2, 1.3, -1.5, 0, 0.4, 0.4); box(1.5, 0.18, 0.25, 0xcfd8dc, 2.95, 2.45, -1.5, 0, 0.4, 0.4); box(0.45, 0.4, 0.45, 0x90a4ae, 3.8, 2.2, -1.5, 0, 0.4, 0.5); col(2.2, -1.5, 0.4, 0.4);
+  const xr = canvasTex(128, 160, c => { c.fillStyle = '#05080c'; c.fillRect(0, 0, 128, 160); c.strokeStyle = 'rgba(220,235,255,.85)'; c.lineWidth = 4; c.beginPath(); c.moveTo(64, 14); c.lineTo(64, 150); c.stroke(); c.lineWidth = 3; for (let i = 0; i < 7; i++) { const y = 34 + i * 14; c.beginPath(); c.ellipse(64, y + 6, 44 - i * 2, 9, 0, Math.PI, TAU); c.stroke(); } c.beginPath(); c.arc(64, 14, 10, 0, TAU); c.stroke(); });
+  for (const z of [-3.6, -2.3]) { box(0.06, 1.0, 1.15, 0xffffff, 0.15, 1.7, z); const im = add(new THREE.PlaneGeometry(0.95, 0.85), new THREE.MeshBasicMaterial({ map: xr }), 0.19, 1.7, z, Math.PI / 2); im.castShadow = false; }
+  box(0.08, 2.0, 1.4, 0x78909c, 6.5, 1.0, 1.5, 0, 0.6, 0.3); col(6.5, 1.5, 0.15, 1.4); sign('☢️', '#ffcf3a', 6.5, 2.3, 1.5, 0, 0.6);
+  // ---- centro cirúrgico ----
+  solid(0.8, 0.9, 2.1, 0x90a4ae, 14.2, 0.45, -1.4, 0.3, 0.6); box(0.75, 0.08, 2.0, 0x26a69a, 14.2, 0.94, -1.4, 0, 0.7);
+  add(CYL(0.03, 0.03, 0.9, 6), std(0x9aa0a8, 0.3, 0.7), 14.2, 2.75, -1.4); const lamp = add(CYL(0.55, 0.4, 0.18, 18), std(0xeceff1, 0.3, 0.4), 14.2, 2.25, -1.4);
+  const disc = add(new THREE.CircleGeometry(0.38, 18), new THREE.MeshBasicMaterial({ color: 0xfffbe6 }), 14.2, 2.155, -1.4); disc.rotation.x = Math.PI / 2;
+  solid(0.7, 1.3, 0.6, 0x546e7a, 16.6, 0.65, -3.6, 0.4, 0.3); box(0.5, 0.36, 0.06, 0x263238, 16.6, 1.5, -3.3); const sc2 = add(new THREE.PlaneGeometry(0.44, 0.3), new THREE.MeshBasicMaterial({ map: hospEcgTex() }), 16.6, 1.5, -3.26); sc2.castShadow = false;
+  solid(0.9, 0.85, 0.5, 0xb0bec5, 12, 0.42, -3.8, 0.3, 0.6); for (let k = 0; k < 5; k++) box(0.12, 0.02, 0.03, 0xe0e0e0, 11.7 + k * 0.14, 0.86, -3.8, 0, 0.2, 0.9);
+  // ---- equipe (figurantes) ----
+  const look = (sh, pa, f) => lookOf({ shirt: sh, pants: pa, shoes: 'shoes_basic' }, pick(SKINS), pick(HAIRS), f ? 'f' : 'm');
+  const staff = city.hospStaff = [];
+  const st = (lk, name, x, z, h, say, path) => { const s = makeSkater(lk, name, '#8fd3ff'); s.position.set(cx + x, 0, cz + z); s.rotation.y = h; city.scene.add(s); const o = { g: s, x: cx + x, z: cz + z, h, h0: h, say, path: path && path.map(([a, b]) => [cx + a, cz + b]), pi: 0, wait: 0, ph: rand(0, 9) }; staff.push(o); return o; };
+  city.nurse = st(look('uni_med', 'uni_med_p', true), 'Enfermeira', HOSP_WAKE[0] + 1.6, HOSP_WAKE[1] + 2.4, Math.PI, ['Que bom que acordou!', 'Vai com calma, tá?']).g;
+  st(look('uni_med', 'uni_med_p', true), 'Recepcionista', -1.3, 5.4, 0, ['Bom dia! Pegue sua senha.', 'Documento, por favor.', 'Aguarde ser chamado.']);
+  st(look('uni_med', 'uni_med_p', false), 'Recepcionista', 1.3, 5.4, 0, ['Próximo!', 'Pode aguardar nas cadeiras.']);
+  st(look('uni_med', 'uni_med_p', false), 'Farmacêutico', 16.2, 8.2, -Math.PI / 2, ['Remédio só com receita, hein!', 'Precisa de alguma coisa?']);
+  st(look('uni_med', 'uni_med_p', true), 'Triagem', -15, -2.1, 0, ['Vou medir sua pressão.', 'Classificação de risco feita.']);
+  city.hospDoc = st(look('uni_med', 'uni_med_p', false), 'Dr. Plantonista', -9, -8, Math.PI, ['Próximo paciente!', 'Respira fundo…', 'Vai ficar tudo bem.']).g;
+  st(look('uni_samu', 'uni_samu_p', false), 'Socorrista', -4, 1.5, 0, ['Chegou mais um do SAMU!', 'Maca livre?'], [[-9, 5], [-9, 1], [-9, -7], [-9, 1], [-9, 5], [-3, 8], [3, 8], [9.5, 5], [9.5, -3], [9.5, -8], [9.5, -3], [9.5, 5], [3, 8], [-3, 8]]);
+  st(look('uni_med', 'uni_med_p', true), 'Cirurgiã', 13, -1.4, Math.PI / 2, ['Centro cirúrgico: só equipe.', 'Bisturi!']);
+  // pacientes esperando (sentados) e um paciente na enfermaria
+  for (const s of hs.filter((_, i) => i % 3 === 1).slice(0, 6)) city.sitNpcs.push(sitNpc(city.scene, s, null));
+  // pontos de interação
+  const spot = (x, z, r, label, fn, ok) => city.xspots.push({ hosp: true, x: cx + x, z: cz + z, r, label, fn, ok: () => city.hospIn && !P.sitAt && (!ok || ok()) });
+  spot(0, 7.7, 1.6, '🏥 Recepção: ficha, consulta e farmácia', () => openPanel('hospital'));
+  spot(13.6, 8.2, 1.5, '💊 Farmácia do hospital', () => openPanel('remedios'));
+  spot(-15, -0.1, 1.5, '🩺 Triagem (classificação de risco)', hospTriagem);
+  spot(-9, -6.6, 2.2, '🚑 Pedir atendimento na emergência', hospER, () => !city.hospTreat);
+  spot(4, 0.2, 1.6, '🩻 Fazer raio-X', () => { if (P.hp >= 100) return toast('🩻 Raio-X limpo: nenhum osso quebrado!', 'good'); toast('🩻 Raio-X feito: só pancada, nada quebrado. Passe na emergência para o curativo.', 'pink'); sfx('ui'); });
+  spot(9.5, 1.5, 1.4, '🚘 Garagem do SAMU (veículo da profissão)', () => openPanel('base'));
+}
+let _ecgT = null;
+function hospEcgTex() { return _ecgT || (_ecgT = canvasTex(128, 80, c => { c.fillStyle = '#071a12'; c.fillRect(0, 0, 128, 80); c.strokeStyle = '#3ddc84'; c.lineWidth = 2; c.beginPath(); let x = 0; c.moveTo(0, 50); while (x < 128) { c.lineTo(x + 10, 50); c.lineTo(x + 13, 40); c.lineTo(x + 16, 62); c.lineTo(x + 19, 18); c.lineTo(x + 22, 56); c.lineTo(x + 26, 50); x += 32; } c.stroke(); c.fillStyle = '#3ddc84'; c.font = 'bold 14px sans-serif'; c.fillText('♥ 78', 86, 16); })); }
+const hospTriageOf = hp => hp < 30 ? ['🟥', 'Vermelho (emergência)'] : hp < 60 ? ['🟨', 'Amarelo (urgente)'] : hp < 100 ? ['🟩', 'Verde (pouco urgente)'] : ['🟦', 'Azul (não urgente)'];
+function hospTriagem() { const [i, n] = hospTriageOf(P.hp); toast(`${i} Classificação de risco: ${n}. Vida ${Math.round(P.hp)}%.${P.hp < 100 ? ' Vá para a emergência.' : ''}`, P.hp < 100 ? 'pink' : 'good'); sfx('ui'); }
+function hospER() {
+  if (P.hp >= 100) return toast('🟦 Você está com 100% de vida: não precisa de atendimento.', 'good');
+  if ((S.consultaT || 0) > Date.now()) return toast(`O plantão está cheio: próximo atendimento em ${Math.ceil((S.consultaT - Date.now()) / 60000)} min. A farmácia tem remédios.`, 'bad');
+  const b = (city.hospBeds || []).find(b => b.er && !b.seat.npc && !(city.hospTreat && city.hospTreat.b === b)); if (!b) return toast('Todas as macas estão ocupadas. Aguarde.', 'bad');
+  const [i, n] = hospTriageOf(P.hp); P.x = b.seat.x; P.z = b.seat.z; sitDown(b.seat);
+  city.hospTreat = { b, t: 0, t0: performance.now(), dur: P.hp < 30 ? 9 : 7 }; toast(`${i} ${n}. Sente na maca: o médico já vem.`, 'pink'); sfx('ui');
+  if (city.hospDoc) bubble(city.hospDoc, 'Já vou te atender!', 2.5);
+}
+function hospTick(dt, t) {
+  if (!city.hospIn || !city.hospStaff) return;
+  const T = city.hospTreat, doc = city.hospStaff.find(o => o.g === city.hospDoc);
+  if (T) {
+    if (P.sitAt !== T.b.seat) { city.hospTreat = null; toast('Atendimento interrompido.', 'bad'); }
+    else { T.t = (performance.now() - T.t0) / 1000; if (doc) { doc.goto = [T.b.x + 0.9, T.b.z + 1.6]; }
+      if (T.t > 2.5 && !T.said) { T.said = true; if (city.hospDoc) bubble(city.hospDoc, pick(['Respira fundo…', 'Vou fazer o curativo.', 'Só uma picadinha!']), 3); }
+      if (T.t >= T.dur) { city.hospTreat = null; P.hp = 100; P.down = false; renderHp(); S.consultaT = Date.now() + 3 * 60000; persist(); sfx('level'); toast('🩺 Alta médica! Vida 100%. Atendimento pelo SUS: de graça.', 'good'); if (city.hospDoc) bubble(city.hospDoc, 'Pronto! Pode ir, mas se cuida.', 3); if (doc) doc.goto = null; } }
+  } else if (doc) doc.goto = null;
+  for (const o of city.hospStaff) {
+    let tgt = o.goto || (o.path ? o.path[o.pi] : [o.home ? o.home[0] : (o.home = [o.x, o.z])[0], o.home[1]]);
+    if (!o.home) o.home = [o.x, o.z]; if (!o.goto && !o.path) tgt = o.home;
+    const dx = tgt[0] - o.x, dz = tgt[1] - o.z, d = Math.hypot(dx, dz); let v = 0;
+    if (o.wait > 0) o.wait -= dt;
+    else if (d > 0.15) { v = Math.min(1.4, d * 2); o.x += dx / d * v * dt; o.z += dz / d * v * dt; o.h = Math.atan2(dx, dz); }
+    else if (o.path) { o.pi = (o.pi + 1) % o.path.length; o.wait = Math.random() < 0.3 ? rand(1, 3) : 0; }
+    else { const pd = Math.hypot(P.x - o.x, P.z - o.z); const want = pd < 4 ? Math.atan2(P.x - o.x, P.z - o.z) : o.goto ? Math.atan2((T ? T.b.x : o.x) - o.x, (T ? T.b.z : o.z) - o.z) : o.h0; o.h += Math.atan2(Math.sin(want - o.h), Math.cos(want - o.h)) * Math.min(1, dt * 4); }
+    o.g.position.set(o.x, 0, o.z); o.g.rotation.y = o.h; animSkater(o.g, { walk: true, v, fallT: 0 }, t + o.ph);
+    if (o.say && (o.sayT = (o.sayT ?? rand(4, 12)) - dt) <= 0) { o.sayT = rand(10, 22); if (Math.hypot(P.x - o.x, P.z - o.z) < 7) bubble(o.g, pick(o.say), 3); }
+    tickBubble(o.g, dt);
+  }
+  // painel de senha chamando o próximo
+  const Sg = city.hospSenha; if (Sg && (Sg.t += dt) > 14) { Sg.t = 0; Sg.n++; const ns = textSprite(`SENHA ${String(Sg.n).padStart(3, '0')} · GUICHÊ ${1 + (Sg.n & 1)}`, { bg: '#15161a', fg: '#fff', size: 40, scale: [3.2, 0.42, 1] }); ns.position.copy(Sg.s.position); Sg.s.parent.add(ns); Sg.s.parent.remove(Sg.s); Sg.s = ns; sfx('ui'); }
+}
+function enterHospital() {
+  if (city.hospIn) return; P.v = 0; P.onBoard = false; if (P.aim) setAim(false);
+  fadeTo(() => { buildHospital(); city.hospIn = true; P.x = HOSP.x; P.z = HOSP.z + HOSP.D / 2 - 3.8; P.y = 0; P.h = Math.PI; city.camYaw = Math.PI; city.zoom = 0.75; city.camSnap = true;
+    toast('🏥 Hospital Municipal: recepção à frente, emergência à esquerda, enfermaria e farmácia à direita.', 'pink'); });
 }
 function toHospital(by) {
   fadeTo(() => {
     clearSamu(); buildHospital(); P.down = false; P.fallT = 0; P.hp = 70; renderHp();
-    P.x = HOSP.x - 6 + 1.2; P.z = HOSP.z - HOSP.D / 2 + 2.6; P.y = 0; P.v = 0; P.h = Math.PI; city.hospIn = true; city.camYaw = 0; city.camSnap = true; city.zoom = 0.7;
+    P.x = HOSP.x + HOSP_WAKE[0] + 0.9; P.z = HOSP.z + HOSP_WAKE[1] + 1.6; P.y = 0; P.v = 0; P.h = 0; city.hospIn = true; city.camYaw = 0; city.camSnap = true; city.zoom = 0.7;
     toast(`Você acordou no Hospital (trazido pelo ${by}). Vida 70%. Atendimento pelo SUS: de graça!`, 'pink');
     if (city.nurse) bubble(city.nurse, 'Que bom que acordou! Já pode ir, mas vai com calma.', 5);
     try { if (NET.online && ccOnDuty('consulta')) setTimeout(() => toast('🩺 Tem médico de plantão: peça uma consulta em 📞 Chamados para sair com 100% de vida.', 'pink'), 2500); } catch (e) { }
   });
 }
 function leaveHospital() {
-  fadeTo(() => { city.hospIn = false; const d = city.doors.find(d => d.kind === 'hospital'); if (d) { P.x = d.x; P.z = d.z + 2.5; } else { P.x = 0; P.z = 10; } P.y = 0; city.zoom = 1; city.camSnap = true;
+  fadeTo(() => { city.hospIn = false; city.hospTreat = null; if (P.sitAt) standUp(); const d = city.doors.find(d => d.kind === 'hospital'); if (d) { const len = Math.hypot(d.x, d.z) || 1; if (d.out) { P.x = d.out[0]; P.z = d.out[1]; P.h = d.out[2]; } else { P.x = d.x + d.x / len * 1.5; P.z = d.z + d.z / len * 1.5; P.h = Math.atan2(d.x, d.z); } city.camYaw = P.h; } else { P.x = 0; P.z = 10; } P.y = 0; city.zoom = 1; city.camSnap = true;
     // o seu carro/moto fica esperando na porta do hospital: volte dirigindo até onde estava (sem teletransporte)
     const V = S.veh && VEH[S.veh]; if (V && !V.heli && !V.plane) { spawnMyVehicle(); toast(`Seu ${V.kind === 'car' ? 'carro' : 'veículo'} (${V.name}) está esperando na porta do hospital.`, 'pink'); } else toast('Alta do hospital! Volte a pé (ou de táxi) até onde estava.', 'pink');
   });
@@ -13015,15 +13182,31 @@ function carProxy(root) {
   const bb = new THREE.Box3(); root.traverse(m => { if (m.isMesh && m.visible && !m.userData.proxy && m.geometry) { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); bb.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld)); } });
   root.quaternion.copy(q); root.position.copy(p0); root.scale.copy(sc0); root.visible = saveV; root.updateMatrixWorld(true);
   if (bb.isEmpty()) return null; const S2 = bb.getSize(new THREE.Vector3()), C = bb.getCenter(new THREE.Vector3());
-  // cor da lataria: o material com mais vértices
-  let best = null, bn = 0; root.traverse(m => { if (m.isMesh && m.material && m.material.color && !m.material.transparent) { const n = m.geometry.attributes.position.count; if (n > bn) { bn = n; best = m.material; } } });
-  const paint = best ? best.color : new THREE.Color(0x888888), glass = new THREE.Color(0x1d2733), tire = new THREE.Color(0x111111);
-  const parts = [[S2.x, S2.y * 0.5, S2.z, C.x, bb.min.y + S2.y * 0.42, C.z, paint], [S2.x * 0.86, S2.y * 0.36, S2.z * 0.48, C.x, bb.min.y + S2.y * 0.8, C.z - S2.z * 0.04, glass]];
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.push([0.25, S2.y * 0.36, S2.z * 0.17, C.x + sx * (S2.x / 2 - 0.1), bb.min.y + S2.y * 0.18, C.z + sz * S2.z * 0.31, tire]);
-  const pos = [], nor = [], col = [];
-  for (const [w, h, d, x, y, z, c] of parts) { const g = new THREE.BoxGeometry(w, h, d).toNonIndexed(); g.translate(x, y, z); const P2 = g.attributes.position, N = g.attributes.normal; for (let i = 0; i < P2.count; i++) { pos.push(P2.getX(i), P2.getY(i), P2.getZ(i)); nor.push(N.getX(i), N.getY(i), N.getZ(i)); col.push(c.r, c.g, c.b); } g.dispose(); }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  CARLOD.mat = CARLOD.mat || shared(new THREE.MeshLambertMaterial({ vertexColors: true }));
+  // versão de longe = o próprio carro juntado numa peça só (mesmo formato, cores da pintura/vidro/pneu por vértice)
+  // antes eram caixas no lugar do carro, e de longe o carro parecia "distorcido" até chegar perto
+  // as rodas (aros cheios de detalhe) viram um cilindro simples de pneu; o resto entra com o formato de verdade
+  root.updateMatrixWorld(true); const inv = root.matrixWorld.clone().invert(), RM = new THREE.Matrix4();
+  const pos = [], nor = [], col = [], idx = [], V3 = new THREE.Vector3(), N3 = new THREE.Vector3(), NM = new THREE.Matrix3(), tint = new THREE.Color();
+  const put = (geo, M4, c) => { const P2 = geo.attributes.position, N = geo.attributes.normal, base = pos.length / 3; NM.getNormalMatrix(M4);
+    for (let k = 0; k < P2.count; k++) { V3.fromBufferAttribute(P2, k).applyMatrix4(M4); pos.push(V3.x, V3.y, V3.z); if (N) { N3.fromBufferAttribute(N, k).applyMatrix3(NM).normalize(); nor.push(N3.x, N3.y, N3.z); } else nor.push(0, 1, 0); col.push(c.r, c.g, c.b); }
+    if (geo.index) { const I = geo.index.array; for (let k = 0; k < I.length; k++) idx.push(base + I[k]); } else for (let k = 0; k < P2.count; k++) idx.push(base + k); };
+  const wheelSet = new Set(); for (const w of root.userData.wheels || []) w.traverse && w.traverse(o => wheelSet.add(o));
+  root.traverse(m => {
+    if (!m.isMesh || m.isInstancedMesh || m.userData.proxy || m.userData.ao || wheelSet.has(m) || !m.geometry || !m.geometry.attributes.position) return;
+    let vis = true; for (let o = m; o && o !== root; o = o.parent) if (!o.visible) { vis = false; break; } if (!vis) return;
+    const mat = Array.isArray(m.material) ? m.material[0] : m.material; if (!mat || mat.visible === false || (mat.transparent && mat.opacity < 0.25 && !mat.map)) return;
+    tint.copy(mat.color || new THREE.Color(0x888888)); if (mat.map && tint.r + tint.g + tint.b > 2.7) tint.setHex(0x55585e); if (mat.transparent) tint.lerp(new THREE.Color(0x22324a), 0.75);
+    put(m.geometry, RM.multiplyMatrices(inv, m.matrixWorld), tint);
+  });
+  const tyre = new THREE.CylinderGeometry(0.5, 0.5, 1, 12), wb = new THREE.Box3(), tc = new THREE.Color(0x15161a);
+  for (const w of root.userData.wheels || []) { if (!w.traverse) continue; wb.makeEmpty(); w.traverse(o => { if (o.isMesh && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); wb.union(o.geometry.boundingBox.clone().applyMatrix4(RM.multiplyMatrices(inv, o.matrixWorld))); } });
+    if (wb.isEmpty()) continue; const sz = wb.getSize(new THREE.Vector3()), c = wb.getCenter(new THREE.Vector3()), d = Math.max(sz.y, Math.min(sz.x, sz.z) === sz.x ? sz.z : sz.x), wd = Math.min(sz.x, sz.z);
+    const T = new THREE.Matrix4().makeTranslation(c.x, c.y, c.z).multiply(new THREE.Matrix4().makeRotationZ(sz.x <= sz.z ? Math.PI / 2 : 0)).multiply(new THREE.Matrix4().makeRotationX(sz.x <= sz.z ? 0 : Math.PI / 2)).multiply(new THREE.Matrix4().makeScale(d, wd, d));
+    put(tyre, T, tc); }
+  tyre.dispose();
+  if (!pos.length) return null;
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeBoundingSphere();
+  CARLOD.mat = CARLOD.mat || shared(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.2 }));
   const m = new THREE.Mesh(g, CARLOD.mat); m.userData.proxy = true; m.userData.noMerge = true; m.castShadow = true; m.visible = false; root.add(m); u.proxy = m; return m;
 }
 function carLod(cam) {
@@ -13033,7 +13216,7 @@ function carLod(cam) {
   for (const o of CARLOD.roots) {
     if (!o.visible || !o.parent) continue; o.getWorldPosition(CARLOD.v); if (CARLOD.v.distanceTo(cp) < far) continue;
     const px = carProxy(o); if (!px) continue; const kids = [];
-    for (const c of o.children) if (c !== px && c.visible && !(c.isSprite)) { c.visible = false; kids.push(c); }
+    for (const c of o.children) if (c !== px && c.visible && !c.isSprite && !c.userData.ao) { c.visible = false; kids.push(c); }
     px.visible = true; sw.push([o, px, kids]);
   }
   return sw;
@@ -15211,7 +15394,7 @@ function ccFinishPay(stars, tip) {
 }
 
 /* ---- etapa 2: Polícia, SAMU e Médico com jogadores reais ---- */
-function goEnfermaria() { fadeTo(() => { buildHospital(); city.hospIn = true; P.x = HOSP.x + 2; P.z = HOSP.z; P.y = 0; P.v = 0; P.h = Math.PI; city.camYaw = 0; city.camSnap = true; city.zoom = 0.7; toast('🩺 Você está na enfermaria. Chegue perto do paciente e aperte Ação para atender.', 'pink'); }); }
+function goEnfermaria() { fadeTo(() => { buildHospital(); city.hospIn = true; P.x = HOSP.x + 9.5; P.z = HOSP.z - 7; P.y = 0; P.v = 0; P.h = Math.PI; city.camYaw = 0; city.camSnap = true; city.zoom = 0.7; toast('🩺 Você está na enfermaria. Chegue perto do paciente e aperte Ação para atender.', 'pink'); }); }
 const payCash = n => { n = Math.max(0, Math.min(n, cashNow())); if (S.wallet != null) S.wallet -= n; else S.coins -= n; updateHUD(); return n; };
 function ccTreat(p) { // médico atende o paciente do chamado: exame de 2,5 s e cura
   const T = CC.take; if (!T || T.arr || T.treating) return; T.treating = true; P.stopT = 2.5; toast(`🩺 Examinando ${p.name}…`, 'pink'); sfx('ui');

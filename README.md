@@ -636,3 +636,19 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
 
 ### Build 2026.10.15-63 (Sem motos figurantes)
   - 🏍️ **Retiradas as motos figurantes do trânsito:** o piloto era feito de blocos simples e destoava do resto da cidade. Saíram só elas: os carros do trânsito, o táxi, a viatura e as motos dos jogadores (inclusive a de motoboy) continuam iguais.
+
+### Build 2026.10.15-64 (Sentar com vida, carro de longe e hospital novo)
+  - 🪑 **Sentado com vida:** quem senta (jogadores e figurantes) troca de postura sozinho de tempos em tempos, com transição suave: mãos nas coxas, perna cruzada, inclinado para frente, falando no celular e recostado. Também respira, olha para os lados e bate o pé.
+  - 🚗 **Carro de longe sem distorção:** o carro visto de longe virava um bloco de caixas e só ficava certo ao chegar perto. Agora a versão de longe é o próprio carro juntado numa peça só, com o mesmo formato e pneus simples. Continua leve: um desenho por carro e cerca de 8 mil pontos.
+  - 🏥 **Hospital novo**, maior e com setores, inspirado no do One State. A porta do hospital leva direto para dentro:
+    - **Recepção:** dois recepcionistas, painel de senha que chama o próximo, sala de espera com cadeiras (dá para sentar) e pacientes esperando, TV com avisos de saúde, plantas e bebedouro. Lá ficam a ficha, a consulta e a farmácia.
+    - **Farmácia do hospital** com farmacêutico.
+    - **Emergência (pronto-socorro):**
+      - triagem com classificação de risco por cor (vermelho, amarelo, verde ou azul, conforme a vida);
+      - 4 macas com cortina, monitor de batimentos e soro, e carrinho de desfibrilador;
+      - **atendimento de verdade:** você senta na maca, o médico plantonista vem até você e você sai com 100% de vida, de graça pelo SUS (a cada 3 min).
+    - **Enfermaria:** 6 leitos. É onde você acorda depois do SAMU.
+    - **Raio-X**, com aparelho, negatoscópio com a radiografia e biombo.
+    - **Centro cirúrgico**, com mesa, foco de luz, monitor e instrumentos.
+    - Equipe trabalhando: um socorrista do SAMU circula pelos setores e a equipe olha para você e conversa.
+    - Placas por setor, faixas coloridas no chão (vermelha para a emergência, azul para a enfermaria) e garagem do SAMU (veículo da profissão) no corredor.
