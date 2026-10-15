@@ -684,3 +684,14 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
       - **Danças gravadas de verdade:** Passinho, Funk, Rebolado, Charme e Quebradeira.
     - As mãos vão no lugar certo do corpo, porque usam o mesmo cálculo de braço da arma.
     - Todo mundo online vê o movimento que você faz.
+
+### Build 2026.10.15-67 (Oficina do Zé e liberação por ID)
+  - 🔧 **Oficina do Zé**, a oficina mecânica com figurante. Fica no quarteirão -84,84 em São Paulo, -84,0 no Rio e -84,-42 em Salvador.
+    - **Como funciona:** venha dirigindo o seu carro até a porta (ou deixe estacionado do lado). Ele sobe no elevador, o Zé Mecânico trabalha e o carro desce pronto. O serviço é feito com o figurante, sem precisar de um mecânico jogador online.
+    - **Conserto:** deixa a lataria em 100%. O preço depende do estrago.
+    - **Rebaixado em 3 níveis:** leve ($ 1.500), médio ($ 3.000) e no chão, com rodas cambadas ($ 5.000). Voltar ao original custa $ 500.
+    - Todo mundo online vê o seu carro rebaixado, cada nível com a sua altura.
+  - 🆔 **ID do jogador:** cada jogador tem um ID de 6 letras e números, que aparece no Perfil (aba Resumo).
+  - 👑 **ADM libera pelo ID:** no painel de Segurança, o ADM digita o ID do jogador.
+    - Quem for liberado **sobe o morro** e **entra na mansão do ADM**, mesmo com a casa fechada.
+    - A liberação fica salva. O ADM pode tirar quando quiser.
