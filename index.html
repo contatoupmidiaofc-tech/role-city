@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-70';
+const BUILD = '2026.10.15-71';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -3070,7 +3070,7 @@ function cityExtras(sc) {
   { const [bx, bz] = morroWorld(17.6, 10), [sx, sz] = morroWorld(17.6, 15); partyAt(sc, bx, bz, 7, 4); speakerStack(sc, sx, sz, morroHd(17.6), 0, 2); const [ax, az] = morroWorld(-2, 3); usersFor(sc, [ax, az, city.boca[0], city.boca[1]], 2); }
   try { city.milQ = null; city.milQ = milSpot(); } catch (e) { city.milQ = null; }
   try { buildOuterCity(sc); } catch (e) { console.warn('cidade grande', e); city.outer = null; }
-  buildMilitary(sc);
+  buildMilitary(sc); buildSeaLife(sc);
   try { buildLife(sc); } catch (e) { console.warn('vida', e); }
   buildDayNight(sc);
   setTimeout(loadMarks, 600);
@@ -3660,7 +3660,7 @@ function carWheel(r, w, alloy) {
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.5, r * 0.5, 0.02, 16), vmat('alloy')); disc.rotation.z = Math.PI / 2; disc.position.x = -w * 0.1; wg.add(disc);
   return wg;
 }
-function makeVehicleMesh(V) { if (V.tank) return makeTankMesh(V); if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.low && V.kind === 'car') vehLower(m, V.low); if (V.deco) vehDeco(m, V); if (V.kind === 'car' && V.deco !== 'paredao') { try { const u = m.userData, keep = new Set([].concat(u.siren || [])); mergeByMaterial(m, keep); mergeDeep(m, keep); } catch (e) { console.warn('juntar carro', e); } } return m; }
+function makeVehicleMesh(V) { if (V.boat) return makeBoatMesh(V); if (V.tank) return makeTankMesh(V); if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.low && V.kind === 'car') vehLower(m, V.low); if (V.deco) vehDeco(m, V); if (V.kind === 'car' && V.deco !== 'paredao') { try { const u = m.userData, keep = new Set([].concat(u.siren || [])); mergeByMaterial(m, keep); mergeDeep(m, keep); } catch (e) { console.warn('juntar carro', e); } } return m; }
 function makeVehicleMesh0(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
   const paint = vmat('paint', V.color), add = (geo, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, P = g) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.set(rx, ry, rz); k.castShadow = true; k.receiveShadow = true; P.add(k); return k; };
@@ -4149,6 +4149,7 @@ function vehHorn() {
 }
 /* chama o seu veículo: aparece estacionado do seu lado */
 function spawnMyVehicle(Vj) {
+  if (Vj && Vj.boat) return spawnBoat(Vj, Vj.navy ? 'naval' : null);
   if (!Vj && (!S.veh || !VEH[S.veh])) return toast('Você ainda não tem veículo. Compre na Concessionária.', 'bad');
   if (city.myVeh) city.scene.remove(city.myVeh.m);
   const V = Vj || vehTuned(S.veh), m = makeVehicleMesh(V);
@@ -4161,6 +4162,7 @@ function enterVehicle() {
   for (const k of ['horn', 'lights', 'blinkL', 'blinkR', 'act']) input.pressed[k] = false;
   P.drive = { V: mv.V, m: mv.m }; P.onBoard = false; P.emote = null; P.x = mv.x; P.z = mv.z; P.h = mv.h; P.v = 0; P.y = mv.V.heli ? mv.m.position.y : 0; P.air = false;
   city.player.visible = mv.V.kind === 'moto'; city.zoom = 1; sfx('ui');
+  if (mv.V.boat) return toast(`🌊 Pilotando: ${mv.V.name}. ${IS_TOUCH ? 'Joystick acelera e vira · Buzina' : 'W acelera · S dá ré · A/D vira · H buzina'} · perto do cais, Ação sobe no cais; longe, você pula na água.`);
   toast(`${mv.V.kind === 'car' ? 'Dirigindo' : 'Pilotando'}: ${mv.V.name}. ${IS_TOUCH ? 'Joystick acelera e vira · Buzina, Farol e Setas nos botões.' : 'W acelera · S freia · A/D vira · H buzina · L farol · Z/X setas · E sai.'}`);
 }
 function exitVehicle(silent) {
@@ -4168,6 +4170,7 @@ function exitVehicle(silent) {
   city.myVeh.x = P.x; city.myVeh.z = P.z; city.myVeh.h = P.h;
   if (d.V.heli || d.V.plane) { if (!silent && (P.y - (d.V.heli ? heliGnd(P.x, P.z, P.y) : groundH(P.x, P.z)) > 0.8 || (d.V.plane && P.v > 4))) return toast(d.V.plane ? 'Pouse e pare o avião antes de sair.' : 'Pouse antes de sair (segure Descer).', 'bad'); heliLabels(false); heliCtl(false); }
   vehLightsTick(d.m, 0, 0, 0); P.drive = null; P.v = 0; city.player.visible = true;
+  if (isBoat(d.V)) { const e = boatExitSpot(), x = e ? e[0] : P.x + Math.cos(P.h) * 1.6, z = e ? e[1] : P.z - Math.sin(P.h) * 1.6; P.x = x; P.z = z; P.y = groundH(x, z); if (!silent) { sfx('ui'); if (!e) toast('🌊 Pulou na água!', 'pink'); } return; }
   if (d.V.heli && roofH(P.x, P.z) > 2 && !silent) { const b = roofBox(P.x, P.z); if (b) { const c = [[b[0] - 1.6, P.z], [b[1] + 1.6, P.z], [P.x, b[2] - 1.6], [P.x, b[3] + 1.6]].sort((p, q) => Math.hypot(p[0] - P.x, p[1] - P.z) - Math.hypot(q[0] - P.x, q[1] - P.z)).find(([x, z]) => !collide(x, z, 0.5)); if (c) { P.x = c[0]; P.z = c[1]; P.y = groundH(P.x, P.z); city.camSnap = true; sfx('ui'); toast('🚪 Desceu pela escada do prédio. O helicóptero ficou lá em cima.', 'pink'); return; } } }
   let x = P.x + Math.cos(P.h) * 1.8, z = P.z - Math.sin(P.h) * 1.8; if (collide(x, z, 0.5)) { x = P.x - Math.cos(P.h) * 1.8; z = P.z + Math.sin(P.h) * 1.8; }
   P.x = x; P.z = z; P.y = groundH(x, z); if (!silent) sfx('ui');
@@ -4187,6 +4190,7 @@ function updateDriving(dt, ax, blocked) {
   const d = P.drive, V = d.V, moto = V.kind === 'moto';
   if (V.heli) return updateFlying(dt, ax, blocked);
   if (V.plane) return updateFlyingPlane(dt, ax, blocked);
+  if (V.boat) return updateBoat(dt, ax, blocked);
   const thr = blocked ? 0 : ax.y, st = blocked ? 0 : ax.x;
   if (thr > 0.1) P.v += V.acc * thr * dt * (1 - Math.max(0, P.v) / V.top);
   else if (thr < -0.1) P.v -= (P.v > 0.5 ? 20 : V.acc * 0.4) * -thr * dt;
@@ -4563,7 +4567,8 @@ function updateCity(dt, t) {
     const maxV = P.swim ? 2.8 : P.lie ? 0 : 6.2 * (P.sprint || 1);
     turnTo(9);
     P.v = lerp(P.v, mag > 0.12 ? maxV * mag : 0, 1 - Math.exp(-(mag > 0.12 ? 6 : 9) * dt));
-    if (!blocked && !P.sport && tap('jump') && !P.air) { P.vy = 6; P.air = true; P.emote = null; }
+    if (!blocked && P.swim && tap('jump')) { P.diveT = 3; if (!S.diveTip) { S.diveTip = 1; toast('🤿 Mergulhando! Olha os peixes.', 'pink'); } }
+    else if (!blocked && !P.sport && tap('jump') && !P.air) { P.vy = 6; P.air = true; P.emote = null; }
     if (!blocked && !P.sport && !P.sitAt && tap('punch')) meleeHit(myKnife());
   }
   else {
@@ -4733,7 +4738,7 @@ function updateCity(dt, t) {
   const pr = $('prompt');
   if (near && !blocked && !city.contest) {
     const key = IS_TOUCH ? 'Ação' : 'E';
-    if (near.type === 'exitveh') { pr.textContent = `${key} · Sair ${P.drive.V.heli ? 'do helicóptero (pousado)' : P.drive.V.plane ? 'do avião (parado na pista)' : P.drive.V.kind === 'car' ? 'do carro' : P.drive.V.bike ? 'da bike' : 'da moto'}`; pr.hidden = false; if (tap('act')) exitVehicle(); }
+    if (near.type === 'exitveh') { pr.textContent = `${key} · Sair ${P.drive.V.boat ? (boatExitSpot() ? 'para o cais' : (P.drive.V.bm === 'jet' ? 'do jet-ski' : 'da lancha') + ' (pular na água)') : P.drive.V.heli ? 'do helicóptero (pousado)' : P.drive.V.plane ? 'do avião (parado na pista)' : P.drive.V.kind === 'car' ? 'do carro' : P.drive.V.bike ? 'da bike' : 'da moto'}`; pr.hidden = false; if (tap('act')) exitVehicle(); }
     else if (near.type === 'assalto') { pr.textContent = `${key} · Assaltar`; pr.hidden = false; if (tap('act')) robNpc(near.o); }
     else if (near.type === 'assaltoP') { pr.textContent = `${key} · Assaltar ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'assalto', payload: { id: NET.user.id, to: near.p.id, by: S.name } }); addWanted(2, 'assalto à mão armada'); } }
     else if (near.type === 'lotveh') { pr.textContent = `${key} · 🚓 Pegar: ${city.policeLot[near.i].V.name}`; pr.hidden = false; if (tap('act')) takeLotVeh(near.i); }
@@ -5062,6 +5067,7 @@ function interact(n) {
     else if (k === 'bombeiros' || k === 'reciclagem') openPanel('agencia');
     else if (k === 'quartel') openPanel('militar', 'exercito');
     else if (k === 'naval') openPanel('militar', 'marinha');
+    else if (k === 'marina') openPanel('marina');
     P.v = 0;
   } else if (n.type === 'veh') { enterVehicle();
   } else {
@@ -5356,6 +5362,7 @@ function morroWorld(d, t, id) { const [ax, s] = MORRO_SIDE[id || cityId()] || MO
 function inMorro(x, z, m = 0) { const [d, t] = morroLocal(x, z); return d > -6 && d < MORRO_D - m && Math.abs(t) < MORRO_W - m; }
 const morroHd = d => { const k = clamp(d / 85, 0, 1); return MORRO_H * k * k * (3 - 2 * k); };
 function groundH(x, z) {
+  if (z > 140 && city.piers && city.piers.length) { const q = onPier(x, z); if (q) return q.y; }
   if (city.tour || city.helipad || city.homePad) { const wa = walkAreaY(x, z); if (wa != null) return wa; }
   let b = 0; if (city.morro) { const [d, t] = morroLocal(x, z); if (d > 0 && Math.abs(t) <= MORRO_W + 1) b = morroHd(Math.min(d, MORRO_D + 12)); }
   if (city.surf.length) { const s = surfaceH(x, z); if (s != null) return b + s; }
@@ -7828,7 +7835,7 @@ SWIM_ITEMS.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 const SEA_Z = 163.5, SHARK_X = { rj: [55, 125], ssa: [-125, -55] };
 const beachCity = () => !!CITY().beach;
 const onSand = () => beachCity() && P.z > 117 && P.z < SEA_Z && !city.tour && !P.drive;
-const inSea = () => beachCity() && P.z > SEA_Z + 1 && !city.tour && !P.drive && Math.abs(P.x) < 400;
+const inSea = () => beachCity() && P.z > SEA_Z + 1 && !city.tour && !P.drive && Math.abs(P.x) < 400 && !onPier(P.x, P.z);
 const sharkZone = (x, z) => { const s = SHARK_X[cityId()]; return !!s && x > s[0] && x < s[1] && z > SEA_Z + 2; };
 /* roupa de praia: usa a peça de praia que a pessoa tem; se não tiver, a básica de graça */
 function beachEquip() {
@@ -7928,7 +7935,7 @@ function renderBeachBar() {
 function beachPose(g) {
   g.rotation.order = 'YXZ';
   if (P.lie) { g.rotation.x = -Math.PI / 2; g.position.y = P.y + 0.16; }
-  else { if (P.stagT > 0) { const k = Math.sin((1 - P.stagT / 0.6) * Math.PI); g.rotation.x = -k * 0.3; g.rotation.z = Math.sin(P.stagT * 18) * 0.05 * k; } else { g.rotation.x = 0; g.rotation.z = 0; } if (P.swim) g.position.y = P.y - 1.15; }
+  else { if (P.stagT > 0) { const k = Math.sin((1 - P.stagT / 0.6) * Math.PI); g.rotation.x = -k * 0.3; g.rotation.z = Math.sin(P.stagT * 18) * 0.05 * k; } else { g.rotation.x = 0; g.rotation.z = 0; } if (P.swim) g.position.y = P.y - 1.15 - (P.diveT > 0 ? 1.2 * Math.min(1, P.diveT, 3 - P.diveT) : 0); }
 }
 /* =========================================================
    TEMPO: sol, nublado, chuva e temporal com raios e trovões (o mesmo para todo mundo na cidade)
@@ -9550,7 +9557,7 @@ function oColHit(x, z, r) { const L = city.ocol && city.ocol[Math.floor(x / 24) 
 function outerBlocked(x, z, r) {
   if (inInner(x, z)) return false;
   if (!city.outer) return true;
-  if (Math.abs(x) > OUT_N - r || z < -OUT_N + r || z > outZMax() - r) return true;
+  if (Math.abs(x) > OUT_N - r || z < -OUT_N + r || z > (beachCity() ? SEA_Z + SEA_MAX : outZMax()) - r) return true; // nas cidades com praia: areia e mar livres para andar e nadar
   if (morroBand(x, z) || inHill(x, z)) return true;
   if (oColHit(x, z, r)) return true;
   return spotBlocked(x, z, r);
@@ -9733,6 +9740,7 @@ function updateRP20(dt, t) {
   try { updateCityFire(dt, t); } catch (e) { console.warn('fogo', e); }
   try { updateRaid(dt, t); } catch (e) { console.warn('operação', e); }
   try { updateMilitary(dt, t); } catch (e) { console.warn('militar', e); }
+  try { updateSeaLife(dt, t); } catch (e) { console.warn('mar', e); }
   updateOuter(dt, t);
   updateLife25(dt, t);
 }
@@ -15449,6 +15457,9 @@ function act(a, ds, el) {
     case 'ab-algema': abordAlgema(); break;
     case 'ab-solta': abordSolta(); break;
     case 'open-base': openPanel('base'); break;
+    case 'boat-buy': boatBuy(ds.id, ds.cur); break;
+    case 'boat-rent': boatRent(); break;
+    case 'boat-use': closePanel(); spawnBoat(VEH[ds.id], 'marina'); break;
     case 'jveh': takeJobVeh(ds.id); break;
     case 'floor': goFloor(+ds.n); break;
     case 'vault': vaultMove(+ds.d, ds.a); break;
@@ -16234,7 +16245,7 @@ Object.assign(RANKS, { exercito: ['Recruta', 'Soldado', 'Cabo', 'Sargento', 'Ten
 Object.assign(CC_RADIO, { exercito: 'seg', marinha: 'seg' });
 Object.assign(JOB_BASE, { exercito: 'quartel', marinha: 'naval' });
 Object.assign(BASE_NAME, { quartel: 'Quartel do Exército', naval: 'Base Naval da Marinha' });
-Object.assign(DOOR_COL, { quartel: '#6b8e23', naval: '#4fc3ff' });
+Object.assign(DOOR_COL, { quartel: '#6b8e23', naval: '#4fc3ff', marina: '#1f8fbf' });
 JOB_VEH.exercito = [['j_eb', 'v_pickup', 0x4b5a32, 'Viatura do Exército (Marruá)', 'eb']];
 JOB_VEH.marinha = [['j_mb', 'v_suv', 0xf4f4f0, 'Viatura da Marinha', 'mb']];
 for (const job of MIL_JOBS) JOB_VEH[job] = JOB_VEH[job].map(([id, base, color, name, deco]) => (VEH[id] = Object.assign({}, VEH[base], { id, name, color, deco, job, c: null, t: null, r: 'comum', desc: `Veículo de trabalho: ${JOBS[job].name}.` })));
@@ -16248,6 +16259,7 @@ function milTask(id, lv) {
   } else if (id === 'marinha' && M.n) {
     const N = M.n, base = shuffle([[N.pier[0], N.pier[1], 'Inspeção no cais', 'x', 5], [N.flag[0], N.flag[1], 'Hastear a Bandeira na Base Naval', 'x', 5], [N.pier[0] + 1.5, N.pier[1] - 3, 'Fiscalizar embarcação (documentos e coletes)', 'x', 4]]);
     stops.push(base[0]); if (n > 3) stops.push(base[1]);
+    if (Math.random() < 0.5) stops.push([rand(-100, 100), SEA_Z + rand(40, 90), 'Patrulha no mar: conferir boia de sinalização (de lancha)', 'mar', 0]);
     while (stops.length < n) { const sea = Math.random() < 0.5, x = rand(-110, 110); stops.push(sea ? [x, SEA_Z - 1.5, 'Salvamento: socorrer banhista', null, 6] : [x, rand(128, 150), 'Patrulha da orla', 'x', 3]); }
   } else { const p = farPoint(40); stops.push([p[0], p[1], 'Patrulha: ponto de controle', 'x', 3]); }
   const t = stops.reduce((a, s, i) => a + Math.hypot(s[0] - (i ? stops[i - 1][0] : P.x), s[1] - (i ? stops[i - 1][1] : P.z)), 0);
@@ -16355,6 +16367,7 @@ function buildNaval(sc) {
   const men = []; const mk = (i, x, z, h) => { const s = makeSkater(roleLook('marinha', i), null); s.position.set(x, groundH(x, z), z); s.rotation.y = h; g.add(s); return s; };
   men.push({ g: mk(0, nx - 2, bz - 6, Math.PI), sentry: true }, { g: mk(1, nx + 2, bz - 6, Math.PI), sentry: true });
   const walker = { g: mk(2, px, 152, 0), a: 0 };
+  city.colliders.push({ x0: px + 3.4, x1: px + 10.6, z0: SEA_Z + 12, z1: SEA_Z + 53, boat: true });
   city.mil = Object.assign(city.mil || {}, { n: { nx, bz, ship, men, walker, pier: [px, 152], flag: [flx - 1.2, flz] } });
   const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0x4fc3ff, transparent: true, opacity: .85, side: THREE.DoubleSide })); ring.position.set(nx, 0.13, bz - 6.2); sc.add(ring);
   city.doors.push({ kind: 'naval', label: '⚓ Base Naval da Marinha', x: nx, z: bz - 6.2, ring });
@@ -16385,6 +16398,170 @@ function updateMilitary(dt, t) {
   }
 }
 
+/* =========================================================
+   MAR: nadar (e mergulhar), cais, marina, jet-ski e lanchas (Rio e Salvador)
+   ========================================================= */
+const SEA_MAX = 170; // até onde dá para nadar e navegar (a partir da beira do mar)
+const BOATS = [
+  { id: 'b_jet', kind: 'moto', boat: true, bm: 'jet', name: 'Jet-ski', color: 0xffcf3a, top: 24, acc: 10, c: 28000, t: 300, r: 'raro', desc: 'Jet-ski para 1 pessoa: rápido e pula nas ondas.' },
+  { id: 'b_jet2', kind: 'moto', boat: true, bm: 'jet', name: 'Jet-ski Turbo', color: 0xd8312f, top: 29, acc: 12, c: 45000, t: 450, r: 'raro', desc: 'O jet-ski mais rápido da marina.' },
+  { id: 'b_lancha', kind: 'car', boat: true, bm: 'lancha', name: 'Lancha', color: 0xf4f4f0, top: 21, acc: 6.5, c: 90000, t: 900, r: 'lendario', desc: 'Lancha com cabine aberta e motor de popa.' },
+  { id: 'b_iate', kind: 'car', boat: true, bm: 'lancha', name: 'Lancha de Luxo AJBZ', color: 0x15161a, gold: true, top: 23, acc: 6, c: 250000, t: 2000, r: 'lendario', desc: 'Lancha preta e dourada do AJBZ.' },
+];
+BOATS.forEach(V => VEH[V.id] = V);
+VEH.b_aluguel = { id: 'b_aluguel', kind: 'moto', boat: true, bm: 'jet', name: 'Jet-ski Alugado', color: 0x4fc3ff, top: 22, acc: 9, r: 'comum' };
+JOB_VEH.marinha.push(VEH.j_mb_lancha = { id: 'j_mb_lancha', kind: 'car', boat: true, bm: 'lancha', navy: true, name: 'Lancha de Patrulha da Marinha', color: 0x8a939c, top: 22, acc: 7, job: 'marinha', r: 'comum', desc: 'Veículo de trabalho: Marinha do Brasil.' });
+const isBoat = V => !!(V && V.boat);
+/* malha dos barcos (o casco fica na linha d'água, y = 0) */
+function makeBoatMesh(V) {
+  const g = new THREE.Group(), body = new THREE.Group(), u = g.userData; g.add(body); u.body = body; u.wheels = []; u.boat = true;
+  const paint = std(V.color, 0.35, 0.2), white = std(0xf6f6f2, 0.5), dark = std(0x1d1e22, 0.6), gold = std(0xd4a017, 0.3, 0.8);
+  const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.castShadow = true; body.add(o); return o; };
+  if (V.bm === 'jet') {
+    add(boxGeo(1.0, 0.42, 2.4), paint, 0, 0.2, -0.2); const nose = add(new THREE.ConeGeometry(0.5, 1.0, 4), paint, 0, 0.22, 1.45, Math.PI / 2, Math.PI / 4); nose.scale.set(1, 1, 0.42);
+    add(boxGeo(1.04, 0.1, 2.5), white, 0, -0.02, -0.2); add(boxGeo(0.46, 0.22, 1.3), dark, 0, 0.52, -0.35); add(boxGeo(0.7, 0.3, 0.45), paint, 0, 0.55, 0.55);
+    add(CYL(0.025, 0.025, 0.7, 6), dark, 0, 0.82, 0.62, 0, 0, Math.PI / 2); add(boxGeo(0.5, 0.2, 0.05), new THREE.MeshStandardMaterial({ color: 0x9fd6ff, roughness: 0.05, transparent: true, opacity: 0.6 }), 0, 0.78, 0.78, -0.5);
+    u.seatY = 0.82; u.radius = 0.65; u.len = 3.2; u.camD = 7;
+  } else {
+    const L = 7, W = 2.4, hull = V.navy ? std(0x8a939c, 0.6) : paint;
+    add(boxGeo(W, 0.9, L), hull, 0, 0.2, -0.3); const bow = add(new THREE.ConeGeometry(W * 0.7, 2.4, 4), hull, 0, 0.22, L / 2 + 0.9, Math.PI / 2, Math.PI / 4); bow.scale.set(1, 1, 0.5);
+    add(boxGeo(W + 0.04, 0.16, L + 0.02), V.gold ? gold : V.navy ? std(0x1b2a4a, 0.6) : std(0x1f4fbf, 0.5), 0, 0.45, -0.3);
+    add(boxGeo(W - 0.3, 0.06, L - 0.6), std(0xd8c7a0, 0.8), 0, 0.68, -0.3);
+    add(boxGeo(W - 0.4, 0.55, 0.1), new THREE.MeshStandardMaterial({ color: 0x9fd6ff, roughness: 0.05, transparent: true, opacity: 0.55 }), 0, 1.05, 1.2, -0.35);
+    add(boxGeo(0.9, 0.7, 0.8), V.navy ? std(0x8a939c, 0.6) : white, 0.45, 0.95, 0.4); add(CYL(0.22, 0.22, 0.06, 14), dark, 0.45, 1.33, 0.2, 0.6);
+    for (const x of [-0.5, 0.5]) add(boxGeo(0.7, 0.35, 0.7), dark, x, 0.85, -1.2);
+    add(boxGeo(W - 0.4, 0.35, 1.1), dark, 0, 0.85, -2.9);
+    add(boxGeo(0.45, 1.1, 0.5), dark, 0, 0.45, -L / 2 - 0.55); add(boxGeo(0.12, 0.8, 0.12), std(0x5a5d64, 0.4, 0.6), 0, -0.25, -L / 2 - 0.55);
+    if (V.navy) { const bl = add(boxGeo(0.4, 0.14, 0.24), new THREE.MeshBasicMaterial({ color: 0x2060ff }), 0, 1.75, 0.6); u.siren = [bl, bl]; add(CYL(0.04, 0.04, 1.2, 6), dark, 0, 1.6, 0.4); }
+    const lb = V.navy ? '⚓ MARINHA' : V.gold ? '👑 AJBZ' : null; if (lb) for (const s of [-1, 1]) { const t = textSprite(lb, { bg: 'rgba(0,0,0,0)', fg: V.gold ? '#d4a017' : '#1b2a4a', size: 50, scale: [2.2, 0.45, 1] }); t.position.set(s * (W / 2 + 0.05), 0.25, 0.8); body.add(t); }
+    u.seatY = 1.05; u.radius = 1.3; u.len = L + 1.6; u.camD = 12; u.roof = 1.5;
+  }
+  return g;
+}
+/* cais: áreas de madeira em cima da água onde dá para andar */
+const onPier = (x, z) => { for (const q of city.piers || []) if (x > q.x0 && x < q.x1 && z > q.z0 && z < q.z1) return q; return null; };
+function addPier(sc, px, z0, z1, kind) {
+  const wood = std(0x8a6a45, 0.9), g = new THREE.Group(); sc.add(g);
+  const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  add(boxGeo(4, 0.35, z1 - z0), wood, px, 0.55, (z0 + z1) / 2);
+  for (let z = z0 + 2; z < z1; z += 4) for (const s of [-1, 1]) add(CYL(0.15, 0.15, 3.4, 6), wood, px + s * 1.9, -1, z);
+  for (const s of [-1, 1]) add(boxGeo(0.08, 0.08, z1 - z0 - 6), std(0xdddddd, 0.6), px + s * 1.95, 1.4, (z0 + z1) / 2 + 3);
+  (city.piers = city.piers || []).push({ x0: px - 2, x1: px + 2, z0, z1, y: 0.73, px, kind, spawn: [px + 4.2, SEA_Z + 22] });
+  return g;
+}
+/* marina: quiosque de aluguel na areia, cais, jet-skis e lancha atracados, boias */
+function marinaSpot() {
+  if (!beachCity()) return null; const sh = SHARK_X[cityId()] || [0, 0], nv = city.mil && city.mil.n ? city.mil.n.nx : 1e9, A = AIRPORT[cityId()];
+  const ok = (x, k) => !(x > sh[0] - 30 && x < sh[1] + 30) && Math.abs(x - nv) >= 40 && !(A && Math.abs(x - A.x) < 96) && !tourList().some(T => Math.hypot(T.x - x, T.z - 140) < k || (T.lk && Math.hypot(T.lk[0] - x, T.lk[1] - 140) < k));
+  const L = [-130, 130, -160, 160, -100, 100, -60, 60, 180, -180, 210, -210, 240, -240, 20, -20];
+  for (const k of [40, 26]) for (const x of L) if (ok(x, k)) return x;
+  return null;
+}
+function buildMarina(sc) {
+  city.piers = []; city.seaBoats = [];
+  if (!beachCity()) return;
+  if (city.mil && city.mil.n) city.piers.push({ x0: city.mil.n.pier[0] - 2, x1: city.mil.n.pier[0] + 2, z0: 150, z1: SEA_Z + 44, y: 0.73, px: city.mil.n.pier[0], kind: 'naval', spawn: [city.mil.n.pier[0] - 4.2, SEA_Z + 22] });
+  const mx = marinaSpot(); if (mx == null) return; const g = new THREE.Group(); sc.add(g);
+  addPier(sc, mx, 150, SEA_Z + 40, 'marina');
+  const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  const kx = mx - 7, kz = 142; add(boxGeo(5, 2.8, 3.6), std(0xf6f6f2, 0.8), kx, 1.4, kz); add(boxGeo(6, 0.25, 4.6), std(0x1f8fbf, 0.6), kx, 2.95, kz);
+  city.colliders.push({ x0: kx - 2.5, x1: kx + 2.5, z0: kz - 1.8, z1: kz + 1.8 });
+  const sg = textSprite('⚓ MARINA · JET-SKI E LANCHAS', { bg: '#1f8fbf', fg: '#ffffff', size: 42, scale: [8, 1.1, 1] }); sg.position.set(kx, 4.2, kz); g.add(sg);
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0x1f8fbf, transparent: true, opacity: .85, side: THREE.DoubleSide })); ring.position.set(kx, 0.13, kz - 2.8); sc.add(ring);
+  city.doors.push({ kind: 'marina', label: '⚓ Marina (jet-ski e lancha)', x: kx, z: kz - 2.8, ring });
+  // barcos atracados de enfeite e boias
+  const deco = [];
+  for (const [id, dx, dz] of [['b_jet', -3.4, SEA_Z + 8], ['b_jet2', -3.4, SEA_Z + 13], ['b_lancha', -4.6, SEA_Z + 26]]) { const m = makeBoatMesh(VEH[id]); m.position.set(mx + dx, 0, dz); g.add(m); deco.push(m); city.colliders.push({ x0: mx + dx - (m.userData.radius), x1: mx + dx + m.userData.radius, z0: dz - m.userData.len / 2, z1: dz + m.userData.len / 2, boat: true }); }
+  for (let z = SEA_Z + 10; z < SEA_Z + 60; z += 10) for (const s of [-1, 1]) { const b = new THREE.Mesh(SPH(0.35, 10, 8), lam(0xff7a1a)); b.position.set(mx + s * 14, 0.1, z); g.add(b); }
+  city.marina = { x: mx, kx, kz, deco };
+  (LANDMARKS[cityId()] || []).some(l => l[2] === 'Marina') || (LANDMARKS[cityId()] || []).push([mx, 150, 'Marina']);
+}
+/* barcos passando no mar: veleiros, pesqueiros e (em Salvador) saveiros e jangadas */
+function buildSeaTraffic(sc) {
+  if (!beachCity()) return; const ssa = cityId() === 'ssa', L = [];
+  const sail = (col, sailC, big) => { const g = new THREE.Group(), k = big ? 1.4 : 1; const h = new THREE.Mesh(boxGeo(1.6 * k, 0.6, 5 * k), std(col, 0.6)); h.position.y = 0.2; g.add(h); const bw = new THREE.Mesh(new THREE.ConeGeometry(0.8 * k, 1.6, 4), std(col, 0.6)); bw.rotation.set(Math.PI / 2, Math.PI / 4, 0); bw.scale.z = 0.5; bw.position.set(0, 0.2, 3.3 * k); g.add(bw);
+    const mast = new THREE.Mesh(CYL(0.06, 0.06, 6 * k, 6), std(0x6b4a2f, 0.8)); mast.position.set(0, 3 * k + 0.4, 0.4); g.add(mast);
+    const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(0, 5.4 * k); sh.lineTo(-2.6 * k, 0.2); sh.closePath(); const sl = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshLambertMaterial({ color: sailC, side: THREE.DoubleSide })); sl.position.set(0, 0.7, 0.5); sl.rotation.y = Math.PI / 2; g.add(sl); return g; };
+  const kinds = ssa ? [[0x8a5a2f, 0xf6efe0, 1], [0xc0392b, 0xffffff, 0], [0x2e7d32, 0xf6efe0, 0], [0x1f4fbf, 0xfff1c4, 1]] : [[0xf4f4f0, 0xffffff, 1], [0x1f4fbf, 0xffffff, 0], [0xd8312f, 0xf6efe0, 0], [0xf4f4f0, 0xffcf3a, 1]];
+  kinds.forEach(([c, s, big], i) => { const g = sail(c, s, big); sc.add(g); L.push({ g, x: rand(-300, 300), z: SEA_Z + 50 + i * 22, sp: rand(1.6, 3.2) * (i % 2 ? 1 : -1), ph: rand(0, 6) }); });
+  city.seaBoats = L;
+}
+function buildSeaLife(sc) { try { buildMarina(sc); buildSeaTraffic(sc); } catch (e) { console.warn('marina', e); } }
+/* ponto de água livre perto do cais mais próximo (onde o barco aparece) */
+function boatSpawnSpot(kind) {
+  let best = null, bd = 1e9; for (const q of city.piers || []) { if (kind && q.kind !== kind) continue; const d = Math.hypot(q.px - P.x, (q.z0 + q.z1) / 2 - P.z); if (d < bd) { bd = d; best = q; } }
+  return best ? best.spawn : null;
+}
+const seaOK = (x, z, r) => beachCity() && z > SEA_Z + 2.5 + r && z < SEA_Z + SEA_MAX - r && Math.abs(x) < OUT_N - 4 && !city.colliders.some(c => x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) && !onPier(x, z) && !(onPier(x - r, z) || onPier(x + r, z));
+/* chama um barco: aparece na água, do lado do cais */
+function spawnBoat(V, kind) {
+  if (!beachCity()) return toast('🌊 Barco e jet-ski só nas cidades com mar: Rio de Janeiro e Salvador.', 'bad');
+  const sp = boatSpawnSpot(kind) || boatSpawnSpot(); if (!sp) return toast('Não achei um cais nesta cidade.', 'bad');
+  if (P.drive) exitVehicle(true); if (city.myVeh) city.scene.remove(city.myVeh.m);
+  const m = makeVehicleMesh(V); m.position.set(sp[0], 0, sp[1]); m.rotation.y = 0; city.scene.add(m); city.myVeh = { m, V, x: sp[0], z: sp[1], h: 0 };
+  setGps(sp[0], sp[1] - 4, V.name); toast(`⚓ ${V.name} na água, do lado do cais. Ande pelo cais, chegue perto e aperte Ação.`, 'good'); sfx('ui');
+}
+/* pilotar na água: acelera, vira (devagar também), balança nas ondas, deixa espuma; jet-ski pula nas ondas */
+function updateBoat(dt, ax, blocked) {
+  const d = P.drive, V = d.V, jet = V.bm === 'jet', thr = blocked ? 0 : ax.y, st = blocked ? 0 : ax.x, t = performance.now() / 1000;
+  if (thr > 0.1) P.v += V.acc * thr * dt * (1 - Math.max(0, P.v) / V.top); else if (thr < -0.1) P.v -= V.acc * 0.6 * -thr * dt;
+  P.v -= P.v * (thr > 0.1 ? 0.12 : 0.5) * dt; P.v = clamp(P.v, -4, V.top);
+  const steerK = (jet ? 1.5 : 0.85) * Math.min(1, 0.35 + Math.abs(P.v) / 8); P.h -= st * steerK * dt * (P.v < -0.2 ? -1 : 1);
+  const r = d.m.userData.radius, L2 = (d.m.userData.len || 4) / 2, nx = P.x + Math.sin(P.h) * P.v * dt, nz = P.z + Math.cos(P.h) * P.v * dt;
+  const fx = nx + Math.sin(P.h) * L2 * Math.sign(P.v || 1), fz = nz + Math.cos(P.h) * L2 * Math.sign(P.v || 1);
+  if (seaOK(nx, nz, r * 0.6) && seaOK(fx, fz, 0.2)) { P.x = nx; P.z = nz; }
+  else { const sp = Math.abs(P.v); if (sp > 4 && !(d.wallT > 0)) { d.wallT = 1; sfx('hit'); toast(nz <= SEA_Z + 4 ? '🏖️ Encalhou na areia! Dê ré.' : nz >= SEA_Z + SEA_MAX - 6 ? '🌊 Área de navegação termina aqui: volte para perto da praia.' : '💥 Bateu!', 'bad'); } P.v *= -0.25; }
+  d.wallT = (d.wallT || 0) - dt;
+  const sp = Math.abs(P.v) / V.top, m = d.m, u = m.userData;
+  let hop = 0; if (jet && sp > 0.55) hop = Math.max(0, Math.sin(t * 3.1)) * 0.35 * sp;
+  P.y = Math.sin(t * 1.6) * 0.07 + hop;
+  m.rotation.order = 'YXZ'; m.position.set(P.x, P.y, P.z); m.rotation.y = P.h; m.rotation.x = -Math.min(0.14, sp * 0.16) + Math.sin(t * 1.3) * 0.02;
+  u.lean = lerp(u.lean || 0, -st * Math.min(1, sp * 1.4) * (jet ? 0.4 : 0.15), 1 - Math.exp(-5 * dt)); u.body.rotation.z = u.lean;
+  if (u.siren) u.siren[0].visible = Math.floor(t * 3) % 2 === 0;
+  // espuma atrás e dos lados
+  if (Math.abs(P.v) > 2 && (d.foamT = (d.foamT || 0) - dt) <= 0) {
+    d.foamT = jet ? 0.06 : 0.09;
+    for (let k = 0; k < 2; k++) { const fm = new THREE.Mesh(SPH(jet ? 0.14 : 0.2, 6, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 })); const bx = P.x - Math.sin(P.h) * L2 + rand(-0.3, 0.3), bz = P.z - Math.cos(P.h) * L2 + rand(-0.3, 0.3); fm.position.set(bx, 0.08, bz); city.scene.add(fm); city.fx.push({ m: fm, vx: rand(-0.6, 0.6), vy: rand(0.5, 1.6) * sp, vz: rand(-0.6, 0.6), life: 0.8, max: 0.8, conf: true }); }
+  }
+  city.myVeh.x = P.x; city.myVeh.z = P.z; city.myVeh.h = P.h;
+  d.hornCd = (d.hornCd || 0) - dt; if (!blocked && tap('horn')) { if (d.hornCd <= 0) { d.hornCd = 0.8; tone('sawtooth', 180, 175, 0.7, 0.05); tone('sawtooth', 240, 236, 0.7, 0.04); } }
+}
+/* sair do barco perto do cais: sobe no cais; longe: cai na água e nada */
+function boatExitSpot() {
+  for (const q of city.piers || []) { const cz = clamp(P.z, q.z0 + 1, q.z1 - 1), cx = clamp(P.x, q.x0 + 0.6, q.x1 - 0.6); if (Math.hypot(cx - P.x, cz - P.z) < 4.5) return [cx, cz, q.y]; }
+  return null;
+}
+/* barcos e jet-ski parados balançam; veleiros passam; mergulho */
+function updateSeaLife(dt, t) {
+  if (!beachCity()) return;
+  const mv = city.myVeh; if (mv && isBoat(mv.V) && !P.drive) { mv.m.position.y = Math.sin(t * 1.6 + 1) * 0.07; mv.m.rotation.z = Math.sin(t * 1.2) * 0.03; }
+  const mr = city.marina; if (mr) mr.deco.forEach((m, i) => { m.position.y = Math.sin(t * 1.5 + i) * 0.06; m.rotation.z = Math.sin(t * 1.1 + i) * 0.03; });
+  for (const b of city.seaBoats || []) { b.x += b.sp * dt; if (b.x > 330) b.x = -330; if (b.x < -330) b.x = 330; b.g.position.set(b.x, Math.sin(t * 1.2 + b.ph) * 0.12, b.z); b.g.rotation.y = b.sp > 0 ? Math.PI / 2 : -Math.PI / 2; b.g.rotation.z = Math.sin(t * 0.9 + b.ph) * 0.05; }
+  if (P.diveT > 0) { P.diveT -= dt; if (!P.swim) P.diveT = 0; }
+  // aluguel acabou: some quando a pessoa sai do jet-ski
+  const R = S.boatRent; if (R && Date.now() > R.until) { if (!R.warned) { R.warned = 1; toast('⏱️ O tempo do jet-ski alugado acabou. Volte para a marina e desça.', 'pink'); } if (!P.drive && mv && mv.V.id === 'b_aluguel') { city.scene.remove(mv.m); city.myVeh = null; S.boatRent = null; persist(); toast('⚓ Jet-ski devolvido na marina. Valeu!', 'good'); } }
+}
+const MARINA_RENT = 250, MARINA_MIN = 6;
+PANELS.marina = function () {
+  let html = `<p class="muted">Jet-ski e lancha para andar no mar de ${esc(CITY().name)}. Saldo: <b class="coin">$ ${fmt(S.coins)}</b> · <b class="tokc">${fmt(S.tokens)} T</b>.</p>`;
+  const R = S.boatRent && Date.now() < S.boatRent.until ? S.boatRent : null;
+  html += `<div class="card"><h4>🚤 Alugar um jet-ski</h4><p>${MARINA_MIN} minutos de jet-ski por $ ${fmt(MARINA_RENT)}. Colete salva-vidas incluso.</p><div class="row">${R ? `<span class="pill on">Alugado · faltam ${Math.ceil((R.until - Date.now()) / 60000)} min</span><button class="btn ghost sm" data-act="boat-use" data-id="b_aluguel">Chamar de novo</button>` : `<button class="btn sm" data-act="boat-rent" ${S.coins < MARINA_RENT ? 'disabled' : ''}>Alugar $ ${fmt(MARINA_RENT)}</button>`}</div></div>`;
+  html += `<h3>Comprar o seu</h3><div class="grid-items">${BOATS.map(V => { const own = (S.boats || []).includes(V.id);
+    const act = own ? `<button class="btn sm" data-act="boat-use" data-id="${V.id}">⚓ Colocar na água</button>` : `<button class="btn sm" data-act="boat-buy" data-id="${V.id}" data-cur="c" ${S.coins < V.c ? 'disabled' : ''}>$ ${fmt(V.c)}</button> <button class="btn tok sm" data-act="boat-buy" data-id="${V.id}" data-cur="t" ${S.tokens < V.t ? 'disabled' : ''}>${fmt(V.t)} T</button>`;
+    return `<div class="item-card r-${V.r}"><div class="swatch ico" style="--sw:${hex(V.color)}">${V.bm === 'jet' ? '🚤' : '🛥️'}</div><div class="item-info"><b>${esc(V.name)}</b><span class="muted">${esc(V.desc)} Até ${V.top * 4} km/h.</span><div class="row">${act}</div></div></div>`; }).join('')}</div>`;
+  html += `<p class="muted">Dica: no mar, toque em Pular para <b>mergulhar</b> e ver os peixes. Cuidado com a área do tubarão (bandeiras vermelhas)!</p>`;
+  return { title: '⚓ Marina', html };
+};
+function boatBuy(id, cur) {
+  const V = VEH[id]; if (!V || (S.boats || []).includes(id)) return;
+  if (cur === 't') { if (S.tokens < V.t) { toast('Tokens insuficientes.', 'bad'); return openPanel('tokens'); } S.tokens -= V.t; } else { if (S.coins < V.c) return toast('Grana insuficiente.', 'bad'); S.coins -= V.c; }
+  (S.boats = S.boats || []).push(id); persist(); updateHUD(); sfx('coin'); toast(`⚓ ${V.name} é seu! Toque em "Colocar na água".`, 'good'); renderPanel();
+}
+function boatRent() {
+  if (S.coins < MARINA_RENT) return toast('Grana insuficiente.', 'bad');
+  S.coins -= MARINA_RENT; S.boatRent = { until: Date.now() + MARINA_MIN * 60000 }; persist(); updateHUD(); closePanel(); spawnBoat(VEH.b_aluguel, 'marina');
+}
+
 /* ---- trampo com figurantes: ir até o ponto e segurar Ação ---- */
 function s6Task(id, lv) {
   const n = id === 'dj' ? 1 : id === 'corretor' ? 2 : 2 + Math.min(2, lv - 1), dur = { mecanico: 5, barbeiro: 4, corretor: 3, dj: 12 }[id];
@@ -16401,6 +16578,7 @@ function s6Task(id, lv) {
 function s6TaskObjs(m) {
   m.stops.forEach((s, i) => {
     if (i < m.got || s[3] === 'x') return; let o;
+    if (s[3] === 'mar') { o = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.8, 10), lam(0xff7a1a)); o.userData.si = i; o.position.set(s[0], 0.6, s[1]); city.scene.add(o); city.mObjs.push(o); return; }
     if (m.job === 'mecanico') { o = makeVehicleMesh(VEH[pick(['v_fusca', 'v_gol', 'v_sedan'])]); o.rotation.y = rand(0, TAU); }
     else { o = makePed({ shirt: pick([0x4fc3ff, 0xff4f7b, 0x3ddc84, 0xffcf3a]), pants: 0x2f4f86, skin: pick(SKINS), hair: pick(HAIRS), f: Math.random() < 0.5 }); }
     o.position.set(s[0] + (m.job === 'mecanico' ? 2 : 0.9), groundH(s[0], s[1]), s[1]); o.userData.si = i; city.scene.add(o); city.mObjs.push(o);
@@ -16409,6 +16587,7 @@ function s6TaskObjs(m) {
 }
 function s6TaskTick(m, dt, near, key, pr) {
   const s = m.stops[m.got]; if (!s) return completeMission();
+  if (s[3] === 'mar') { if (near < 8 && P.drive && isBoat(P.drive.V)) { m.got++; sfx('coin'); for (const o of city.mObjs) if (o.userData.si === m.got - 1) o.visible = false; if (m.got >= m.stops.length) return completeMission(); toast(`Boia conferida! Próximo: ${m.stops[m.got][2]}.`, 'good'); renderMissionBox(); } else if (near < 8 && !m.seaTip) { m.seaTip = 1; toast('⚓ Esse ponto é no mar: pegue a lancha de patrulha na base (🚙 Viatura).', 'pink'); } return; }
   if (near < 3 && !P.drive) {
     city.promptBusy = true; pr.hidden = false;
     const hold = input.held.KeyE || input.hold.act || tap('act');

@@ -734,3 +734,15 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - Missões: inspeção no cais, hastear a bandeira, fiscalizar embarcação, patrulha da orla e **salvamento de banhista** na beira do mar.
   - 📝 As duas têm **teste de admissão** (com perguntas reais: continência, alistamento aos 18 anos, Duque de Caxias, Almirante Tamandaré, telefone 185 da Marinha…). Quem passa ganha o movimento **Continência** de graça.
   - Salários: Exército R$ 5 mil, Marinha R$ 5,5 mil (no jogo $ 140 e $ 150 por dia de serviço). Os dois falam no rádio de segurança da Central.
+
+### Build 2026.10.15-71 (Mar: nadar, mergulhar, jet-ski e lanchas)
+  - 🌊 **Agora dá para chegar no mar e nadar de verdade (Rio e Salvador).** Antes uma parede invisível bloqueava a areia perto da água e o mar. Agora você anda pela areia toda, entra na água e nada até longe (a área de navegação vai bem para dentro do mar).
+  - 🤿 **Mergulho:** nadando, toque em **Pular** para mergulhar por alguns segundos e ver os peixes de perto.
+  - ⚓ **Marina** na praia (quiosque azul, cais de madeira, boias, jet-skis e lancha atracados):
+    - **Alugar jet-ski:** $ 250 por 6 minutos. Quando o tempo acaba, ele é devolvido assim que você descer.
+    - **Comprar o seu:** Jet-ski, Jet-ski Turbo, Lancha e Lancha de Luxo AJBZ (preta e dourada), com grana ou tokens. Depois é só "Colocar na água".
+  - 🚤 **Pilotar no mar:** acelera, vira, dá ré, balança nas ondas e deixa espuma atrás. O jet-ski pula nas ondas em alta velocidade. Encalha se for para a areia e avisa no fim da área de navegação. Os navios, os barcos atracados e os cais são sólidos.
+  - 🪵 **Cais em que dá para andar** (na marina e na Base Naval). Saindo do barco perto do cais, você sobe nele; longe, pula na água e sai nadando.
+  - ⛵ **Barcos passando no mar:** veleiros e pesqueiros (em Salvador, saveiros coloridos).
+  - ⚓ **Marinha:** ganhou a **Lancha de Patrulha** (cinza, com luz azul) na base, e missões de **patrulha no mar** para conferir boias de sinalização pilotando a lancha.
+  - Os outros jogadores veem o seu barco no mar.
