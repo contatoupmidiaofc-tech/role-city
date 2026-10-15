@@ -720,3 +720,17 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 🚁 **Helicóptero Águia com rapel:** o helicóptero chega, para em cima do alto do morro, solta a **corda** e uma equipe de **4 policiais desce de rapel**, um de cada vez, e depois vai descendo o morro.
   - 📢 Avisos para quem está perto: o cerco começando, o rapel e a PM recuando no fim. No fim todo mundo recua e o helicóptero vai embora.
   - O Delegado continua podendo mandar operação na hora.
+
+### Build 2026.10.15-70 (Exército e Marinha)
+  - 🪖 **Profissão: Exército Brasileiro (nas 3 cidades).** Cada cidade tem um **Quartel** num quarteirão da cidade grande (São Paulo: Comando Militar do Sudeste; Rio: Comando Militar do Leste; Salvador: 6ª Região Militar):
+    - Muro com faixa verde-oliva, **portão com guarita, cancela e 2 sentinelas** armadas, pátio de formatura, alojamento, **mastro com a Bandeira do Brasil**, **tanque** e viatura estacionados, e o lema "Braço Forte, Mão Amiga".
+    - A **tropa marcha em volta do pátio** com o sargento; de tempos em tempos ele grita "Tropa... SENTIDO!" e eles param.
+    - Quem está de serviço é recebido pelas sentinelas com **continência**, e a cancela abre sozinha.
+    - Farda **camuflada** com **boina verde-oliva**. Patentes: Recruta → Soldado → Cabo → Sargento → Tenente. Viatura do Exército (Marruá) na base.
+    - Missões: ordem unida no pátio, guarda no portão, hastear a bandeira, patrulha em pontos de controle e ação cívico-social entregando mantimentos.
+  - ⚓ **Profissão: Marinha do Brasil (Rio e Salvador, as cidades com mar).** **Base Naval** na areia da orla (Rio: Base Naval do Rio de Janeiro; Salvador: Base Naval de Aratu):
+    - Prédio branco e azul, mastro com a bandeira, âncora, **cais de madeira** entrando no mar e um **navio de guerra** atracado (balança na água, radar girando).
+    - Marinheiros na porta e no cais. Farda **branca** com **gorro de marinheiro**. Patentes: Grumete → Marinheiro → Cabo → Sargento → Tenente. Viatura da Marinha na base.
+    - Missões: inspeção no cais, hastear a bandeira, fiscalizar embarcação, patrulha da orla e **salvamento de banhista** na beira do mar.
+  - 📝 As duas têm **teste de admissão** (com perguntas reais: continência, alistamento aos 18 anos, Duque de Caxias, Almirante Tamandaré, telefone 185 da Marinha…). Quem passa ganha o movimento **Continência** de graça.
+  - Salários: Exército R$ 5 mil, Marinha R$ 5,5 mil (no jogo $ 140 e $ 150 por dia de serviço). Os dois falam no rádio de segurança da Central.
