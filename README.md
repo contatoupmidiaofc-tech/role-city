@@ -746,3 +746,15 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - ⛵ **Barcos passando no mar:** veleiros e pesqueiros (em Salvador, saveiros coloridos).
   - ⚓ **Marinha:** ganhou a **Lancha de Patrulha** (cinza, com luz azul) na base, e missões de **patrulha no mar** para conferir boias de sinalização pilotando a lancha.
   - Os outros jogadores veem o seu barco no mar.
+
+### Build 2026.10.15-72 (Voar até outra cidade conhecendo o caminho)
+  - ✈️🚁 **Viagem no seu avião ou helicóptero agora é pilotada, sobre o caminho de verdade.** Antes, o meio do voo era uma tela genérica com piloto automático. Agora, depois de decolar, você voa por um corredor com a **geografia real entre as cidades**:
+    - **São Paulo ↔ Rio (Via Dutra):** São José dos Campos, Taubaté, **Aparecida (com a Basílica)**, Resende, Volta Redonda e a **Baía de Guanabara**; a **Serra da Mantiqueira** de um lado, a **Serra do Mar** e o mar do outro, e o **Rio Paraíba do Sul** lá embaixo.
+    - **Rio ↔ Salvador (pelo litoral, BR-101):** Campos dos Goytacazes, Vitória (ES), o **Arquipélago de Abrolhos** no mar, Porto Seguro, Ilhéus e a **Baía de Todos os Santos**, com o mar sempre do lado.
+    - **São Paulo ↔ Salvador (Rio-Bahia, BR-116):** Belo Horizonte, **Serra do Espinhaço**, Governador Valadares e o **Rio Doce**, Teófilo Otoni, Vitória da Conquista, Feira de Santana e o litoral chegando em Salvador.
+    - A **BR aparece lá embaixo** serpenteando, com placas, e cada cidade, serra e rio tem o **nome grande** para você reconhecer.
+  - 🕹️ **Controles de voo:** setas/WASD ou os botões na tela (**Subir, Descer, Esquerda, Direita**). O botão **🤖 Piloto automático** segue a BR sozinho; mexeu nos controles, você assume.
+  - O painel mostra **onde você está sobrevoando**, a **próxima cidade e quantos km faltam**. "Segure para ir mais rápido" continua funcionando.
+  - Segurança: se ficar baixo demais perto de uma serra, o avião sobe sozinho; se sair muito da rota, ele volta para perto da BR.
+  - Chegando, você continua pilotando: o avião aparece alinhado com a pista (anéis verdes para pousar) e o helicóptero pousa onde você quiser.
+  - Os voos de linha (passagem) usam o mesmo caminho, no piloto automático: dá para ir olhando a paisagem.

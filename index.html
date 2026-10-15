@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-71';
+const BUILD = '2026.10.15-72';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -8180,11 +8180,11 @@ function updateTrip(dt, t) {
   const T = TRIP; if (!T) return; T.t += dt;
   if (T.phase === 'road') { roadTick(dt, t); if (T.heist) try { heistTripTick(dt, t); } catch (e) { console.warn('fuga br', e); } }
   else if (T.phase === 'path') pathTick(dt, t);
-  else if (T.phase === 'cruise') cruiseTick(dt, t);
+  else if (T.phase === 'cruise') routeTick(dt, t);
   if ((T.hudT = (T.hudT || 0) - dt) <= 0) { T.hudT = 0.25; tripHudTick(); }
 }
 function endTrip() {
-  const T = TRIP; TRIP = null; mode = 'city'; tripHud(false); camera.far = 700; camera.updateProjectionMatrix(); $('hud').hidden = false; if (IS_TOUCH) $('touch').hidden = false;
+  const T = TRIP; TRIP = null; mode = 'city'; tripHud(false); try { flightPad(false); } catch (e) { } camera.far = 700; camera.updateProjectionMatrix(); $('hud').hidden = false; if (IS_TOUCH) $('touch').hidden = false;
   city.player.visible = true; if (NET.user) netJoinPlaza(); updateHUD(); sfx('level');
   toast(T.scenic ? '🛬 Fim do passeio aéreo!' : `Bem-vindo a ${CITY_DEFS[T.dest].name}!`, 'pink');
   try { heistTripEnd(); } catch (e) { console.warn('assalto', e); }
@@ -8329,7 +8329,7 @@ function pathTick(dt, t) {
   updateDayNight(dt); updateWeather(dt, t);
   T.prog = T.takeoff ? T.u * 0.12 : 0.88 + T.u * 0.12;
   T.label = T.takeoff ? (T.u < 0.3 ? 'Decolando' : `Sobrevoando ${CITY_DEFS[T.from].name}`) : (T.u < 0.45 ? `Sobrevoando ${CITY_DEFS[T.dest].name}` : T.u < 0.92 ? 'Pousando' : 'Taxiando');
-  if (T.u >= 1) { if (T.takeoff && T.scenic) { startPath(false); } else if (T.takeoff) { if (!T.fading) { city.scene.remove(T.m); buildCruise(); } } else airArrive(); }
+  if (T.u >= 1) { if (T.takeoff && T.scenic) { startPath(false); } else if (T.takeoff) { if (!T.fading) { city.scene.remove(T.m); buildRouteScene(); } } else airArrive(); }
 }
 function buildCruise() {
   const T = TRIP, sc = new THREE.Scene(); T.sc = sc; T.phase = 'cruise'; T.ct = 0; T.cdur = T.V.heli ? 34 : 38;
@@ -8370,6 +8370,130 @@ function airArrive() {
     endTrip(); toast(`🛬 Pouso em ${CITY_DEFS[T.dest].name}. Use "Voltar para a cidade" quando quiser.`, 'pink');
   }), 600);
 }
+
+/* =========================================================
+   VOO ENTRE CIDADES PILOTADO, CONHECENDO O CAMINHO: o meio da viagem é um corredor com a geografia de verdade
+   (serras, mar, rios, a BR lá embaixo e as cidades do caminho, com o nome). Você pilota (ou liga o piloto automático).
+   ========================================================= */
+// t = 0 na origem e 1 no destino (no sentido canônico); lado +1 = à direita de quem pilota
+const ROUTE_GEO = {
+  'sp-rj': { br: 'BR-116 (Via Dutra)', sea: [[0.0, 1.0, 1, 760, 0.88, 160]], mts: [[0.04, 0.86, -1, 'Serra da Mantiqueira'], [0.08, 0.86, 1, 'Serra do Mar']], river: [0.08, 0.82, -1, 'Rio Paraíba do Sul'],
+    towns: [[0.16, 'São José dos Campos', -1], [0.3, 'Taubaté', -1], [0.42, 'Aparecida', -1, 'basilica'], [0.6, 'Resende', 1], [0.72, 'Volta Redonda', 1], [0.94, 'Baía de Guanabara', 1, 'bay']] },
+  'rj-ssa': { br: 'BR-101 (pelo litoral)', sea: [[0.0, 1.0, 1, 320, 0.0, 320]], mts: [[0.02, 0.28, -1, 'Serra do Mar'], [0.34, 0.7, -1, 'Mata Atlântica']], river: [0.12, 0.2, -1, 'Rio Paraíba do Sul (foz)'],
+    towns: [[0.14, 'Campos dos Goytacazes', -1], [0.3, 'Vitória (ES)', 1], [0.48, 'Arquipélago de Abrolhos', 1, 'islands'], [0.62, 'Porto Seguro', 1], [0.76, 'Ilhéus', 1], [0.95, 'Baía de Todos os Santos', 1, 'bay']] },
+  'sp-ssa': { br: 'BR-116 (Rio-Bahia)', sea: [[0.84, 1.0, 1, 520, 1.0, 200]], mts: [[0.12, 0.42, -1, 'Serra do Espinhaço'], [0.5, 0.66, 1, 'Vale do Rio Doce']], river: [0.46, 0.58, 1, 'Rio Doce'],
+    towns: [[0.2, 'Belo Horizonte', -1], [0.52, 'Governador Valadares', 1], [0.68, 'Teófilo Otoni', -1], [0.78, 'Vitória da Conquista', -1], [0.9, 'Feira de Santana', -1]] },
+};
+function routeGeo(from, dest) {
+  const k = from + '-' + dest, G = ROUTE_GEO[k]; if (G) return G;
+  const R = ROUTE_GEO[dest + '-' + from]; if (!R) return { br: 'BR-116', sea: [], mts: [], towns: [] };
+  const fl = ([a, b, s, ...r]) => [1 - b, 1 - a, -s, ...r];
+  return { br: R.br, sea: R.sea.map(([a, b, s, off, tc, off2]) => [1 - b, 1 - a, -s, off, 1 - tc, off2]), mts: R.mts.map(fl), river: R.river && fl(R.river), towns: R.towns.map(([t, n, s, k]) => [1 - t, n, -s, k]).sort((a, b) => a[0] - b[0]) };
+}
+const routeX = z => 140 * Math.sin(z / 900) + 60 * Math.sin(z / 317); // a BR serpenteando lá embaixo
+const sideX = (s, d) => -s * d; // +1 = direita de quem olha para +z
+/* distância da BR até o mar naquele ponto (Infinity se não tem mar daquele lado) */
+function seaDist(G, tt, side) { let best = Infinity; for (const [a, b, s, off, tc, off2] of G.sea) { if (s !== side || tt < a - 0.02 || tt > b + 0.02) continue; const k = clamp(1 - Math.abs(tt - tc) / Math.max(0.01, Math.abs(b - a)), 0, 1); best = Math.min(best, off + (off2 - off) * k - 30); } return best; }
+function buildRouteScene() {
+  const T = TRIP, sc = new THREE.Scene(); T.sc = sc; T.phase = 'cruise'; T.ct = 0;
+  const heli = !!T.V.heli, G = routeGeo(T.from, T.dest), Lz = Math.round(2200 + T.km * 3.2); T.Lz = Lz; T.geo = G;
+  sc.background = new THREE.Color(0x8fc4ee); sc.fog = new THREE.Fog(0xb5d8f2, 380, 2100);
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 0.95)); const sun = new THREE.DirectionalLight(0xfff2d8, 1.1); sun.position.set(100, 300, 50); sc.add(sun);
+  // chão: plantações, pastos e matas
+  const gT = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#6f9a4f'; g.fillRect(0, 0, w, h); for (let i = 0; i < 90; i++) { g.fillStyle = pick(['#5f8a45', '#7a9a50', '#8a7a55', '#4f7a3a', '#a89a6a', '#3f6a32']); g.fillRect(Math.random() * w, Math.random() * h, 14 + Math.random() * 50, 14 + Math.random() * 50); } });
+  gT.wrapS = gT.wrapT = THREE.RepeatWrapping; gT.repeat.set(12, Math.round(Lz / 300));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(5000, Lz + 3000), new THREE.MeshLambertMaterial({ map: gT })); ground.rotation.x = -Math.PI / 2; ground.position.set(0, 0, Lz / 2); sc.add(ground);
+  // mar: faixa do lado certo (o litoral vai chegando perto quando a rota encosta na costa)
+  T.coast = [];
+  for (const [a, b, s, off, tc, off2] of G.sea) {
+    const z0 = a * Lz - (a === 0 ? 1500 : 0), z1 = b * Lz + (b === 1 ? 1500 : 0), N = 40, pos = [], idx = [];
+    for (let i = 0; i <= N; i++) { const z = z0 + (z1 - z0) * i / N, tt = clamp(z / Lz, 0, 1), k = clamp(1 - Math.abs(tt - tc) / Math.max(0.01, Math.abs(b - a)), 0, 1), d = off + (off2 - off) * k + 30 * Math.sin(z / 260); const xi = routeX(z) + sideX(s, d), xo = routeX(z) + sideX(s, 2600); pos.push(xi, 0.6, z, xo, 0.6, z); T.coast.push([z, xi, s]); if (i) { const q = (i - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); } }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+    sc.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x2a7fb8, side: THREE.DoubleSide })));
+    const sand = []; for (let i = 0; i < pos.length; i += 6) sand.push(pos[i], pos[i + 2]);
+    const sg = new THREE.BufferGeometry(), sp = [], si = []; for (let i = 0; i < sand.length / 2; i++) { const x = sand[i * 2], z = sand[i * 2 + 1]; sp.push(x, 0.7, z, x + s * 26, 0.7, z); if (i) { const q = (i - 1) * 2; si.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); } }
+    sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3)); sg.setIndex(si); sc.add(new THREE.Mesh(sg, new THREE.MeshLambertMaterial({ color: 0xe8d3a0, side: THREE.DoubleSide })));
+  }
+  // a BR lá embaixo (com placas)
+  { const pos = [], idx = []; for (let z = -400, i = 0; z <= Lz + 400; z += 20, i++) { const x = routeX(z); pos.push(x - 7, 0.9, z, x + 7, 0.9, z); if (i) { const q = (i - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); sc.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x3a3d44, side: THREE.DoubleSide })));
+    for (let z = 500; z < Lz; z += 1300) { const s = textSprite('🛣️ ' + G.br, { bg: '#1e5b3a', fg: '#fff', size: 40, scale: [60, 9, 1] }); s.position.set(routeX(z), 20, z); sc.add(s); } }
+  // rio
+  if (G.river) { const [a, b, s, n] = G.river, pos = [], idx = []; let i = 0; for (let z = a * Lz; z <= b * Lz; z += 25, i++) { const x = routeX(z) + sideX(s, 160 + 70 * Math.sin(z / 210)); pos.push(x - 9, 0.8, z, x + 9, 0.8, z); if (i) { const q = (i - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); sc.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x3f8fb8, side: THREE.DoubleSide })));
+    const zm = (a + b) / 2 * Lz, lb = textSprite('〰️ ' + n, { bg: '#2a7fb8', fg: '#fff', size: 40, scale: [70, 10, 1] }); lb.position.set(routeX(zm) + sideX(s, 160), 30, zm); sc.add(lb); T.marks = [[zm, n]]; }
+  T.marks = T.marks || [];
+  // serras: cones verdes e cinzas, mais altos no meio
+  T.peaks = []; const cg = new THREE.ConeGeometry(1, 1, 7), cols = [0x3f6a32, 0x4f7a3a, 0x5e7c4a, 0x6d7a6a, 0x58704a], N = G.mts.reduce((a, m) => a + Math.round((m[1] - m[0]) * Lz / 28), 0);
+  if (N) { const im = new THREE.InstancedMesh(cg, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), N), M4 = new THREE.Matrix4(), c = new THREE.Color(); let k = 0;
+    for (const [a, b, s, n] of G.mts) { const cnt = Math.round((b - a) * Lz / 28); for (let i = 0; i < cnt; i++) { const z = (a + (b - a) * Math.random()) * Lz, sd = seaDist(G, z / Lz, s), mid = 1 - Math.abs((z / Lz - (a + b) / 2) / ((b - a) / 2)), h = 50 + mid * 120 + Math.random() * 60, d = Math.min(240 + Math.random() * 520, sd - 60), x = routeX(z) + sideX(s, d), r = h * (0.8 + Math.random() * 0.5); M4.compose(new THREE.Vector3(x, h / 2, z), new THREE.Quaternion(), new THREE.Vector3(r, h, r)); im.setMatrixAt(k, M4); im.setColorAt(k, c.setHex(pick(cols))); k++; T.peaks.push([x, z, h, r]); }
+      const zm = (a + b) / 2 * Lz, lb = textSprite('⛰️ ' + n, { bg: '#3f6a32', fg: '#fff', size: 40, scale: [80, 12, 1] }); lb.position.set(routeX(zm) + sideX(s, 420), 230, zm); sc.add(lb); T.marks.push([zm, n]); }
+    sc.add(im); }
+  // cidades do caminho (prédios + nome grande), Basílica de Aparecida, ilhas de Abrolhos, baías
+  const bm = new THREE.InstancedMesh(boxGeo(1, 1, 1), new THREE.MeshLambertMaterial({ color: 0xffffff }), G.towns.length * 46), M4 = new THREE.Matrix4(), cc = new THREE.Color(); let nb = 0;
+  for (const [t, n, s, kind] of G.towns) {
+    const z = t * Lz, cx = routeX(z) + sideX(s, kind === 'islands' ? 520 : kind === 'bay' ? 260 : 190), cz = z;
+    if (kind === 'islands') { for (let i = 0; i < 6; i++) { const isl = new THREE.Mesh(SPH(1, 10, 6), new THREE.MeshLambertMaterial({ color: 0x5f8a45 })); isl.scale.set(rand(14, 34), rand(5, 12), rand(14, 34)); isl.position.set(cx + rand(-90, 90), 0, cz + rand(-110, 110)); sc.add(isl); } }
+    else if (kind === 'bay') { const w = new THREE.Mesh(new THREE.CircleGeometry(150, 28), new THREE.MeshLambertMaterial({ color: 0x2a7fb8 })); w.rotation.x = -Math.PI / 2; w.position.set(cx, 0.7, cz); sc.add(w); for (let i = 0; i < 18; i++) { const a = rand(0, TAU), r = rand(160, 230); M4.compose(new THREE.Vector3(cx + Math.cos(a) * r, 0, cz + Math.sin(a) * r).setY(0), new THREE.Quaternion(), new THREE.Vector3(rand(10, 22), rand(8, 50), rand(10, 22))); M4.elements[13] = M4.elements[5] / 2; bm.setMatrixAt(nb, M4); bm.setColorAt(nb++, cc.setHex(pick([0xe8e4dc, 0xd9d2c3, 0xb7b2a8, 0xf2efe6]))); } }
+    else for (let i = 0; i < 40; i++) { const a = rand(0, TAU), r = Math.sqrt(Math.random()) * 85, h = rand(6, i < 6 ? 60 : 26); M4.compose(new THREE.Vector3(cx + Math.cos(a) * r, h / 2, cz + Math.sin(a) * r), new THREE.Quaternion(), new THREE.Vector3(rand(8, 18), h, rand(8, 18))); bm.setMatrixAt(nb, M4); bm.setColorAt(nb++, cc.setHex(pick([0xe8e4dc, 0xd9d2c3, 0xb7b2a8, 0xf2efe6, 0xc46a4a, 0xa8c9e8]))); }
+    if (kind === 'basilica') { const g = new THREE.Group(), m = new THREE.MeshLambertMaterial({ color: 0xb0603c }); const b = new THREE.Mesh(boxGeo(60, 22, 60), m); b.position.y = 11; g.add(b); const d = new THREE.Mesh(SPH(18, 16, 10, 0, TAU, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x3f6a8a })); d.position.y = 22; g.add(d); const tw = new THREE.Mesh(boxGeo(10, 80, 10), m); tw.position.set(0, 40, -40); g.add(tw); g.position.set(cx + sideX(s, 120), 0, cz); sc.add(g); }
+    const lb = textSprite('📍 ' + n.toUpperCase(), { bg: '#15161a', fg: '#ffcf3a', size: 44, scale: [90, 13, 1] }); lb.position.set(cx, kind === 'islands' ? 60 : 110, cz); sc.add(lb); T.marks.push([z, n]);
+  }
+  bm.count = nb; sc.add(bm);
+  T.marks.sort((a, b) => a[0] - b[0]);
+  // nuvens
+  T.clouds = []; const cm = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, emissive: 0x556070 }), cgeo = new THREE.IcosahedronGeometry(1, 0);
+  for (let i = 0; i < 70; i++) { const c = new THREE.Group(); for (let k = 0; k < 4; k++) { const m = new THREE.Mesh(cgeo, cm); const s = rand(12, 26); m.scale.set(s * 1.5, s * 0.6, s); m.position.set(k * 18 - 30, rand(-4, 4), rand(-8, 8)); c.add(m); } c.position.set(rand(-900, 900), rand(heli ? 200 : 380, heli ? 320 : 560), rand(0, Lz)); sc.add(c); T.clouds.push(c); }
+  // destino: o nome no fim do corredor
+  const dl = textSprite(`🛬 ${CITY_DEFS[T.dest].name.toUpperCase()}`, { bg: '#2f6db5', fg: '#fff', size: 46, scale: [120, 18, 1] }); dl.position.set(routeX(Lz), 160, Lz + 200); sc.add(dl);
+  // o avião / helicóptero
+  T.m = heli ? makeAnyHeli(T.V) : makePlaneMesh(T.V); sc.add(T.m);
+  T.alt = heli ? 150 : 300; T.fx = routeX(0); T.fz = 0; T.fyaw = 0; T.auto = !!(T.V.linha); T.other = null; city.camSnap = true; T.label = 'Em voo';
+  T.spdK = heli ? 42 : T.V.linha || T.V.pm === 'airliner' ? 90 : T.V.pm === 'jato' ? 88 : 64;
+  flightPad(!T.V.linha);
+}
+/* botões de voo (no celular): subir, descer, esquerda, direita e piloto automático */
+function flightPad(on) {
+  let el = $('flight-pad');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'flight-pad'; document.body.appendChild(el);
+    el.innerHTML = '<button data-f="up">⬆️<small>Subir</small></button><button data-f="left">⬅️<small>Esquerda</small></button><button data-f="auto">🤖<small>Piloto auto</small></button><button data-f="right">➡️<small>Direita</small></button><button data-f="down">⬇️<small>Descer</small></button>';
+    const st = document.createElement('style'); st.textContent = '#flight-pad{position:fixed;right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 14px);display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,56px);gap:6px;z-index:41}#flight-pad button{border-radius:14px;border:2px solid #ffcf3a;background:rgba(21,22,26,.82);color:#fff;font-size:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:none;user-select:none}#flight-pad small{font-size:10px;font-family:var(--cond,system-ui)}#flight-pad button.on{background:#3ddc84;color:#15161a}#flight-pad [data-f=up]{grid-column:2;grid-row:1}#flight-pad [data-f=left]{grid-column:1;grid-row:2}#flight-pad [data-f=auto]{grid-column:2;grid-row:2}#flight-pad [data-f=right]{grid-column:3;grid-row:2}#flight-pad [data-f=down]{grid-column:2;grid-row:3}'; document.head.appendChild(st);
+    const set = v => e => { const f = e.target.closest('button'); if (!f || !TRIP) return; e.preventDefault(); const k = f.dataset.f; if (k === 'auto') { if (v) { TRIP.auto = !TRIP.auto; toast(TRIP.auto ? '🤖 Piloto automático ligado: ele segue a BR até o destino.' : '🕹️ Você está pilotando! Siga a estrada ou vá olhando o caminho.', 'pink'); } return; } TRIP.pad = TRIP.pad || {}; TRIP.pad[k] = v; if (v && TRIP.auto) TRIP.auto = false; };
+    el.addEventListener('pointerdown', set(true)); el.addEventListener('pointerup', set(false)); el.addEventListener('pointerleave', e => { if (TRIP) TRIP.pad = {}; });
+  }
+  el.hidden = !on;
+}
+function routeTick(dt, t) {
+  const T = TRIP, heli = !!T.V.heli, sp = T.fast ? 2.6 : 1, pad = T.pad || {}, h = input.held, m = T.m, u = m.userData;
+  let ax = (h.KeyD || h.ArrowRight || pad.right ? 1 : 0) - (h.KeyA || h.ArrowLeft || pad.left ? 1 : 0), ay = (h.KeyW || h.ArrowUp || pad.up ? 1 : 0) - (h.KeyS || h.ArrowDown || pad.down ? 1 : 0);
+  if ((ax || ay) && T.auto && !T.V.linha) { T.auto = false; toast('🕹️ Você assumiu o controle. (🤖 liga o piloto automático de novo)', 'pink'); }
+  const ahead = routeX(T.fz + 260);
+  if (T.auto) { const d = Math.atan2(ahead - T.fx, 260); ax = clamp((T.fyaw - d) * 3, -1, 1); ay = clamp(((heli ? 150 : 300) - T.alt) / 60, -1, 1); }
+  // longe demais da rota: o piloto automático puxa de volta
+  const off = T.fx - routeX(T.fz); if (Math.abs(off) > 900) { ax = clamp(Math.sign(off) * 1, -1, 1) * (T.fyaw * Math.sign(off) > -0.6 ? 1 : 0); if (!T.warnOff) { T.warnOff = 1; toast('🧭 Muito longe da rota! Voltando para perto da BR.', 'bad'); } } else if (Math.abs(off) < 600) T.warnOff = 0;
+  T.fyaw = clamp(T.fyaw - ax * 0.7 * dt, -1.0, 1.0); if (!ax) T.fyaw *= 1 - Math.min(1, dt * 0.15);
+  T.alt = clamp(T.alt + ay * (heli ? 30 : 45) * dt, heli ? 50 : 90, heli ? 420 : 700);
+  // serra na frente e baixo demais: sobe sozinho
+  let gmin = 0; for (const [px, pz, ph, pr] of T.peaks) if (Math.abs(pz - T.fz) < pr + 30 && Math.abs(px - T.fx) < pr + 20) gmin = Math.max(gmin, ph + 25);
+  if (T.alt < gmin) { T.alt = lerp(T.alt, gmin, Math.min(1, dt * 2)); if (!T.warnMt) { T.warnMt = 1; toast('⛰️ Cuidado com a serra! Subindo.', 'bad'); } } else if (T.alt > gmin + 60) T.warnMt = 0;
+  const v = T.spdK * sp; T.fz += Math.cos(T.fyaw) * v * dt; T.fx += Math.sin(T.fyaw) * v * dt;
+  m.rotation.order = 'YXZ'; m.position.set(T.fx, T.alt + Math.sin(t * 0.5) * 0.8, T.fz); m.rotation.set(-ay * 0.12 + (heli ? 0.1 : 0), T.fyaw, -ax * 0.45 * (heli ? 0.5 : 1) + Math.sin(t * 0.4) * 0.04);
+  if (u.rotor) { u.rotor.rotation.y += dt * 28; u.trotor.rotation.x += dt * 40; } for (const pr of u.props || []) pr.rotation.z += dt * 40;
+  // câmera atrás, um pouco acima (vê o caminho lá embaixo)
+  const cd = (u.camD || 14) + 4, cam = new THREE.Vector3(T.fx - Math.sin(T.fyaw) * cd, T.alt + cd * 0.34, T.fz - Math.cos(T.fyaw) * cd);
+  camera.position.lerp(cam, city.camSnap ? 1 : 1 - Math.exp(-2.5 * dt)); city.camSnap = false; camera.lookAt(T.fx + Math.sin(T.fyaw) * 30, T.alt - 7, T.fz + Math.cos(T.fyaw) * 30);
+  // outro avião cruzando de vez em quando
+  if (!T.other && Math.random() < dt * 0.03) { const o = makePlaneMesh(VEH.a_linha); o.position.set(T.fx + rand(-200, 200), T.alt + rand(30, 90), T.fz + 900); o.rotation.y = Math.PI; T.sc.add(o); T.other = o; }
+  if (T.other) { T.other.position.z -= 180 * dt; if (T.other.position.z < T.fz - 300) { T.sc.remove(T.other); T.other = null; } }
+  // painel: onde está, próxima cidade, distância
+  const k = clamp(T.fz / T.Lz, 0, 1); T.prog = 0.12 + k * 0.76; const kmPer = T.km / T.Lz;
+  const here = T.marks.slice().reverse().find(q => Math.abs(q[0] - T.fz) < 240), nx = T.marks.find(q => q[0] > T.fz + 20 && (!here || q[1] !== here[1]));
+  T.label = (here ? `Sobrevoando: ${here[1]}` : T.auto ? '🤖 Piloto automático' : '🕹️ Você está pilotando') + (nx ? ` · próximo: ${nx[1]} em ${Math.max(1, Math.round((nx[0] - T.fz) * kmPer))} km` : ` · chegando em ${CITY_DEFS[T.dest].name}`);
+  if (here && T.saidMark !== here[1]) { T.saidMark = here[1]; feed(`✈️ Sobrevoando ${here[1]}`); }
+  if (k >= 1 && !T.fading) { T.fading = true; flightPad(false); if (!T.V.linha && !T.scenic) return airArriveFly(T); loadDestCity(T.dest); city.player.visible = false; T.m = T.V.heli ? makeAnyHeli(T.V) : makePlaneMesh(T.V); city.scene.add(T.m); startPath(false); T.fading = false; }
+}
+
 /* ---------- aeroporto: ir até lá, hangar e voos ---------- */
 function goAirport() {
   const A = city.airport; if (!A) return; closePanel();
