@@ -860,3 +860,13 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 👕 Duas camisetas novas na loja de roupas (Drip Store), $ 350 cada:
     - **Amarela** com letras verdes: "FLÁVIO BOLSONARO" e o **22** grande na frente; "FLÁVIO" e o **22** grande nas costas.
     - **Verde** com letras amarelas, mesmo desenho.
+
+### Build 2026.10.15-88 (Boné, bandeira de mão e Carreata 22)
+  - 🧢 **Boné Flávio Bolsonaro 22** (amarelo com 22 verde, ou verde com 22 amarelo), $ 220, e 🇧🇷 **Bandeira de mão Flávio 22** (verde e amarela, com o 22), $ 150, na loja de roupas. A bandeira é um acessório: equipada, o personagem anda com ela na mão direita.
+  - 🇧🇷 **Botão "Carreata" (só o ADM)**, no canto direito embaixo do Fone. Ao tocar:
+    - chegam **30 figurantes** de camisa do 22 (amarela e verde), muitos de boné e bandeira, comemorando de braços para cima;
+    - o **seu carro** é chamado (se ainda não estiver na rua) e atrás dele vem uma **carreta de som verde e amarela** com caixas de som, luzes piscando, faixa "FLÁVIO BOLSONARO 22" e bandeira;
+    - a carreta **toca música** (piseiro com uma melodia de jingle), mais alta quanto mais perto;
+    - você **dirige na frente** e a carreta e o povo vão atrás seguindo o caminho do carro, em fileiras de 3;
+    - quem estiver online na mesma cidade também vê a carreata passando e ouve o som;
+    - tocar de novo (**Parar**) encerra a carreata.

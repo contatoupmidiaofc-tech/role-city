@@ -218,6 +218,7 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #mic-rec i{width:12px;height:12px;border-radius:50%;background:#ff5a5a;animation:blink .8s steps(1) infinite}
 .hud-btn.rec{border-color:#ff5a5a;background:rgba(200,30,40,.9)}
 .hud-btn.vc-on{border-color:#3ddc84;background:rgba(30,140,80,.92)}
+#hb-carreata{position:fixed;top:calc(env(safe-area-inset-top) + 118px);right:calc(env(safe-area-inset-right) + 12px);z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;height:48px;padding:2px 6px}#hb-carreata[hidden]{display:none}#hb-carreata .lbl{font-size:9px;line-height:1}#hb-carreata.vc-on{background:#0b6b2e;color:#ffdf00}
 #hb-fone{position:fixed;top:calc(env(safe-area-inset-top) + 64px);right:calc(env(safe-area-inset-right) + 12px);z-index:12;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;height:48px;padding:2px 6px}#hb-fone .lbl{font-size:9px;line-height:1}
 .install-btn{width:100%;margin:6px 0 10px}
 #crosshair{position:fixed;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;color:#fff;filter:drop-shadow(0 0 2px #000);pointer-events:none;z-index:14}
@@ -672,6 +673,7 @@ canvas.swatch{background:#333}
     <button class="hud-btn" data-act="face-cam" aria-label="Câmera de rosto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="lbl">Rosto</span></button>
     <button class="hud-btn" data-act="open-config" aria-label="Configurações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
   </div>
+  <button class="hud-btn" id="hb-carreata" data-act="carreata" hidden aria-label="Carreata 22 (só o ADM)"><span style="font-size:17px">🇧🇷</span><span class="lbl">Carreata</span></button>
   <button class="hud-btn" id="hb-fone" data-act="vc-toggle" aria-label="Fone: conversa por voz (liga e desliga)" aria-pressed="false"><span style="font-size:17px">🎧</span><span class="lbl">Fone</span></button>
   <div id="mission-box" hidden></div>
   <div id="jail-box" hidden></div>
@@ -771,7 +773,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-87';
+const BUILD = '2026.10.15-88';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1701,7 +1703,9 @@ function buildCap(u, cap) {
       mk(CYL(0.1, 0.1, 0.012, 18, false, -Math.PI / 2, Math.PI), 0, 0.135, 0.085, 1, 1, 1.15, 0.12);
       mk(SPH(0.012, 8, 6), 0, 0.245, -0.005);
   }
+  if (cap.txt) { const k = cap.txt + cap.txtC; _capTxt[k] = _capTxt[k] || capTxtTex(cap.txt, cap.txtC); mk(new THREE.PlaneGeometry(0.11, 0.062), 0, 0.2, 0.118, 1, 1, 1, -0.42, new THREE.MeshBasicMaterial({ map: _capTxt[k], transparent: true })); }
 }
+const _capTxt = {};
 let _straw = null;
 function strawTex() { return _straw || (_straw = canvasTex(64, 64, g => { g.fillStyle = '#d9b45a'; g.fillRect(0, 0, 64, 64); for (let i = 0; i < 64; i += 4) { g.fillStyle = i % 8 ? 'rgba(120,80,20,.25)' : 'rgba(255,240,190,.35)'; g.fillRect(0, i, 64, 2); g.fillRect(i, 0, 1, 64); } })); }
 function heartGeo() {
@@ -2461,6 +2465,7 @@ function showWeaponProp(u, kind) {
     if (kind === 'spray') { m(CYL(0.035, 0.035, 0.18, 12), 0xff4f7b, 0, 0.1, 0.03); m(CYL(0.015, 0.02, 0.04, 8), 0xffffff, 0, 0.21, 0.03); }
     else if (kind === 'banana') { const t = m(new THREE.TorusGeometry(0.09, 0.03, 6, 12, Math.PI), 0xffe14a, 0, 0.08, 0.04); t.rotation.z = Math.PI / 2; }
     else if (kind === 'sling') { m(boxGeo(0.025, 0.12, 0.025), 0x8a6a45, 0, 0.08, 0.03); m(boxGeo(0.02, 0.09, 0.02), 0x8a6a45, 0.035, 0.17, 0.03, 0, -0.4); m(boxGeo(0.02, 0.09, 0.02), 0x8a6a45, -0.035, 0.17, 0.03, 0, 0.4); m(boxGeo(0.1, 0.008, 0.008), 0xd9a520, 0, 0.21, 0.03); }
+    else if (kind === 'bandeira22') { m(CYL(0.012, 0.012, 0.95, 6), 0x5a3d26, 0, 0.4, 0.03); const f = m(new THREE.PlaneGeometry(0.5, 0.34), 0xffffff, 0.26, 0.74, 0.03, 0, 0, new THREE.MeshLambertMaterial({ map: flag22Tex(), side: THREE.DoubleSide })); f.castShadow = false; }
     else if (kind === 'faca') { m(boxGeo(0.03, 0.1, 0.035), 0x2a1d14, 0, 0.05, 0.02); m(boxGeo(0.012, 0.2, 0.04), 0xd9dde2, 0, 0.19, 0.02, 0, 0, std(0xd9dde2, 0.15, 0.95)); }
     else if (kind === 'smoke') { m(SPH(0.055, 10, 8), 0x6d717a, 0, 0.08, 0.04); m(CYL(0.006, 0.006, 0.06, 4), 0xd9a520, 0, 0.15, 0.04); }
     else if (kind === 'rocket') { m(CYL(0.045, 0.045, 0.45, 12), 0xa66bff, 0, 0.12, 0.05, Math.PI / 2); m(new THREE.ConeGeometry(0.045, 0.1, 10), 0xffcf3a, 0, 0.12, 0.32, Math.PI / 2); }
@@ -4731,7 +4736,7 @@ function updateCity(dt, t) {
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
-  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: skateOut() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow(), wpProp: P.wpShowT > 0 ? handNow() : null, aimP: P.aim ? clamp(-city.camPitch * 0.9, -0.7, 0.8) : 0, emote: P.emote && P.emote.id }, t);
+  else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: skateOut() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow() || (S.equip.acc === 'pol_bandeira22' && S.owned.includes('pol_bandeira22') ? 'bandeira22' : null), wpProp: P.wpShowT > 0 ? handNow() : null, aimP: P.aim ? clamp(-city.camPitch * 0.9, -0.7, 0.8) : 0, emote: P.emote && P.emote.id }, t);
   if (!driving && !P.ride) beachPose(g); else g.rotation.x = 0;
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
@@ -4741,7 +4746,7 @@ function updateCity(dt, t) {
   // céu e sol acompanham
   city.sky.position.copy(camera.position);
   for (const c of city.clouds.children) { c.position.x += c.userData.v * dt; if (c.position.x > 340) c.position.x = -340; }
-  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); try { milBaseTick(dt); } catch (e) { } updateHealth(dt); updateShopIn(dt, t); hospTick(dt, t); try { ofiTick(dt, t); } catch (e) { console.warn('oficina', e); } updatePolice(dt, t); updateBeach(dt, t); updateWeather(dt, t); updateLife(dt, t); updateRP20(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
+  updateDayNight(dt); updateCritters(dt, t); updateRoles(dt, t); updateWanted(dt); updateMorro(dt, t); updateRobbers(dt, t); updateJail(dt); try { milBaseTick(dt); } catch (e) { } try { car22Tick(dt, t); } catch (e) { console.warn('carreata', e); } updateHealth(dt); updateShopIn(dt, t); hospTick(dt, t); try { ofiTick(dt, t); } catch (e) { console.warn('oficina', e); } updatePolice(dt, t); updateBeach(dt, t); updateWeather(dt, t); updateLife(dt, t); updateRP20(dt, t); city.arrestT = (city.arrestT || 0) - dt; amb.tick(dt);
   const sd = city.dn ? city.dn.sunDir : [40, 80, 30]; city.sun.position.set(P.x + sd[0], sd[1], P.z + sd[2]); city.sun.target.position.set(P.x, 0, P.z);
   for (const d of city.doors) if (d.ring) d.ring.rotation.y += dt;
   updateHomeDoor(dt); if (city.seaTex) { city.seaTex.offset.x += dt * 0.01; city.seaTex.offset.y += dt * 0.02; city.foam.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.3; }
@@ -9380,6 +9385,107 @@ const POL_WEAR = [
   I('shirt', 'pol_flavio22v', 'Camiseta Flávio Bolsonaro 22 (verde)', 0x0b6b2e, 350, null, 'comum', { pat: 'plain', img: 'flavio22v', desc: 'FLÁVIO BOLSONARO 22 em amarelo na frente e nas costas.' }),
 ];
 POL_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
+
+/* =========================================================
+   CARREATA 22 (Flávio Bolsonaro): boné e bandeira de mão na loja, e o botão do ADM que chama
+   30 figurantes de camisa, boné e bandeira andando atrás do carro, com a carreta de som tocando.
+   ========================================================= */
+const POL_ITEMS = [
+  I('cap', 'pol_bone22', 'Boné Flávio Bolsonaro 22 (amarelo)', 0xffdf00, 220, null, 'comum', { txt: '22', txtC: '#0b6b2e', desc: 'Boné amarelo com o 22 em verde na frente.' }),
+  I('cap', 'pol_bone22v', 'Boné Flávio Bolsonaro 22 (verde)', 0x0b6b2e, 220, null, 'comum', { txt: '22', txtC: '#ffdf00', desc: 'Boné verde com o 22 em amarelo na frente.' }),
+  I('acc', 'pol_bandeira22', 'Bandeira de mão Flávio 22', 0xffdf00, 150, null, 'comum', { ak: 'bandeira22', desc: 'Bandeirinha na mão direita, verde e amarela com o 22.' }),
+];
+POL_ITEMS.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
+let _flag22T = null;
+const flag22Tex = () => _flag22T || (_flag22T = canvasTex(128, 88, (g, w, h) => { g.fillStyle = '#0b6b2e'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffdf00'; g.beginPath(); g.moveTo(w / 2, 6); g.lineTo(w - 8, h / 2); g.lineTo(w / 2, h - 6); g.lineTo(8, h / 2); g.closePath(); g.fill(); g.fillStyle = '#0b6b2e'; g.font = 'bold 34px Bungee, Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('22', w / 2, h / 2 + 1); g.fillStyle = '#ffffff'; g.font = 'bold 11px sans-serif'; g.fillText('FLÁVIO', w / 2, h / 2 - 22); }));
+const capTxtTex = (t, c) => canvasTex(64, 36, (g, w, h) => { g.fillStyle = c; g.font = 'bold 30px Bungee, Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, w / 2, h / 2 + 2); });
+/* ---- carreta de som (reboque) ---- */
+function soundTrailerMesh() {
+  const g = new THREE.Group(), Y = std(0xffdf00, 0.5), G = std(0x0b6b2e, 0.6), K = std(0x15161a, 0.6);
+  const b = (w, h, d, m, x, y, z) => { const o = new THREE.Mesh(boxGeo(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  b(2.3, 0.25, 5.2, K, 0, 0.75, 0); b(0.12, 0.12, 1.6, K, 0, 0.7, 3.3); // chassi e engate
+  for (const s of [-1, 1]) for (const z of [-1.2, 0.2]) { const w = new THREE.Mesh(CYL(0.45, 0.45, 0.3, 16), K); w.rotation.z = Math.PI / 2; w.position.set(s * 1.2, 0.45, z); g.add(w); }
+  b(2.4, 2.2, 4.6, Y, 0, 1.95, -0.3); b(2.46, 0.25, 4.66, G, 0, 3.12, -0.3); b(2.46, 0.25, 4.66, G, 0, 0.95, -0.3);
+  const spk = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.4, metalness: 0.3 });
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 3; j++) { const c = new THREE.Mesh(CYL(0.28, 0.28, 0.08, 18), spk); c.rotation.x = Math.PI / 2; c.position.set(-0.6 + i * 1.2, 1.4 + j * 0.62, -2.62); g.add(c); }
+  const ban = new THREE.MeshBasicMaterial({ map: canvasTex(256, 96, (c, w, h) => { c.fillStyle = '#0b6b2e'; c.fillRect(0, 0, w, h); c.fillStyle = '#ffdf00'; c.font = 'bold 30px Bungee, Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('FLÁVIO BOLSONARO', w / 2, 30); c.font = 'bold 52px Bungee, Impact, sans-serif'; c.fillText('22', w / 2, 72); }), side: THREE.DoubleSide });
+  for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.6), ban); p.position.set(s * 1.215, 2.0, -0.3); p.rotation.y = s * Math.PI / 2; g.add(p); }
+  for (let k = 0; k < 6; k++) { const l = new THREE.Mesh(SPH(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: k % 2 ? 0xffdf00 : 0x3ddc84 })); l.position.set(-1.0 + k * 0.4, 3.3, -2.5); g.add(l); g.userData.leds = (g.userData.leds || []).concat(l); }
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.8), new THREE.MeshLambertMaterial({ map: flag22Tex(), side: THREE.DoubleSide })); fl.position.set(0.9, 4.2, 1.6); g.add(fl); const pole = new THREE.Mesh(CYL(0.03, 0.03, 1.6, 6), K); pole.position.set(0.3, 3.9, 1.6); g.add(pole);
+  return g;
+}
+/* ---- som da carreata: piseiro com uma melodia de jingle, mais alto perto da carreta ---- */
+const CAR22 = { on: false, from: null, scene: null, trail: [], ppl: [], trailer: null, out: null, next: 0, step: 0, timer: null, lastSend: 0, hx: 0, hz: 0 };
+const JINGLE = [76, 0, 76, 79, 0, 76, 74, 0, 72, 0, 74, 76, 0, 0, 79, 0, 81, 0, 79, 76, 0, 74, 0, 72, 74, 0, 76, 0, 72, 0, 0, 0];
+function car22Music(on) {
+  const ac = audioCtx(); if (!ac) return; clearInterval(CAR22.timer); CAR22.timer = null;
+  if (!on) { if (CAR22.out) CAR22.out.gain.setTargetAtTime(0, ac.currentTime, 0.1); return; }
+  stBus(); if (!CAR22.out) { CAR22.out = ac.createGain(); CAR22.out.connect(ac.destination); } CAR22.out.gain.value = 0;
+  const B = BEATS.piseiro, bpm = 150, sd = 60 / bpm / 4; CAR22.next = ac.currentTime + 0.1; CAR22.step = 0;
+  CAR22.timer = setInterval(() => { while (CAR22.next < ac.currentTime + 0.12) { const i = CAR22.step % 16, t = CAR22.next, o = CAR22.out;
+    if (B.k[i] === 'x') stHit('k', t, 0, o); if (B.s[i] === 'x') stHit('s', t, 0, o); if (B.h[i] === 'x') stHit('h', t, 0, o); if (B.p[i] === 'x') stHit('p', t, 0, o); if (B.b[i]) stHit('b', t, B.b[i], o);
+    const n = JINGLE[CAR22.step % 32]; if (n) { const os = ac.createOscillator(), gg = ac.createGain(), lp = ac.createBiquadFilter(); os.type = 'square'; os.frequency.value = midiF(n); lp.type = 'lowpass'; lp.frequency.value = 2200; gg.gain.setValueAtTime(0.0001, t); gg.gain.exponentialRampToValueAtTime(0.09, t + 0.01); gg.gain.exponentialRampToValueAtTime(0.0001, t + sd * 1.8); os.connect(lp); lp.connect(gg); gg.connect(o); os.start(t); os.stop(t + sd * 2); }
+    CAR22.next += sd; CAR22.step++; } }, 25);
+}
+/* ---- figurantes ---- */
+function car22Build() {
+  car22Clear(); CAR22.scene = city.scene; CAR22.trail = [];
+  CAR22.trailer = soundTrailerMesh(); city.scene.add(CAR22.trailer);
+  const pants = ITEMS.filter(t => t.slot === 'pants' && t.c && !t.beach && !t.trunk), rnd = mulberry32(22);
+  for (let i = 0; i < 30; i++) {
+    const g = rnd() < 0.5 ? 'f' : 'm', yel = rnd() < 0.6;
+    const look = lookOf({ shirt: yel ? 'pol_flavio22' : 'pol_flavio22v', pants: pants[Math.floor(rnd() * pants.length)].id, shoes: 'shoes_basic', cap: rnd() < 0.7 ? (yel ? 'pol_bone22v' : 'pol_bone22') : 'cap_none' }, SKINS[Math.floor(rnd() * SKINS.length)], HAIRS[Math.floor(rnd() * HAIRS.length)], g);
+    const m = makeSkater(look, null); m.position.set(P.x, 0, P.z); city.scene.add(m);
+    CAR22.ppl.push({ g: m, flag: rnd() < 0.6, ph: rnd() * 10, x: P.x, z: P.z, cheer: 0, row: Math.floor(i / 3), col: (i % 3) - 1 + (rnd() - 0.5) * 0.5 });
+  }
+}
+function car22Clear() { for (const p of CAR22.ppl) if (p.g.parent) p.g.parent.remove(p.g); CAR22.ppl = []; if (CAR22.trailer && CAR22.trailer.parent) CAR22.trailer.parent.remove(CAR22.trailer); CAR22.trailer = null; CAR22.trail = []; }
+/* frente da carreata: o carro do ADM (ou ele a pé) */
+function car22Head() {
+  if (CAR22.from === ccMe()) { const v = P.drive || city.myVeh; return v ? { x: v.x, z: v.z, h: v.h, car: true } : { x: P.x, z: P.z, h: P.h }; }
+  const p = peerById(CAR22.from); return p && p.seen ? { x: p.x, z: p.z, h: p.h || 0, car: !!(p.t && p.t.vh) } : null;
+}
+function trailAt(dist) { // ponto da trilha a "dist" metros atrás da frente
+  const T = CAR22.trail; if (!T.length) return null; let acc = 0;
+  for (let i = T.length - 1; i > 0; i--) { const a = T[i], b = T[i - 1], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (acc + d >= dist) { const k = (dist - acc) / (d || 1); return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, Math.atan2(a[0] - b[0], a[1] - b[1])]; } acc += d; }
+  const f = T[0]; return [f[0], f[1], T.length > 1 ? Math.atan2(T[1][0] - f[0], T[1][1] - f[1]) : 0];
+}
+function car22Tick(dt, t) {
+  if (!CAR22.on) return; if (CAR22.scene !== city.scene) { car22Build(); }
+  const H = car22Head(); if (!H) return;
+  const T = CAR22.trail, L = T[T.length - 1]; if (!L || Math.hypot(L[0] - H.x, L[1] - H.z) > 0.6) { T.push([H.x, H.z]); if (T.length > 500) T.shift(); }
+  if (T.length < 2) { T.unshift([H.x - Math.sin(H.h) * 60, H.z - Math.cos(H.h) * 60]); }
+  // carreta de som 7 m atrás
+  const tr = CAR22.trailer, q = trailAt(H.car ? 6.8 : 4); if (tr && q) { tr.position.set(q[0], groundH(q[0], q[1]), q[1]); tr.rotation.y = q[2]; if (tr.userData.leds) tr.userData.leds.forEach((l, i) => l.visible = Math.floor(t * 6 + i) % 2 === 0); }
+  if (CAR22.out && tr) { const d = Math.hypot(tr.position.x - P.x, tr.position.z - P.z); CAR22.out.gain.value = city.interior || city.shopIn ? 0 : clamp(1.15 - d / 70, 0, 1) * 0.9; }
+  // povo andando atrás
+  for (const p of CAR22.ppl) {
+    const s = trailAt((H.car ? 12 : 6) + p.row * 1.7); if (!s) continue; const nx = Math.cos(s[2]), nz = -Math.sin(s[2]);
+    const tx = s[0] + nx * p.col * 1.25, tz = s[1] + nz * p.col * 1.25, dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz);
+    if (d > 40) { p.x = tx; p.z = tz; } const sp = Math.min(d * 2.2, 8); if (d > 0.05) { p.x += dx / d * sp * dt; p.z += dz / d * sp * dt; p.h = Math.atan2(dx, dz); }
+    if ((p.cheer -= dt) < -6 - (p.ph % 5)) p.cheer = 2.2;
+    p.g.position.set(p.x, groundH(p.x, p.z), p.z); p.g.rotation.y = p.h != null ? p.h : s[2];
+    const far = Math.hypot(p.x - P.x, p.z - P.z) > 90; if (far && Math.floor(t * 20 + p.ph) % 3) continue;
+    animSkater(p.g, { walk: true, v: d > 0.3 ? Math.min(sp, 4) : 0, fallT: 0, wpHold: p.flag ? 'bandeira22' : null, emote: p.cheer > 0 && !p.flag ? 'cheer' : null }, t + p.ph);
+  }
+  if (CAR22.from === ccMe() && t - CAR22.lastSend > 10 && NET.ch && NET.online) { CAR22.lastSend = t; ccSend0('carreata', { on: true, from: ccMe(), cid: cityId() }); }
+}
+function carreataToggle() {
+  if (!isAdm()) return toast('Só o ADM chama a carreata.', 'bad');
+  if (CAR22.on) { carreataStop(); if (NET.ch && NET.online) ccSend0('carreata', { on: false, from: ccMe(), cid: cityId() }); toast('🎉 Carreata encerrada. Valeu, povo!'); return carBtn22(); }
+  if (!city.myVeh && S.veh) { try { spawnMyVehicle(); } catch (e) { } }
+  CAR22.on = true; CAR22.from = ccMe(); car22Build(); car22Music(true); CAR22.lastSend = 0;
+  toast('🇧🇷 CARREATA 22! O povo chegou de camisa, boné e bandeira. Entre no seu carro e vá na frente: a carreta de som e o povo seguem você.', 'good'); sfx('level'); carBtn22();
+}
+function carreataStop() { CAR22.on = false; CAR22.from = null; car22Clear(); car22Music(false); }
+function onCarreata(d) {
+  if (!d || d.from === ccMe() || d.cid !== cityId()) return;
+  if (d.on && !CAR22.on) { CAR22.on = true; CAR22.from = d.from; car22Build(); car22Music(true); toast('🇧🇷 Tem carreata do 22 passando na cidade! Siga o som.', 'pink'); }
+  else if (!d.on && CAR22.from === d.from) carreataStop();
+}
+function carBtn22() { const b = $('hb-carreata'); if (!b) return; const show = isAdm() && mode === 'city'; if (b.hidden === show) b.hidden = !show; b.classList.toggle('vc-on', CAR22.on); const l = b.querySelector('.lbl'); const tx = CAR22.on ? 'Parar' : 'Carreata'; if (l.textContent !== tx) l.textContent = tx; }
+setInterval(() => { try { carBtn22(); } catch (e) { } }, 1000);
+
 function gfxCanvas(it, side) {
   const def = GFX_DEF[it.img]; if (!def || !def[side]) return null;
   const k = it.id + '_' + side; if (GFX[k] !== undefined) return GFX[k];
@@ -12913,8 +13019,8 @@ const ST = { g: 'funk', bpm: 130, on: false, step: 0, next: 0, timer: null, bus:
 const midiF = n => 440 * Math.pow(2, (n - 69) / 12);
 let _stNoise = null;
 function stBus() { const ac = audioCtx(); if (!ac) return null; if (!ST.bus) { ST.bus = ac.createGain(); ST.bus.gain.value = ST.vb; ST.bus.connect(ac.destination); } if (!_stNoise) { _stNoise = ac.createBuffer(1, ac.sampleRate * 0.5, ac.sampleRate); const d = _stNoise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } return ac; }
-function stHit(kind, t, note) {
-  const ac = audioCtx(), out = ST.bus; if (!ac || !out) return; const g = ac.createGain(); g.connect(out);
+function stHit(kind, t, note, out0) {
+  const ac = audioCtx(), out = out0 || ST.bus; if (!ac || !out) return; const g = ac.createGain(); g.connect(out);
   if (kind === 'k') { const o = ac.createOscillator(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12); g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35); o.connect(g); o.start(t); o.stop(t + 0.4); }
   else if (kind === 'b') { const o = ac.createOscillator(), lp = ac.createBiquadFilter(); o.type = 'sine'; o.frequency.setValueAtTime(midiF(note), t); lp.type = 'lowpass'; lp.frequency.value = 400; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.7, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5); o.connect(lp); lp.connect(g); o.start(t); o.stop(t + 0.55); }
   else if (kind === 'pad') { for (const n of note) { const o = ac.createOscillator(), lp = ac.createBiquadFilter(); o.type = 'sawtooth'; o.frequency.value = midiF(n); lp.type = 'lowpass'; lp.frequency.value = 1100; const gg = ac.createGain(); gg.gain.setValueAtTime(0.0001, t); gg.gain.linearRampToValueAtTime(0.05, t + 0.08); gg.gain.linearRampToValueAtTime(0.0001, t + 60 / ST.bpm * 3.8); o.connect(lp); lp.connect(gg); gg.connect(out); o.start(t); o.stop(t + 60 / ST.bpm * 4); } }
@@ -16274,6 +16380,7 @@ function act(a, ds, el) {
     case 'deco-del': decoRemove(+ds.i); break;
     case 'deco-wall': decoWall(ds.c); break;
     case 'deco-open': openPanel('decorar'); break;
+    case 'carreata': carreataToggle(); break;
     case 'st-beat': ST.g = ds.g; ST.bpm = BEATS[ds.g].bpm; if (ST.on && !ST.rec) studioPlay(); renderPanel(); break;
     case 'st-play': studioPlay(); renderPanel(); break;
     case 'st-stop': studioStop(); renderPanel(); break;
@@ -18443,7 +18550,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
-    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 'mil' }, ({ payload }) => onMil(payload)).on('broadcast', { event: 'vc' }, ({ payload }) => onVC(payload)).on('broadcast', { event: 'deco' }, ({ payload }) => onDeco(payload)).on('broadcast', { event: 'studio' }, ({ payload }) => onStudio(payload)).on('broadcast', { event: 'adm_pg' }, ({ payload }) => onAdmPg(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'samu_emb' }, ({ payload }) => onSamuEmb(payload)).on('broadcast', { event: 'samu_hosp' }, ({ payload }) => onSamuHosp(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 'mil' }, ({ payload }) => onMil(payload)).on('broadcast', { event: 'vc' }, ({ payload }) => onVC(payload)).on('broadcast', { event: 'deco' }, ({ payload }) => onDeco(payload)).on('broadcast', { event: 'studio' }, ({ payload }) => onStudio(payload)).on('broadcast', { event: 'carreata' }, ({ payload }) => onCarreata(payload)).on('broadcast', { event: 'adm_pg' }, ({ payload }) => onAdmPg(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'samu_emb' }, ({ payload }) => onSamuEmb(payload)).on('broadcast', { event: 'samu_hosp' }, ({ payload }) => onSamuHosp(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
