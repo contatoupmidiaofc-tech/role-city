@@ -837,3 +837,9 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 💿 **Minhas faixas:** ouvir, dar nome, **baixar o arquivo de áudio** para o aparelho, **lançar no feed** (+40 XP no primeiro lançamento do dia) e apagar. As faixas ficam até sair do jogo; para guardar, é só baixar.
   - 👥 **Com a galera:** quem está no mesmo estúdio ouve o beat que outra pessoa soltou, e com o **🎧 Fone** ligado todo mundo ouve quem está cantando ao vivo. Quando alguém lança uma música, quem está no estúdio recebe o aviso.
   - O estúdio é de graça. Precisa permitir o microfone no navegador; usar fone de ouvido deixa a gravação mais limpa (o beat não vaza na voz).
+
+### Build 2026.10.15-84 (Cores mais reais dentro das casas e comércios)
+  - 🎨 **Chega de tudo branco e claro:** as paredes dos comércios agora usam a cor da loja num tom mais forte e de verdade (rosa na Drip Store, azul na CelZap, etc.), e as casas têm paredes coloridas (terracota, verde-sálvia, azul petróleo, mostarda, vinho, caramelo, oliva, lavanda...), cada casa com a sua.
+  - 🟫 **Pisos de verdade:** madeira escura nas casas, lojas de roupa, skate, móveis, imobiliária e estúdio; **porcelanato cinza escuro** nas lojas de celular, tokens, concessionária e rodoviária; **granito** no banco, prefeitura, delegacia e agência; **xadrez preto e bege** nos bares, brega e sorveteria; **cimento queimado** na oficina, loja de armas e garagem; **terracota** em outros comércios.
+  - O teto deixou de ser branco puro (creme), o guarda-roupa da casa virou madeira, e as fachadas brancas de casas no bairro, no Rio e em Salvador viraram cores (terracota e verde-água).
+  - Quem quiser ainda pode mudar a cor das paredes no **🛋️ Decorar**.

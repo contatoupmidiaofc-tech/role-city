@@ -771,7 +771,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-83';
+const BUILD = '2026.10.15-84';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -3547,8 +3547,8 @@ function updateDayNight(dt, force) {
    ========================================================= */
 const CITY_DEFS = {
   sp: { name: 'São Paulo', short: 'SP', pal: [0x9aa3ad, 0x8c8f96, 0xb7b2a8, 0x6f7c8e, 0xd9d2c3, 0x7d8590, 0xa59c90, 0x5f6670, 0xc46a4a], h: [14, 62], tall: 0.35, beach: false, grass: '#55804a', sea: false },
-  rj: { name: 'Rio de Janeiro', short: 'RJ', pal: [0xf2efe6, 0xe8dcc2, 0xf7d1cd, 0xc9e4de, 0xfaedcb, 0xd9d2c3, 0xa8c9e8, 0xf2c94c], h: [8, 34], tall: 0.25, beach: true, grass: '#4f8a3a', sea: true },
-  ssa: { name: 'Salvador', short: 'BA', pal: [0xf2c94c, 0xf28ca0, 0x7fb3e0, 0x9bd1a8, 0xe07a5f, 0xf6f1e7, 0xb58ad6, 0xff9f43], h: [5, 13], tall: 0.08, beach: true, grass: '#5d8c45', sea: true, colonial: true },
+  rj: { name: 'Rio de Janeiro', short: 'RJ', pal: [0xd98c5f, 0xe8dcc2, 0xf7d1cd, 0xc9e4de, 0xfaedcb, 0xd9d2c3, 0xa8c9e8, 0xf2c94c], h: [8, 34], tall: 0.25, beach: true, grass: '#4f8a3a', sea: true },
+  ssa: { name: 'Salvador', short: 'BA', pal: [0xf2c94c, 0xf28ca0, 0x7fb3e0, 0x9bd1a8, 0xe07a5f, 0x5aa9a0, 0xb58ad6, 0xff9f43], h: [5, 13], tall: 0.08, beach: true, grass: '#5d8c45', sea: true, colonial: true },
 };
 const cityId = () => (S && CITY_DEFS[S.cityId]) ? S.cityId : 'sp';
 const CITY = () => CITY_DEFS[cityId()];
@@ -4406,11 +4406,11 @@ function buildInterior(hid) {
   const spot = (kind, label, x, z) => it.spots.push({ kind, label, x: cx + x, z: cz + z });
   // piso de madeira, paredes, rodapé e teto
   const wt = woodTex().clone(); wt.needsUpdate = true; wt.wrapS = wt.wrapT = THREE.RepeatWrapping; wt.repeat.set(W / 3, D / 3);
-  const floor = add(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ map: wt, roughness: 0.55 }), 0, 0.01, 0); floor.rotation.x = -Math.PI / 2;
-  const wallC = { quarto: 0xe8dcc2, kitnet: 0xd6e6f2, casa: 0xf2e6d0, mansao: 0xf6f1e7 }[hid] || 0xe8dcc2; it.wallM = null; const wm = new THREE.MeshStandardMaterial({ color: wallC, roughness: 0.95, side: THREE.DoubleSide });
+  const floor = add(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ color: 0xa07a58, map: wt, roughness: 0.5 }), 0, 0.01, 0); floor.rotation.x = -Math.PI / 2;
+  const wallC = { quarto: 0xc9875f, kitnet: 0x6f9a8a, casa: 0xb98a5a, mansao: 0x8e6a7a }[hid] || 0xc9875f; it.wallM = null; const wm = new THREE.MeshStandardMaterial({ color: wallC, roughness: 0.95, side: THREE.DoubleSide });
   for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [0, D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) { add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry); box(ry ? 0.04 : w, 0.12, ry ? w : 0.04, 0xf2f2f0, x * 0.995, 0.06, z * 0.995); }
   col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
-  const ceil = add(new THREE.PlaneGeometry(W, D), std(0xf6f6f2, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
+  const ceil = add(new THREE.PlaneGeometry(W, D), std(0xd8d0c4, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
   const lampM = new THREE.MeshBasicMaterial({ color: 0xfff4d8 }); add(CYL(0.35, 0.35, 0.06, 16), lampM, 0, H - 0.04, 0);
   const light = roomFill(); light.position.set(0, H - 0.4, 0); g.add(light);
   const amb = poolHemi(0xfff6ea, 0x6a5a48, 1.05); amb.position.set(0, H, 0); g.add(amb);
@@ -4431,7 +4431,7 @@ function buildInterior(hid) {
   col(bx, bz, 1.6, 2.2); spot('in_cama', 'Dormir', bx + 1.3, bz + 0.3);
   // guarda-roupa (parede direita)
   const gx = W / 2 - 0.4, gz = -D / 2 + 1.6;
-  box(0.7, 2.2, 1.8, 0xe8e2d6, gx, 1.1, gz); box(0.02, 2.0, 0.02, 0x999999, gx - 0.36, 1.1, gz); for (const z of [-0.12, 0.12]) box(0.04, 0.3, 0.03, 0xd4a017, gx - 0.37, 1.1, gz + z);
+  box(0.7, 2.2, 1.8, 0x7a5232, gx, 1.1, gz); box(0.02, 2.0, 0.02, 0x999999, gx - 0.36, 1.1, gz); for (const z of [-0.12, 0.12]) box(0.04, 0.3, 0.03, 0xd4a017, gx - 0.37, 1.1, gz + z);
   col(gx, gz, 0.8, 1.9); spot('in_armario', 'Guarda-roupa', gx - 1.1, gz);
   // sala: sofá virado para a TV
   const sx = 0, sz = D / 2 - 3.1; // longe da porta: deixa o corredor de entrada livre
@@ -6948,8 +6948,27 @@ function exitShop() {
     const d = it.door, len = Math.hypot(d.x, d.z) || 1; if (d.out) { P.x = d.out[0]; P.z = d.out[1]; P.h = d.out[2]; P.y = groundH(P.x, P.z); } else { P.x = d.x + d.x / len * 1.5; P.z = d.z + d.z / len * 1.5; P.y = 0; P.h = Math.atan2(d.x, d.z); } city.camYaw = P.h; city.zoom = 1; city.camSnap = true;
   });
 }
+/* pisos de verdade (nada de branco): porcelanato escuro, granito, terracota, cimento queimado e xadrez */
+const _floorT = {};
+function floorTex(kind) {
+  if (_floorT[kind]) return _floorT[kind];
+  const t = canvasTex(128, 128, (g, w, h) => {
+    if (kind === 'xadrez') { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { g.fillStyle = (i + j) % 2 ? '#1f2024' : '#b9b2a4'; g.fillRect(i * 32, j * 32, 32, 32); } return; }
+    const base = { porc: '#5b5f66', granito: '#4a4743', terra: '#a5583a', cimento: '#7d7870' }[kind] || '#6b6a66'; g.fillStyle = base; g.fillRect(0, 0, w, h);
+    const r = mulberry32(kind.length * 13); for (let i = 0; i < 500; i++) { g.fillStyle = `rgba(${r() < 0.5 ? '255,255,255' : '0,0,0'},${kind === 'granito' ? 0.18 : 0.06})`; g.fillRect(r() * w, r() * h, kind === 'cimento' ? 6 : 2, kind === 'cimento' ? 4 : 2); }
+    const step = kind === 'terra' ? 32 : 64; g.strokeStyle = kind === 'terra' ? 'rgba(60,25,10,.55)' : 'rgba(0,0,0,.35)'; g.lineWidth = kind === 'cimento' ? 1 : 2; for (let k = 0; k <= w; k += step) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); }
+  }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return _floorT[kind] = t;
+}
+const SHOP_FLOOR = { bar: 'xadrez', brega: 'xadrez', sorveteria: 'xadrez', barbearia: 'xadrez', banco: 'granito', agencia: 'granito', prefeitura: 'granito', delegacia: 'granito', emprestimo: 'granito', celular: 'porc', tokens: 'porc', arena: 'porc', viagem: 'porc', concessionaria: 'porc', armas: 'cimento', mecanica: 'cimento', crew: 'cimento', bombeiros: 'cimento', reciclagem: 'cimento', hospital: 'porc' };
+const floorFor = k => SHOP_FLOOR[k] || ['terra', 'porc', 'cimento', 'granito'][(k.length * 7 + k.charCodeAt(0)) % 4];
 let _tileT = null;
 function tileTex() { return _tileT || (_tileT = (() => { const t = canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#d8d3c8'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 2; for (let k = 0; k <= w; k += 32) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k, h); g.moveTo(0, k); g.lineTo(w, k); g.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })()); }
+/* cor da parede do comércio: a cor da marca puxada para um tom médio (nada de parede branca) */
+function shopWallColor(c, k) {
+  if (k === 'igreja') return new THREE.Color(0xd9c7a0);
+  const col = new THREE.Color(c).lerp(new THREE.Color(0x9a8e7c), k.startsWith('mansao') ? 0.15 : 0.4), hsl = {}; col.getHSL(hsl);
+  if (hsl.l > 0.62) col.setHSL(hsl.h, Math.max(hsl.s, 0.35), 0.58); if (hsl.l < 0.28) col.setHSL(hsl.h, hsl.s, 0.34); return col;
+}
 function buildShopInterior(d) {
   const k = d.kind, BT = k === 'biz' && d.biz ? (BIZ_TYPES[d.biz.tipo] || BIZ_TYPES.loja) : null, info = BT ? { color: BT.c, label: `${BT.i} ${d.biz.nome}`, css: '#' + BT.c.toString(16).padStart(6, '0') } : k.startsWith('mansao') ? { color: k === 'mansao4' ? 0xff8fc8 : 0xffc83d, label: MANSAO_FLOORS[+k.slice(6) - 1] || '👧 Quarto das meninas', css: k === 'mansao4' ? '#ff8fc8' : '#ffc83d' } : Object.values(SPECIAL).find(s => s.kind === k) || (typeof EXTRA_SHOPS !== 'undefined' && EXTRA_SHOPS[k]) || { color: 0xcccccc, label: d.label };
   const [W, D] = ROOM_SIZE[k] || [16, 12], H = k.startsWith('mansao') ? 4.2 : k === 'igreja' ? 7 : k === 'concessionaria' || k === 'bombeiros' ? 5 : 3.4;
@@ -6962,12 +6981,12 @@ function buildShopInterior(d) {
   const npc = (look, name, x, z, ry) => { const n = makeSkater(look, name, '#ffe9a3'); n.position.set(cx + x, 0, cz + z); n.rotation.y = ry; city.scene.add(n); it.npcs.push(n); return n; };
   const spot = (label, x, z, fn) => it.spots.push({ label, x: cx + x, z: cz + z, fn });
   // piso, paredes com a cor da loja, teto e luz
-  const floorT = (k === 'crew' || k === 'bombeiros' || k === 'reciclagem') ? null : tileTex().clone(); if (floorT) { floorT.needsUpdate = true; floorT.repeat.set(W / 4, D / 4); }
-  const wood = ['roupas', 'skate', 'igreja', 'imobiliaria'].includes(k), fl = add(new THREE.PlaneGeometry(W, D), wood ? new THREE.MeshStandardMaterial({ map: (() => { const t = woodTex().clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W / 3, D / 3); return t; })(), roughness: 0.6 }) : floorT ? new THREE.MeshStandardMaterial({ map: floorT, roughness: 0.5 }) : std(0x6d717a, 0.9), 0, 0.01, 0); fl.rotation.x = -Math.PI / 2;
-  const wc = new THREE.Color(info.color).lerp(new THREE.Color(0xffffff), k.startsWith('mansao') ? 0.18 : k === 'igreja' ? 0.85 : 0.65), wm = new THREE.MeshStandardMaterial({ color: wc, roughness: 0.95, side: THREE.DoubleSide });
+  const floorT = floorTex(floorFor(k)).clone(); floorT.needsUpdate = true; floorT.repeat.set(W / 4, D / 4);
+  const wood = ['roupas', 'skate', 'igreja', 'imobiliaria', 'moveis', 'estudio'].includes(k) || k.startsWith('mansao'), fl = add(new THREE.PlaneGeometry(W, D), wood ? new THREE.MeshStandardMaterial({ color: 0x9a7656, map: (() => { const t = woodTex().clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W / 3, D / 3); return t; })(), roughness: 0.55 }) : floorT ? new THREE.MeshStandardMaterial({ map: floorT, roughness: 0.5 }) : std(0x6d717a, 0.9), 0, 0.01, 0); fl.rotation.x = -Math.PI / 2;
+  const wc = shopWallColor(info.color, k), wm = new THREE.MeshStandardMaterial({ color: wc, roughness: 0.95, side: THREE.DoubleSide });
   for (const [x, z, w, ry] of [[0, -D / 2, W, 0], [0, D / 2, W, 0], [-W / 2, 0, D, Math.PI / 2], [W / 2, 0, D, Math.PI / 2]]) add(new THREE.PlaneGeometry(w, H), wm, x, H / 2, z, ry);
   col(0, -D / 2 - 0.2, W, 0.4); col(0, D / 2 + 0.2, W, 0.4); col(-W / 2 - 0.2, 0, 0.4, D); col(W / 2 + 0.2, 0, 0.4, D);
-  const ceil = add(new THREE.PlaneGeometry(W, D), std(0xf4f4f2, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
+  const ceil = add(new THREE.PlaneGeometry(W, D), std(0xcfc8bc, 0.95), 0, H, 0); ceil.rotation.x = Math.PI / 2;
   for (const x of [-W / 4, W / 4]) for (const z of [-D / 4, D / 4]) add(boxGeo(1.2, 0.05, 0.3), new THREE.MeshBasicMaterial({ color: 0xfffbea }), x, H - 0.03, z);
   const lt = roomFill(); lt.position.set(0, H - 0.4, 0); g.add(lt); g.add(poolHemi(0xffffff, 0x7a6a5a, 1.2));
   box(1.6, 2.4, 0.1, 0x6b4a2f, 0, 1.2, D / 2 - 0.06); // porta
@@ -10655,7 +10674,7 @@ function buildCasas(sc) {
   if (L && free[1] && !L.some(l => l[2] === 'Vila Nova')) L.push([free[1][0], free[1][1], 'Vila Nova']);
 }
 function vilaLot(sc, pos, pre, nome, base) {
-  const [vx, vz] = pos, cols = [0xf2c94c, 0x9bd1a8, 0xf6f1e7, 0x7fb3e0, 0xf28ca0, 0xe8a87c];
+  const [vx, vz] = pos, cols = [0xf2c94c, 0x9bd1a8, 0xd98c5f, 0x7fb3e0, 0xf28ca0, 0xe8a87c];
   let n = 0;
   for (const side of [-1, 1]) for (const dz of [-10.5, 0, 10.5]) {
     const hx = vx + side * 8, hz = vz + dz, key = pre + n, num = base + n, g = new THREE.Group(); g.position.set(hx, 0, hz); g.rotation.y = side < 0 ? -Math.PI / 2 : Math.PI / 2; sc.add(g);
@@ -12783,7 +12802,7 @@ EXTRA_INT.moveis = (h) => {
 
 const bizDecoKey = b => 'biz:' + (b.id || b.slot || b.nome);
 /* cor padrão diferente em cada casa (antes de o dono escolher) */
-const HOUSE_WALLS = [0xf2e6d0, 0xd6e6f2, 0xc9e4de, 0xf7d1cd, 0xfaedcb, 0xe3d7f2, 0xf6f1e7, 0xdfe8c8];
+const HOUSE_WALLS = [0xc9875f, 0x7a9e7e, 0x5f7f9f, 0xd2a24c, 0x9a5a66, 0xb07d5a, 0x7d8a5a, 0x8f7fb0, 0x5f9a96, 0xc0706a];
 function decoDefaultWall(it, key) { if (!it || !it.wallM || !key) return; let h = 0; for (const ch of String(key)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; it.wallM.color.setHex(HOUSE_WALLS[h % HOUSE_WALLS.length]); }
 /* entrando em casa: aplica a decoração salva (ou a cor padrão daquela casa) */
 function decoEnter() {
