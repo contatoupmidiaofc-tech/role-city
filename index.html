@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-76';
+const BUILD = '2026.10.15-77';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1515,6 +1515,76 @@ const HAIR_STYLES = { padrao: 'Padrão', careca: 'Careca', black: 'Black power',
 const FEM_HAIR = { solto: 'Solto longo', ondas: 'Solto ondulado', franja: 'Solto com franja', chanel: 'Chanel (curtinho)', cacheado: 'Cacheado volumoso', rabo_alto: 'Rabo alto', maria: 'Maria-chiquinha', tranca_lat: 'Trança de lado', coque_alto: 'Coque alto', padrao: 'Coque baixo' };
 Object.assign(HAIR_STYLES, FEM_HAIR, { padrao: 'Padrão' });
 const FEM_HAIR_KEYS = Object.keys(FEM_HAIR).filter(k => k !== 'padrao');
+
+/* ---- cabelos de mecha (dreads, tranças, nagô, twists): cada mecha nasce no couro cabeludo, escorre pela cabeça e cai ---- */
+const HAIR_M = { dread: 'Dreads', tranca: 'Tranças (box braids)', nago_m: 'Tranças nagô', twists: 'Twists', cacheado_m: 'Cacheado', topete: 'Topete', afro_curto: 'Black curtinho' };
+const HAIR_F2 = { box_braids: 'Box braids longas', nago: 'Tranças nagô', puffs: 'Puffs (dois coquinhos afro)', rabo_baixo: 'Rabo baixo', cacheado_curto: 'Cacheado curtinho', dread_f: 'Dreads longos' };
+Object.assign(HAIR_STYLES, HAIR_M, HAIR_F2);
+// estilos que escondem o cabelo original do modelo (usam a touca de cabelo + mechas)
+const HAIR_OWN = ['dread', 'tranca', 'nago_m', 'twists', 'cacheado_m', 'afro_curto', 'box_braids', 'nago', 'puffs', 'rabo_baixo', 'cacheado_curto', 'dread_f'];
+/* junta várias geometrias numa só (menos objetos para desenhar) */
+function mergeGeos(list) {
+  let nv = 0, ni = 0; for (const g of list) { nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = new Float32Array(nv * 2), idx = new (nv > 65535 ? Uint32Array : Uint16Array)(ni); let ov = 0, oi = 0;
+  for (const g of list) { const p = g.attributes.position, n = g.attributes.normal, u = g.attributes.uv; pos.set(p.array, ov * 3); if (n) nor.set(n.array, ov * 3); if (u) uv.set(u.array, ov * 2); if (g.index) { for (let i = 0; i < g.index.count; i++) idx[oi + i] = g.index.array[i] + ov; oi += g.index.count; } else { for (let i = 0; i < p.count; i++) idx[oi + i] = ov + i; oi += p.count; } ov += p.count; g.dispose(); }
+  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); out.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); out.setIndex(new THREE.BufferAttribute(idx, 1)); return out;
+}
+/* pontos no couro cabeludo (sem testa, rosto e orelhas); zone: 'all' | 'top' | 'back' */
+function scalpRoots(n, zone, seed) {
+  const rnd = mulberry32(seed || 7), out = [], N = n * 3;
+  for (let i = 0; i < N && out.length < n; i++) {
+    const y = 1 - (i + 0.5) / N * 2, r = Math.sqrt(1 - y * y), a = i * 2.39996 + rnd() * 0.3, d = new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r);
+    if (d.z > 0.28 && d.y < 0.86) continue; // testa e rosto
+    if (d.z > 0.05 && Math.abs(d.x) < 0.42 && d.y < 0.97) continue; // franja: não cai no rosto
+    if (Math.abs(d.x) > 0.7 && d.y < 0.2 && d.z > -0.35) continue; // orelhas
+    if (d.y < -0.42) continue; if (zone === 'top' && d.y < 0.35) continue; if (zone === 'back' && d.z > -0.1) continue;
+    out.push(d);
+  }
+  return out;
+}
+/* uma mecha: escorre pela superfície da cabeça e depois cai solta (com um pouco de afastamento do pescoço) */
+function lockPath(c, R, d, L, steps, out) {
+  const p = c.clone().addScaledVector(d, R), pts = [p.clone()], ds = L / steps, down = new THREE.Vector3(0, -1, 0), t = new THREE.Vector3(), n = new THREE.Vector3();
+  for (let i = 0; i < steps; i++) {
+    n.subVectors(p, c); const dist = n.length(); n.normalize();
+    if (n.y > -0.35 && dist < R * 1.25) { t.copy(down).addScaledVector(n, n.y); if (t.lengthSq() < 0.02) t.set(0, 0, -1).addScaledVector(n, n.z); if (n.z > -0.1) { t.z -= 0.9; t.x += Math.sign(n.x || 1) * 0.5 * Math.min(1, Math.abs(n.x) * 3 + 0.2); } t.normalize(); t.addScaledVector(n, out || 0).normalize(); p.addScaledVector(t, ds); const k = R * (1 + 0.05 * i / steps) / p.distanceTo(c); p.sub(c).multiplyScalar(Math.max(1, k)).add(c); }
+    else { p.y -= ds; const hx = p.x - c.x, hz = p.z - c.z, hr = Math.hypot(hx, hz), need = R * 0.82; if (hr < need) { p.x = c.x + hx / (hr || 1) * need; p.z = c.z + hz / (hr || 1) * need; } p.x += hx * 0.03; p.z += (hz < 0 ? hz * 0.04 : 0); }
+    pts.push(p.clone());
+  }
+  return pts;
+}
+function lockTube(pts, r, braid, taper) {
+  const curve = new THREE.CatmullRomCurve3(pts), seg = Math.max(8, pts.length * 2), g = new THREE.TubeGeometry(curve, seg, r, 6, false), P = g.attributes.position, fr = curve.computeFrenetFrames(seg, false);
+  if (braid || taper) for (let i = 0; i <= seg; i++) { const u = i / seg, cp = curve.getPointAt(u), k = (braid ? 1 + 0.32 * Math.abs(Math.sin(u * seg * 1.6)) : 1) * (taper ? 1 - 0.35 * u : 1); for (let j = 0; j <= 6; j++) { const vi = i * 7 + j; if (vi >= P.count) break; P.setXYZ(vi, cp.x + (P.getX(vi) - cp.x) * k, cp.y + (P.getY(vi) - cp.y) * k, cp.z + (P.getZ(vi) - cp.z) * k); } }
+  g.computeVertexNormals(); return g;
+}
+/* trilhas de trança nagô: da testa até a nuca, rentes à cabeça */
+function cornrows(c, R, lines, spread, E) { // trilhas paralelas da testa até a nuca (como meridianos com polos nas orelhas)
+  const geos = [];
+  for (let k = 0; k < lines; k++) { const ph = (k / (lines - 1) - 0.5) * spread, pts = []; for (let i = 0; i <= 18; i++) { const th = 0.42 - i / 18 * 2.62, d = new THREE.Vector3(Math.sin(ph), Math.cos(ph) * Math.cos(th), Math.cos(ph) * Math.sin(th)); pts.push(E(c.clone().addScaledVector(d, R * 1.04))); }
+    geos.push(lockTube(pts, 0.0095, true, false)); }
+  return geos;
+}
+function buildHairLocks(hs, mk, M, y0, RP, g, look) {
+  const R = RP ? 0.104 : 0.125, c = new THREE.Vector3(0, y0 - 0.03, RP ? -0.03 : -0.02), geos = [], SX = 0.8, SZ = 1.05;
+  const E = p => p.set(c.x + (p.x - c.x) * SX, p.y, c.z + (p.z - c.z) * SZ); // a cabeça é oval (mais estreita dos lados)
+  const lockTube0 = lockTube; const lockTubeE = (pts, r, b, t) => lockTube0(pts.map(q => E(q.clone())), r, b, t);
+  // touca de cabelo (couro cabeludo coberto) para todos os estilos de mecha
+  const cap = mk(SPH(R, 24, 14, 0, TAU, 0, Math.PI * 0.56), c.x, c.y, c.z, -1.05, 0, 0, SX, 1.0, SZ);
+  if ((hs === 'nago' || hs === 'nago_m') && look && look.skin != null) cap.material = std(new THREE.Color(look.skin).multiplyScalar(0.55).lerp(new THREE.Color(look.hair || 0x1a120d), 0.35).getHex(), 0.8);
+  const locks = (n, zone, L0, L1, r, braid, seed, out) => { const rnd = mulberry32(seed + 3); for (const d of scalpRoots(n, zone, seed)) geos.push(lockTubeE(lockPath(c, R * 1.02, d, L0 + rnd() * (L1 - L0), 9, out), r, braid, !braid)); };
+  if (hs === 'dread') locks(46, 'all', 0.13, 0.22, 0.0085, false, 11, 0.05);
+  else if (hs === 'dread_f') locks(60, 'all', 0.26, 0.4, 0.008, false, 13, 0.06);
+  else if (hs === 'tranca') locks(52, 'all', 0.16, 0.26, 0.0065, true, 17, 0.05);
+  else if (hs === 'box_braids') locks(70, 'all', 0.34, 0.46, 0.0062, true, 19, 0.06);
+  else if (hs === 'nago_m' || hs === 'nago') { geos.push(...cornrows(c, R, hs === 'nago' ? 14 : 12, 2.5, E)); if (hs === 'nago') { const rnd = mulberry32(5); for (let k = 0; k < 9; k++) { const ax = (k / 8 - 0.5) * 1.5, d = new THREE.Vector3(Math.sin(ax) * 0.45, -0.38, -0.82).normalize(); geos.push(lockTubeE(lockPath(c, R * 1.02, d, 0.3 + rnd() * 0.06, 8, 0.02), 0.0072, true, false)); } } }
+  else if (hs === 'twists') { const rnd = mulberry32(41); for (const d of scalpRoots(70, 'all', 23)) { const p0 = c.clone().addScaledVector(d, R * 0.99), p1 = p0.clone().addScaledVector(d, 0.016), p2 = p1.clone().addScaledVector(d, 0.012).add(new THREE.Vector3(0, -0.012 - rnd() * 0.01, -0.006)); geos.push(lockTubeE([p0, p1, p2], 0.0075, true, false)); } }
+  else if (hs === 'cacheado_m' || hs === 'cacheado_curto') { const rnd = mulberry32(29); for (const d of scalpRoots(hs === 'cacheado_m' ? 46 : 70, hs === 'cacheado_m' ? 'top' : 'all', 31)) { const p = E(c.clone().addScaledVector(d, R * (1.06 + rnd() * 0.05))); mk(SPH(0.017 + rnd() * 0.008, 7, 6), p.x, p.y, p.z); } }
+  else if (hs === 'afro_curto') mk(SPH(R * 1.12, 20, 14, 0, TAU, 0, Math.PI * 0.62), c.x, c.y, c.z - 0.008, -0.45, 0, 0, 1.0, 0.95, 1.06);
+  else if (hs === 'puffs') { for (const s of [-1, 1]) { mk(SPH(0.058, 14, 12), c.x + s * R * 0.55, c.y + R * 0.92, c.z - R * 0.15); mk(new THREE.TorusGeometry(0.03, 0.006, 6, 14), c.x + s * R * 0.5, c.y + R * 0.83, c.z - R * 0.12, Math.PI / 2); } }
+  else if (hs === 'rabo_baixo') { const top = c.clone().add(new THREE.Vector3(0, -R * 0.35, -R * 0.95)); geos.push(lockTubeE([top, top.clone().add(new THREE.Vector3(0, -0.06, -0.035)), top.clone().add(new THREE.Vector3(0, -0.16, -0.04)), top.clone().add(new THREE.Vector3(0, -0.26, -0.03))], 0.026, false, true)); mk(new THREE.TorusGeometry(0.024, 0.006, 6, 14), top.x, top.y - 0.01, top.z - 0.01, 0.4); }
+  if (geos.length) { const m = new THREE.Mesh(mergeGeos(geos), M); m.castShadow = true; g.add(m); }
+}
 const _v1 = new THREE.Vector3();
 function applyBody(u, look) {
   const b = look.body || {}, w = BODY_W[b.w] || 1, h = BODY_H[b.h] || 1;
@@ -1561,7 +1631,7 @@ function buildHairStyle(u, hs, look) {
   const RP = !!(MODELS[u.k] && MODELS[u.k].rpm);
   if (hs === 'black') { if (RP) mk(SPH(0.122, 18, 14), 0, y0 - 0.03, -0.04, 0, 0, 0, 1.0, 0.92, 1.05); else mk(SPH(0.17, 18, 14), 0, y0 + 0.02, -0.02, 0, 0, 0, 1.12, 0.92, 1.1); }
   else if (hs === 'moicano') { if (RP) mk(SPH(0.118, 16, 12), 0, y0 - 0.005, -0.02, 0, 0, 0, 0.22, 1.0, 0.8); else mk(boxGeo(0.04, 0.05, 0.2), 0, y0 + 0.06, -0.02); }
-  else if (hs === 'dread' || hs === 'tranca') { const n = hs === 'dread' ? 14 : 2; for (let i = 0; i < n; i++) { const a = hs === 'dread' ? Math.PI * 0.35 + i / (n - 1) * Math.PI * 1.3 : Math.PI * (0.8 + i * 0.4); const rr = RP ? 0.085 : 0.1, x = Math.sin(a) * rr, z = Math.cos(a) * rr - (RP ? 0.03 : 0.02); mk(CAPG(hs === 'dread' ? (RP ? 0.008 : 0.014) : (RP ? 0.014 : 0.022), hs === 'dread' ? 0.2 : 0.3), x, y0 - (hs === 'dread' ? (RP ? 0.1 : 0.06) : (RP ? 0.15 : 0.12)), z, Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25); } }
+  else if (HAIR_OWN.includes(hs)) buildHairLocks(hs, mk, M, y0, RP, g, look);
   else if (hs === 'rabo') mk(CAPG(0.035, 0.18), 0, y0 - 0.06, -0.14, 0.5);
   else if (hs === 'coque') mk(SPH(0.065, 12, 10), 0, y0 + 0.05, -0.09);
   else if (FEM_HAIR_KEYS.includes(hs)) femHair(hs, mk, y0, RP);
@@ -5554,7 +5624,7 @@ function useRound(G) {
   P.ammo[G.id] = n - 1; if (n - 1 <= 0) setTimeout(() => reloadGun(G), 250); return true;
 }
 function bodyButtons(cur) {
-  const gen = S && mode !== 'menu' ? S.gender : selGender, hsList = gen === 'f' ? Object.assign({}, FEM_HAIR, { black: 'Black power', tranca: 'Tranças', dread: 'Dreads', careca: 'Careca' }) : { padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano', dread: 'Dreads', tranca: 'Tranças', rabo: 'Rabo de cavalo', coque: 'Coque' };
+  const gen = S && mode !== 'menu' ? S.gender : selGender, hsList = gen === 'f' ? Object.assign({}, FEM_HAIR, HAIR_F2, { black: 'Black power', tranca: 'Tranças', careca: 'Careca' }) : Object.assign({ padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano' }, HAIR_M, { rabo: 'Rabo de cavalo', coque: 'Coque' });
   const seg = (k, list) => Object.entries(list).map(([v, n]) => `<button type="button" data-act="body-sel" data-k="${k}" data-v="${v}" aria-pressed="${cur[k] === v}">${n}</button>`).join('');
   const c2 = Object.assign({ bd: 'none', fc: 'normal' }, cur), seg2 = (k, list) => Object.entries(list).map(([v, n]) => `<button type="button" data-act="body-sel" data-k="${k}" data-v="${v}" aria-pressed="${c2[k] === v}">${n}</button>`).join('');
   return { hs: seg('hs', hsList), w: seg('w', { magro: 'Magro', normal: 'Normal', forte: 'Forte', gordo: 'Gordo' }), h: seg('h', { baixinho: 'Baixinho', medio: 'Médio', alto: 'Alto' }), bd: seg2('bd', BEARDS), fc: seg2('fc', { fino: 'Fino', normal: 'Normal', largo: 'Largo' }) };
@@ -9132,6 +9202,46 @@ const GFX_DEF = {
   rei: { front: g => gfxCrown(g, 160, 82, 14), back: g => { gfxCrown(g, 128, 80, 48); gfxText(g, 'REI DO ROLÊ', 128, 162, 24, '#ffd23f'); } },
   corta: { front: g => { gfxText(g, 'RC', 160, 82, 14, '#f4f2ec'); } },
 };
+
+/* ---- coleção GAMER (o que está em alta nos jogos de celular e de RP): estampas de jogo, neon, tática e streetwear ---- */
+const gfxSmile = (g, x, y, s) => { g.fillStyle = '#ffd23f'; g.strokeStyle = '#15161a'; g.lineWidth = s * .08; g.beginPath(); g.arc(x, y, s, 0, TAU); g.fill(); g.stroke(); for (const k of [-1, 1]) { g.fillStyle = '#15161a'; g.beginPath(); g.ellipse(x + k * s * .35, y - s * .2, s * .11, s * .2, 0, 0, TAU); g.fill(); } g.beginPath(); g.arc(x, y + s * .05, s * .55, .15 * Math.PI, .85 * Math.PI); g.stroke(); g.fillStyle = '#ffd23f'; for (const k of [-0.5, 0.1, 0.6]) { g.beginPath(); g.ellipse(x + k * s, y + s * 1.05, s * .1, s * .22, 0, 0, TAU); g.fill(); } };
+const gfxBolt = (g, x, y, s, c = '#ffd23f') => { g.fillStyle = c; g.strokeStyle = '#15161a'; g.lineWidth = s * .06; gfxPath(g, [[x + s * .2, y - s], [x - s * .5, y + s * .1], [x - s * .05, y + s * .1], [x - s * .3, y + s], [x + s * .5, y - s * .15], [x + s * .05, y - s * .15]]); g.fill(); g.stroke(); };
+const gfxCross = (g, x, y, s, c = '#ff3b3b') => { g.strokeStyle = c; g.lineWidth = s * .09; g.beginPath(); g.arc(x, y, s * .7, 0, TAU); g.stroke(); g.beginPath(); g.arc(x, y, s * .25, 0, TAU); g.stroke(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { g.beginPath(); g.moveTo(x + dx * s * .35, y + dy * s * .35); g.lineTo(x + dx * s, y + dy * s); g.stroke(); } };
+const gfxFlameC = (g, x, y, s, c0, c1, c2) => { const gr = g.createLinearGradient(0, y - s, 0, y + s); gr.addColorStop(0, c0); gr.addColorStop(0.55, c1); gr.addColorStop(1, c2); g.fillStyle = gr; g.beginPath(); g.moveTo(x - s * .55, y + s * .7); for (let i = 0; i <= 6; i++) { const xx = x - s * .55 + i * s * .183, tip = y - s * (i % 2 ? 1 : 0.5) * (i === 3 ? 1.15 : 1); g.quadraticCurveTo(xx - s * .12, y + s * 0.1, xx, tip); } g.quadraticCurveTo(x + s * .75, y + s * .9, x, y + s * 1.0); g.quadraticCurveTo(x - s * .75, y + s * .9, x - s * .55, y + s * .7); g.closePath(); g.fill(); };
+const gfxHeart8 = (g, x, y, s) => { const M = ['0110110', '1111111', '1111111', '0111110', '0011100', '0001000'], c = s / 7; M.forEach((r, j) => [...r].forEach((v, i) => { if (v === '1') { g.fillStyle = '#ff3b5c'; g.fillRect(x - s / 2 + i * c, y - s * .4 + j * c, c - 1, c - 1); } })); };
+Object.assign(GFX_DEF, {
+  gg: { front: g => { gfxText(g, 'GG', 128, 100, 88, '#3dff8a'); gfxText(g, 'BOA PARTIDA', 128, 168, 22, '#ffffff'); }, back: g => { gfxText(g, 'GG', 128, 110, 120, '#3dff8a'); } },
+  smile: { front: g => gfxSmile(g, 128, 100, 44), back: g => { gfxSmile(g, 128, 96, 60); gfxText(g, 'SORRIA', 128, 196, 26, '#ffd23f'); } },
+  raio: { front: g => gfxBolt(g, 128, 110, 50), back: g => { gfxBolt(g, 128, 110, 80); } },
+  mira: { front: g => { gfxCross(g, 128, 96, 44); gfxText(g, 'HEADSHOT', 128, 172, 24, '#ffffff', '#ff3b3b'); }, back: g => gfxCross(g, 128, 110, 74) },
+  pixel: { front: g => { gfxHeart8(g, 128, 96, 84); gfxText(g, '+1 VIDA', 128, 176, 26, '#ff3b5c', '#15161a'); }, back: g => { gfxText(g, 'GAME', 128, 86, 48, '#ff3b5c'); gfxText(g, 'OVER', 128, 140, 48, '#ff3b5c'); } },
+  fogo_azul: { front: g => gfxFlameC(g, 128, 104, 52, '#e8fbff', '#2fb6e8', '#1f3a9a'), back: g => { gfxFlameC(g, 92, 112, 56, '#e8fbff', '#2fb6e8', '#1f3a9a'); gfxFlameC(g, 164, 112, 56, '#e8fbff', '#2fb6e8', '#1f3a9a'); } },
+  afk: { front: g => { gfxText(g, 'AFK', 128, 100, 70, '#ff4fa3'); gfxText(g, 'NUNCA', 128, 160, 30, '#ffffff'); }, back: g => { gfxText(g, 'ROLÊ', 128, 90, 44, '#ffffff'); gfxText(g, 'CITY', 128, 140, 44, '#ff4fa3'); } },
+});
+const GAMER_WEAR = [
+  I('shirt', 'gm_gg', 'Camiseta GG Neon', 0x15161a, 1200, 35, 'raro', { pat: 'plain', img: 'gg', desc: '"GG" em verde neon no peito e nas costas.' }),
+  I('shirt', 'gm_smile', 'Camiseta Smile Derretendo', 0xf4f2ec, 1100, 32, 'raro', { pat: 'plain', img: 'smile' }),
+  I('shirt', 'gm_raio', 'Camiseta Raio', 0x1b2a4a, 1000, 30, 'raro', { pat: 'plain', img: 'raio' }),
+  I('shirt', 'gm_mira', 'Camiseta Headshot', 0x15161a, 1300, 38, 'raro', { pat: 'plain', img: 'mira', desc: 'Mira vermelha no peito e nas costas.' }),
+  I('shirt', 'gm_pixel', 'Camiseta Pixel +1 Vida', 0xf4f2ec, 1100, 32, 'raro', { pat: 'plain', img: 'pixel', desc: 'Coraçãozinho de pixel na frente, GAME OVER nas costas.' }),
+  I('shirt', 'gm_fogo_azul', 'Moletom Fogo Azul', 0x15161a, null, 95, 'lendario', { pat: 'plain', img: 'fogo_azul', desc: 'Chamas azuis na frente e duas nas costas.' }),
+  I('shirt', 'gm_afk', 'Moletom AFK Nunca', 0x2a1a3a, 1400, 40, 'raro', { pat: 'plain', img: 'afk' }),
+  I('shirt', 'gm_jersey_neon', 'Jersey de Basquete Neon', 0x9cff3a, 600, null, 'comum', { pat: 'tm_trim_15161a_15161a', tank: true, team: true }),
+  I('shirt', 'gm_jersey_roxo', 'Jersey de Basquete Roxo e Dourado', 0x5a2a8a, 600, null, 'comum', { pat: 'tm_trim_ffd23f_ffd23f', tank: true, team: true }),
+  I('shirt', 'gm_corta_rosa', 'Corta-Vento Rosa e Preto', 0xff4fa3, 1800, 55, 'raro', { pat: 'wd_15161a_ffffff', img: 'corta' }),
+  I('shirt', 'gm_camo_urbano', 'Camiseta Camuflada Urbana', 0x6d717a, 520, null, 'comum', { pat: 'camo' }),
+  I('shirt', 'gm_galaxia', 'Camiseta Galáxia', 0x2a1a6a, null, 80, 'lendario', { pat: 'galaxy' }),
+  I('pants', 'gm_cargo_preta', 'Calça Cargo Tática Preta', 0x15161a, 480, null, 'comum', { pat: 'plain', baggy: true }),
+  I('pants', 'gm_camo_urbana', 'Calça Camuflada Urbana', 0x6d717a, 480, null, 'comum', { pat: 'camo', baggy: true }),
+  I('pants', 'gm_tactel_neon', 'Bermuda Tactel Neon', 0x9cff3a, 220, null, 'comum', { pat: 'sidestripe', short: true }),
+  I('pants', 'gm_jogger_rosa', 'Calça Jogger Rosa', 0xff7aa8, 300, null, 'comum', { pat: 'sidestripe' }),
+  I('shoes', 'gm_cano_alto', 'Tênis Cano Alto Vermelho', 0xc8102e, 520, null, 'comum', { pat: 'sidestripe' }),
+  I('shoes', 'gm_neon_rosa', 'Tênis Neon Rosa', 0xff4fa3, 520, null, 'comum', { pat: 'sidestripe' }),
+  I('cap', 'gm_bandana_verm', 'Bandana Vermelha', 0xc8102e, 160, null, 'comum', { hat: 'bandana' }),
+  I('cap', 'gm_bandana_preta', 'Bandana Preta', 0x15161a, 160, null, 'comum', { hat: 'bandana' }),
+  I('cap', 'gm_bone_neon', 'Boné Aba Reta Neon', 0x9cff3a, 260, null, 'comum', { hat: 'flat' }),
+];
+GAMER_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 function gfxCanvas(it, side) {
   const def = GFX_DEF[it.img]; if (!def || !def[side]) return null;
   const k = it.id + '_' + side; if (GFX[k] !== undefined) return GFX[k];
@@ -10215,7 +10325,7 @@ function applyRpmLook(u, look) {
   if (!tex) { u.atlasJob = [M.atlas, look, pm, tm, bald]; if (!u.atlasQ) { u.atlasQ = true; ATLASQ.list.push(u); } }
   else { u.atlasJob = null; m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; } }
   if (M.normal) { const nn = look.shirt.nude ? 0.25 : 0.8; m.normalScale.set(nn, nn); }
-  if (u.hairMat2) { const hs = (look.body && look.body.hs) || 'padrao'; u.hairMat2.visible = !['careca', 'moicano', 'black'].includes(hs) && !FEM_HAIR_KEYS.includes(hs); }
+  if (u.hairMat2) { const hs = (look.body && look.body.hs) || 'padrao'; u.hairMat2.visible = !['careca', 'moicano', 'black'].includes(hs) && !FEM_HAIR_KEYS.includes(hs) && !HAIR_OWN.includes(hs); }
 }
 /* posição 3D de cada pixel da camiseta (para desenhar peito, abdômen e costas quando está sem camisa) */
 function rpmTorsoDetail(info, mesh, scene) {
@@ -12652,7 +12762,7 @@ PANELS28.garagem = () => {
 };
 /* ---- filhos de quem casou: criar os personagens (até 4), igual às filhas do chefe ---- */
 const KID_OUTFITS = { f: [['Rosa e branco', { shirt: 'shirt_pink', pants: 'sh_white', shoes: 'shoes_white' }], ['Florido', { shirt: 'rg_branca', pants: 'sh_floral', shoes: 'shoes_white' }], ['Básico', { shirt: 'shirt_basic', pants: 'sh_bermuda', shoes: 'shoes_basic' }]], m: [['Básico', { shirt: 'shirt_basic', pants: 'sh_bermuda', shoes: 'shoes_basic' }], ['Branquinho', { shirt: 'rg_branca', pants: 'sh_white', shoes: 'shoes_white' }], ['Esporte', { shirt: 'shirt_basic', pants: 'sh_white', shoes: 'shoes_basic' }]] };
-const KID_HAIR = { f: Object.assign({ tranca: 'Tranças', coque: 'Coque' }, FEM_HAIR), m: { padrao: 'Curtinho', careca: 'Raspado', black: 'Black power', moicano: 'Moicano', dread: 'Dreads' } };
+const KID_HAIR = { f: Object.assign({ tranca: 'Tranças', coque: 'Coque', puffs: 'Puffs', nago: 'Tranças nagô', box_braids: 'Box braids' }, FEM_HAIR), m: { padrao: 'Curtinho', careca: 'Raspado', black: 'Black power', moicano: 'Moicano', dread: 'Dreads', twists: 'Twists', nago_m: 'Tranças nagô', cacheado_m: 'Cacheado' } };
 window.filhoG = g => { g = g === 'm' ? 'm' : 'f'; const o = document.getElementById('fk-o'), h = document.getElementById('fk-hs'); if (o) o.innerHTML = KID_OUTFITS[g].map((x, i) => `<option value="${i}">${x[0]}</option>`).join(''); if (h) h.innerHTML = Object.entries(KID_HAIR[g]).map(([k, n]) => `<option value="${k}">${n}</option>`).join(''); };
 function filhoForm() { const v = id => { const e = document.getElementById(id); return e ? e.value : ''; }; return { n: v('fk-n').trim().slice(0, 16), g: v('fk-g') === 'm' ? 'm' : 'f', age: Math.max(1, Math.min(10, +v('fk-age') || 5)), o: +v('fk-o') || 0, hs: v('fk-hs'), sk: +v('fk-sk') || 0 }; }
 function filhoCriar() {
@@ -17070,7 +17180,7 @@ function onMecFeito(d) {
 /* ===== Barbeiro: corte e cor feitos por outra pessoa, visíveis para todos ===== */
 const BB = { orc: null, job: null };
 const BB_DYES = ['dy_none', 'dy_nevou', 'dy_amarelo', 'dy_luzes', 'dy_ruivo', 'dy_rosa', 'dy_azul', 'dy_verde'].filter(id => ITEM[id]);
-const bbStyles = g => g === 'f' ? Object.assign({}, FEM_HAIR, { black: 'Black power', tranca: 'Tranças', dread: 'Dreads', careca: 'Careca' }) : { padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano', dread: 'Dreads', tranca: 'Tranças' };
+const bbStyles = g => g === 'f' ? Object.assign({}, FEM_HAIR, HAIR_F2, { black: 'Black power', tranca: 'Tranças', careca: 'Careca' }) : Object.assign({ padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano' }, HAIR_M);
 function bbOrcSend() {
   const T = CC.take; if (!T || T.c.svc !== 'barbeiro') return;
   const hs = ($('bo-hs') || {}).value || '', dye = ($('bo-dye') || {}).value || '', bd = ($('bo-bd') || {}).value || '';

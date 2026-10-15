@@ -786,3 +786,11 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 📻 **Ordens pelo rádio:** quem é **Sargento para cima** dá ordens ("Todos ao pátio", "Reforçar a guarda do portão", "Patrulha na praça"; na Marinha: "Todos à Base Naval", "Inspeção no cais", "Patrulha na orla"). Todos os militares online recebem o aviso e o GPS.
   - 🎖️ A patente agora sobe pelos pontos da carreira (missões, deveres e operações), igual às outras profissões da Central.
   - 👕 Roupa nova dos filhos aparece para os outros jogadores na hora (antes só quando a família saía de novo).
+
+### Build 2026.10.15-77 (Cabelos refeitos e moda dos jogos)
+  - 💇 **Tranças e dreads refeitos:** antes eram varetas grossas soltas no ar, longe da cabeça. Agora cada mecha **nasce no couro cabeludo, escorre pela cabeça e cai** (finas, com formato de trança ou de dread), sem cair na frente do rosto. A cabeça usa uma touca de cabelo no formato oval certo, e no modelo feminino o coque original some quando o penteado é outro.
+  - ✨ **Cabelos novos:**
+    - **Masculino:** Dreads, Tranças (box braids), **Tranças nagô** (trilhas da testa até a nuca, com o couro cabeludo aparecendo entre elas), **Twists**, **Cacheado**, **Black curtinho**.
+    - **Feminino:** **Box braids longas**, **Tranças nagô** (com as tranças caindo nas costas), **Puffs** (dois coquinhos afro), **Rabo baixo**, **Cacheado curtinho**, **Dreads longos**.
+    - Os filhos e o barbeiro também têm as opções novas.
+  - 🎮 **Coleção Gamer (em alta nos jogos):** camisetas **GG Neon**, **Smile Derretendo**, **Raio**, **Headshot** (mira), **Pixel +1 Vida / GAME OVER**, moletom **Fogo Azul** e **AFK Nunca**; jerseys de basquete neon e roxo-dourado, corta-vento rosa e preto, camuflada urbana, galáxia; calça cargo tática, calça camuflada urbana, bermuda tactel neon, jogger rosa; tênis cano alto vermelho e neon rosa; bandanas e boné aba reta neon.
