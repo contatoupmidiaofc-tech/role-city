@@ -771,7 +771,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-79';
+const BUILD = '2026.10.15-80';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -10622,7 +10622,8 @@ async function loadCasas() {
     const now = Date.now();
     for (const r of data) { if (r.modo === 'aluguel' && new Date(r.pago_ate).getTime() < now - 2 * 3600e3) continue; city.casaRows[r.casa] = r; }
     // minha casa ainda é minha?
-    if (S.casa && S.casa.cid === cid && (!city.casaRows[S.casa.key] || city.casaRows[S.casa.key].dono !== NET.user.id)) { toast('Você perdeu a casa (aluguel vencido).', 'bad'); S.casa = null; if (S.home && S.home.casa) S.home = null; persist(); }
+    for (const mc of myCasas().filter(c => c.cid === cid)) if (!city.casaRows[mc.key] || city.casaRows[mc.key].dono !== NET.user.id) { toast(`Você perdeu a casa ${mc.n} (aluguel vencido).`, 'bad'); S.casas = S.casas.filter(c => c !== mc); if (S.casa === mc) S.casa = null; }
+    casaDaCidade(); if (!S.casa && S.home && S.home.casa) S.home = null; persist();
     if (!isAdm() && S.casa && S.casa.cid === cid && city.casaRows[S.casa.key] && !(S.home && S.home.casa)) { S.home = { id: S.casa.tier, own: S.casa.modo === 'compra', casa: true }; persist(); }
     casaMigrate();
     refreshCasaSigns();
@@ -10645,14 +10646,13 @@ async function takeCasa(key, modo, o = {}) {
   const c = city.casas[key]; if (!c) return;
   if (!NET.user || !NET.sb) return toast('Entre com sua conta para alugar ou comprar uma casa.', 'bad');
   if (city.casaRows[key]) return toast('Essa casa já tem dono.', 'bad');
-  if (S.casa && S.casa.cid === cityId()) return toast('Você já tem uma casa nesta cidade. Entregue a outra primeiro.', 'bad');
   const price = o.free ? 0 : modo === 'compra' ? c.buy : c.rent;
   if (o.tok) { if ((S.tokens || 0) < c.tok) { toast('Tokens insuficientes.', 'bad'); return openPanel('tokens'); } }
   else if (S.coins < price) return toast(`Precisa de $ ${fmt(price)}.`, 'bad');
   try {
     const { data, error } = await NET.sb.from('casas').insert({ cidade: cityId(), casa: key, modo, dono_nome: S.name, pago_ate: new Date(Date.now() + 3600e3).toISOString() }).select().single();
     if (error) { if (/duplicate|unique/i.test(error.message)) { city.casaRows[key] = city.casaRows[key] || { casa: key, dono: '?', dono_nome: 'outro jogador', modo: modo }; } if (!o.quiet) toast(/duplicate|unique/i.test(error.message) ? 'Alguém acabou de pegar essa casa.' : 'Não deu agora. Tente de novo.', 'bad'); return; }
-    if (o.tok) S.tokens -= c.tok; else S.coins -= price; if (S.casa && S.casa.cid !== cityId()) { S.casasOutras = S.casasOutras || {}; S.casasOutras[S.casa.cid] = S.casa; toast(`🏠 Casa extra: você agora tem casa em ${CITY_DEFS[S.casa.cid].name} e em ${CITY_DEFS[cityId()].name}.`, 'pink'); } S.casa = { key, cid: cityId(), modo, tier: c.tier, n: c.n, paid: gameDay() };
+    if (o.tok) S.tokens -= c.tok; else S.coins -= price; const nc = { key, cid: cityId(), modo, tier: c.tier, n: c.n, paid: gameDay() }; myCasas().push(nc); if (S.casas.length > 1) toast(`🏠 Agora você tem ${S.casas.length} casas (${[...new Set(S.casas.map(q => CITY_DEFS[q.cid].name))].join(', ')}).`, 'pink'); S.casa = nc;
     if (!isAdm()) S.home = { id: c.tier, own: modo === 'compra', casa: true };
     if (c.morro) { S.morador = S.morador || {}; S.morador[cityId()] = true; }
     persist(); updateHUD(); city.casaRows[key] = data; refreshCasaSigns(); sfx('level');
@@ -10662,22 +10662,23 @@ async function takeCasa(key, modo, o = {}) {
     postFeed(modo === 'compra' ? `Comprei a ${c.n}!` : `Aluguei a ${c.n}!`); renderPanel();
   } catch (e) { toast('Sem conexão com o servidor.', 'bad'); }
 }
-async function dropCasa() {
-  const sc = S.casa; if (!sc) return;
+async function dropCasa(key) {
+  const sc = key ? myCasas().find(c => c.key === key && c.cid === cityId()) || myCasas().find(c => c.key === key) : S.casa; if (!sc) return;
   try { await NET.sb.from('casas').delete().eq('cidade', sc.cid).eq('casa', sc.key); } catch (e) { }
   if (sc.cid === cityId()) { delete city.casaRows[sc.key]; refreshCasaSigns(); if (NET.ch) NET.ch.send({ type: 'broadcast', event: 'casa', payload: { cid: sc.cid, key: sc.key, op: 'del' } }); }
-  S.casa = null; if (S.home && S.home.casa) S.home = null; persist(); toast('Você entregou a casa.'); renderPanel();
+  S.casas = myCasas().filter(c => c !== sc); if (S.casa === sc) S.casa = null; casaDaCidade(); if (!S.casa && S.home && S.home.casa) S.home = null; persist(); toast(`Você entregou a casa ${sc.n}.`); renderPanel();
 }
 /* aluguel diário (vai para o chefe) */
-function casaDaily() {
-  const sc = S && S.casa; if (!sc || sc.modo !== 'aluguel' || !NET.user) return; const d = gameDay(); if ((sc.paid || 0) >= d) return;
-  const c = city.casas && city.casas[sc.key]; const rent = c ? c.rent : (sc.tier === 'casa' ? 220 : 60);
+function casaDaily() { if (!S || !NET.user) return; for (const sc of myCasas().slice()) if (sc.modo === 'aluguel') casaDaily1(sc); }
+function casaDaily1(sc) {
+  const d = gameDay(); if ((sc.paid || 0) >= d) return;
+  const c = sc.cid === cityId() && city.casas && city.casas[sc.key]; const rent = c ? c.rent : (sc.tier === 'mansao' ? 900 : sc.tier === 'casa' ? 220 : 60);
   sc.paid = d;
   if (S.coins >= rent) {
     S.coins -= rent; sc.debt = 0; toast(`🏠 Aluguel do dia pago: $ ${fmt(rent)} (${sc.n})`);
-    if (NET.sb) NET.sb.from('casas').update({ pago_ate: new Date(Date.now() + 3600e3).toISOString() }).eq('cidade', sc.cid).eq('casa', sc.key).then(() => { }, () => { });
+    try { if (NET.sb) NET.sb.from('casas').update({ pago_ate: new Date(Date.now() + 3600e3).toISOString() }).eq('cidade', sc.cid).eq('casa', sc.key).then(() => { }, () => { }); } catch (e) { }
     if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'casa_pg', payload: { amt: rent, who: S.name, casa: sc.n, modo: 'aluguel' } });
-  } else if ((sc.debt = (sc.debt || 0) + 1) >= 2) { toast(`Despejado! Dois dias sem pagar o aluguel da ${sc.n}.`, 'bad'); dropCasa(); return; }
+  } else if ((sc.debt = (sc.debt || 0) + 1) >= 2) { toast(`Despejado! Dois dias sem pagar o aluguel da ${sc.n}.`, 'bad'); dropCasa(sc.key); return; }
   else toast(`Aluguel atrasado (${sc.n}). Pague até amanhã ou será despejado.`, 'bad');
   persist(); updateHUD();
 }
@@ -10701,6 +10702,7 @@ function casaToggle() {
 /* visita: se o dono fechar a casa ou sair do jogo, a visita sai */
 function casaVisitTick() {
   const it = city.interior, hb = $('hb-casa');
+  if (!isAdm() && !it && city.casas && (city.cvT = (city.cvT || 0) - 1) <= 0) { city.cvT = 20; for (const mc of casasAqui()) { const c = city.casas[mc.key]; if (c && mc !== S.casa && Math.hypot(c.ox - P.x, c.oz - P.z) < 8) { const was = S.casaAberta; S.casa = mc; persist(); if (was) netTrack && netTrack(); break; } } }
   const mine = it ? (!it.visitKey) : (isAdm() ? homeDoor() && Math.hypot(homeDoor().x - P.x, homeDoor().z - P.z) < 10 : S.casa && S.casa.cid === cityId() && city.casas && city.casas[S.casa.key] && Math.hypot(city.casas[S.casa.key].ox - P.x, city.casas[S.casa.key].oz - P.z) < 10);
   const show = !!mine && mode === 'city' && (isAdm() || !!S.casa); if (hb) { if (hb.hidden === show) hb.hidden = !show; const tx = S.casaAberta ? 'Casa aberta' : 'Casa fechada', l = hb.querySelector('.lbl'); if (l.textContent !== tx) { l.textContent = tx; hb.querySelector('span').textContent = S.casaAberta ? '🔓' : '🔒'; } }
   if (it && it.visitKey) { const p = peerById(it.owner); if (!p || p.ca !== it.visitKey) { toast('🔒 O dono fechou a casa. Você saiu.', 'pink'); exitHome(); } }
@@ -10713,21 +10715,21 @@ function enterCasa(c, visit) {
     city.interior = buildInterior(c.tier); city.interior.owner = NET.user ? NET.user.id : null;
     for (const s of city.interior.spots) city.doors.push({ kind: s.kind, label: s.label, x: s.x, z: s.z, ring: null, inside: true });
     P.x = city.interior.exit.x; P.z = city.interior.exit.z; P.h = Math.PI; P.y = 0; city.camYaw = Math.PI; city.zoom = 0.75; city.camSnap = true;
-    city.homeOut = [c.ox + 2.2, c.oz]; city.casaOut = c; toast(`Você entrou na sua casa (${c.n}).`, 'pink');
+    city.homeOut = [c.ox + 2.2, c.oz]; city.casaOut = c; if (c.key) casaDaCidade(c.key); netTrack && netTrack(); toast(`Você entrou na sua casa (${c.n}).`, 'pink');
   });
 }
 const PANEL_CASA = function (key) {
   const c = city.casas && city.casas[key]; if (!c) return { title: '🏠 Casa', html: '<p class="muted">Casa não encontrada.</p>' };
   const r = city.casaRows[key], mine = r && NET.user && r.dono === NET.user.id;
   let html = `<p><b>${esc(c.n)}</b></p><p class="muted">Dono do imóvel: <b>${esc(CHIEF)} (ADM)</b>. Aluguel e venda vão para o chefe.</p>`;
-  if (mine) html += `<div class="note">Esta casa é sua (${r.modo === 'compra' ? 'comprada' : 'alugada'}).</div><div class="row"><button class="btn" data-act="casa-in" data-k="${key}">Entrar em casa</button><button class="btn ${S.casaAberta ? 'ghost' : ''}" data-act="casa-toggle">${S.casaAberta ? '🔒 Fechar a casa' : '🔓 Liberar a casa'}</button><button class="btn ghost" data-act="casa-drop">Entregar a casa</button></div><p class="muted">${S.casaAberta ? 'Casa liberada: quem estiver online pode entrar.' : 'Casa fechada: ninguém entra.'}</p>`;
+  if (mine) html += `<div class="note">Esta casa é sua (${r.modo === 'compra' ? 'comprada' : 'alugada'}). <button class="btn ghost sm" data-act="casa-drop" data-k="${key}">Entregar esta casa</button></div><div class="row"><button class="btn" data-act="casa-in" data-k="${key}">Entrar em casa</button><button class="btn ${S.casaAberta ? 'ghost' : ''}" data-act="casa-toggle">${S.casaAberta ? '🔒 Fechar a casa' : '🔓 Liberar a casa'}</button></div><p class="muted">${S.casaAberta ? 'Casa liberada: quem estiver online pode entrar.' : 'Casa fechada: ninguém entra.'}</p>`;
   else if (r) { const op = peerById(r.dono), aberta = op && op.ca === key; html += `<div class="note">Mora aqui: <b>${esc(r.dono_nome)}</b> (${r.modo === 'compra' ? 'casa própria' : 'aluguel'}). ${aberta ? '🔓 Casa liberada para visitas.' : '🔒 Casa fechada.'}</div>${aberta ? `<div class="row"><button class="btn" data-act="casa-visit" data-k="${key}">Entrar na casa</button></div>` : ''}`; }
   else {
     if (c.st === 'morador') html += `<div class="note">Hoje mora aqui o figurante <b>${esc(c.mor)}</b>. Se você alugar ou comprar, ele se muda e a casa fica só sua.</div>`;
     html += `<div class="note">ALUGUEL: <b>$ ${fmt(c.rent)}</b> por dia do jogo (cobrado automaticamente) · COMPRA: <b>$ ${fmt(c.buy)}</b>${c.tok ? ` ou <b>${fmt(c.tok)} T</b>` : ''} (é sua para sempre).</div>`;
     html += `<p class="muted">${c.morro ? 'Casa no morro: quem mora aqui vira morador e pode subir o morro.' : c.mans ? 'Mansão com piscina, dois andares e muro.' : 'Casa com quintal.'} Cada casa tem um morador só: ninguém divide endereço. Dentro tem cama, sofá, TV e cozinha.</p>`;
     html += `<div class="row"><button class="btn" data-act="casa-take" data-k="${key}" data-m="aluguel">Alugar ($ ${fmt(c.rent)})</button><button class="btn" data-act="casa-take" data-k="${key}" data-m="compra">Comprar ($ ${fmt(c.buy)})</button>${c.tok ? `<button class="btn tok" data-act="casa-take" data-k="${key}" data-m="compra" data-tok="1">${fmt(c.tok)} T</button>` : ''}<button class="btn ghost" data-act="casa-gps" data-k="${key}">📍 GPS</button></div>`;
-    if (S.casa && S.casa.cid === cityId()) html += `<p class="muted">Você já tem a ${esc(S.casa.n)}. Entregue ela antes de pegar outra.</p>`;
+    if (casasAqui().length) html += `<p class="muted">Você já tem ${casasAqui().length} casa${casasAqui().length > 1 ? 's' : ''} nesta cidade e pode ter quantas quiser: cada uma é um endereço seu.</p>`;
   }
   return { title: '🏠 Casa', html };
 };
@@ -11926,12 +11928,13 @@ function brincarSpot() {
 }
 function filhasBrincar() {
   if (!isAdm() && !hasKids()) return; S.filhas = S.filhas || {};
-  if (!S.filhas.comigo) { toast('👧 Primeiro busque a Jasmim e a Helena (botão Filhas).', 'pink'); return; }
-  if (S.filhas.br) { S.filhas.br = null; persist(); netTrack && netTrack(); toast('👧 As meninas estão voltando pra perto de você.', 'pink'); bubble(city.player, 'Meninas, vem cá! Vamos embora.', 2.5); renderPanel(); return; }
+  const nomes = isAdm() ? 'a Jasmim e a Helena' : (S.kids || []).map(k => k.n).join(' e ');
+  if (!S.filhas.comigo) { toast(`👶 Primeiro busque ${nomes} (botão ${isAdm() ? 'Filhas' : 'Filhos'}).`, 'pink'); return; }
+  if (S.filhas.br) { S.filhas.br = null; persist(); netTrack && netTrack(); toast(`👶 ${isAdm() ? 'As meninas estão' : nomes + ' estão'} voltando pra perto de você.`, 'pink'); bubble(city.player, isAdm() ? 'Meninas, vem cá! Vamos embora.' : 'Crianças, vem cá! Vamos embora.', 2.5); renderPanel(); return; }
   const sp = brincarSpot();
-  if (!sp) { toast('👧 Leve as meninas até um parquinho ou uma pista de skate pra liberar elas pra brincar.', 'pink'); return; }
+  if (!sp) { toast('🛝 Leve as crianças até um parquinho ou uma pista de skate pra liberar pra brincar.', 'pink'); return; }
   S.filhas.br = [sp.x, sp.z, sp.r]; S.filhas.brN = sp.n; persist(); netTrack && netTrack();
-  bubble(city.player, 'Podem ir brincar, meninas!', 2.5); toast(`🛝 Jasmim e Helena foram brincar sozinhas no ${sp.n}. Toque em "Chamar as meninas" para elas voltarem.`, 'good'); renderPanel();
+  bubble(city.player, isAdm() ? 'Podem ir brincar, meninas!' : 'Podem ir brincar!', 2.5); toast(`🛝 ${isAdm() ? 'Jasmim e Helena foram' : nomes + ' foram'} brincar sozinhos no ${sp.n}. Toque em "Brincar" de novo para voltarem.`, 'good'); renderPanel();
 }
 function girlFreePlay(k, br, dt, t) {
   const [cx, cz, R] = br, r = R || 7;
@@ -13587,10 +13590,18 @@ function botSwap() {
    CASA POR CIDADE: cada casa é de uma cidade só; para ter em outra cidade, compra outra.
    Ao trocar de cidade, a casa daquela cidade passa a ser a "sua casa" do momento.
    ========================================================= */
-function casaDaCidade() {
-  const cid = cityId(), O = S.casasOutras || {}; if (!O[cid] || (S.casa && S.casa.cid === cid)) return;
-  if (S.casa) O[S.casa.cid] = S.casa; S.casa = O[cid]; delete O[cid]; S.casasOutras = O; persist();
+/* todas as casas do jogador (sem limite: quantas quiser comprar ou alugar, cada uma com o seu endereço, em qualquer cidade) */
+function myCasas() {
+  S.casas = S.casas || []; const has = c => S.casas.some(q => q.key === c.key && q.cid === c.cid);
+  if (S.casa && !has(S.casa)) S.casas.push(S.casa); for (const c of Object.values(S.casasOutras || {})) if (c && !has(c)) S.casas.push(c); S.casasOutras = {};
+  return S.casas;
 }
+/* casa "principal": a da cidade onde você está (a última que você usou); é ela que abre/fecha para visita e onde os filhos esperam */
+function casaDaCidade(pref) {
+  const L = myCasas(), here = L.filter(c => c.cid === cityId()), cur = S.casa && L.find(c => c.key === S.casa.key && c.cid === S.casa.cid);
+  S.casa = (pref && L.find(c => c.key === pref && c.cid === cityId())) || (cur && cur.cid === cityId() ? cur : null) || here[0] || cur || L[0] || null; persist();
+}
+const casasAqui = () => myCasas().filter(c => c.cid === cityId());
 /* =========================================================
    BOMBEIROS: alarme para o bombeiro de verdade, caminhão com escada Magirus que sobe e jato d'água da mangueira
    ========================================================= */
@@ -15199,8 +15210,7 @@ const PANELS = {
     if (!isAdm()) {
       const all = Object.values(city.casas || {}), rows = city.casaRows || {}, myC = S.casa && S.casa.cid === cityId() && city.casas[S.casa.key];
       let html = `<p class="muted">Todas as casas da cidade são do ${esc(CHIEF)} (ADM) e estão para alugar ou vender para quem joga de verdade. <b>Cada casa tem um endereço só seu</b>: ninguém divide casa, e a mansão do chefe é particular. O aluguel é cobrado a cada dia do jogo.</p>`;
-      if (myC) html += `<div class="note">Você mora em: <b>${esc(myC.n)}</b> (${S.casa.modo === 'compra' ? 'casa própria' : 'alugada'}). <button class="btn ghost sm" data-act="casa-gps" data-k="${myC.key}">📍 Ir para casa</button> <button class="btn ghost sm" data-act="casa-drop">Entregar</button></div>`;
-      else if (S.casa) html += `<div class="note">Sua casa fica em outra cidade: <b>${esc(S.casa.n)}</b>.</div>`;
+      const MC = myCasas(); if (MC.length) html += `<div class="card"><h4>🏠 Minhas casas (${MC.length})</h4>${MC.map(q => `<p><b>${esc(q.n)}</b> · ${esc(CITY_DEFS[q.cid].name)} · ${q.modo === 'compra' ? 'casa própria' : 'alugada'}${q === S.casa ? ' · <span class="pill on">principal</span>' : ''} ${q.cid === cityId() ? `<button class="btn ghost sm" data-act="casa-gps" data-k="${q.key}">📍 Ir</button> <button class="btn ghost sm" data-act="casa-drop" data-k="${q.key}">Entregar</button>` : '<span class="muted">(só vale naquela cidade)</span>'}</p>`).join('')}<p class="muted">Sem limite: compre ou alugue quantas quiser. Cada casa é de uma cidade só.</p></div>`;
       for (const [tier, nm, desc] of [['kitnet', 'Casas no morro', 'Simples, perto da comunidade. Quem mora vira morador do morro.'], ['casa', 'Casas com quintal (Vila Residencial e Vila Nova)', 'Quintal, cerca branca e garagem.'], ['mansao', 'Mansões nos condomínios', 'Dois andares, piscina e muro. Compra com grana ou tokens.']]) {
         const L = all.filter(c => c.tier === tier), livres = L.filter(c => !rows[c.key]), H = HOMES.find(h => h.id === tier), ex = livres.find(c => c.st !== 'morador') || livres[0];
         if (!L.length) continue;
@@ -15743,7 +15753,7 @@ function act(a, ds, el) {
     case 'tat-remove': { if (S.coins < 300 && !isAdm()) { toast('Remover custa $ 300.', 'bad'); break; } if (!isAdm()) S.coins -= 300; delete S.tats[city.tatSel || 'antebracoE']; persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); renderPanel(); toast('🧽 Tatuagem removida.'); break; }
     case 'tat-shirtless': S.equip.shirt = 'shirt_none'; persist(); applyLook(city.player, myLook()); netTrack(); renderPanel(); break;
     case 'tour-gps': tourGps(ds.id); break;
-    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-filhos': openPanel('filhos'); break; case 'filho-criar': filhoCriar(); break; case 'filho-remover': filhoRemover(+ds.i); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'hud-menu': hudMenu(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'open-assalto': toggleRadio(false); openPanel('assalto'); break; case 'heist-go': heistStart(ds.id); break; case 'heist-city': heistOtherCity(ds.c); break; case 'heist-cancel': closePanel(); heistCancel(); break; case 'fuga-morro': fugaMorro(); break; case 'fuga-br': fugaBR(ds.c); break; case 'bonde-entrar': boardLead(); break; case 'heist-fugir': heistFugir(); break; case 'heist-tiro': heistTiro(); break; case 'tank-fire': tankFire(); break; case 'skate-toggle': skateToggle(); break; case 'open-role': openPanel('role'); break; case 'role-gps': { const d = roleSpots().find(q => q.k === ds.k); if (d) { setGps(d.x, d.z, d.n); closePanel(); toast(`📍 GPS marcado: ${d.n}`, 'pink'); } break; } case 'tropa-liberar': tropaLiberar(); break; case 'open-garagem': openPanel('garagem'); break; case 'garagem-usar': garagemUsar(ds.id); break; case 'bonde-dispensar': bondeDispensar(); break; case 'bonde-ordem': bondeOrdem(ds.m); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
+    case 'radio-play': radioPlay(+ds.i); break; case 'familia': familiaToggle(); renderPanel(); break; case 'open-filhos': openPanel('filhos'); break; case 'filho-criar': filhoCriar(); break; case 'filho-remover': filhoRemover(+ds.i); break; case 'filhas-brincar': filhasBrincar(); break; case 'open-seg': openPanel('seguranca'); break; case 'seg-toggle': S.segOff = !S.segOff; persist(); netTrack && netTrack(); toast(S.segOff ? '🕶️ Seguranças dispensados.' : '🕶️ Seguranças de volta ao seu lado.', 'pink'); renderPanel(); break; case 'seg-lib': segLib(ds.id); break; case 'seg-mode': S.segMode = ds.m; if (ds.m === 'porta') S.segAnchor = [P.x, P.z, P.h]; persist(); netTrack && netTrack(); toast(ds.m === 'porta' ? '🕶️ Seguranças esperando aqui na porta.' : ds.m === 'longe' ? '🕶️ Seguranças acompanhando de longe.' : '🕶️ Seguranças do seu lado.', 'pink'); renderPanel(); break; case 'cine-ver': cineVer(ds.id); break; case 'cine-sair': cineSair(); break; case 'sair-local': sairLocal(); break; case 'cine-pipoca': if (S.coins >= 10) { S.coins -= 10; P.hp = Math.min(100, P.hp + 10); renderHp(); persist(); updateHUD(); toast('🍿 Pipoca quentinha!', 'good'); } break; case 'vozes-set': S.settings.vozes = ds.on === '1'; persist(); renderPanel(); if (S.settings.vozes) say('Salve! As vozes estão ligadas.', { force: true }); break; case 'bank-open': bankOpen(); break; case 'bank-dep': bankDep(ds.v); break; case 'bank-saq': bankSaq(ds.v); break; case 'bank-fat': bankFat(); break; case 'casa-take': takeCasa(ds.k, ds.m, { tok: ds.tok === '1' }); break; case 'open-casa': openPanel('casa', ds.k); break; case 'casa-toggle': casaToggle(); break; case 'toque': darToque(); break; case 'hud-menu': hudMenu(); break; case 'menu-buy': menuBuy(ds.k, +ds.i); break; case 'brega-dance': closePanel(); P.emote = { id: 'dance', t: 30 }; break; case 'emp-pedir': empPedir(); break; case 'emp-pagar': empPagar(ds.id); break; case 'emp-dec': empDecidir(ds.id, ds.ok === '1'); break; case 'open-empadm': openPanel('empadm'); break; case 'open-assalto': toggleRadio(false); openPanel('assalto'); break; case 'heist-go': heistStart(ds.id); break; case 'heist-city': heistOtherCity(ds.c); break; case 'heist-cancel': closePanel(); heistCancel(); break; case 'fuga-morro': fugaMorro(); break; case 'fuga-br': fugaBR(ds.c); break; case 'bonde-entrar': boardLead(); break; case 'heist-fugir': heistFugir(); break; case 'heist-tiro': heistTiro(); break; case 'tank-fire': tankFire(); break; case 'skate-toggle': skateToggle(); break; case 'open-role': openPanel('role'); break; case 'role-gps': { const d = roleSpots().find(q => q.k === ds.k); if (d) { setGps(d.x, d.z, d.n); closePanel(); toast(`📍 GPS marcado: ${d.n}`, 'pink'); } break; } case 'tropa-liberar': tropaLiberar(); break; case 'open-garagem': openPanel('garagem'); break; case 'garagem-usar': garagemUsar(ds.id); break; case 'bonde-dispensar': bondeDispensar(); break; case 'bonde-ordem': bondeOrdem(ds.m); break; case 'casa-visit': { const c = city.casas && city.casas[ds.k], rr = c && city.casaRows[ds.k]; closePanel(); if (rr) casaVisit(c, rr); break; } case 'casa-gps': { const c = city.casas && city.casas[ds.k]; if (c) { setGps(c.ox, c.oz, c.n); closePanel(); toast('📍 GPS marcado até a casa.', 'pink'); } break; } case 'casa-in': closePanel(); enterCasa(city.casas[ds.k]); break; case 'casa-drop': dropCasa(ds.k); break; case 'dom-bet': domBet(+ds.i, +ds.k, +ds.v); break; case 'ring-join': ringJoin(); break; case 'ring-leave': ringLeave(); break; case 'ring-npc': fightNPC(); break; case 'ring-giveup': closePanel(); fightGiveUp(); break; case 'luva-buy': luvaBuy(ds.id); break; case 'luva-use': luvaUse(ds.id); break; case 'fs-join': fsJoin(); break; case 'fs-leave': fsLeave(); break; case 'fs-start': fsStart(); break; case 'fs-quit': fsQuit(); break; case 'skt-join': sktJoin(); break; case 'skt-leave': sktLeave(); break; case 'skt-fill': sktStart(true); break; case 'fm-vol': fmVol(+ds.d); break;
     case 'pick-song': closePanel(); pickSong(); break;
     case 'map-zoom': city.mapRad = (city.mapRad || 300) > 200 ? 140 : 300; renderPanel(); break;
     case 'tour-go': tourGo(ds.id); break;

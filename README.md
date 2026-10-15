@@ -806,3 +806,10 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - **Volume pela distância**, como na vida real: perto se ouve alto, longe vai sumindo (a partir de uns 80 m não se ouve mais).
   - Ligação direta entre os aparelhos (WebRTC); o som não passa por servidor. Precisa permitir o microfone no navegador. Em algumas redes (certas redes 4G ou de empresa) a ligação direta pode não conectar; o jogo avisa quando isso acontece.
   - Mudando de cidade, o fone desliga sozinho (é só ligar de novo lá). O botão antigo de **segurar para mandar áudio** continua no menu ☰.
+
+### Build 2026.10.15-80 (Várias casas por jogador, endereço único e vizinhos)
+  - 🏠 **Sem limite de casas:** dá para alugar ou comprar quantas casas quiser, na mesma cidade ou em outras. O importante é pagar: o aluguel de **cada** casa alugada é cobrado todo dia do jogo (quem não paga perde só aquela casa).
+  - 📍 **Endereço único:** cada casa é de um jogador só. A casa vale **apenas na cidade dela**: quem tem casa em Salvador não tem casa em São Paulo, a não ser que compre ou alugue lá também.
+  - 🏘️ **Vizinhos de verdade:** se a pessoa A tem casa perto da pista de skate em São Paulo, a pessoa B pode pegar a casa do lado. Cada um vê o nome do outro na placa da casa.
+  - 📋 **Imobiliária → "Minhas casas (N)":** lista todas as suas casas (cidade, alugada ou comprada, qual é a principal), com **📍 Ir** (GPS) e **Entregar** para cada uma. Chegando perto de uma das suas casas, ela vira a principal (botão de abrir/fechar para visitas).
+  - 👨‍👩‍👧 **Filhos:** quem casa e tem filhos tem os mesmos controles do ADM: **deixar em casa, buscar e colocar para brincar** no parque ou na pista; os avisos agora usam o nome dos seus filhos.
