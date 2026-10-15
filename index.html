@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-75';
+const BUILD = '2026.10.15-76';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -5170,7 +5170,7 @@ function missionEvent(ev, arg) {
 }
 function completeMission() {
   const m = S.mission; S.mission = null; P.carry = null;
-  if (m.job) return completeJobTask(m);
+  if (m.job) { if (MIL_JOBS.includes(m.job)) try { milDutyMark('missoes'); } catch (e) { } return completeJobTask(m); }
   const got = earn(m.reward); addXP(m.xp); S.stats.missions++; addLeague(15); evProgress('mission', 1); persist();
   toast(`Missão concluída: ${m.title}  +$${fmt(got)}`, 'good'); sfx('coin');
   for (const t of TRICKS.filter(t => t.need === S.stats.missions && t.need > 0)) { setTimeout(() => toast(`Nova manobra liberada: ${t.name} (${DIR_LABEL[t.key]})`, 'pink'), 900); postFeed(`Liberei o ${t.name}!`); }
@@ -9866,6 +9866,7 @@ function updateRP20(dt, t) {
   try { updateCityFire(dt, t); } catch (e) { console.warn('fogo', e); }
   try { updateRaid(dt, t); } catch (e) { console.warn('operação', e); }
   try { updateMilitary(dt, t); } catch (e) { console.warn('militar', e); }
+  try { milOpTick(dt, t); milFormTick(dt); } catch (e) { console.warn('militar online', e); }
   try { updateSeaLife(dt, t); } catch (e) { console.warn('mar', e); }
   updateOuter(dt, t);
   updateLife25(dt, t);
@@ -11870,7 +11871,9 @@ function updateFamilia(dt, t) {
   const seen = {};
   for (const id in NET.peers) {
     const p = NET.peers[id]; if ((!p.adm && !(p.kd && p.kd.length)) || !p.t) continue; seen[id] = true;
-    const E = entFor(id, !p.adm), d = p.t; if (!!d.fk !== !!E.girls) entGirls(E, !!d.fk, p.skin ?? SKINS[2], p.x, p.z, p.adm ? GIRLS : kidsDefsFrom(p.kd));
+    const E = entFor(id, !p.adm), d = p.t, kSig = p.adm ? '' : JSON.stringify((p.kd || []).map(k => k.eq)); // roupa nova dos filhos: refaz as crianças
+    if (E.girls && d.fk && E.kSig != null && E.kSig !== kSig) entGirls(E, false);
+    if (!!d.fk !== !!E.girls) { entGirls(E, !!d.fk, p.skin ?? SKINS[2], p.x, p.z, p.adm ? GIRLS : kidsDefsFrom(p.kd)); E.kSig = kSig; }
     updateEntourage(E, { x: p.x, z: p.z, h: p.h, v: d.v || 0, hidden: !!d.vh || !!d.rd || (d.rm || '') !== roomKey(), seg: p.adm ? p.seg !== 0 : false, m: p.segm || 'perto', anc: p.sa, br: d.fk ? p.fb : null }, dt, t);
     // eu não posso chegar perto (a não ser liberado, esposa ou filha)
     if (p.adm && p.seg !== 0 && (p.segm || 'perto') === 'perto' && !segAllowed(p) && !P.drive && !d.vh) {
@@ -15596,6 +15599,10 @@ function act(a, ds, el) {
     case 'boat-buy': boatBuy(ds.id, ds.cur); break;
     case 'boat-rent': boatRent(); break;
     case 'kid-wear': kidWear(+ds.i, +ds.l); break;
+    case 'mil-op': milOpOpen(ds.t); break;
+    case 'mil-join': milOpJoin(); break;
+    case 'mil-leave': milOpLeave(); break;
+    case 'mil-ordem': milOrder(ds.k); break;
     case 'boat-trip': startBoatTrip(ds.d, ds.id); break;
     case 'gps-marina': { closePanel(); const d = city.doors.find(d => d.kind === 'marina'); if (d) setGps(d.x, d.z, 'Marina'); else toast('Esta cidade não tem mar: barco só no Rio e em Salvador.', 'bad'); break; }
     case 'boat-use': closePanel(); spawnBoat(VEH[ds.id], 'marina'); break;
@@ -16406,15 +16413,16 @@ function milTask(id, lv) {
   return { job: id, type: 'job_serv', title: id === 'exercito' ? 'Missão do Quartel' : 'Missão da Marinha', stops, got: 0, p: 0, dur: 5, pay: jobPay(id, JOBS[id].base + stops.length * 25), time, timeMax: time };
 }
 PANELS.militar = function (id) {
-  const J = JOBS[id], rec = S.jobs[id] || { done: 0, earned: 0 }, rk = (RANKS[id] || [])[Math.min(4, Math.floor((rec.done || 0) / 5))] || '';
+  const J = JOBS[id], rec = S.jobs[id] || { done: 0, earned: 0 }, rk = rankName(id);
   const where = id === 'exercito' ? `${MIL_NAME[cityId()] || 'Quartel do Exército'}` : `${NAVAL_NAME[cityId()] || 'Base Naval'}`;
   let html = `<div class="card"><p>${esc(J.desc)}</p><div class="meta"><span>${esc(where)}</span><span>Salário ${SAL_REAL[id]} (no jogo $ ${fmt(SALARIO[id])}/dia)</span><span>Patente: ${esc(rk || (RANKS[id] || [])[0])}</span><span>${rec.done || 0} missões</span></div></div>`;
-  html += `<h3>Patentes</h3><p class="muted">${(RANKS[id] || []).map((r, i) => `${i ? '→ ' : ''}${esc(r)}`).join(' ')} · sobe a cada 5 missões cumpridas.</p>`;
+  html += `<h3>Patentes</h3><p class="muted">${(RANKS[id] || []).map((r, i) => `${i ? '→ ' : ''}${esc(r)}`).join(' ')} · sobe com missões, deveres do dia e operações em grupo (${jobPts(id)} pontos; próxima patente com ${RANK_PTS[Math.min(4, jobRank(id) + 1)]}).</p>`;
   html += `<p class="muted">🫡 Quem passa no teste ganha a <b>Continência</b> nos movimentos.</p>`;
   if (J.sea && !beachCity()) html += `<div class="note">A Marinha fica nas cidades com mar: Rio de Janeiro e Salvador.</div>`;
   else if (S.shift === id) html += `<div class="row"><span class="pill on">Em serviço</span><button class="btn ghost sm" data-act="open-base">🚙 Viatura</button><button class="btn ghost sm" data-act="shift-end">Encerrar serviço</button></div>`;
   else if (lvlLock(J.need)) html += `<span class="pill">Libera no nível ${J.need}</span>`;
   else html += certOk(id) ? `<button class="btn" data-act="shift-start" data-id="${id}">${J.icon} Entrar em serviço</button>` : `<button class="btn" data-act="job-test" data-id="${id}">📝 Fazer o teste de admissão</button>`;
+  html += milPanelExtra(id);
   return { title: `${J.icon} ${id === 'exercito' ? 'Quartel do Exército' : 'Base Naval da Marinha'}`, html };
 };
 /* quartel: muro, portão com guarita e sentinelas, pátio de formatura, alojamento, mastro da bandeira, tanque e viatura; a tropa marcha no pátio */
@@ -16512,7 +16520,7 @@ function buildNaval(sc) {
   city.doors.push({ kind: 'naval', label: '⚓ Base Naval da Marinha', x: nx, z: bz - 6.2, ring });
   (LANDMARKS[cityId()] || []).some(l => l[2] === 'Base Naval') || (LANDMARKS[cityId()] || []).push([nx, bz, 'Base Naval']);
 }
-function buildMilitary(sc) { city.mil = null; try { buildQuartel(sc); } catch (e) { console.warn('quartel', e); } try { buildNaval(sc); } catch (e) { console.warn('base naval', e); } }
+function buildMilitary(sc) { city.mil = null; try { MILO.op = null; } catch (e) { } try { buildQuartel(sc); } catch (e) { console.warn('quartel', e); } try { buildNaval(sc); } catch (e) { console.warn('base naval', e); } }
 /* vida no quartel e na base: a tropa marcha em volta do pátio (com parada e "Sentido!"), sentinelas prestam continência, o navio balança */
 function updateMilitary(dt, t) {
   const M = city.mil; if (!M || city.interior || city.shopIn) return;
@@ -16521,6 +16529,7 @@ function updateMilitary(dt, t) {
     const mil = MIL_JOBS.includes(S.shift);
     for (const s of Q.men) { const near = Math.hypot(P.x - s.g.position.x, P.z - s.g.position.z) < 6; animSkater(s.g, { walk: true, v: 0, fallT: 0, emote: near && mil ? 'continencia' : null, wpHold: near && mil ? null : 'fuzil' }, t + s.g.position.x); if (near && mil && !s.said) { s.said = 1; bubble(s.g, pick(['Continência!', 'Bom dia, ' + ((RANKS.exercito || [])[0] || 'soldado') + '!', 'Pode passar.']), 2.5); } if (!near) s.said = 0; }
     // marcha: retângulo em volta do pátio; de tempos em tempos a tropa para ("Sentido!") e volta a marchar
+    const FA = formAt(); if (FA.el < FORM_DUR) { Q.halt = 1; if (Q.formS !== FA.s) { Q.formS = FA.s; bubble(Q.sarg.g, 'FORMATURA GERAL! Em forma!', 4); } }
     if (Q.halt > 0) Q.halt -= dt; else { Q.ph += dt * 1.4; if ((Q.nextHalt = (Q.nextHalt ?? rand(18, 30)) - dt) <= 0) { Q.nextHalt = rand(20, 35); Q.halt = 4; bubble(Q.sarg.g, pick(['Tropa... SENTIDO!', 'Alto!', 'Descansar!', 'Ordinário... MARCHE!']), 2.5); } }
     const per = 2 * (12 + 8), pos = d => { d = ((d % per) + per) % per; if (d < 12) return [Q.cx - 6 + d, Q.cz - 4, Math.PI / 2]; d -= 12; if (d < 8) return [Q.cx + 6, Q.cz - 4 + d, 0]; d -= 8; if (d < 12) return [Q.cx + 6 - d, Q.cz + 4, -Math.PI / 2]; d -= 12; return [Q.cx - 6, Q.cz + 4 - d, Math.PI]; };
     for (const s of Q.squad) { const [x, z, h] = pos(Q.ph - (s.i >> 1) * 1.4), side = (s.i & 1 ? 0.7 : -0.7); s.g.position.set(x + Math.cos(h) * side, 0, z - Math.sin(h) * side); s.g.rotation.y = h; animSkater(s.g, { walk: true, v: Q.halt > 0 ? 0 : 1.4, fallT: 0, wpHold: 'fuzil' }, t * 1.1); }
@@ -16867,6 +16876,113 @@ function kidWear(i, li) {
 }
 { const _shop = PANELS.shop; PANELS.shop = function (kind) { const r = _shop.apply(this, arguments); if (kind === 'roupas' && r) r.html += kidShopHtml(); return r; }; }
 
+/* =========================================================
+   EXÉRCITO E MARINHA ONLINE: deveres do dia (escala), formatura geral no horário, operações em grupo
+   (comboio de mantimentos e patrulha) que um abre e os outros entram, e ordens pelo rádio de quem é Sargento ou mais
+   ========================================================= */
+const milSend = (k, d) => ccSend0('mil', Object.assign({ k, c: cityId(), from: ccMe(), name: S.name }, d));
+const FORM_SLOT = 12 * 60 * 1000, FORM_DUR = 90; // formatura geral a cada 12 minutos, dura 1 min e meio
+const formAt = () => { const n = Date.now(), s = Math.floor(n / FORM_SLOT); return { s, el: (n - s * FORM_SLOT) / 1000, next: (s + 1) * FORM_SLOT - n }; };
+const milOn = () => MIL_JOBS.includes(S.shift);
+const DUTY = [['formatura', '🎖️ Comparecer à formatura geral'], ['guarda', '💂 Tirar uma guarda (portão ou cais)'], ['missoes', '📋 Cumprir 2 missões'], ['operacao', '🤝 Participar de uma operação em grupo']];
+function milDuty() { const d = gameDay(); if (!S.milDuty || S.milDuty.day !== d) S.milDuty = { day: d, d: {}, paid: false }; return S.milDuty; }
+const dutyOk = (D, k) => k === 'missoes' ? (D.d.missoes || 0) >= 2 : !!D.d[k];
+function milDutyMark(k) {
+  if (!milOn()) return; const D = milDuty(); if (k === 'missoes') D.d.missoes = (D.d.missoes || 0) + 1; else { if (D.d[k]) return; D.d[k] = 1; }
+  const it = DUTY.find(x => x[0] === k); if (it && dutyOk(D, k)) feed(`✅ Dever cumprido: ${it[1]}`);
+  if (!D.paid && DUTY.every(([q]) => dutyOk(D, q))) { D.paid = true; const g = earn(jobPay(S.shift, 450)); const r = jobRec(S.shift); r.done = (r.done || 0) + 5; addXP(80); toast(`🎖️ Todos os deveres de hoje cumpridos! +$${fmt(g)} e +5 pontos para a promoção (${rankName(S.shift)}).`, 'good'); sfx('level'); }
+  persist(); if (panelKind === 'militar') renderPanel();
+}
+/* ---- operações em grupo ---- */
+const MILO = { op: null };
+function milBase(job) { const M = city.mil || {}; return job === 'marinha' ? (M.n ? [M.n.nx, M.n.bz - 10] : null) : (M.q ? M.q.gate : null); }
+function milOpOpen(type) {
+  if (!milOn()) return toast('Entre em serviço primeiro (painel do quartel/base).', 'bad'); if (MILO.op) return toast('Já tem uma operação em andamento: entre nela.', 'bad');
+  const job = S.shift, base = milBase(job); if (!base) return toast('Esta cidade não tem a base dessa força.', 'bad');
+  const id = 'op' + Date.now().toString(36), pts = [];
+  if (type === 'comboio') { const dst = farPoint(70), path = [[base[0], base[1]]].concat(roadPath(base[0], base[1], dst[0], dst[1])); pts.push(...path); }
+  else for (let i = 0; i < 4; i++) { const p = job === 'marinha' ? [rand(-140, 140), rand(128, 152)] : farPoint(45 + i * 10); pts.push([p[0], p[1]]); }
+  const op = { id, type, job, by: ccMe(), byName: S.name, pts, members: { [ccMe()]: S.name }, got: 0, d: 0, t0: Date.now() };
+  milSend('op_new', { op: JSON.parse(JSON.stringify(op)) }); milOpSet(op); // só os dados vão pela rede (as marcas e o caminhão ficam em cada tela) toast(type === 'comboio' ? '🚚 Operação aberta: comboio de mantimentos! Os soldados online foram chamados. Escolte o caminhão até o destino.' : '🧭 Operação aberta: patrulha em grupo! Passem pelos 4 pontos marcados.', 'good'); closePanel();
+}
+function milOpSet(op) {
+  milOpClear(); MILO.op = op; if (!op) return;
+  op.marks = op.type === 'patrulha' ? op.pts.map((p, i) => { const r = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.18, 8, 28), new THREE.MeshBasicMaterial({ color: 0x6b8e23 })); r.rotation.x = Math.PI / 2; r.position.set(p[0], 0.4, p[1]); city.scene.add(r); const s = textSprite(`🧭 PONTO ${i + 1}`, { bg: '#3d4a24', fg: '#fff', size: 40, scale: [3.2, 0.7, 1] }); s.position.set(p[0], 3.2, p[1]); city.scene.add(s); return [r, s]; }) : [];
+  if (op.type === 'comboio') { const m = makeVehicleMesh(VEH.j_eb); city.scene.add(m); op.truck = m; op.len = pathLen(op.pts); const cg = new THREE.Mesh(boxGeo(1.6, 0.9, 1.6), std(0x8a6a45, 0.9)); cg.position.set(0, 1.9, -1.1); m.add(cg); }
+  milOpGps();
+}
+function milOpClear() { const op = MILO.op; if (!op) return; for (const [r, s] of op.marks || []) { city.scene.remove(r); city.scene.remove(s); } if (op.truck) city.scene.remove(op.truck); MILO.op = null; }
+const milIn = () => !!(MILO.op && MILO.op.members[ccMe()]);
+function milOpGps() { const op = MILO.op; if (!op || !milIn()) return; if (op.type === 'comboio') { const p = pathAt(op.pts, op.d); setGps(p[0], p[1], '🚚 Comboio'); } else { const i = op.pts.findIndex((p, k) => !(op.done || {})[k]); if (i >= 0) setGps(op.pts[i][0], op.pts[i][1], `🧭 Ponto ${i + 1}`); } }
+function milOpJoin() { const op = MILO.op; if (!op || !milOn()) return; op.members[ccMe()] = S.name; milSend('op_join', { id: op.id }); milOpGps(); toast('🤝 Você entrou na operação!', 'good'); renderPanel(); }
+function milOpLeave() { const op = MILO.op; if (!op) return; if (op.by === ccMe()) { milSend('op_end', { id: op.id }); milOpClear(); toast('Operação cancelada.', 'pink'); } else { delete op.members[ccMe()]; milSend('op_leave', { id: op.id }); } renderPanel(); }
+function milOpFinish(op, ok) {
+  const mine = !!op.members[ccMe()], near = op.type === 'patrulha' || Math.hypot(P.x - op.pts[op.pts.length - 1][0], P.z - op.pts[op.pts.length - 1][1]) < 45;
+  if (ok && mine && near && milOn()) { const n = Object.keys(op.members).length, g = earn(jobPay(S.shift, 260 + 60 * Math.min(4, n - 1))); const r = jobRec(S.shift); r.done = (r.done || 0) + 2; r.real = (r.real || 0) + 1; addXP(60); milDutyMark('operacao'); toast(`🎖️ Operação cumprida com ${n} militar${n > 1 ? 'es' : ''}! +$${fmt(g)} e pontos para a promoção.`, 'good'); sfx('level'); }
+  else if (ok && mine) toast('A operação terminou, mas você estava longe: sem pagamento desta vez.', 'pink');
+  milOpClear(); if (panelKind === 'militar') renderPanel();
+}
+function onMil(d) {
+  if (!d || !S || d.c !== cityId() || d.from === ccMe()) return; const op = MILO.op;
+  if (d.k === 'op_new') { if (op && op.id !== d.op.id && op.by === ccMe()) return; milOpSet(d.op); if (milOn()) { toast(`📻 ${d.name} abriu uma operação: ${d.op.type === 'comboio' ? '🚚 comboio de mantimentos' : '🧭 patrulha em grupo'}. Entre pelo painel do ${d.op.job === 'marinha' ? 'Base Naval' : 'Quartel'} (ou 📻 Rádio).`, 'pink'); sfx('ui'); } }
+  else if (!op || d.id !== op.id) { if (d.k === 'ordem' && milOn() && d.job === S.shift) milOrderGot(d); return; }
+  else if (d.k === 'op_join') { op.members[d.from] = d.name; if (op.by === ccMe()) feed(`🤝 ${d.name} entrou na operação`); }
+  else if (d.k === 'op_leave') delete op.members[d.from];
+  else if (d.k === 'op_pos') { op.d = d.d; op.wait = d.wait; }
+  else if (d.k === 'op_cp') { op.done = op.done || {}; if (!op.done[d.i]) { op.done[d.i] = 1; const mk = op.marks[d.i]; if (mk) mk.forEach(o => o.visible = false); if (milIn()) { feed(`🧭 ${d.name} conferiu o ponto ${d.i + 1}`); milOpGps(); } } }
+  else if (d.k === 'op_done') milOpFinish(op, true);
+  else if (d.k === 'op_end') { milOpClear(); if (milOn()) toast('📻 A operação foi cancelada.', 'pink'); }
+  if (panelKind === 'militar') renderPanel();
+}
+/* quem abriu a operação comanda o caminhão do comboio (manda a posição para os outros) */
+function milOpTick(dt, t) {
+  const op = MILO.op; if (!op) return; const host = op.by === ccMe(), mine = milIn();
+  if (op.type === 'comboio') {
+    if (host) {
+      const p = pathAt(op.pts, op.d), esc = Object.keys(op.members).some(id => { const q = id === ccMe() ? { x: P.x, z: P.z } : ccPeer(id); return q && Math.hypot(q.x - p[0], q.z - p[1]) < 18; });
+      op.wait = !esc; if (esc) op.d = Math.min(op.len, op.d + 5 * dt);
+      if (op.wait && (op.waitT = (op.waitT || 0) - dt) <= 0) { op.waitT = 12; toast('🚚 O comboio parou: a escolta tem que ficar perto do caminhão!', 'bad'); }
+      if ((op.sendT = (op.sendT || 0) - dt) <= 0) { op.sendT = 1; milSend('op_pos', { id: op.id, d: +op.d.toFixed(1), wait: op.wait }); }
+      if (op.d >= op.len - 0.5 && !op.fin) { op.fin = true; milSend('op_done', { id: op.id }); milOpFinish(op, true); return; }
+    }
+    if (!op.truck) return; const p = pathAt(op.pts, op.d); op.vd = op.vd == null ? op.d : lerp(op.vd, op.d, 1 - Math.exp(-3 * dt)); const q = pathAt(op.pts, op.vd);
+    op.truck.position.set(q[0], groundH(q[0], q[1]), q[1]); if (q[2] != null) op.truck.rotation.y = q[2];
+    if (mine && (op.gpsT = (op.gpsT || 0) - dt) <= 0) { op.gpsT = 3; milOpGps(); }
+  } else {
+    for (const mk of op.marks || []) mk[0].rotation.z += dt;
+    if (mine) { op.done = op.done || {}; op.pts.forEach((p, i) => { if (!op.done[i] && Math.hypot(P.x - p[0], P.z - p[1]) < 6) { op.done[i] = 1; op.marks[i].forEach(o => o.visible = false); sfx('coin'); toast(`🧭 Ponto ${i + 1} conferido!`, 'good'); milSend('op_cp', { id: op.id, i }); milOpGps(); } }); }
+    if (host && op.pts.every((p, i) => (op.done || {})[i]) && !op.fin) { op.fin = true; milSend('op_done', { id: op.id }); milOpFinish(op, true); }
+  }
+}
+/* ordens pelo rádio (Sargento para cima) */
+const MIL_ORDERS = { exercito: [['patio', '📢 Todos ao pátio do quartel!'], ['portao', '📢 Reforçar a guarda do portão!'], ['praca', '📢 Patrulha na praça central!']], marinha: [['base', '📢 Todos à Base Naval!'], ['cais', '📢 Inspeção geral no cais!'], ['orla', '📢 Patrulha na orla!']] };
+function milOrderPos(job, k) { const M = city.mil || {}; if (job === 'marinha' && M.n) return k === 'cais' ? M.n.pier : k === 'orla' ? [0, 140] : [M.n.nx, M.n.bz - 10]; if (M.q) return k === 'portao' ? M.q.gate : k === 'praca' ? [0, -10] : M.q.pat; return null; }
+function milOrder(k) {
+  if (!milOn()) return; if (jobRank(S.shift) < 3) return toast(`Só Sargento para cima dá ordens. Você é ${rankName(S.shift)}.`, 'bad');
+  const o = (MIL_ORDERS[S.shift] || []).find(x => x[0] === k); if (!o) return; const p = milOrderPos(S.shift, k);
+  milSend('ordem', { job: S.shift, txt: o[1], x: p && p[0], z: p && p[1], rank: rankName(S.shift) }); toast(`📻 Ordem enviada: ${o[1]}`, 'good'); closePanel();
+}
+function milOrderGot(d) { toast(`📻 ${d.rank} ${d.name}: ${d.txt}`, 'pink'); sfx('ui'); if (d.x != null) setGps(d.x, d.z, d.txt.replace('📢 ', '')); feed(`📻 Ordem: ${d.txt}`); }
+/* formatura: aviso 1 minuto antes; quem fica no pátio (ou na frente da base naval) ganha presença */
+function milFormTick(dt) {
+  const F = formAt(), job = S.shift; if (!milOn()) return; const spot = job === 'marinha' ? milBase('marinha') : city.mil && city.mil.q && city.mil.q.pat; if (!spot) return;
+  if (F.next < 60000 && city.formWarn !== F.s + 1) { city.formWarn = F.s + 1; toast(`🎖️ Formatura geral em 1 minuto ${job === 'marinha' ? 'na frente da Base Naval' : 'no pátio do quartel'}! GPS marcado.`, 'pink'); setGps(spot[0], spot[1], 'Formatura'); sfx('ui'); }
+  if (F.el < FORM_DUR) { const D = milDuty(); if (Math.hypot(P.x - spot[0], P.z - spot[1]) < 10) { city.formT = (city.formT || 0) + dt; if (city.formT > 8 && city.formOk !== F.s) { city.formOk = F.s; const g = earn(jobPay(job, 60)); toast(`🎖️ Presente na formatura! +$${fmt(g)}`, 'good'); milDutyMark('formatura'); } } else city.formT = 0; }
+}
+/* painel do quartel / base: deveres, formatura, operação e ordens */
+function milPanelExtra(id) {
+  if (cityId() && id === 'marinha' && !beachCity()) return '';
+  const D = milDuty(), F = formAt(), op = MILO.op, on = S.shift === id;
+  let h = `<h3>📋 Deveres de hoje</h3><div class="card">${DUTY.map(([k, n]) => `<p>${dutyOk(D, k) ? '✅' : '⬜'} ${n}${k === 'missoes' ? ` (${Math.min(2, D.d.missoes || 0)}/2)` : ''}</p>`).join('')}<p class="muted">${D.paid ? '🎖️ Recompensa do dia já recebida.' : 'Cumprindo todos: bônus em dinheiro e +5 pontos para subir de patente.'}</p></div>`;
+  h += `<h3>🎖️ Formatura geral</h3><p class="muted">${F.el < FORM_DUR ? `<b>AGORA</b> ${id === 'marinha' ? 'na frente da Base Naval' : 'no pátio do quartel'}! Fique lá uns segundos para marcar presença.` : `Próxima em ${Math.ceil(F.next / 60000)} min. Todos os militares online da cidade se reúnem (a cada 12 minutos).`}</p>`;
+  h += `<h3>🤝 Operação em grupo</h3>`;
+  if (op && op.job === id) { const n = Object.keys(op.members); h += `<div class="card"><h4>${op.type === 'comboio' ? '🚚 Comboio de mantimentos' : '🧭 Patrulha em grupo'}</h4><p>Aberta por <b>${esc(op.byName)}</b> · ${n.length} militar${n.length > 1 ? 'es' : ''}: ${Object.values(op.members).map(esc).join(', ')}</p><p class="muted">${op.type === 'comboio' ? `Caminhão ${Math.round(op.d / Math.max(1, op.len || pathLen(op.pts)) * 100)}% do caminho${op.wait ? ' · parado esperando a escolta' : ''}` : `Pontos conferidos: ${Object.keys(op.done || {}).length}/4`}</p><div class="row">${milIn() ? `<button class="btn ghost sm" data-act="mil-leave">${op.by === ccMe() ? 'Cancelar operação' : 'Sair da operação'}</button>` : on ? '<button class="btn sm" data-act="mil-join">Entrar na operação</button>' : '<span class="pill">Entre em serviço para participar</span>'}</div></div>`; }
+  else if (on) h += `<p class="muted">Abra uma operação: todos os ${id === 'marinha' ? 'marinheiros' : 'soldados'} online na cidade recebem o chamado e podem entrar. Pagamento maior quanto mais gente.</p><div class="row">${id === 'exercito' ? '<button class="btn sm" data-act="mil-op" data-t="comboio">🚚 Comboio de mantimentos</button>' : ''}<button class="btn sm" data-act="mil-op" data-t="patrulha">🧭 Patrulha em grupo</button></div>`;
+  else h += '<p class="muted">Entre em serviço para abrir ou participar de operações.</p>';
+  if (on) { const ok = jobRank(id) >= 3; h += `<h3>📻 Ordens pelo rádio</h3><p class="muted">${ok ? 'Como ' + esc(rankName(id)) + ', você pode dar ordens: todos os militares online recebem o aviso e o GPS.' : `Só Sargento para cima dá ordens (você é ${esc(rankName(id))}).`}</p>${ok ? `<div class="row">${(MIL_ORDERS[id] || []).map(([k, n]) => `<button class="btn ghost sm" data-act="mil-ordem" data-k="${k}">${n}</button>`).join('')}</div>` : ''}`; }
+  return h;
+}
+
 /* ---- trampo com figurantes: ir até o ponto e segurar Ação ---- */
 function s6Task(id, lv) {
   const n = id === 'dj' ? 1 : id === 'corretor' ? 2 : 2 + Math.min(2, lv - 1), dur = { mecanico: 5, barbeiro: 4, corretor: 3, dj: 12 }[id];
@@ -16898,7 +17014,7 @@ function s6TaskTick(m, dt, near, key, pr) {
     const hold = input.held.KeyE || input.hold.act || tap('act');
     if (hold) { m.p += dt / (s[4] || m.dur); P.v = 0; P.h = Math.atan2(s[0] - P.x, s[1] - P.z); if (m.job === 'dj' && Math.random() < dt * 2) sfx('ui'); }
     pr.textContent = `Segure ${key} · ${s[2]} ${Math.round(Math.min(1, m.p) * 100)}%`;
-    if (m.p >= 1) { m.p = 0; m.got++; sfx('coin'); for (const o of city.mObjs) if (o.userData.si === m.got - 1) o.visible = false; if (m.got >= m.stops.length) return completeMission(); toast(`Feito! Próximo: ${m.stops[m.got][2]}.`, 'good'); renderMissionBox(); }
+    if (m.p >= 1) { m.p = 0; m.got++; sfx('coin'); if (MIL_JOBS.includes(m.job) && /Guarda|cais/i.test(s[2])) milDutyMark('guarda'); for (const o of city.mObjs) if (o.userData.si === m.got - 1) o.visible = false; if (m.got >= m.stops.length) return completeMission(); toast(`Feito! Próximo: ${m.stops[m.got][2]}.`, 'good'); renderMissionBox(); }
   }
 }
 
@@ -17639,7 +17755,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
-    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'samu_emb' }, ({ payload }) => onSamuEmb(payload)).on('broadcast', { event: 'samu_hosp' }, ({ payload }) => onSamuHosp(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 'mil' }, ({ payload }) => onMil(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'samu_emb' }, ({ payload }) => onSamuEmb(payload)).on('broadcast', { event: 'samu_hosp' }, ({ payload }) => onSamuHosp(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }

@@ -775,3 +775,14 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 👔 **Masculino:** camisas polo (verde-bandeira e listrada), **camisa social** branca e azul, camisa xadrez, **jaqueta puffer**, regata de academia, camisas de time (verde e branca, tricolor), camiseta degradê; bermuda cargo e jeans, **calça social**, calça cargo, jogger; tênis branco, tênis de corrida neon, **sapato social**, botina; boné verde, bucket bege, gorro vinho e **chapéu panamá**.
   - 👗 **Feminino:** vestido listrado, xadrez de festa junina, lilás, longo girassol, tie-dye e longo de estrelas; **cropped** branco e rosa, blusa floral; **saia de couro**, saia midi amarela, **shortinho jeans**, legging; salto rosa e sandália de salto azul; bolsa de palha e bolsa vermelha; brinco de estrela.
   - 🧒 **Moda Infantil** (na Drip Store): 12 conjuntos para vestir os seus filhos (Uniforme da Escola, Seleção Brasileira, Super-herói, Princesa, Vestidinhos, Pijama de Estrelinhas, Dia de Praia, Basquete, Grafiteiro Mirim, Soldadinho…). Escolha para qual criança é e ela aparece com a roupa nova na hora (e para quem estiver online).
+
+### Build 2026.10.15-76 (Exército e Marinha online: deveres, formatura, operações em grupo e ordens)
+  - 📋 **Deveres do dia (escala de serviço)** no painel do Quartel/Base Naval: comparecer à formatura, tirar uma guarda (portão ou cais), cumprir 2 missões e participar de uma operação em grupo. Cumprindo todos: **bônus em dinheiro e +5 pontos para subir de patente**. Renova a cada dia do jogo.
+  - 🎖️ **Formatura geral a cada 12 minutos**: 1 minuto antes, todos os militares online da cidade recebem o aviso com GPS. A tropa para no pátio e o sargento chama "FORMATURA GERAL!". Quem fica no pátio (ou na frente da Base Naval) marca presença e ganha.
+  - 🤝 **Operações em grupo** (abre pelo painel, todo mundo de serviço na cidade recebe o chamado e pode entrar):
+    - **🚚 Comboio de mantimentos (Exército):** um caminhão do Exército sai do quartel pelas ruas até o destino. Ele **só anda com escolta perto**; se todo mundo se afastar, ele para e avisa.
+    - **🧭 Patrulha em grupo (Exército e Marinha):** 4 pontos marcados no mapa; cada um que um militar confere conta para todos.
+    - O pagamento é maior quanto mais gente participa, e conta pontos para a promoção.
+  - 📻 **Ordens pelo rádio:** quem é **Sargento para cima** dá ordens ("Todos ao pátio", "Reforçar a guarda do portão", "Patrulha na praça"; na Marinha: "Todos à Base Naval", "Inspeção no cais", "Patrulha na orla"). Todos os militares online recebem o aviso e o GPS.
+  - 🎖️ A patente agora sobe pelos pontos da carreira (missões, deveres e operações), igual às outras profissões da Central.
+  - 👕 Roupa nova dos filhos aparece para os outros jogadores na hora (antes só quando a família saía de novo).
