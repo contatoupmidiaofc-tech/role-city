@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-58';
+const BUILD = '2026.10.15-59';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -3166,6 +3166,22 @@ function buildDayNight(sc) {
   pts.forEach(([x, z], i) => { M4.makeTranslation(x, 0.06, z); pm.setMatrixAt(i, M4); }); pm.renderOrder = 2; sc.add(pm);
   dn.lampHeads = sc.children.filter(o => o.isInstancedMesh && o.material && o.material.isMeshBasicMaterial && o.material.color.getHex() === 0xfff2c4).map(o => o.material);
   dn.skyM = city.sky.material;
+  // céu de verdade: degradê do topo ao horizonte, brilho em volta do sol e entardecer laranja/rosado (um único desenho, sem custo)
+  const r186 = !!THREE.ShaderChunk.colorspace_fragment;
+  dn.skyU = { top: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, low: { value: new THREE.Color() }, sunC: { value: new THREE.Color() }, sunD: { value: new THREE.Vector3(0, 1, 0) }, glow: { value: 0 } };
+  city.sky.material = dn.skyM = new THREE.ShaderMaterial({ uniforms: dn.skyU, side: THREE.BackSide, depthWrite: false, fog: false,
+    vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform vec3 top, hor, low, sunC; uniform vec3 sunD; uniform float glow; varying vec3 vP;
+      void main(){ float y = vP.y; vec3 c = y > 0.0 ? mix(hor, top, pow(clamp(y * 1.6, 0.0, 1.0), 0.55)) : mix(hor, low, clamp(-y * 5.0, 0.0, 1.0));
+        float s = max(dot(normalize(vP), normalize(sunD)), 0.0); c += sunC * (pow(s, 6.0) * 0.45 + pow(s, 90.0) * 0.8) * glow; gl_FragColor = vec4(c, 1.0);
+        #include <tonemapping_fragment>
+        #include <${r186 ? 'colorspace_fragment' : 'encodings_fragment'}>
+      }` });
+  dn.sky = { dTop: new THREE.Color(0x3f86d4), dHor: new THREE.Color(0xcfe2ee), dLow: new THREE.Color(0xa9b6bf), gTop: new THREE.Color(0x3b4a86), gHor: new THREE.Color(0xf29a62), gLow: new THREE.Color(0x8a6a72), nTop: new THREE.Color(0x03060f), nHor: new THREE.Color(0x1d1d3a), nLow: new THREE.Color(0x07080f), t: new THREE.Color() };
+  // auréola das lâmpadas dos postes (aparece à noite)
+  const lampM = sc.children.filter(o => o.isInstancedMesh && o.material && o.material.isMeshBasicMaterial && o.material.color.getHex() === 0xfff2c4), hp = [], M5 = new THREE.Matrix4(), V5 = new THREE.Vector3();
+  for (const lm of lampM) for (let i = 0; i < lm.count; i++) { lm.getMatrixAt(i, M5); V5.setFromMatrixPosition(M5); hp.push(V5.x, V5.y - 0.15, V5.z); }
+  if (hp.length) { const hg = new THREE.BufferGeometry(); hg.setAttribute('position', new THREE.Float32BufferAttribute(hp, 3)); dn.haloM = new THREE.PointsMaterial({ map: glow, size: 4.2, sizeAttenuation: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0, fog: false }); const halo = new THREE.Points(hg, dn.haloM); halo.renderOrder = 3; sc.add(halo); }
   dn.cDay = new THREE.Color(0xcfe9ff); dn.cDusk = new THREE.Color(0xf2a36b); dn.cNight = new THREE.Color(0x0c1430); dn.tmp = new THREE.Color();
   updateDayNight(0, true);
 }
@@ -3175,22 +3191,30 @@ function updateDayNight(dt, force) {
   if (!force && (dn.tick = (dn.tick || 0) + dt) < 0.25) return; dn.tick = 0;
   if (S.day !== gameDay()) { S.day = gameDay(); chargeRent(); }
   const h = dn.hour = dayHour(), el = h >= 5 && h <= 20 ? Math.sin((h - 5) / 15 * Math.PI) : -Math.sin(((h + 4) % 24) / 9 * Math.PI), wk = city.wxK || 0;
-  const night = dn.night = clamp((0.12 - el) / 0.32, 0, 1), dusk = clamp(1 - Math.abs(el) / 0.28, 0, 1) * (1 - night * 0.6);
+  const night = dn.night = clamp((0.12 - el) / 0.32, 0, 1), dusk = clamp(1 - Math.abs(el) / 0.4, 0, 1) * (1 - night * 0.6); // entardecer mais longo (hora dourada)
   const c = dn.tmp.copy(dn.cDay).lerp(dn.cDusk, dusk * 0.8).lerp(dn.cNight, night);
-  c.lerp(dn.cStorm || (dn.cStorm = new THREE.Color(0x7d858f)), wk * 0.7 * (1 - night * 0.7)); city.scene.background.copy(c); city.scene.fog.color.copy(c); city.scene.fog.far = 230 - wk * 110;
-  dn.skyM.color.setRGB(1, 1, 1).lerp(new THREE.Color(1, 0.72, 0.55), dusk * 0.7).lerp(new THREE.Color(0.09, 0.12, 0.25), night);
+  c.lerp(dn.cStorm || (dn.cStorm = new THREE.Color(0x7d858f)), wk * 0.7 * (1 - night * 0.7)); city.scene.background.copy(c);
+  if (dn.skyU) { // céu em degradê; a neblina pega a cor do horizonte e esconde o fim do mapa
+    const K = dn.sky, U = dn.skyU, g = dusk * 0.9;
+    U.top.value.copy(K.dTop).lerp(K.gTop, g).lerp(K.nTop, night); U.hor.value.copy(K.dHor).lerp(K.gHor, g).lerp(K.nHor, night); U.low.value.copy(K.dLow).lerp(K.gLow, g).lerp(K.nLow, night);
+    const st = dn.cStorm; U.top.value.lerp(st, wk * 0.75 * (1 - night)); U.hor.value.lerp(st, wk * 0.6 * (1 - night)); U.low.value.lerp(st, wk * 0.6 * (1 - night));
+    U.sunC.value.setRGB(1, lerp(0.85, 0.55, dusk), lerp(0.6, 0.3, dusk)); U.glow.value = (1 - night) * (1 - wk * 0.8) * (0.55 + dusk * 0.9);
+    city.scene.fog.color.copy(U.hor.value).lerp(U.low.value, 0.25); city.scene.background.copy(city.scene.fog.color);
+  } else city.scene.fog.color.copy(c);
+  city.scene.fog.near = lerp(lerp(90, 60, dusk), 35, night); city.scene.fog.far = lerp(lerp(260, 220, dusk), 170, night) - wk * 110;
+  if (!dn.skyU) dn.skyM.color.setRGB(1, 1, 1).lerp(new THREE.Color(1, 0.72, 0.55), dusk * 0.7).lerp(new THREE.Color(0.09, 0.12, 0.25), night);
   dn.stars.material.opacity = night;
-  if (dn.hemi) { dn.hemi.intensity = lerp(0.72, 0.28, night) * (1 - wk * 0.25); dn.hemi.color.setRGB(lerp(0.9, 0.55, night), lerp(0.94, 0.62, night), 1); }
-  const sun = city.sun; sun.intensity = lerp(1.05, 0.22, night) * (1 - dusk * 0.35) * (1 - wk * 0.7); sun.color.setRGB(1, lerp(0.88, 0.7, dusk) * (1 - night * 0.1), lerp(0.72, 0.5, dusk) + night * 0.4);
+  if (dn.hemi) { dn.hemi.intensity = lerp(lerp(0.72, 0.6, dusk), 0.24, night) * (1 - wk * 0.25); dn.hemi.color.setRGB(lerp(lerp(0.9, 1, dusk), 0.5, night), lerp(lerp(0.94, 0.82, dusk), 0.5, night), lerp(lerp(1, 0.8, dusk), 0.95, night)); } // noite escura de verdade (luar azulado)
+  const sun = city.sun; sun.intensity = lerp(1.1, 0.16, night) * (1 - dusk * 0.2) * (1 - wk * 0.7); sun.color.setRGB(lerp(1, 0.55, night), lerp(lerp(0.88, 0.62, dusk), 0.62, night), lerp(lerp(0.72, 0.38, dusk), 0.95, night)); // sol dourado no fim da tarde, luar azul à noite
   const ang = (h / 24) * TAU - Math.PI / 2, sx = Math.cos(ang), sy = Math.abs(Math.sin(ang));
-  dn.sunDir = [sx * 60, Math.max(25, sy * 90), 30];
+  dn.sunDir = [sx * 60, Math.max(night > 0.5 ? 30 : 14, sy * 90), 30]; if (dn.skyU) dn.skyU.sunD.value.set(sx, Math.max(0.04, sy * 0.9), 0.3); // sol baixo = sombra comprida
   if (dn.sunSpr) { const moon = night > 0.5; dn.sunSpr.position.set((moon ? -sx : sx) * 300, Math.max(20, sy * 330), 160); dn.sunSpr.scale.setScalar(moon ? 40 : 90); dn.sunSpr.material.color.setRGB(moon ? 0.8 : 1, moon ? 0.85 : lerp(1, 0.75, dusk), moon ? 1 : lerp(1, 0.55, dusk)); }
   const env = night > 0.55 ? dn.envNight : dn.envDay; if (city.scene.environment !== env) city.scene.environment = env;
   for (const m of city.winMats || []) m.emissiveIntensity = night * 0.9;
-  dn.poolM.opacity = night * 0.85;
+  dn.poolM.opacity = night * 0.85; if (dn.haloM) dn.haloM.opacity = night * 0.9;
   for (const m of dn.lampHeads) m.color.setRGB(1, lerp(0.95, 0.85, night), lerp(0.77, 0.55, night));
-  for (const c2 of city.cars) if (c2.lights) c2.lights.forEach(l => l.visible = night > 0.2);
-  renderer.toneMappingExposure = city.expBase = lerp(0.82, 1.0, night) * (1 - wk * 0.1); if (dn.sunSpr) dn.sunSpr.visible = wk < 0.5;
+  for (const c2 of city.cars) { if (c2.lights) c2.lights.forEach(l => l.visible = night > 0.2); const u2 = c2.m && c2.m.userData; if (u2 && u2.lightG) { u2.lightG.visible = night > 0.2; if (u2.beam) u2.beam.material.opacity = 0.35 + 0.65 * night; } } // trânsito acende os faróis
+  renderer.toneMappingExposure = city.expBase = lerp(lerp(0.82, 0.9, dusk), 0.95, night) * (1 - wk * 0.1); if (dn.sunSpr) dn.sunSpr.visible = wk < 0.5;
   const el2 = $('clock-chip'); if (el2) { const hh = Math.floor(h), mm = Math.floor((h - hh) * 60); el2.textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} ${city.wx && city.wx !== 'sol' ? WX[city.wx].i : night > 0.5 ? '☾' : '☀'}`; }
 }
 

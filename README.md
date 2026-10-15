@@ -595,3 +595,12 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - **Previsão de movimento:** entre uma mensagem e outra, o jogo calcula para onde a pessoa está indo (pela velocidade e direção), então os outros jogadores continuam andando liso na tela.
   - Medição: andando caiu de 8,3 para 3,1 mensagens por segundo; parado, de 8,3 para 0,4; no menu, de 8,3 para 0,2.
   - Estimativa: com 10 pessoas na mesma cidade, a conta mensal cai de 70% a 85%, conforme o quanto elas estão espalhadas e paradas. Com 20 pessoas espalhadas, cerca de 90%.
+
+### Build 2026.10.15-59 (Gráficos, fase 1: luz e cor)
+  - 🌅 **Céu de verdade:** degradê do topo ao horizonte, com brilho em volta do sol. Fica azul de dia, lilás e laranja no entardecer (a hora dourada agora dura mais) e quase preto à noite.
+  - 🌫️ **Neblina da cor do horizonte:** o fundo da rua some suavemente no céu. No entardecer e à noite a neblina chega mais perto, o que dá clima e esconde o fim do mapa.
+  - ☀️ **Sol dourado e sombra comprida** no fim da tarde (o sol desce mais).
+  - 🌙 **Noite escura de verdade**, com luar azul-arroxeado. Os prédios não ficam mais claros como de dia.
+  - 💡 **Postes com auréola de luz** nas lâmpadas, além das poças de luz no chão que já existiam.
+  - 🚗 **Trânsito com farol aceso à noite**, com o facho iluminando a pista.
+  - Tudo isso custa praticamente nada no celular: um desenho só para o céu e pontos de luz leves, sem luzes de verdade a mais. Funciona igual nas duas versões do motor gráfico.
