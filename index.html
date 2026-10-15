@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-59';
+const BUILD = '2026.10.15-60';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1520,11 +1520,12 @@ function applyBody(u, look) {
   const b = look.body || {}, w = BODY_W[b.w] || 1, h = BODY_H[b.h] || 1;
   if (u.stance) u.stance.scale.setScalar(h); else if (u.root) u.root.scale.setScalar(h);
   const B = u.R && u.R.B; if (!B) return;
-  if (!u.restS) { u.restS = {}; for (const n of ['Spine', 'Neck', 'LeftShoulder', 'RightShoulder', 'LeftUpLeg', 'RightUpLeg', 'LeftFoot', 'RightFoot']) if (B[n]) u.restS[n] = B[n].scale.clone(); }
+  if (!u.restS) { u.restS = {}; for (const n of ['Spine', 'Neck', 'Head', 'LeftShoulder', 'RightShoulder', 'LeftUpLeg', 'RightUpLeg', 'LeftFoot', 'RightFoot']) if (B[n]) u.restS[n] = B[n].scale.clone(); }
   const set = (n, x, y, z) => { if (B[n] && u.restS[n]) B[n].scale.copy(u.restS[n]).multiply(_v1.set(x, y, z)); };
   const lw = 1 + (w - 1) * 0.75;
   set('Spine', w, 1, 1 + (w - 1) * 1.1); set('Neck', 1 / w, 1, 1 / (1 + (w - 1) * 1.1)); set('LeftShoulder', 1 / w, 1, 1 / (1 + (w - 1) * 1.1)); set('RightShoulder', 1 / w, 1, 1 / (1 + (w - 1) * 1.1));
   set('LeftUpLeg', lw, 1, lw); set('RightUpLeg', lw, 1, lw); set('LeftFoot', 1 / lw, 1, 1 / lw); set('RightFoot', 1 / lw, 1, 1 / lw);
+  const fw = b.fc === 'fino' ? 0.93 : b.fc === 'largo' ? 1.08 : 1; set('Head', fw / (1 / w), 1, 1 + (fw - 1) * 0.5); // formato do rosto (compensa o pescoço, que já é ajustado pelo corpo)
   buildHairStyle(u, b.hs || 'padrao', look);
 }
 /* cabelo feminino em volta da cabeça (espaço do osso da cabeça; c = centro do crânio) */
@@ -2135,7 +2136,7 @@ function makeRealSkater(look, tagText, tagColor) {
     o.castShadow = true; o.frustumCulled = false;
     const n = o.material.name;
     if (k === 'm' && (n === 'Wolf3D_Headwear' || /Beard/.test(o.name))) { o.visible = false; return; }
-    if (M.rpm && n === M.avatarMat) { u.avatar = o; const mat = rpmBodyMat(M); u.mats[n] = mat; if (M.hairGroup) { u.hairMat2 = mat.clone(); o.material = [mat, u.hairMat2]; } else o.material = mat; return; }
+    if (M.rpm && n === M.avatarMat) { u.avatar = o; const mat = rpmBodyMat(M); u.mats[n] = mat; if (M.hairGroup) { u.hairMat2 = rpmShade(mat.clone(), M); o.material = [mat, u.hairMat2]; } else o.material = mat; return; }
     o.material = o.material.clone(); u.mats[n] = o.material;
     if (o.morphTargetDictionary && o.morphTargetInfluences) u.morphs.push(o);
     if (k === 'm' && M[n]) o.material.map = M[n];
@@ -3007,7 +3008,7 @@ function makeRealPed(f) {
   for (const s of ['shirt', 'pants', 'shoes']) eq[s] = pick(byS(s)).id;
   if (f) { if (Math.random() < 0.35) eq.shirt = pick(byS('shirt').filter(i => i.dress)).id; if (Math.random() < 0.4) eq.bolsa = pick(byS('bolsa').filter(i => i.bk !== 'none')).id; if (Math.random() < 0.5) eq.ear = pick(byS('ear').filter(i => i.ek !== 'none')).id; if (Math.random() < 0.3) eq.shoes = pick(byS('shoes').filter(i => i.heel)).id; }
   eq.cap = Math.random() < 0.7 ? 'cap_none' : pick(byS('cap')).id; eq.glasses = Math.random() < 0.75 ? 'gl_none' : pick(byS('glasses')).id; eq.acc = Math.random() < 0.8 ? 'ac_none' : 'ac_backpack';
-  const g = makeSkater(lookOf(eq, pick(SKINS), pick(HAIRS), f ? 'f' : 'm', null, f && Math.random() < 0.7 ? { hs: pick(FEM_HAIR_KEYS) } : null), null); g.userData.ped = true; return g;
+  const g = makeSkater(lookOf(eq, pick(SKINS), pick(HAIRS), f ? 'f' : 'm', null, f && Math.random() < 0.7 ? { hs: pick(FEM_HAIR_KEYS) } : !f && Math.random() < 0.35 ? { bd: pick(['rala', 'cavanhaque', 'cheia', 'bigode']) } : null), null); g.userData.ped = true; return g;
 }
 function animPed(u, ph, amp, down) {
   const s = Math.sin(ph) * amp;
@@ -5250,7 +5251,8 @@ function useRound(G) {
 function bodyButtons(cur) {
   const gen = S && mode !== 'menu' ? S.gender : selGender, hsList = gen === 'f' ? Object.assign({}, FEM_HAIR, { black: 'Black power', tranca: 'Tranças', dread: 'Dreads', careca: 'Careca' }) : { padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano', dread: 'Dreads', tranca: 'Tranças', rabo: 'Rabo de cavalo', coque: 'Coque' };
   const seg = (k, list) => Object.entries(list).map(([v, n]) => `<button type="button" data-act="body-sel" data-k="${k}" data-v="${v}" aria-pressed="${cur[k] === v}">${n}</button>`).join('');
-  return { hs: seg('hs', hsList), w: seg('w', { magro: 'Magro', normal: 'Normal', forte: 'Forte', gordo: 'Gordo' }), h: seg('h', { baixinho: 'Baixinho', medio: 'Médio', alto: 'Alto' }) };
+  const c2 = Object.assign({ bd: 'none', fc: 'normal' }, cur), seg2 = (k, list) => Object.entries(list).map(([v, n]) => `<button type="button" data-act="body-sel" data-k="${k}" data-v="${v}" aria-pressed="${c2[k] === v}">${n}</button>`).join('');
+  return { hs: seg('hs', hsList), w: seg('w', { magro: 'Magro', normal: 'Normal', forte: 'Forte', gordo: 'Gordo' }), h: seg('h', { baixinho: 'Baixinho', medio: 'Médio', alto: 'Alto' }), bd: seg2('bd', BEARDS), fc: seg2('fc', { fino: 'Fino', normal: 'Normal', largo: 'Largo' }) };
 }
 function renderBodySel() { const b = bodyButtons(selBody); if ($('b-hs')) { $('b-hs').innerHTML = b.hs; $('b-w').innerHTML = b.w; $('b-h').innerHTML = b.h; } }
 function nextGun() {
@@ -9362,36 +9364,51 @@ function prepAtlasRPM(img, k) {
     const j = y * W + x, i = j * 4, u = (x + 0.5) / W, v = (y + 0.5) / H; let kc = 0;
     if (inBlk(BL.pants, u, v)) kc = 1; else if (inBlk(BL.shirt, u, v)) kc = 2; else if (inBlk(BL.shoes, u, v)) kc = 4;
     else if (inBlk(BL.skin, u, v)) kc = 3; else if (inBlk(BL.hair, u, v)) kc = 5;
-    else if (inBlk(BL.head, u, v)) kc = dist(i, hairRef) < dist(i, skinRef) * 0.8 ? 5 : 3;
+    else if (inBlk(BL.head, u, v)) { kc = dist(i, hairRef) < dist(i, skinRef) * 0.8 ? 5 : 3; const by = (v - BL.head[1]) / (BL.head[3] - BL.head[1]); if (kc === 5 && by >= 0.285) kc = by < 0.36 ? 6 : 3; } // olhos ficam como estão (6); narinas, lábios e sombra do queixo são pele (antes viravam "barba" da cor do cabelo)
     cls[j] = kc;
   }
   // luminância "limpa" das roupas: some com a logomarca e mantém as dobras
   const R = 5, clean = new Float32Array(n), tmp = new Float32Array(n);
   for (let y = 0; y < H; y++) { let s = 0; for (let x = -R; x <= R; x++) s += lum[y * W + clamp(x, 0, W - 1)]; for (let x = 0; x < W; x++) { tmp[y * W + x] = s / (2 * R + 1); s += lum[y * W + clamp(x + R + 1, 0, W - 1)] - lum[y * W + clamp(x - R, 0, W - 1)]; } }
   for (let x = 0; x < W; x++) { let s = 0; for (let y = -R; y <= R; y++) s += tmp[clamp(y, 0, H - 1) * W + x]; for (let y = 0; y < H; y++) { const bl = s / (2 * R + 1), j = y * W + x; clean[j] = clamp(lum[j], bl * 0.88, bl * 1.12); s += tmp[clamp(y + R + 1, 0, H - 1) * W + x] - tmp[clamp(y - R, 0, H - 1) * W + x]; } }
-  const ref = [0, 0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0, 0]; for (let j = 0; j < n; j++) { const kc = cls[j]; ref[kc] += kc === 1 || kc === 2 || kc === 4 ? clean[j] : lum[j]; cnt[kc]++; }
+  const ref = [0, 0, 0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0, 0, 0]; for (let j = 0; j < n; j++) { const kc = cls[j]; ref[kc] += kc === 1 || kc === 2 || kc === 4 ? clean[j] : lum[j]; cnt[kc]++; }
   for (let kk = 0; kk < 6; kk++) ref[kk] /= Math.max(1, cnt[kk]);
   return { rpm: true, c, d, cls, lum: clean, rawLum: lum, ref, skinRef, hairRef, w: W, h: H, cache: {}, blk: BL };
+}
+const BEARDS = { none: 'Sem barba', bigode: 'Bigode', cavanhaque: 'Cavanhaque', rala: 'Barba rala', cheia: 'Barba cheia', lenhador: 'Barba lenhador' };
+/* barba pintada na textura do rosto (coordenadas do molde do rosto; mesmo molde no masculino e no feminino) */
+function beardA(bx, by, st) {
+  const sm = (a, b, x) => clamp((x - a) / (b - a), 0, 1), dx = Math.abs(bx - 0.5), lips = (dx / 0.072) ** 2 + ((by - 0.485) / 0.021) ** 2 < 1;
+  const must = by > 0.438 && by < 0.47 && dx < 0.09 ? sm(0.09, 0.07, dx) * sm(0.438, 0.448, by) : 0;
+  if (st === 'bigode') return must;
+  if (st === 'cavanhaque') { if (lips) return 0; const chin = dx < 0.065 && by > 0.503 && by < 0.61 ? sm(0.065, 0.045, dx) : 0, side = dx > 0.06 && dx < 0.085 && by > 0.45 && by < 0.525 ? 1 : 0; return Math.max(must, chin, side); }
+  if (lips) return 0; const full = st === 'cheia' || st === 'lenhador', e = ((bx - 0.5) / (full ? 0.29 : 0.27)) ** 2 + ((by - 0.425) / (full ? 0.23 : 0.21)) ** 2;
+  const top = dx < 0.09 ? 0.445 : 0.445 - (dx - 0.09) * (full ? 0.62 : 0.5); // linha de cima: da costeleta até o canto da boca
+  let a = e < 1 ? sm(1, 0.84, e) * sm(top, top + 0.025, by) : 0;
+  if (dx > 0.205 && dx < 0.265 && by > 0.3 && by < 0.4) a = Math.max(a, sm(0.205, 0.22, dx) * sm(0.265, 0.25, dx) * (full ? 1 : 0.8)); // costeletas
+  return Math.max(a, must) * (st === 'rala' ? 0.38 : st === 'lenhador' ? 1 : 0.85);
 }
 function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi, defer) {
   const sh = look.shirt, pa = look.pants, so = look.shoes, sp = plainPat(sh) ? 'plain' : sh.pat, pp = plainPat(pa) ? 'plain' : pa.pat;
   const bare = so && (so.id === 'shoes_none' || so.barefoot);
-  const key = [sh.color, sp, pa.color, pp, so ? so.color : 0, so ? so.pat || '' : '', bare ? 1 : 0, look.skin, look.hair, bald ? 1 : 0, pantsMask ? pantsMask.nm : '', topMask ? topMask.nm : '', hi ? 'hi' : 'lo', sh.img ? sh.id : '', look.hl || '', look.hair0 ?? ''].join('_');
+  const key = [sh.color, sp, pa.color, pp, so ? so.color : 0, so ? so.pat || '' : '', bare ? 1 : 0, look.skin, look.hair, bald ? 1 : 0, pantsMask ? pantsMask.nm : '', topMask ? topMask.nm : '', hi ? 'hi' : 'lo', sh.img ? sh.id : '', look.hl || '', look.hair0 ?? '', (look.body && look.body.bd) || ''].join('_');
   if (A.cache[key]) return A.cache[key];
   if (defer) return null; // ainda não existe: quem chamou monta depois (por partes)
   const W = A.w, H = A.h, src = A.d.data, out = new ImageData(new Uint8ClampedArray(src), W, H), p = out.data;
   const rgbA = x => [(x >> 16 & 255), (x >> 8 & 255), (x & 255)];
   const skin = rgbA(look.skin), hair = rgbA(look.hair), cP = rgbA(pa.color), cS = rgbA(sh.color), cF = rgbA(so ? so.color : 0xeeeeee);
-  const sr = A.skinRef, kr = [skin[0] / sr[0], skin[1] / sr[1], skin[2] / sr[2]], ref = A.ref;
+  const sr = A.skinRef, kr = [skin[0] / sr[0], skin[1] / sr[1], skin[2] / sr[2]], ref = A.ref, bd = look.body && look.body.bd && look.body.bd !== 'none' && A.blk ? look.body.bd : null, bc = rgbA(look.hair0 != null ? look.hair0 : look.hair);
   const put = (i, c, f) => { p[i] = Math.min(255, c[0] * f); p[i + 1] = Math.min(255, c[1] * f); p[i + 2] = Math.min(255, c[2] * f); };
   for (let j = 0, i = 0; j < W * H; j++, i += 4) {
-    const kc = A.cls[j]; if (!kc) continue;
+    const kc = A.cls[j]; if (!kc || kc === 6) continue;
     const u = (j % W) / W, v = Math.floor(j / W) / H;
     if (kc === 5 && bald) { put(i, skin, 0.92); continue; }
-    if (kc === 3) { p[i] = Math.min(255, src[i] * kr[0]); p[i + 1] = Math.min(255, src[i + 1] * kr[1]); p[i + 2] = Math.min(255, src[i + 2] * kr[2]); continue; }
+    if (kc === 3) { p[i] = Math.min(255, src[i] * kr[0]); p[i + 1] = Math.min(255, src[i + 1] * kr[1]); p[i + 2] = Math.min(255, src[i + 2] * kr[2]);
+      if (bd && v < A.blk.head[3]) { const ba = beardA(u / A.blk.head[2], v / A.blk.head[3], bd); if (ba > 0) { const nz = (Math.sin((j % W) * 12.9898 + (((j / W) | 0) >> 1) * 78.233) * 43758.5453) % 1, aa = ba * (0.6 + 0.4 * Math.abs(nz)), sh = clamp(A.rawLum[j] / ref[3], 0.6, 1.2); for (let q = 0; q < 3; q++) p[i + q] = p[i + q] * (1 - aa) + bc[q] * sh * aa; } }
+      continue; }
     if (kc === 5 && look.hair0 != null && A.blk && !inBlk(A.blk.hair, u, v)) { put(i, rgbA(look.hair0), clamp(A.rawLum[j] / ref[5], 0.45, 1.8)); continue; } // tintura: sobrancelha fica na cor natural
     if (kc === 5) { const hl = look.hl && (!A.blk || inBlk(A.blk.hair, u, v)) && (Math.sin(u * W * 0.55 + v * H * 0.08) > 0.45 || Math.sin(u * W * 0.21 + 1.3) > 0.8); put(i, hl ? rgbA(look.hl) : hair, clamp(A.rawLum[j] / ref[5], 0.45, 1.8)); continue; }
-    const f = clamp(A.lum[j] / ref[kc], 0.55, 1.3);
+    const x0 = j % W, y0 = (j / W) | 0, f = clamp(A.lum[j] / ref[kc], 0.42, 1.38) * (kc === 1 || kc === 2 ? 1 + ((((x0 * 7 + y0 * 13) & 7) / 7) - 0.5) * 0.05 : 1); // dobras mais marcadas e trama fina do tecido
     if (kc === 1) { if (pantsMask && pantsMask[j]) put(i, skin, clamp(f, 0.75, 1.1) * 0.95); else put(i, pp === 'plain' ? cP : patColor(pp, u * 1.6, v * 1.6, cP, skin), f); }
     else if (kc === 2) { if (topMask && topMask[j]) { if (topMask.nm === 'nude' && A.torso) { const sf = A.torso[j]; p[i] = Math.min(255, skin[0] * sf * 0.93); p[i + 1] = Math.min(255, skin[1] * sf * 0.93); p[i + 2] = Math.min(255, skin[2] * sf * 0.93); } else put(i, skin, clamp(f, 0.8, 1.08) * 0.95); } else put(i, sp === 'plain' ? cS : patColor(sp, u * 1.6, v * 1.6, cS, skin), f); }
     else if (kc === 4) put(i, bare ? skin : so && !plainPat(so) && !['sandal', 'gradient'].includes(so.pat) ? patColor(so.pat, u * 2, v * 2, cF, skin) : cF, f);
@@ -9450,7 +9467,29 @@ function charLod(o, d) {
   const want = o === city.player || city.faceCam || d < 16 ? 0 : d < 45 ? 1 : 2, g = M.lods[want] || M.lods[want - 1] || M.lods[0];
   if (av.geometry !== g) av.geometry = g;
 }
-function rpmBodyMat(M) { const m = new THREE.MeshStandardMaterial({ map: M.atlas.base || (M.atlas.base = (() => { const t = new THREE.CanvasTexture(M.atlas.c); t.flipY = false; t.encoding = THREE.sRGBEncoding; return t; })()), normalMap: M.normal, roughness: 0.78, metalness: 0 }); m.name = M.avatarMat; if (M.normal) m.normalScale.set(0.8, 0.8); return m; }
+/* pele, tecido e cabelo com acabamento diferente no mesmo corpo (como nos jogos de RP):
+   pele com brilho suave e a luz "atravessando" nas bordas (tom rosado), tecido fosco com leve brilho de fibra, cabelo mais lustroso.
+   Uma textura pequena diz o que é pele, roupa ou cabelo; o resto é feito na placa de vídeo, sem custo extra de desenho. */
+function rpmClsTex(M) {
+  if (M.clsTex) return M.clsTex; const A = M.atlas, W = A.w, H = A.h, d = new Uint8Array(W * H * 4);
+  for (let j = 0; j < W * H; j++) { const k = A.cls[j]; d[j * 4] = k === 3 ? 255 : 0; d[j * 4 + 1] = k === 1 || k === 2 ? 255 : 0; d[j * 4 + 2] = k === 5 ? 255 : 0; d[j * 4 + 3] = 255; }
+  const t = new THREE.DataTexture(d, W, H, THREE.RGBAFormat); t.flipY = false; t.magFilter = t.minFilter = THREE.LinearFilter; t.needsUpdate = true; return (M.clsTex = t);
+}
+function rpmShade(m, M) {
+  if (!M.atlas || !M.atlas.cls) return m; const tex = rpmClsTex(M), r186 = !!THREE.ShaderChunk.colorspace_fragment, uvN = r186 ? 'vMapUv' : 'vUv';
+  m.onBeforeCompile = sh => {
+    sh.uniforms.clsMap = { value: tex };
+    sh.fragmentShader = 'uniform sampler2D clsMap;\n' + sh.fragmentShader
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>\n  vec3 cls = texture2D(clsMap, ${uvN}).rgb; roughnessFactor = mix(roughnessFactor, 0.52, cls.r); roughnessFactor = mix(roughnessFactor, 0.9, cls.g); roughnessFactor = mix(roughnessFactor, 0.42, cls.b);`)
+      .replace(r186 ? '#include <opaque_fragment>' : '#include <output_fragment>', `{ float fr = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
+  outgoingLight += diffuseColor.rgb * (vec3(0.55, 0.2, 0.13) * 0.16 + vec3(1.0, 0.5, 0.38) * fr * 0.35) * cls.r; // pele: calor por dentro e borda rosada
+  outgoingLight += diffuseColor.rgb * fr * 0.22 * cls.g; } // tecido: brilho de fibra nas bordas
+  ${r186 ? '#include <opaque_fragment>' : '#include <output_fragment>'}`);
+  };
+  m.customProgramCacheKey = () => 'rpmshade';
+  return m;
+}
+function rpmBodyMat(M) { const m = new THREE.MeshStandardMaterial({ map: M.atlas.base || (M.atlas.base = (() => { const t = new THREE.CanvasTexture(M.atlas.c); t.flipY = false; t.encoding = THREE.sRGBEncoding; return t; })()), normalMap: M.normal, roughness: 0.78, metalness: 0 }); m.name = M.avatarMat; if (M.normal) m.normalScale.set(0.95, 0.95); return rpmShade(m, M); }
 function applyRpmLook(u, look) {
   const M = MODELS[u.k], m = u.mats[M.avatarMat]; if (!m) return;
   const bald = ['careca', 'moicano'].includes(look.body && look.body.hs); // moicano: laterais raspadas, só a crista
@@ -14367,7 +14406,7 @@ const PANELS = {
       html += `<p>Cada nível dá <b>2 pontos</b> de evolução. Você tem <b>${S.attrPts}</b> para distribuir.</p>` + A.map(([k, n, d]) => `<div class="attr"><div><b>${n}</b><small class="muted">${d}</small></div><div class="bar"><i style="width:${S.attr[k] * 10}%"></i></div><span class="pill">${S.attr[k]}/10</span><button class="btn sm" data-act="attr" data-k="${k}" ${!S.attrPts || S.attr[k] >= 10 ? 'disabled' : ''} aria-label="Aumentar ${n}">+</button></div>`).join('');
     } else if (tab === 'aparencia') {
       const b = bodyButtons(S.body);
-      html += `<p class="muted">Mude o corpo, a altura e o estilo do cabelo quando quiser. Os outros jogadores veem na hora.</p><h3>Estilo do cabelo</h3><div class="seg wrap">${b.hs}</div><h3>Corpo</h3><div class="seg">${b.w}</div><h3>Altura</h3><div class="seg">${b.h}</div>`;
+      html += `<p class="muted">Mude o corpo, a altura e o estilo do cabelo quando quiser. Os outros jogadores veem na hora.</p><h3>Estilo do cabelo</h3><div class="seg wrap">${b.hs}</div>${S.gender === 'f' ? '' : `<h3>Barba</h3><div class="seg wrap">${b.bd}</div>`}<h3>Formato do rosto</h3><div class="seg">${b.fc}</div><h3>Corpo</h3><div class="seg">${b.w}</div><h3>Altura</h3><div class="seg">${b.h}</div>`;
     } else if (tab === 'manobras') {
       html += `<p class="muted">Pule e, no ar, aperte Pular de novo. A direção escolhe a manobra. O botão Truque (tecla Q) faz a manobra especial escolhida aqui. Manobras novas liberam com missões concluídas (${S.stats.missions} até agora).</p>`;
       html += TRICKS.map(t => { const ok = trickUnlocked(t.id); return `<div class="item-card ${ok ? '' : 'locked'}"><div class="swatch trick">${ok ? (S.stats.trickCount[t.id] || 0) : '🔒'}</div><div class="item-info"><b>${esc(t.name)}</b><small>${DIR_LABEL[t.key]} · ${t.pts} pts${ok ? '' : ` · libera com ${t.need} missões`}</small></div><div class="item-actions">${t.key === 's' && ok ? (S.special === t.id ? '<span class="pill on">Truque</span>' : `<button class="btn ghost sm" data-act="special" data-id="${t.id}">Usar como Truque</button>`) : ''}</div></div>`; }).join('');
@@ -15546,12 +15585,12 @@ const BB_DYES = ['dy_none', 'dy_nevou', 'dy_amarelo', 'dy_luzes', 'dy_ruivo', 'd
 const bbStyles = g => g === 'f' ? Object.assign({}, FEM_HAIR, { black: 'Black power', tranca: 'Tranças', dread: 'Dreads', careca: 'Careca' }) : { padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano', dread: 'Dreads', tranca: 'Tranças' };
 function bbOrcSend() {
   const T = CC.take; if (!T || T.c.svc !== 'barbeiro') return;
-  const hs = ($('bo-hs') || {}).value || '', dye = ($('bo-dye') || {}).value || '';
-  if (!hs && !dye) return toast('Escolha o corte ou a cor.', 'bad');
-  const total = Math.round(((hs ? 35 : 0) + (dye ? (dye === 'dy_none' ? 20 : 60) : 0)) * rankMult('barbeiro')); T.orc = { hs, dye, total };
-  s6Send('bb_orc', { to: T.c.from, from: ccMe(), hs, dye, total, by: S.name }); toast(`💈 Proposta enviada: $ ${fmt(total)}.`, 'good'); ccRefresh();
+  const hs = ($('bo-hs') || {}).value || '', dye = ($('bo-dye') || {}).value || '', bd = ($('bo-bd') || {}).value || '';
+  if (!hs && !dye && !bd) return toast('Escolha o corte, a cor ou a barba.', 'bad');
+  const total = Math.round(((hs ? 35 : 0) + (dye ? (dye === 'dy_none' ? 20 : 60) : 0) + (bd ? 25 : 0)) * rankMult('barbeiro')); T.orc = { hs, dye, bd, total };
+  s6Send('bb_orc', { to: T.c.from, from: ccMe(), hs, dye, bd, total, by: S.name }); toast(`💈 Proposta enviada: $ ${fmt(total)}.`, 'good'); ccRefresh();
 }
-const bbDesc = d => [d.hs ? `corte ${bbStyles('f')[d.hs] || bbStyles('m')[d.hs] || d.hs}` : '', d.dye ? `cor ${ITEM[d.dye] ? ITEM[d.dye].name : d.dye}` : ''].filter(Boolean).join(' e ');
+const bbDesc = d => [d.hs ? `corte ${bbStyles('f')[d.hs] || bbStyles('m')[d.hs] || d.hs}` : '', d.dye ? `cor ${ITEM[d.dye] ? ITEM[d.dye].name : d.dye}` : '', d.bd ? (d.bd === 'none' ? 'tirar a barba' : `barba: ${BEARDS[d.bd]}`) : ''].filter(Boolean).join(' e ');
 function bbAnswer(yes) {
   const o = BB.orc; if (!o) return; BB.orc = null;
   if (!yes) { s6Send('bb_nao', { to: o.from }); return ccRefresh(); }
@@ -15562,13 +15601,14 @@ function bbWork() {
   const T = CC.take; if (!T || !T.orc || T.arr) return; const p = ccPeer(T.c.from); if (!p) return;
   workStart('💈 Cortando', 5000, p.x, p.z, () => {
     if (!CC.take || CC.take.id !== T.id) return; T.arr = Date.now(); T.job = S.shift; ccSend0('cc_arrive', { id: T.id, to: T.c.from });
-    s6Send('bb_feito', { to: T.c.from, from: ccMe(), hs: T.orc.hs, dye: T.orc.dye, total: T.orc.total });
+    s6Send('bb_feito', { to: T.c.from, from: ccMe(), hs: T.orc.hs, dye: T.orc.dye, bd: T.orc.bd, total: T.orc.total });
     const g = earn(jobPay('barbeiro', 30)); addXP(25); toast(`💈 Ficou show! +$${fmt(g)} (o serviço e a avaliação vêm em seguida).`, 'good'); sfx('level');
   });
 }
 function onBbFeito(d) {
   if (!BB.job) return; BB.job = null; const f = payCash(d.total || 0);
   if (d.hs) { S.body = Object.assign({}, S.body, { hs: d.hs }); }
+  if (d.bd) { S.body = Object.assign({}, S.body, { bd: d.bd }); }
   if (d.dye && ITEM[d.dye]) { if (!S.owned.includes(d.dye)) S.owned.push(d.dye); S.equip.dye = d.dye; }
   persist(); updateHUD(); applyLook(city.player, myLook()); netTrack(); s6Send('bb_pago', { to: d.from, fee: f });
   toast(`💈 Visual novo: ${bbDesc(d)}! Pago: $ ${fmt(f)}. Todo mundo já está vendo.`, 'good'); sfx('coin');
@@ -15647,7 +15687,7 @@ function s6CentralJob() {
   } else if (T.c.svc === 'barbeiro') {
     if (d > 6) return h + '<p class="muted">Chegue perto do cliente (até 6 m) para combinar o corte.</p>';
     if (T.orc && T.orc.ok) return h + `<div class="card"><h4>💈 Aprovado: ${esc(bbDesc(T.orc))}</h4><button class="btn sm" data-act="cc-bb-work">Começar o corte</button></div>`;
-    const st = bbStyles(T.c.g); h += `<div class="card"><h4>💈 Visual para ${esc(T.c.name)}</h4><div class="row" style="gap:6px;flex-wrap:wrap"><select id="bo-hs"><option value="">Manter o corte</option>${Object.entries(st).map(([k, n]) => `<option value="${k}">${esc(n)}</option>`).join('')}</select><select id="bo-dye"><option value="">Manter a cor</option>${BB_DYES.map(k => `<option value="${k}">${esc(ITEM[k].name)}</option>`).join('')}</select><button class="btn sm" data-act="cc-bb-orc">${T.orc ? 'Reenviar' : 'Propor'}</button></div><p class="muted" style="margin-top:4px">Corte $ 35 · cor $ 60 (cor natural $ 20), mais o bônus do cargo.${T.orc ? ` Aguardando: $ ${fmt(T.orc.total)}.` : ''}</p></div>`;
+    const st = bbStyles(T.c.g); h += `<div class="card"><h4>💈 Visual para ${esc(T.c.name)}</h4><div class="row" style="gap:6px;flex-wrap:wrap"><select id="bo-hs"><option value="">Manter o corte</option>${Object.entries(st).map(([k, n]) => `<option value="${k}">${esc(n)}</option>`).join('')}</select><select id="bo-dye"><option value="">Manter a cor</option>${BB_DYES.map(k => `<option value="${k}">${esc(ITEM[k].name)}</option>`).join('')}</select>${T.c.g === 'f' ? '' : `<select id="bo-bd"><option value="">Manter a barba</option>${Object.entries(BEARDS).map(([k, n]) => `<option value="${k}">${k === 'none' ? 'Tirar a barba' : esc(n)}</option>`).join('')}</select>`}<button class="btn sm" data-act="cc-bb-orc">${T.orc ? 'Reenviar' : 'Propor'}</button></div><p class="muted" style="margin-top:4px">Corte $ 35 · cor $ 60 (cor natural $ 20) · barba $ 25, mais o bônus do cargo.${T.orc ? ` Aguardando: $ ${fmt(T.orc.total)}.` : ''}</p></div>`;
   } else if (T.c.svc === 'corretor') {
     const c = T.casa && city.casas[T.casa];
     if (c) { const dc = p ? Math.hypot(p.x - c.ox, p.z - c.oz) : 1e9; h += `<div class="card"><h4>🏡 Visita: ${esc(c.n)}</h4><p class="muted">Cliente a ${Math.round(dc)} m da casa · você a ${Math.round(Math.hypot(P.x - c.ox, P.z - c.oz))} m.</p><div class="row" style="gap:6px">${c.st !== 'vende' ? `<button class="btn sm" data-act="cc-cor-fecha" data-m="aluguel">Fechar aluguel ($ ${fmt(c.rent)}/dia)</button>` : ''}${c.st !== 'aluga' ? `<button class="btn sm" data-act="cc-cor-fecha" data-m="compra">Fechar venda ($ ${fmt(c.buy)})</button>` : ''}<button class="btn ghost sm" data-act="cc-cor-outra">Mostrar outra</button></div></div>`; }

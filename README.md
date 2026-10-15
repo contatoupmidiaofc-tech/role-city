@@ -604,3 +604,14 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 💡 **Postes com auréola de luz** nas lâmpadas, além das poças de luz no chão que já existiam.
   - 🚗 **Trânsito com farol aceso à noite**, com o facho iluminando a pista.
   - Tudo isso custa praticamente nada no celular: um desenho só para o céu e pontos de luz leves, sem luzes de verdade a mais. Funciona igual nas duas versões do motor gráfico.
+
+### Build 2026.10.15-60 (Gráficos, fase 2: personagens)
+  - 🧑 **Pele mais real:** brilho suave, calor por dentro e borda levemente rosada quando a luz bate de lado (a luz "atravessando" a pele, como nos jogos de RP).
+    - O tecido ficou mais fosco, com brilho de fibra nas bordas, e o cabelo mais lustroso, com os fios aparecendo.
+    - É tudo calculado na placa de vídeo a partir de uma textura pequena que separa pele, roupa e cabelo, sem desenhar nada a mais.
+  - 👕 **Roupas com mais relevo:** as dobras do tecido ficaram mais marcadas, com uma trama fina, e o relevo do corpo está mais forte.
+  - 🐛 **Correção da "barba" que não existia:** a sombra embaixo do queixo era confundida com cabelo e pintada da cor do cabelo, inclusive nas mulheres. Lábios, narinas e o queixo agora seguem o tom de pele, e os olhos ficam com a cor original.
+  - 🧔 **Barba:** Bigode, Cavanhaque, Barba rala, Barba cheia e Barba lenhador, na cor do cabelo natural, com aparência de fios e seguindo o contorno do rosto. Fica em Perfil → Aparência.
+    - O Barbeiro também pode fazer ou tirar a barba ($ 25).
+    - Alguns figurantes da rua agora têm barba.
+  - 🙂 **Formato do rosto:** Fino, Normal ou Largo, em Perfil → Aparência. Todo mundo vê.
