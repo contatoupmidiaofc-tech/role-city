@@ -855,3 +855,8 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - **🛰️ Sala de Inteligência (acesso restrito):** parede de vidro, terminais com 3 monitores, telão de situação, **quadro de investigação** (fotos ligadas por fio vermelho), servidores e um analista. **Só militar em serviço (e o ADM) entra**; quem não é, é barrado na porta. O computador mostra os **procurados online** com estrelas, distância e GPS, os presos federais da base e a operação em andamento.
     - **⛓️ Celas para presos federais:** 3 celas com grade e fechadura, iguais às da Delegacia.
   - 🚨 **Militar em serviço também aborda e prende** (como a polícia): aborda, pede documento, revista, algema e leva até as **celas federais** do quartel/base (o GPS marca). O preso federal pega **pena 50% maior** e o militar ganha o pagamento da própria carreira (conta como missão do dia).
+
+### Build 2026.10.15-87 (Camisetas Flávio Bolsonaro 22)
+  - 👕 Duas camisetas novas na loja de roupas (Drip Store), $ 350 cada:
+    - **Amarela** com letras verdes: "FLÁVIO BOLSONARO" e o **22** grande na frente; "FLÁVIO" e o **22** grande nas costas.
+    - **Verde** com letras amarelas, mesmo desenho.

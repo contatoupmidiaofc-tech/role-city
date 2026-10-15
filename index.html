@@ -771,7 +771,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-86';
+const BUILD = '2026.10.15-87';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -9372,6 +9372,14 @@ const GAMER_WEAR = [
   I('cap', 'gm_bone_neon', 'Boné Aba Reta Neon', 0x9cff3a, 260, null, 'comum', { hat: 'flat' }),
 ];
 GAMER_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
+/* camisetas de campanha (Flávio Bolsonaro 22): nome na frente e o número grande nas costas */
+GFX_DEF.flavio22 = { front: g => { gfxText(g, 'FLÁVIO', 128, 70, 40, '#0b6b2e'); gfxText(g, 'BOLSONARO', 128, 108, 26, '#0b6b2e'); gfxText(g, '22', 128, 190, 92, '#0b6b2e'); }, back: g => { gfxText(g, 'FLÁVIO', 128, 62, 30, '#0b6b2e'); gfxText(g, '22', 128, 170, 130, '#0b6b2e'); } };
+GFX_DEF.flavio22v = { front: g => { gfxText(g, 'FLÁVIO', 128, 70, 40, '#ffdf00'); gfxText(g, 'BOLSONARO', 128, 108, 26, '#ffdf00'); gfxText(g, '22', 128, 190, 92, '#ffdf00'); }, back: g => { gfxText(g, 'FLÁVIO', 128, 62, 30, '#ffdf00'); gfxText(g, '22', 128, 170, 130, '#ffdf00'); } };
+const POL_WEAR = [
+  I('shirt', 'pol_flavio22', 'Camiseta Flávio Bolsonaro 22 (amarela)', 0xffdf00, 350, null, 'comum', { pat: 'plain', img: 'flavio22', desc: 'FLÁVIO BOLSONARO 22 na frente e o 22 grande nas costas.' }),
+  I('shirt', 'pol_flavio22v', 'Camiseta Flávio Bolsonaro 22 (verde)', 0x0b6b2e, 350, null, 'comum', { pat: 'plain', img: 'flavio22v', desc: 'FLÁVIO BOLSONARO 22 em amarelo na frente e nas costas.' }),
+];
+POL_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
 function gfxCanvas(it, side) {
   const def = GFX_DEF[it.img]; if (!def || !def[side]) return null;
   const k = it.id + '_' + side; if (GFX[k] !== undefined) return GFX[k];
