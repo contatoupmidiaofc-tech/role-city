@@ -712,3 +712,11 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 🐛 **Correções:**
     - No Rio e em Salvador não sobrava nenhum prédio comum. Agora os endereços de entrega também ficam nas calçadas das lojas, e as paredes de grafite também nas laterais e fundos das lojas.
     - Os gatos não quebram mais a cidade quando falta parede.
+
+### Build 2026.10.15-69 (Operação policial realista)
+  - 🚨 **A operação no morro não tem mais hora certa:** antes era sempre no mesmo intervalo. Agora a hora e a duração variam (de ~3 a ~4,5 minutos). **De madrugada é bem mais provável** (como na vida real), à noite um pouco e de dia é mais rara. Nunca acontece duas seguidas; o espaço entre uma e outra vai de uns 40 minutos a mais de 4 horas. Todo mundo na cidade vê a mesma operação na mesma hora.
+  - 🚧 **Cerco da comunidade:** primeiro chegam as viaturas atravessadas em **todas as entradas** (escadaria, becos e laterais), com **cones** fechando a passagem, e o **blindado do BOPE (caveirão)** com sirene na entrada principal.
+  - 👮 **A tropa sobe por vários lados:** policiais pela escadaria e pelos dois becos, avançando devagar quando trocam tiro; nas laterais, policiais ficam **segurando o cerco**.
+  - 🚁 **Helicóptero Águia com rapel:** o helicóptero chega, para em cima do alto do morro, solta a **corda** e uma equipe de **4 policiais desce de rapel**, um de cada vez, e depois vai descendo o morro.
+  - 📢 Avisos para quem está perto: o cerco começando, o rapel e a PM recuando no fim. No fim todo mundo recua e o helicóptero vai embora.
+  - O Delegado continua podendo mandar operação na hora.

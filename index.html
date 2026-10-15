@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-68';
+const BUILD = '2026.10.15-69';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -9345,31 +9345,88 @@ function fireHelpSpot() {
 /* =========================================================
    OPERAÇÃO POLICIAL NO MORRO: a PM chega de viatura, sobe o morro e os traficantes trocam tiro
    ========================================================= */
-const RAID_EVERY = 9 * 60 * 1000, RAID_DUR = 130;
-function raidSlot() { if (city.raidForce && Date.now() - city.raidForce < (RAID_DUR + 10) * 1000) return { s: 'f' + city.raidForce, el: (Date.now() - city.raidForce) / 1000, on: true }; const n = Date.now(), s = Math.floor(n / RAID_EVERY), r = mulberry32(s * 53 + cityId().length * 11); return { s, el: (n - s * RAID_EVERY) / 1000 - 30, on: r() < 0.8 }; }
-function startRaid(sl) {
-  const R = { s: sl.s, cops: [], cars: [], t: Math.max(0, sl.el) }, sc = city.scene, V = VEH.j_viatura || VEH.v_sedan;
-  for (const [d, tt] of [[-14, -6], [-14, 6], [-20, 0]]) { const m = makeVehicleMesh(V), [x, z] = morroWorld(d, tt); m.position.set(x, 0, z); m.rotation.y = Math.atan2(...(() => { const [ax, az] = morroWorld(0, tt); return [ax - x, az - z]; })()); sc.add(m); R.cars.push(m); }
-  for (let i = 0; i < 7; i++) { const g = makeSkater(roleLook('policial', i), null); const tt = (i - 3) * 2.2, [x, z] = morroWorld(-10 - (i % 2) * 2, tt); g.position.set(x, groundH(x, z), z); sc.add(g); R.cops.push({ g, d: -10 - (i % 2) * 2, tt, hp: 100, x, z, shotT: rand(1, 3), fallT: 0, stop: rand(14, 34) }); }
-  city.raid = R;
-  if (Math.hypot(...(() => { const [x, z] = morroWorld(10, 0); return [P.x - x, P.z - z]; })()) < 170) { toast('🚨 Operação policial no morro! A PM está subindo e o tiroteio começou.', 'bad'); feed('🚨 Operação da PM no morro'); }
+/* operação policial no morro, como na vida real: não tem hora certa (o intervalo e a duração variam; de madrugada é mais
+   provável), começa com o CERCO nas entradas (viaturas, cones, o blindado do BOPE), a tropa sobe pela escadaria e pelos becos
+   e o helicóptero Águia desce uma equipe de RAPEL no alto do morro. Todo mundo na cidade vê a mesma operação na mesma hora. */
+const RAID_SLOT = 10 * 60 * 1000, RAID_DUR = 210;
+const hourAt = ms => { const f = (ms % DAYLEN) / DAYLEN; return f < 0.72 ? 5 + f / 0.72 * 15 : (20 + (f - 0.72) / 0.28 * 9) % 24; };
+function raidRoll(s) { const r = mulberry32(s * 53 + cityId().length * 11), h = hourAt(s * RAID_SLOT + 60000), dawn = h >= 3.5 && h < 7, p = dawn ? 0.6 : h >= 22 || h < 3.5 ? 0.22 : 0.16; return { hit: r() < p, off: 20 + r() * 220, dur: 170 + r() * 110 }; }
+function raidSlot() {
+  if (city.raidForce && Date.now() - city.raidForce < (RAID_DUR + 10) * 1000) return { s: 'f' + city.raidForce, el: (Date.now() - city.raidForce) / 1000, on: true, dur: RAID_DUR };
+  const n = Date.now(), s = Math.floor(n / RAID_SLOT), R = raidRoll(s);
+  // nunca em sequência: se teve operação em algum dos 3 períodos anteriores, não tem agora (fica sem padrão, mas espaçado)
+  const on = R.hit && !raidRoll(s - 1).hit && !raidRoll(s - 2).hit && !raidRoll(s - 3).hit;
+  return { s, el: (n - s * RAID_SLOT) / 1000 - R.off, on, dur: R.dur };
 }
-function endRaid() { const R = city.raid; if (!R) return; for (const o of [...R.cops.map(c => c.g), ...R.cars]) if (o.parent) o.parent.remove(o); for (const o of city.thugs || []) { o.raidA = null; if (o.raidDown) { o.fallT = 0; o.raidDown = false; o.dead = false; o.hp = 100; npcHpBar(o); } } city.raid = null; }
+function caveiraoMesh() {
+  const g = new THREE.Group(), blk = std(0x15161a, 0.6, 0.4), m = (geo, mat, x, y, z) => { const k = new THREE.Mesh(geo, mat); k.position.set(x, y, z); k.castShadow = true; g.add(k); return k; };
+  m(boxGeo(2.5, 1.6, 5.6), blk, 0, 1.5, 0); m(boxGeo(2.3, 1.0, 2.0), blk, 0, 2.7, 1.3); m(boxGeo(2.6, 0.5, 0.3), std(0x2a2d34, 0.5, 0.6), 0, 0.8, 2.9);
+  for (const sx of [-1, 1]) { m(boxGeo(0.05, 0.12, 0.9), new THREE.MeshBasicMaterial({ color: 0x0a0a0a }), sx * 1.27, 2.0, 1.2); for (const z of [-1.9, 0, 1.9]) { const w = m(CYL(0.55, 0.55, 0.45, 14), std(0x111111, 0.9), sx * 1.2, 0.55, z); w.rotation.z = Math.PI / 2; } }
+  const s = textSprite('💀 BOPE', { bg: '#15161a', fg: '#e0e0e0', size: 44, scale: [2.4, 0.6, 1] }); s.position.set(0, 3.7, 0); g.add(s);
+  const sir = [0xff2020, 0x2060ff].map((c, i) => { const k = new THREE.Mesh(boxGeo(0.4, 0.15, 0.25), new THREE.MeshBasicMaterial({ color: c })); k.position.set(i ? 0.3 : -0.3, 3.3, 1.6); g.add(k); return k; });
+  g.userData.siren = sir; g.userData.wheels = []; return g;
+}
+function raidPos(d, tt) { const [x, z] = morroWorld(d, tt); return [x, z]; }
+function startRaid(sl) {
+  const R = { s: sl.s, cops: [], cars: [], props: [], t: Math.max(0, sl.el), dur: sl.dur || RAID_DUR, said: {} }, sc = city.scene, V = VEH.j_viatura || VEH.v_sedan;
+  const face = (x, z, tt) => { const [ax, az] = morroWorld(4, tt); return Math.atan2(ax - x, az - z); };
+  // cerco: viatura atravessada + cones em cada entrada do morro (escadaria, becos e laterais)
+  for (const tt of [-52, -27, 0, 27, 52]) {
+    const [x, z] = raidPos(-15, tt + 3), m = makeVehicleMesh(V); m.position.set(x, 0, z); m.rotation.y = face(x, z, tt) + Math.PI / 2; sc.add(m); R.cars.push(m);
+    for (let k = -2; k <= 2; k++) { const [cx, cz] = raidPos(-11, tt + k * 1.4), c = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.7, 10), lam(0xff6d00)); c.position.set(cx, 0.35, cz); sc.add(c); R.props.push(c); }
+  }
+  { const [x, z] = raidPos(-20, -6), m = caveiraoMesh(); m.position.set(x, 0, z); m.rotation.y = face(x, z, -6); sc.add(m); R.cars.push(m); }
+  // a tropa: sobe pela escadaria (t=0) e pelos becos (t=±27); nas laterais ficam segurando o cerco
+  const cop = (tt, d, stop, i, extra) => { const g = makeSkater(roleLook('policial', i), null), [x, z] = raidPos(d, tt); g.position.set(x, groundH(x, z), z); sc.add(g); const c = Object.assign({ g, d, tt, hp: 100, x, z, shotT: rand(1, 3), fallT: 0, stop }, extra || {}); R.cops.push(c); return c; };
+  for (let i = 0; i < 4; i++) cop((i - 1.5) * 1.6, -10 - (i % 2) * 2, rand(18, 40), i);
+  for (const sg of [-1, 1]) for (let i = 0; i < 3; i++) cop(sg * 27 + (i - 1) * 0.9, -12 - i * 1.5, rand(14, 34), i + 4);
+  for (const sg of [-1, 1]) cop(sg * 52, -9, -9, 7, { hold: true });
+  // helicóptero Águia para o rapel no alto do morro
+  const hv = { id: 'h_pm_op', heli: true, kind: 'heli', name: 'Águia PM', color: 0x1f2f4f, sc: 1, top: 34 }, hm = makeAnyHeli(hv); sc.add(hm);
+  const [hx, hz] = raidPos(-60, 18); hm.position.set(hx, 70, hz); R.heli = { m: hm, x: hx, z: hz, y: 70, h: 0, st: 'vindo', ropeT: 0, drop: 0 };
+  const sp = textSprite('🚁 ÁGUIA · OPERAÇÃO', { bg: '#1f2f4f', fg: '#fff', size: 36, scale: [4, 0.6, 1] }); sp.position.set(0, 3, 0); hm.add(sp);
+  city.raid = R;
+}
+function endRaid() { const R = city.raid; if (!R) return; for (const o of [...R.cops.map(c => c.g), ...R.cars, ...(R.props || []), R.heli && R.heli.m, R.heli && R.heli.rope]) if (o && o.parent) o.parent.remove(o); for (const o of city.thugs || []) { o.raidA = null; if (o.raidDown) { o.fallT = 0; o.raidDown = false; o.dead = false; o.hp = 100; npcHpBar(o); } } city.raid = null; }
+/* helicóptero da operação: chega, para em cima do alto do morro, solta a corda e a equipe desce de rapel; no fim vai embora */
+function raidHeliTick(R, dt, t, near, back) {
+  const H = R.heli; if (!H) return; const u = H.m.userData, [px, pz] = raidPos(70, 16), gy = morroHd(70);
+  let tx = px, tz = pz, ty = gy + 16;
+  if (back) { const [ox, oz] = raidPos(-120, 40); tx = ox; tz = oz; ty = 80; }
+  const dx = tx - H.x, dz = tz - H.z, d = Math.hypot(dx, dz);
+  if (d > 0.4) { const k = Math.min(1, 16 * dt / d); H.x += dx * k; H.z += dz * k; H.h += Math.atan2(Math.sin(Math.atan2(dx, dz) - H.h), Math.cos(Math.atan2(dx, dz) - H.h)) * Math.min(1, dt * 1.2); }
+  H.y += (ty - H.y) * Math.min(1, dt * 0.7);
+  H.m.position.set(H.x, H.y + Math.sin(t * 1.3) * 0.15, H.z); H.m.rotation.y = H.h; H.m.rotation.x = Math.min(0.18, d / 140);
+  if (u.rotor) u.rotor.rotation.y += dt * 28; if (u.trotor) u.trotor.rotation.x += dt * 40;
+  if (near && (H.thT = (H.thT || 0) - dt) <= 0) { H.thT = 0.12; if (audioCtx()) try { noiseHit(0.08, 'lowpass', 160, 0.05, 1, 60); } catch (e) { } }
+  // parado em cima: corda e rapel (4 policiais, um de cada vez)
+  if (!back && d < 3 && Math.abs(H.y - ty) < 2) {
+    if (!H.rope) { H.rope = new THREE.Mesh(CYL(0.03, 0.03, 1, 5), lam(0x2a2d34)); city.scene.add(H.rope); if (near && !R.said.rapel) { R.said.rapel = 1; toast('🚁 A Águia parou em cima do morro: equipe descendo de RAPEL!', 'bad'); } }
+    H.ropeT += dt;
+    if (H.drop < 4 && H.ropeT > 1 + H.drop * 1.6) { const i = H.drop++, g = makeSkater(roleLook('policial', i + 2), null); city.scene.add(g); R.cops.push({ g, d: 70, tt: 16 + (i - 1.5) * 1.2, hp: 100, x: H.x, z: H.z, shotT: rand(1.5, 3), fallT: 0, stop: rand(46, 62), rope: { y: H.y - 1.2, gy } }); }
+  }
+  if (H.rope) { const top = H.y - 0.8, bot = gy; H.rope.visible = !back && H.drop <= 4 && H.ropeT < 10; H.rope.position.set(H.x, (top + bot) / 2, H.z); H.rope.scale.y = Math.max(0.1, top - bot); }
+}
 function updateRaid(dt, t) {
   if (!city.morro) return; const sl = raidSlot(); let R = city.raid;
-  if (R && (R.s !== sl.s || sl.el > RAID_DUR + 20)) { endRaid(); R = null; }
-  if (!R && sl.on && sl.el > 0 && sl.el < RAID_DUR && !city.interior) startRaid(sl), R = city.raid;
-  if (!R) return; R.t += dt; const back = R.t > RAID_DUR - 25 || R.cops.every(c => c.dead), on = Math.floor(t * 4) % 2;
+  if (R && (R.s !== sl.s || sl.el > (sl.dur || RAID_DUR) + 20)) { endRaid(); R = null; }
+  if (!R && sl.on && sl.el > 0 && sl.el < (sl.dur || RAID_DUR) && !city.interior) startRaid(sl), R = city.raid;
+  if (!R) return; R.t += dt; const back = R.t > R.dur - 30 || R.cops.every(c => c.dead), on = Math.floor(t * 4) % 2;
   for (const m of R.cars) { const u = m.userData; if (u.siren) { u.siren[0].visible = !!on; u.siren[1].visible = !on; } }
+  const nearM = Math.hypot(...(() => { const [x, z] = morroWorld(20, 0); return [P.x - x, P.z - z]; })()) < 200;
+  if (nearM && !R.said.cerco) { R.said.cerco = 1; toast('🚨 Operação policial! A PM está CERCANDO a comunidade: viaturas e o blindado do BOPE em todas as entradas.', 'bad'); feed('🚨 Operação da PM no morro'); sfx('tiro'); }
+  if (nearM && back && !R.said.fim && R.t > R.dur - 30) { R.said.fim = 1; toast('🚔 A PM está recuando: fim da operação.', 'pink'); }
+  try { raidHeliTick(R, dt, t, nearM, back); } catch (e) { }
   // todos os traficantes do morro entram na troca de tiro: os do morro, o bonde e a tropa da facção
   const F = morroFighters();
   const near = Math.hypot(...(() => { const [x, z] = morroWorld(20, 0); return [P.x - x, P.z - z]; })()) < 120;
   for (const c of R.cops) {
     const g = c.g; if (c.dead) { animSkater(g, { walk: true, v: 0, fallT: 1 }, t); continue; }
+    if (c.rope) { c.rope.y -= dt * 3.2; const H = R.heli; if (H) { c.x = H.x + (c.tt - 16) * 0.3; c.z = H.z; } g.position.set(c.x, Math.max(c.rope.gy, c.rope.y), c.z); animSkater(g, { climb: (t * 0.6) % 1, walk: true, v: 0, fallT: 0 }, t); if (c.rope.y <= c.rope.gy) { c.rope = null; const [mx, mz] = morroWorld(c.d, c.tt); c.x = mx; c.z = mz; } continue; }
     const [x, z] = morroWorld(c.d, c.tt); c.x = x; c.z = z;
     let tgt = null, bd = 60; for (const o of F) { const k = Math.hypot(o.x - x, o.z - z); if (k < bd) { bd = k; tgt = o; } }
     const pT = !isAdm() && (S.shift === 'traficante' || S.gang) && !P.drive && !P.down && Math.hypot(P.x - x, P.z - z) < 30;
-    const want = back ? -16 : c.stop, mv = (want - c.d), sp = back ? 3.4 : (tgt && bd < 30 ? 0.8 : 2.2);
+    const want = back ? -16 : c.stop, mv = c.hold && !back ? 0 : (want - c.d), sp = back ? 3.4 : (tgt && bd < 30 ? 0.8 : 2.2);
     if (Math.abs(mv) > 0.2) c.d += Math.sign(mv) * Math.min(Math.abs(mv), sp * dt);
     g.position.set(x, groundH(x, z), z);
     const a = tgt && !back ? Math.atan2(tgt.x - x, tgt.z - z) : Math.atan2(...(() => { const [fx, fz] = morroWorld(c.d + (back ? -1 : 1), c.tt); return [fx - x, fz - z]; })());
