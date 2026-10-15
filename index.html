@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.14-56';
+const BUILD = '2026.10.14-57';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -4020,6 +4020,7 @@ function bigmapClick(e) {
   const d = city.doors.reduce((b, d) => { const k = Math.hypot(d.x - x, d.z - z); return k < b[0] ? [k, d] : b; }, [12, null])[1];
   if (d) { setGps(d.x, d.z, d.label); } else if (inMorro(x, z, 2)) setGps(x, z, MORRO_NAME[cityId()]); else setGps(clamp(x, -OUT_N + 5, OUT_N - 5), clamp(z, -OUT_N + 5, outZMax() - 2), label);
   drawCityMapOn(cv, 0, 0, Rad);
+  if (city.taxiPick) { city.taxiPick = false; setTimeout(() => { openPanel('central'); const el = $('cc-dest'); if (el) el.value = '0'; }, 350); } // volta para a Central com o ponto escolhido
 }
 
 /* =========================================================
@@ -4453,7 +4454,7 @@ function updateCity(dt, t) {
     else if (near.type === 'hospexit') { pr.textContent = `${key} · Sair do hospital`; pr.hidden = false; if (tap('act')) leaveHospital(); }
     else if (near.type === 'entregar') { pr.textContent = `${key} · Entregar o pedido para ${near.p.name}`; pr.hidden = false; if (tap('act')) ccDeliver(near.p); }
     else if (near.type === 'tratar') { pr.textContent = `${key} · Atender ${near.p.name}`; pr.hidden = false; if (tap('act')) ccTreat(near.p); }
-    else if (near.type === 'socorrer') { pr.textContent = `${key} · Socorrer ${near.p.name}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'socorrido', payload: { to: near.p.id, by: S.name } }); try { const T = CC.take; if (T && T.c.from === near.p.id && !T.arr) { T.arr = Date.now(); T.job = S.shift; ccSend0('cc_arrive', { id: T.id, to: T.c.from }); } } catch (e) { } const g = earn(jobPay('socorrista', 260)); addXP(45); toast(`Você salvou ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('level'); } }
+    else if (near.type === 'socorrer') { pr.textContent = `${key} · Socorrer ${near.p.name}`; pr.hidden = false; if (tap('act')) { const amb = samuRescue(near.p); if (!amb) NET.ch && NET.ch.send({ type: 'broadcast', event: 'socorrido', payload: { to: near.p.id, by: S.name } }); try { const T = CC.take; if (T && T.c.from === near.p.id && !T.arr) { T.arr = Date.now(); T.job = S.shift; ccSend0('cc_arrive', { id: T.id, to: T.c.from }); } } catch (e) { } const g = earn(jobPay('socorrista', 260)); addXP(45); toast(`Você salvou ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('level'); } }
     else if (near.type === 'rideexit') { pr.textContent = `${key} · Descer`; pr.hidden = false; if (tap('act')) endRide(); }
     else if (near.type === 'carona') { const lk = near.p.t && near.p.t.lk, moto = near.p.t && VEH[near.p.t.vh] && VEH[near.p.t.vh].kind === 'moto'; pr.textContent = lk ? `🔒 ${moto ? 'Moto' : 'Carro'} de ${near.p.name} trancado` : `${key} · Entrar ${moto ? 'na garupa da moto' : 'no carro'} de ${near.p.name}`; pr.hidden = false; if (tap('act')) { if (lk) toast('🔒 Está trancado.', 'bad'); else askRide(near.p); } }
     else if (near.type === 'prender') { pr.textContent = `${key} · Prender ${near.p.name} ${'★'.repeat(near.p.t.wd)}`; pr.hidden = false; if (tap('act')) { NET.ch && NET.ch.send({ type: 'broadcast', event: 'prisao', payload: { to: near.p.id, by: 'o policial ' + S.name } }); try { ccArrestHook(near.p); } catch (e) { } const g = earn(jobPay('policial', 220)); addXP(40); toast(`Você prendeu ${near.p.name}! +$${fmt(g)}`, 'good'); sfx('coin'); } }
@@ -5407,7 +5408,7 @@ function onRideMsg(ev, d) {
   else if (ev === 'carona_sair') { const dr = P.drive; if (dr && dr.pass) { dr.pass = dr.pass.filter(x => x !== d.id); if (dr.seat) delete dr.seat[d.id]; } }
 }
 function endRide(silent) {
-  const r = P.ride; if (!r) return; P.ride = null; city.player.visible = true;
+  const r = P.ride; if (!r) return; if (P.maca && !silent) return toast('🚑 Você está na maca: o socorrista vai te deixar no Hospital.', 'pink'); P.ride = null; city.player.visible = true;
   if (NET.ch) NET.ch.send({ type: 'broadcast', event: 'carona_sair', payload: { to: r.id, id: NET.user.id } });
   P.x += Math.cos(P.h) * 1.8; P.z -= Math.sin(P.h) * 1.8; P.v = 0; if (!silent) sfx('ui');
 }
@@ -6265,7 +6266,7 @@ function ambulanceMesh() {
 }
 function updateSamu(dt) {
   const S2 = city.samu; if (!S2) return; S2.t += dt;
-  if (S2.st === 'chamado' && S2.t > S2.wait && !(typeof CC !== 'undefined' && CC.mine && CC.mine.svc === 'samu' && CC.mine.byId && S2.t < 120)) { // socorrista real a caminho: a ambulância de figurante espera (até 2 min)
+  if (S2.st === 'chamado' && S2.t > S2.wait && !(typeof CC !== 'undefined' && CC.mine && CC.mine.svc === 'samu' && CC.mine.byId && S2.t < 120) && !P.maca) { // socorrista real a caminho: a ambulância de figurante espera (até 2 min)
     const a = rand(0, TAU); let x = P.x + Math.cos(a) * 45, z = P.z + Math.sin(a) * 45; x = clamp(x, -105, 105); z = clamp(z, -105, 105);
     S2.m = ambulanceMesh(); S2.x = x; S2.z = z; city.scene.add(S2.m); S2.st = 'vindo'; toast('A ambulância do SAMU está chegando!', 'pink');
   }
@@ -6321,7 +6322,7 @@ function onSamuCall(d) {
   if (S.shift !== 'socorrista' || (typeof CC !== 'undefined' && NET.online)) return; // com a central, o chamado chega por ela city.calls = city.calls || {}; city.calls[d.id] = d;
   setGps(d.x, d.z, `Vítima: ${d.name}`); toast(`🚑 Chamado do SAMU: ${d.name} ferido! Local no GPS.`, 'pink'); sfx('level');
 }
-function onRescued(d) { if (NET.user && d.to === NET.user.id && P.down) { clearSamu(); toHospital(`socorrista ${d.by}`); } }
+function onRescued(d) { if (NET.user && d.to === NET.user.id && P.down) { clearSamu(); if (d.amb) { P.maca = { by: d.by, byId: d.byId, t: Date.now() }; toast(`🚑 O socorrista ${d.by} te colocou na maca. A ambulância já vai te levar ao Hospital.`, 'pink'); return; } toHospital(`socorrista ${d.by}`); } }
 /* ferimento na corrida: com 0% de vida a corrida acaba e você vai para o hospital */
 function raceHurt(n) {
   if (!R || R.state !== 'race') return; P.hp = Math.max(0, P.hp - n); renderHp();
@@ -15059,6 +15060,7 @@ const FOOD = [{ n: 'X-Tudo', p: 28, i: '🍔' }, { n: 'Pizza', p: 45, i: '🍕' 
 const deliveryFee = () => 15;
 function ccDests() {
   const L = [{ l: 'Praça', x: 0, z: 10 }], seen = new Set(['Praça']);
+  if (S.gps && Math.hypot(S.gps.x - P.x, S.gps.z - P.z) > 20) L.unshift({ l: `📍 ${String(S.gps.label || 'Ponto no mapa').slice(0, 30)}`, x: S.gps.x, z: S.gps.z }); // ponto marcado no mapa vem primeiro
   const h = typeof homeDoor === 'function' && homeDoor(); if (h) { L.push({ l: 'Minha casa', x: h.x, z: h.z }); seen.add('Minha casa'); }
   for (const d of city.doors) { if (d.inside || !d.label || Math.abs(d.x) > 380 || (d.kind === 'biz' && !d.biz) || /elevador|hangar/i.test(d.kind)) continue; const l = String(d.label).replace(/^[^\wÀ-ú]+/u, '').trim().slice(0, 34); if (!l || seen.has(l)) continue; seen.add(l); L.push({ l, x: d.x, z: d.z }); }
   return L.slice(0, 40);
@@ -15904,6 +15906,32 @@ function s7Near() {
 }
 function s7Tick(now) { try { mecTowTick(now); gbTick(now); rcTick(now); rlTick(now); } catch (e) { console.warn('s7', e); } }
 
+/* ---- ambulância levando o jogador ferido até o hospital ---- */
+const AMB = { vit: null };
+const ambNear = () => city.myVeh && city.myVeh.V && city.myVeh.V.deco === 'samu' && city.myVeh.V.kind === 'car' ? city.myVeh : null;
+function samuRescue(p) { // socorrista com a ambulância por perto: coloca a vítima na maca em vez de mandar direto para o hospital
+  const a = ambNear(); if (!a || Math.hypot(a.x - p.x, a.z - p.z) > 35) return false;
+  AMB.vit = { id: p.id, name: p.name, t: Date.now() }; ccSend0('socorrido', { to: p.id, by: S.name, byId: ccMe(), amb: true });
+  toast(`🚑 ${p.name} está na maca. Entre na ambulância: a vítima embarca e o GPS leva ao Hospital.`, 'good'); sfx('ui'); return true;
+}
+function ambTick(now) {
+  const V = AMB.vit; if (V) {
+    const p = ccPeer(V.id), dr = P.drive; if (!p || now - V.t > 6 * 60000) { AMB.vit = null; return; }
+    if (!V.on && dr && dr.V.deco === 'samu' && Math.hypot(p.x - P.x, p.z - P.z) < 35) {
+      V.on = true; dr.pass = dr.pass || []; dr.seat = dr.seat || {}; if (!dr.pass.includes(V.id)) { dr.pass.push(V.id); dr.seat[V.id] = 1; }
+      ccSend0('samu_emb', { to: V.id, id: ccMe(), seat: 1, by: S.name }); const h = city.doors.find(d => d.kind === 'hospital'); if (h) setGps(h.x, h.z, '🏥 Hospital');
+      toast(`🚑 ${V.name} embarcou. Sirene ligada: leve até o Hospital!`, 'good'); sfx('level');
+    }
+    if (V.on) { const h = city.doors.find(d => d.kind === 'hospital'); if (h && Math.hypot(h.x - P.x, h.z - P.z) < 18) {
+      ccSend0('samu_hosp', { to: V.id, by: S.name }); if (dr && dr.pass) { dr.pass = dr.pass.filter(x => x !== V.id); if (dr.seat) delete dr.seat[V.id]; }
+      AMB.vit = null; clearGps(); const g = earn(jobPay('socorrista', 140)); const r = jobRec('socorrista'); r.real = (r.real || 0) + 1; ccRankCheck(); addXP(40);
+      toast(`🏥 ${V.name} entregue no Hospital! Transporte +$${fmt(g)}.`, 'good'); sfx('level'); } }
+  }
+  if (P.maca) { const q = ccPeer(P.maca.byId); if (!q || now - P.maca.t > 6 * 60000) { P.maca = null; if (P.ride) endRide(true); toHospital('SAMU'); } }
+}
+function onSamuEmb(d) { if (!NET.user || d.to !== NET.user.id || !P.maca) return; P.down = false; P.fallT = 0; P.ride = { id: d.id, seat: d.seat, moto: false }; P.onBoard = false; P.emote = null; toast(`🚑 Você está na ambulância com ${d.by}, a caminho do Hospital.`, 'pink'); }
+function onSamuHosp(d) { if (!NET.user || d.to !== NET.user.id) return; P.maca = null; if (P.ride) endRide(true); toHospital(`socorrista ${d.by}, de ambulância`); }
+
 /* ---- rádio ---- */
 function ccRadioSend(txt, loc) {
   const g = S.shift && CC_RADIO[S.shift]; if (!g) return toast('O rádio da equipe liga quando você está de serviço.', 'bad');
@@ -15961,7 +15989,7 @@ function ccTick() {
   }
   if (now - CC.rs > 5000) { CC.rs = now; ccRankCheck(); ccDot(); }
   try { ctTick(now); correTick(now); } catch (e) { }
-  s5Tick(now); s7Tick(now);
+  s5Tick(now); s7Tick(now); try { ambTick(now); } catch (e) { }
 }
 
 /* ---- tela da central ---- */
@@ -16013,7 +16041,7 @@ function PANEL_CENTRAL() {
   h += `<h3>🆘 Pedir ajuda</h3><p class="muted">O chamado vai na hora para quem está de serviço. Chegou perto, você avalia com estrelas.</p>`;
   for (const k in CC_SVC) {
     const V = CC_SVC[k], n = NET.online ? ccOnDuty(k) : 0;
-    if (V.dest) { const D = ccDests(); h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="gap:6px"><select id="cc-dest" style="flex:1;min-width:0">${D.map((d, i) => `<option value="${i}">${esc(d.l)} · ~$ ${taxiEst(P, d)}</option>`).join('')}</select><button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-taxi" ${m || svcMe === k ? 'disabled' : ''}>Chamar táxi</button></div><p class="muted" style="margin-top:4px">Preço pelo taxímetro (a estimativa aparece ao lado do destino).</p></div>`; continue; }
+    if (V.dest) { const D = ccDests(); h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="gap:6px"><select id="cc-dest" style="flex:1;min-width:0">${D.map((d, i) => `<option value="${i}">${esc(d.l)} · ~$ ${taxiEst(P, d)}</option>`).join('')}</select><button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-taxi" ${m || svcMe === k ? 'disabled' : ''}>Chamar táxi</button></div><div class="row" style="margin-top:6px"><button class="btn ghost sm" data-act="cc-taxi-map">🗺️ Escolher o destino no mapa</button></div><p class="muted" style="margin-top:4px">Preço pelo taxímetro (a estimativa aparece ao lado do destino). Marcou um ponto no mapa? Ele aparece primeiro na lista.</p></div>`; continue; }
     if (V.art) { const a = grafArt(), sel = (id, v) => `<select id="${id}">${GRAF_COLS.map(([c, nm]) => `<option value="${c}" ${c === v ? 'selected' : ''}>${nm}</option>`).join('')}</select>`; h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="flex-wrap:wrap;gap:6px"><input id="cg-txt" maxlength="16" placeholder="Nome ou marca" value="${esc(a.texto)}" style="width:140px">${sel('cg-c1', a.cor)}${sel('cg-c2', a.cor2)}<select id="cg-st">${GRAF_ST.map((s, i) => `<option value="${i}">${s}</option>`).join('')}</select><button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-graf" ${m || svcMe === k ? 'disabled' : ''}>Encomendar</button></div><p class="muted" style="margin-top:4px">O grafiteiro pinta na parede mais perto de você e a arte fica 7 dias para todo mundo ver. A partir de $ 100, pago quando ficar pronto.</p></div>`; continue; }
     if (V.menu) { h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="flex-wrap:wrap;gap:6px">${FOOD.map((f, i) => `<button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-food" data-i="${i}" ${m || svcMe === k || cashNow() < f.p + deliveryFee() ? 'disabled' : ''}>${f.i} ${esc(f.n)} · $ ${f.p}</button>`).join('')}</div><p class="muted" style="margin-top:4px">+ $ ${deliveryFee()} de entrega, pago quando chegar.</p></div>`; continue; }
     h += `<div class="card"><h4>${V.i} ${V.n} <span class="muted">(${V.tel})</span> <span class="pill ${n ? 'on' : ''}">${n} de serviço</span></h4><div class="row" style="flex-wrap:wrap;gap:6px">${V.why.map((w, i) => `<button class="btn sm ${n ? '' : 'ghost'}" data-act="cc-send" data-svc="${k}" data-i="${i}" ${m || (svcMe === k) ? 'disabled' : ''}>${esc(w)}</button>`).join('')}</div></div>`;
@@ -16046,6 +16074,7 @@ function ccAct(act, ds) {
     const art = { texto: String(($('cg-txt') || {}).value || S.name).trim().slice(0, 16) || S.name.slice(0, 16), cor: ($('cg-c1') || {}).value || '#ff4f7b', cor2: ($('cg-c2') || {}).value || '#ffcf3a', estilo: +($('cg-st') || {}).value || 0 };
     return ccSend('grafite', `Grafite: ${art.texto}`, { art, wall: { x: w.x, z: w.z, wx: w.wx, wz: w.wz, nx: w.nx, nz: w.nz, y: w.y || 0 } }); }
   if (act === 'ct-op') return ctOp(ds.id, ds.op);
+  if (act === 'cc-taxi-map') { city.taxiPick = true; openPanel('mapa'); return toast('🗺️ Toque no mapa onde você quer ir.', 'pink'); }
   if (act === 'cc-taxi') { const D = ccDests(), d = D[+($('cc-dest') || {}).value || 0]; return ccSend('taxi', `Corrida até ${d.l}`, { dest: { l: d.l, x: d.x, z: d.z } }); }
   if (act === 'cc-food') { const f = FOOD[+ds.i]; return ccSend('entrega', `Pedido: ${f.n}`, { item: f }); }
   if (act === 'cc-board') { const m = CC.mine; if (m && m.byId) { askRide({ id: m.byId, name: m.by }); closePanel(); } return; }
@@ -16111,7 +16140,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
-    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'samu_emb' }, ({ payload }) => onSamuEmb(payload)).on('broadcast', { event: 'samu_hosp' }, ({ payload }) => onSamuHosp(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }

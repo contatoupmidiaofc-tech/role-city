@@ -580,3 +580,10 @@ Quatro profissões novas na Agência de Empregos. Cada uma tem teste de entrada,
   - 🔎 **Nitidez extra:** um filtro de contraste adaptativo (como o CAS/FSR dos consoles) deixa contornos e texturas mais definidos quando o jogo baixa a resolução para não travar.
     - Fica em Configurações → Nitidez extra: Automática (padrão: só no celular, quando a resolução está reduzida), Sempre ou Desligada.
     - As cores ficam iguais nas duas versões do motor gráfico.
+
+### Build 2026.10.14-57 (Ambulância levando o jogador e táxi com destino no mapa)
+  - 🚑 **Ambulância de verdade:** quando o socorrista está com a ambulância do SAMU por perto (até 35 m) e toca em "Socorrer", a vítima vai para a maca.
+    - Quando o socorrista entra na ambulância, a vítima embarca junto e o GPS aponta para o Hospital. A vítima não consegue descer no caminho.
+    - Chegando no Hospital, a vítima acorda lá dentro e o socorrista ganha o transporte (+$ 140 × cargo).
+    - Sem ambulância por perto, continua como antes (vai direto para o Hospital). Se o socorrista sumir, a vítima vai para o Hospital sozinha depois de alguns minutos.
+  - 🗺️ **Táxi pelo mapa:** na Central, "Escolher o destino no mapa" abre o mapa da cidade. O passageiro toca onde quer ir e volta para a Central com esse ponto já escolhido, com a estimativa de preço. Qualquer ponto marcado no mapa também aparece primeiro na lista de destinos.
