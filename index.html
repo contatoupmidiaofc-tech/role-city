@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-67';
+const BUILD = '2026.10.15-68';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2763,13 +2763,13 @@ const SPECIAL = {
   '-84,0': { kind: 'concessionaria', label: 'Concessionária', sub: 'CARROS E MOTOS', color: 0xe53935, css: '#e53935' },
 };
 SPECIAL['-84,84'] = { kind: 'mecanica', label: 'Oficina do Zé', sub: 'MECÂNICA · REBAIXA', color: 0x37474f, css: '#ff8f00' };
-SPECIAL['84,84'] = { kind: 'armas', label: 'Armas do AJBZ', sub: 'LOJA DE ARMAS', color: 0x8b1e1e, css: '#c62828' };
+SPECIAL['42,84'] = { kind: 'armas', label: 'Armas do AJBZ', sub: 'LOJA DE ARMAS', color: 0x8b1e1e, css: '#c62828' };
 /* cada cidade tem as lojas em quarteirões diferentes e as suas comunidades (favelas) */
 const CITY_SHOPS = {
   rj: { roupas: '42,-42', skate: '-42,42', celular: '42,0', arena: '0,-42', tokens: '0,42', crew: '-42,0', agencia: '42,42', imobiliaria: '-42,-42', viagem: '84,0', concessionaria: '0,84' },
   ssa: { roupas: '0,42', skate: '-42,-42', celular: '-42,0', arena: '42,42', tokens: '42,0', crew: '0,-42', agencia: '-42,42', imobiliaria: '0,84', viagem: '-84,0', concessionaria: '-84,42' },
 };
-const FAVELA_BLOCKS = { sp: [], rj: ['-84,-84', '-84,-42', '-42,-84'], ssa: ['84,-84', '84,-42', '42,-84'] };
+const FAVELA_BLOCKS = { sp: [], rj: ['-84,-84', '-42,-84'], ssa: ['84,-84', '42,-84'] }; // a loja de armas do chefe fica dentro da favela no Rio e em Salvador
 function shopsFor(id) {
   const L = CITY_SHOPS[id]; if (!L) return SPECIAL;
   const out = {}; for (const k in SPECIAL) { const info = SPECIAL[k]; out[L[info.kind] || k] = info; } return out;
@@ -2890,12 +2890,12 @@ function buildCity() {
   const favelaBlock = (cx, cz) => {
     for (const ox of FAV_OFF) for (const oz of FAV_OFF) {
       if (rng() < 0.12) continue;
-      const w = 2.9 + rng() * 0.5, d = 2.9 + rng() * 0.5, fl = 1 + Math.floor(rng() * 3), x = cx + ox + (rng() - 0.5) * 0.3, z = cz + oz + (rng() - 0.5) * 0.3;
-      const brick = rng() < 0.45, c = brick ? pick([0xa0522d, 0xb5651d, 0x9c5a3c, 0xb0623a]) : pick([0xe8604c, 0xf2c94c, 0x5aa9e6, 0x7bc67b, 0xf28ca0, 0xf6f1e7, 0xb58ad6, 0xff9f43]);
-      favH.push({ x, z, w, d, h: fl * 2.8, c, tank: rng() < 0.6, fl });
+      const FS = FAV_STYLE[cid] || FAV_STYLE.rj, w = 2.9 + rng() * 0.5, d = 2.9 + rng() * 0.5, fl = FS.fl[0] + Math.floor(rng() * (FS.fl[1] - FS.fl[0] + 1)), x = cx + ox + (rng() - 0.5) * 0.3, z = cz + oz + (rng() - 0.5) * 0.3;
+      const brick = rng() < FS.brick, c = brick ? pick(FS.bpal) : pick(FS.pal);
+      favH.push({ x, z, w, d, h: fl * 2.8, c, tank: rng() < FS.tank, fl });
       city.colliders.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
     }
-    const tag = textSprite(cid === 'rj' ? 'COMUNIDADE DO MORRO' : 'FAVELA DO NORDESTE', { bg: '#15161a', fg: '#ffcf3a', size: 44, scale: [7, 1.2, 1] }); tag.position.set(cx, 10.5, cz); sc.add(tag);
+    const tag = textSprite(cid === 'rj' ? 'COMUNIDADE DO MORRO' : cid === 'sp' ? 'COMUNIDADE DA QUEBRADA' : 'FAVELA DO NORDESTE', { bg: '#15161a', fg: '#ffcf3a', size: 44, scale: [7, 1.2, 1] }); tag.position.set(cx, 10.5, cz); sc.add(tag);
   };
   for (const cx of BLOCKS) for (const cz of BLOCKS) {
     const key = cx + ',' + cz;
@@ -3027,6 +3027,12 @@ function cityExtras(sc) {
     city.addrs.push(p);
     if (b.h > 5) city.walls.push(alongX ? { x: p[0], z: p[1], wx: sx > 0 ? b.x1 + 0.07 : b.x0 - 0.07, wz: b.z, nx: sx, nz: 0 } : { x: p[0], z: p[1], wx: b.x, wz: sz > 0 ? b.z1 + 0.07 : b.z0 - 0.07, nx: 0, nz: sz });
   }
+  // paredes de grafite também nas laterais e fundos das lojas (as cidades cheias de lojas quase não têm prédio comum)
+  if (city.walls.length < 12) for (const key in shopsFor(cityId())) { const [cx, cz] = key.split(',').map(Number), xF = Math.abs(cx) >= Math.abs(cz), fx = xF ? -Math.sign(cx) : 0, fz = xF ? 0 : -Math.sign(cz);
+    for (const [nx, nz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { if (nx === fx && nz === fz) continue; city.walls.push({ x: cx + nx * 13.6, z: cz + nz * 13.6, wx: nx ? cx + nx * 10.07 : cx, wz: nz ? cz + nz * 10.07 : cz, nx, nz }); } }
+  // poucos prédios comuns (cidade cheia de lojas): os endereços também ficam nas calçadas das lojas, favelas e comércios
+  if (city.addrs.length < 16) for (const bx of BLOCKS) for (const bz of BLOCKS) { if (bx === 0 && bz === 0) continue; if (bx === HOME_LOT[0] && bz === HOME_LOT[1]) continue;
+    for (const [sx, sz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const p = [bx + sx * 13.6 + sz * 6, bz + sz * 13.6 + sx * 6]; if (!collide(p[0], p[1], 0.4)) city.addrs.push(p); } }
   // lanchonetes (retirada dos pedidos)
   city.kiosks = [];
   const KI = [[-28.4, 7, 'Pastelaria do Zé'], [28.4, -7, 'Açaí da Praça'], [7, -28.4, 'Burguer Rolê'], [-7, 28.4, 'Pizza Flip'], [-55.6, -84, 'Lanches 24h'], [84, 55.6, 'Coxinha Radical']];
@@ -3207,7 +3213,7 @@ function buildCritters(sc) {
   }
   // cachorros passeando pelas calçadas, gatos perto das paredes
   for (let i = 0; i < 4; i++) { const g = makeDog(pick([0xb07a3e, 0x2a2018, 0xe8dcc2, 0x8a5634])); sc.add(g); city.dogs.push({ g, bx: pick(BLOCKS), bz: pick(BLOCKS), u: rand(0, 107), dir: 1, spd: rand(1.2, 2.2), ph: 0, stopT: 0, barkT: rand(2, 8), x: 0, z: 0 }); }
-  for (let i = 0; i < 4; i++) { const w = pick(city.walls), g = makeCat(pick([0x15161a, 0xff9a3c, 0x9aa3ad, 0xf2efe6])); const x = w.wx + w.nx * 0.5 + rand(-2, 2) * w.nz, z = w.wz + w.nz * 0.5 + rand(-2, 2) * w.nx; g.position.set(x, 0, z); sc.add(g); city.cats.push({ g, hx: x, hz: z, x, z, h: rand(0, TAU), runT: 0 }); }
+  for (let i = 0; i < (city.walls.length ? 4 : 0); i++) { const w = pick(city.walls), g = makeCat(pick([0x15161a, 0xff9a3c, 0x9aa3ad, 0xf2efe6])); const x = w.wx + w.nx * 0.5 + rand(-2, 2) * w.nz, z = w.wz + w.nz * 0.5 + rand(-2, 2) * w.nx; g.position.set(x, 0, z); sc.add(g); city.cats.push({ g, hx: x, hz: z, x, z, h: rand(0, TAU), runT: 0 }); }
   // pombos na praça (voam quando você passa rápido)
   for (let i = 0; i < 14; i++) { const g = makeBird(pick([0x8a8f99, 0x6d717a, 0x9aa3ad, 0xb7bcc4]), 1.1); g.traverse(o => { o.castShadow = false; }); const x = rand(-10, 10), z = rand(-9, 11); g.position.set(x, 0.12, z); sc.add(g); city.pigeons.push({ g, x, z, y: 0.12, h: rand(0, TAU), st: 'chao', t: rand(0, 5), tx: 0, tz: 0 }); }
   // bandos no céu
@@ -4501,7 +4507,7 @@ function nextWaypoint(o) {
   [o.ix, o.iz] = pick(opts); o.tx = ROADS[o.ix]; o.tz = ROADS[o.iz];
 }
 function freeSpotNear(x, z, r) { for (let d = 0.4; d <= 6; d += 0.4) for (let i = 0; i < 16; i++) { const a = i / 16 * TAU, px = x + Math.sin(a) * d, pz = z + Math.cos(a) * d; if (!collide(px, pz, r)) return [px, pz]; } return null; }
-function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return true; if ((city.tour || city.helipad || city.homePad) && walkAreaY(x, z, r) != null) return false; if ((city.interior || city.jail || city.hospIn || city.shopIn) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return outerBlocked(x, z, r); }
+function collide(x, z, r) { for (const c of city.colliders) if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r && !(c.maxY != null && P.y > c.maxY)) return true; if ((city.tour || city.helipad || city.homePad) && walkAreaY(x, z, r) != null) return false; if ((city.interior || city.jail || city.hospIn || city.shopIn) && x > 400) return false; if (city.morro && inMorro(x, z, r)) return false; if (inPark(x, z, r)) return false; return outerBlocked(x, z, r); }
 function inRamp(x, z) { return city.ramps.some(c => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1); }
 
 let camYaw = 0;
@@ -5318,6 +5324,13 @@ function spawnStudent(first) {
    MORRO: favela de verdade no morro (dá para subir a pé, de skate, de carro ou de moto)
    ========================================================= */
 const MORRO_SIDE = { sp: ['z', 1], rj: ['x', -1], ssa: ['x', 1] };
+/* cada favela com a sua cara: SP de bloco e tijolo aparente, mais alta e cinza; Rio colorida e viva; Salvador em tons coloniais com telhado de barro */
+const FAV_STYLE = {
+  sp: { brick: 0.72, fl: [2, 4], tank: 0.85, roof: 0.05, pal: [0xb7b2a8, 0x9e9e9e, 0xd7ccc8, 0xc8b89a, 0x8d8d8d, 0xe0e0e0, 0xa1887f], bpal: [0xa0522d, 0x9c5a3c, 0x8d6e63] },
+  rj: { brick: 0.3, fl: [1, 3], tank: 0.6, roof: 0.08, pal: [0xff6fa8, 0xffd23f, 0x2ec4b6, 0x9be564, 0xff8c42, 0xa66bff, 0x4fc3ff, 0xff4f5e], bpal: [0xb5651d, 0xb0623a] },
+  ssa: { brick: 0.38, fl: [1, 2], tank: 0.4, roof: 0.6, pal: [0x4fa3d8, 0xf6f1e7, 0xf2c94c, 0xe57373, 0x7bc67b, 0xffb74d, 0x81d4fa], bpal: [0xa0522d, 0xb5651d] },
+};
+const favStyle = () => FAV_STYLE[cityId()] || FAV_STYLE.rj;
 const MORRO_NAME = { sp: 'Comunidade Vila Esperança', rj: 'Morro da Alegria', ssa: 'Alto do Céu Azul' };
 const NPC_GANG = { sp: 'Bonde do Ajbz', rj: 'Bonde do Ajbz', ssa: 'Bonde do Ajbz' };
 const MORRO_D = 95, MORRO_W = 62, MORRO_H = 24;
@@ -5378,10 +5391,11 @@ function buildMorro(sc) {
     if (Math.abs(t) < 5.2) continue; // escadaria
     if (row % 4 === 0) continue; // vielas que cortam o morro
     if (Math.abs(Math.abs(t) - 27) < 2.4) continue; // becos que sobem
+    if (mansT() && Math.abs(t - mansT()) < 15 && d > 76) continue; // quintal e portão da mansão do chefe (fora do centro)
     if (rng() < 0.08) continue;
-    const w = 3.4 + rng() * 0.6, dd = 3.4 + rng() * 0.6, fl = 1 + Math.floor(rng() * (d > 60 ? 2 : 3)), b0 = Math.min(morroHd(d - dd / 2), morroHd(d + dd / 2)) - 0.8, b1 = Math.max(morroHd(d - dd / 2), morroHd(d + dd / 2));
-    const brick = rng() < 0.5;
-    H.push({ d, t: t + (rng() - 0.5) * 0.4, w, dd, fl, base: b0, top: b1 + fl * 2.8, brick, c: brick ? 0xffffff : pick([0xe8604c, 0xf2c94c, 0x5aa9e6, 0x7bc67b, 0xf28ca0, 0xf6f1e7, 0xb58ad6, 0xff9f43, 0x9bd1a8]), tank: rng() < 0.65, flag: rng() < 0.09, ant: rng() < 0.25 });
+    const FS = favStyle(), w = 3.4 + rng() * 0.6, dd = 3.4 + rng() * 0.6, fl = FS.fl[0] + Math.floor(rng() * (FS.fl[1] - FS.fl[0] + (d > 60 ? 0 : 1))), b0 = Math.min(morroHd(d - dd / 2), morroHd(d + dd / 2)) - 0.8, b1 = Math.max(morroHd(d - dd / 2), morroHd(d + dd / 2));
+    const brick = rng() < FS.brick;
+    H.push({ d, t: t + (rng() - 0.5) * 0.4, w, dd, fl, base: b0, top: b1 + fl * 2.8, brick, c: brick ? 0xffffff : FS.pal[Math.floor(rng() * FS.pal.length)], tank: rng() < FS.tank, roof: rng() < FS.roof, flag: rng() < 0.09, ant: rng() < 0.25 });
   }
   const box = (o, x, z) => ax === 'x' ? [o.dd, o.w] : [o.w, o.dd];
   const brickM = new THREE.MeshLambertMaterial({ map: brickTex() }), paintM = new THREE.MeshLambertMaterial({ color: 0xffffff });
@@ -5408,6 +5422,8 @@ function buildMorro(sc) {
     city.mWalls.push({ x: fx + fwd[0] * 1.2, z: fz + fwd[1] * 1.2, wx: fx, wz: fz, nx: fwd[0], nz: fwd[1], y: gy });
     city.mHouses.push([x, z, sx, sz, o.brick ? '#b5651d' : '#' + o.c.toString(16).padStart(6, '0'), o.top + 0.2, o.d, o.t]);
   });
+  // telhado de barro (Salvador tem muito) em cima de algumas casas
+  { const RF = H.filter(o => o.roof); if (RF.length) { const rf = new THREE.InstancedMesh(new THREE.ConeGeometry(0.75, 1, 4).rotateY(Math.PI / 4), lam(0xb5502e), RF.length); RF.forEach((o, i) => { const [x, z] = morroWorld(o.d, o.t), [sx, sz] = box(o); rf.setMatrixAt(i, M4.compose(V(x, o.top + 0.2 + 0.6, z), Q0, V(sx * 1.08, 1.2, sz * 1.08))); }); rf.castShadow = true; sc.add(rf); } }
   for (const m of [hB, hP, slab, tm]) { m.castShadow = true; m.receiveShadow = true; sc.add(m); }
   sc.add(win); sc.add(door);
   // antenas, bandeiras do Brasil nas lajes e bandeirão no alto
@@ -6532,7 +6548,7 @@ Object.assign(SPECIAL, {
   '-42,-84': { kind: 'prefeitura', label: 'Prefeitura', sub: 'PREFEITURA', color: 0xd9c9a3, css: '#c9a227' },
   '84,42': { kind: 'igreja', label: 'Igreja', sub: 'IGREJA · CASAMENTOS', color: 0xf6f1e7, css: '#b58ad6' },
 });
-Object.assign(CITY_SHOPS.rj, { mecanica: '-84,0' }); Object.assign(CITY_SHOPS.ssa, { mecanica: '-84,-42' });
+Object.assign(CITY_SHOPS.rj, { mecanica: '-84,0', armas: '-84,-42' }); Object.assign(CITY_SHOPS.ssa, { mecanica: '-84,-42', armas: '84,-42' });
 Object.assign(CITY_SHOPS.rj, { hospital: '42,84', prefeitura: '84,-42', igreja: '-42,84' });
 Object.assign(CITY_SHOPS.ssa, { hospital: '84,0', prefeitura: '0,-84', igreja: '-42,-84' });
 Object.assign(DOOR_COL, { hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6', biz: '#ffcf3a', mansao: '#ffd700', hangar: '#d4a017' });
@@ -7381,11 +7397,53 @@ function stateFlagTex(id) {
     }
   });
 }
+/* mansão do AJBZ em cada morro: Salvador = a dourada (clássica); Rio = moderna branca com vidro e madeira;
+   São Paulo = industrial de tijolo, aço preto e jardim no terraço. Todas com o mesmo heliponto/cobertura no teto */
+const MANS_STYLE = { ssa: 'ouro', rj: 'moderna', sp: 'industrial' };
+const MANS_T = { ssa: 0, rj: -30, sp: 30 }; // posição no alto do morro (de lado a lado)
+const mansT = () => MANS_T[cityId()] || 0;
+function mansionBody(style, add, g, top) {
+  const id = cityId(), floors = [[22, 14, 0], [20, 12, 1.5], [14, 10, -2]];
+  if (style === 'moderna') {
+    const white = std(0xf7f7f4, 0.5), wood = std(0x9a6a3a, 0.7), black = std(0x15161a, 0.4, 0.5), glass = new THREE.MeshStandardMaterial({ color: 0x223646, roughness: 0.05, metalness: 0.7, emissive: 0x9fd6ff, emissiveIntensity: 0.06 });
+    add(boxGeo(26, 0.6, 17), std(0xe9e6df, 0.4), 0, 0.3, 0);
+    floors.forEach(([w, d, ox], i) => { const y = 0.6 + i * 4.2;
+      add(boxGeo(w, 0.45, d), white, ox, y + 3.98, 0); add(boxGeo(w, 0.35, d), white, ox, y + 0.18, 0); // lajes brancas finas
+      add(boxGeo(w - 0.4, 3.4, 0.08), glass, ox, y + 2.05, d / 2 - 0.2); add(boxGeo(w - 0.4, 3.4, 0.08), glass, ox, y + 2.05, -d / 2 + 0.2); // paredes inteiras de vidro
+      for (const sx of [1, -1]) add(boxGeo(0.5, 3.6, d), sx > 0 && i !== 1 ? wood : white, ox + sx * (w / 2 - 0.25), y + 2.1, 0);
+      for (let k = 1; k < 5; k++) add(boxGeo(0.08, 3.4, 0.12), black, ox - w / 2 + w * k / 5, y + 2.05, d / 2 - 0.15);
+      if (i === 1) for (let k = 0; k < 18; k++) add(boxGeo(0.12, 3.4, 0.12), wood, ox - w / 2 + 1 + k * (w - 2) / 17, y + 2.05, d / 2 + 0.4); // brises de madeira
+      if (i > 0) add(boxGeo(w, 1.1, 0.06), new THREE.MeshStandardMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.3 }), ox, y + 0.9, d / 2 + 1.1); });
+    add(boxGeo(5, 0.25, 3), wood, 0, 4.4, 8.4); for (const x of [-2.3, 2.3]) add(boxGeo(0.12, 3.8, 0.12), black, x, 2.5, 9.6); // marquise de madeira
+    add(boxGeo(2.4, 3.2, 0.12), glass, 0, 2.2, 7.06);
+    for (let k = 0; k < 6; k++) add(boxGeo(2.4, 0.2, 0.6), std(0xe9e6df, 0.4), 0, 0.1 + k * 0.1 - 0.4, 9.6 + k * -0.2);
+    const s = textSprite('👑 MANSÃO DO AJBZ · RIO', { bg: '#ffffff', fg: '#15161a', size: 50, scale: [7.5, 1.05, 1] }); s.position.set(0, 6.2, 9.2); g.add(s);
+    // piscina de borda infinita na frente, com deck de madeira e espreguiçadeiras
+    add(boxGeo(10, 0.4, 3.4), wood, -6, 0.8, 10.6); const w2 = add(new THREE.PlaneGeometry(9, 2.6), new THREE.MeshStandardMaterial({ color: 0x29b6f6, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.88 }), -6, 1.02, 10.6, -Math.PI / 2);
+    for (const x of [-9, -7, -5]) add(boxGeo(0.7, 0.25, 1.8), white, x, 1.2, 12.9);
+  } else if (style === 'industrial') {
+    const brick = new THREE.MeshLambertMaterial({ map: brickTex() }), steel = std(0x1b1d22, 0.45, 0.7), conc = std(0x8d8f93, 0.9), win = new THREE.MeshStandardMaterial({ color: 0x1f2a33, roughness: 0.15, metalness: 0.5, emissive: 0xffb74d, emissiveIntensity: 0.1 }), green = new THREE.MeshLambertMaterial({ color: 0x4caf50, flatShading: true });
+    add(boxGeo(26, 0.6, 17), conc, 0, 0.3, 0);
+    floors.forEach(([w, d, ox], i) => { const y = 0.6 + i * 4.2;
+      add(boxGeo(w, 4.2, d), brick, ox, y + 2.1, 0); add(boxGeo(w + 0.3, 0.3, d + 0.3), conc, ox, y + 4.2, 0);
+      for (let k = 0; k < Math.round(w / 3.4); k++) { const x = ox - w / 2 + (k + 0.5) * w / Math.round(w / 3.4); if (i === 0 && Math.abs(x) < 2) continue;
+        for (const zz of [d / 2 + 0.04, -d / 2 - 0.04]) { add(boxGeo(2.4, 2.8, 0.08), win, x, y + 2.2, zz); for (const gx of [-0.6, 0, 0.6]) add(boxGeo(0.06, 2.8, 0.12), steel, x + gx, y + 2.2, zz); for (const gy of [-0.7, 0.7]) add(boxGeo(2.4, 0.06, 0.12), steel, x, y + 2.2 + gy, zz); } } });
+    for (const x of [-11.2, 11.2]) add(boxGeo(0.4, 13, 0.4), steel, x, 6.6, 7.2); // pilares de aço
+    add(boxGeo(3, 3.4, 0.14), steel, 0, 2.3, 7.06); add(boxGeo(6, 0.3, 2.4), steel, 0, 4.6, 8.2);
+    for (let k = 0; k < 6; k++) add(boxGeo(2.4, 0.2, 0.6), conc, 0, 0.1 + k * 0.1 - 0.4, 9.6 + k * -0.2);
+    const neon = textSprite('AJBZ', { bg: '#15161a', fg: '#ff2d55', size: 80, scale: [5.5, 1.6, 1], stroke: '#ff2d55' }); neon.position.set(0, 7.2, 9.0); g.add(neon);
+    // jardim no terraço do 2º andar e caixa d'água de ferro (bem paulistano)
+    for (let k = 0; k < 7; k++) { add(boxGeo(1.2, 0.5, 1.2), conc, 6 + (k % 4) * 1.4, 9.2 + 0.25, -4 + Math.floor(k / 4) * 3.6); const b = add(new THREE.IcosahedronGeometry(0.75, 0), green, 6 + (k % 4) * 1.4, 10.2, -4 + Math.floor(k / 4) * 3.6); b.scale.y = 1.2; }
+    add(CYL(1.2, 1.2, 2.2, 14), steel, 7, top + 2.1, -3.2); for (const [x, z] of [[6, -4.2], [8, -4.2], [6, -2.2], [8, -2.2]]) add(boxGeo(0.12, 1.4, 0.12), steel, x, top + 0.7, z);
+  }
+}
 function mansaoFrame() { const [ax, s] = MORRO_SIDE[cityId()] || MORRO_SIDE.sp, f = ax === 'x' ? [-s, 0] : [0, -s]; return { ry: Math.atan2(f[0], f[1]), f }; }
 function buildMansion(sc) {
-  const id = cityId(), { ry, f } = mansaoFrame(), [cx, cz] = morroWorld(101, 0), y0 = MORRO_H, g = new THREE.Group(); g.position.set(cx, y0, cz); g.rotation.y = ry; sc.add(g); city.mansaoG = g;
+  const id = cityId(), { ry, f } = mansaoFrame(), [cx, cz] = morroWorld(101, mansT()), y0 = MORRO_H, g = new THREE.Group(); g.position.set(cx, y0, cz); g.rotation.y = ry; sc.add(g); city.mansaoG = g;
   const add = (geo, m, x, y, z, rx = 0, ryy = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ryy, 0); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
   const gold = goldM(), marble = std(0xf4f1ea, 0.35, 0.05), glass = new THREE.MeshStandardMaterial({ color: 0x1b2a3a, roughness: 0.1, metalness: 0.6, emissive: 0xffd27a, emissiveIntensity: 0.12 }), rail = new THREE.MeshStandardMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.35, roughness: 0.05 });
+  const top = 0.6 + 3 * 4.2, style = MANS_STYLE[id] || 'ouro'; city.mansaoCrown = null;
+  if (style === 'ouro') {
   add(boxGeo(26, 0.6, 17), marble, 0, 0.3, 0);
   for (let i = 0; i < 3; i++) {
     const w = 22 - i * 1.6, d = 14 - i * 1.2, y = 0.6 + i * 4.2;
@@ -7401,9 +7459,10 @@ function buildMansion(sc) {
   for (let k = 0; k < 6; k++) add(boxGeo(1.8, 0.2, 0.6), marble, 0, 0.1 + k * 0.1 - 0.4, 9.6 + k * -0.2);
   const sign = textSprite('👑 MANSÃO DO AJBZ', { bg: '#15161a', fg: '#ffd700', size: 52, scale: [7, 1.1, 1], stroke: '#8a5a1e' }); sign.position.set(0, 7.9, 9.2); g.add(sign);
   // coroa de ouro no topo, letreiro e bandeiras
-  const top = 0.6 + 3 * 4.2;
   const crown = new THREE.Group(); const ring = new THREE.Mesh(CYL(1.6, 1.6, 0.8, 24, 1, true), gold); ring.material.side = THREE.DoubleSide; crown.add(ring); for (let k = 0; k < 8; k++) { const a = k / 8 * TAU, c = new THREE.Mesh(new THREE.ConeGeometry(0.28, 1, 8), gold); c.position.set(Math.cos(a) * 1.6, 0.85, Math.sin(a) * 1.6); crown.add(c); const gem = new THREE.Mesh(SPH(0.15, 10, 8), new THREE.MeshStandardMaterial({ color: [0xd8202f, 0x2e9e5b, 0x1e5bb8][k % 3], emissive: [0xd8202f, 0x2e9e5b, 0x1e5bb8][k % 3], emissiveIntensity: 0.6 })); gem.position.set(Math.cos(a) * 1.62, 0.1, Math.sin(a) * 1.62); crown.add(gem); }
   crown.position.set(5.5, top + 0.6, -2); g.add(crown); city.mansaoCrown = crown;
+  } else mansionBody(style, add, g, top);
+
   const fm = (tex) => new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }), poleM = std(0xcfd3d8, 0.3, 0.8);
   [[-8.9, brFlagTex()], [8.9, stateFlagTex(id)]].forEach(([x, tex]) => {
     const pole = add(CYL(0.07, 0.09, 6, 8), poleM, x, top + 3, -4.8); const fg = new THREE.PlaneGeometry(2.8, 2, 10, 1); fg.translate(1.4, 0, 0);
@@ -7423,18 +7482,20 @@ function buildMansion(sc) {
   // muro com portão de ouro
   for (const sx of [1, -1]) { add(boxGeo(9.5, 1.6, 0.4), marble, sx * 8.3, 1.4, 11.2); for (let k = 0; k < 9; k++) add(boxGeo(0.12, 1.4, 0.12), gold, sx * (4 + k * 1), 2.9, 11.2); }
   // porta (anel de entrada) e saída para a escadaria
-  const [dx, dz] = morroWorld(92.4, 0), [ox, oz] = morroWorld(90.6, 0);
+  const [dx, dz] = morroWorld(92.4, mansT()), [ox, oz] = morroWorld(90.6, mansT());
+  // a mansão é sólida: ninguém atravessa as paredes (no teto/heliponto vale o piso de cima)
+  { const P0 = g.localToWorld(new THREE.Vector3(-11.4, 0, -7.4)), P1 = g.localToWorld(new THREE.Vector3(11.4, 0, 7.2)); city.colliders.push({ x0: Math.min(P0.x, P1.x), x1: Math.max(P0.x, P1.x), z0: Math.min(P0.z, P1.z), z1: Math.max(P0.z, P1.z), maxY: y0 + 12, mansao: true }); }
   const rg = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.7, side: THREE.DoubleSide })); rg.position.set(dx, morroHd(92.4) + 0.15, dz); sc.add(rg);
   city.doors.push({ kind: 'mansao', label: '👑 Mansão do Ajbz', x: dx, z: dz, y: morroHd(92.4), ring: rg, out: [ox, oz, ry] });
 }
 function mansionGuards(sc) {
   for (const t of [-3.4, 3.4]) {
-    const [x, z] = morroWorld(91.6, t), g = makeSkater(roleLook('traficante', t > 0 ? 1 : 2), 'Segurança do Chefe', '#ff6b6b'); g.userData.ped = true; sc.add(g);
+    const [x, z] = morroWorld(91.6, t + mansT()), g = makeSkater(roleLook('traficante', t > 0 ? 1 : 2), 'Segurança do Chefe', '#ff6b6b'); g.userData.ped = true; sc.add(g);
     city.thugs.push({ role: 'traficante', g, x, z, h: mansaoFrame().ry, hx: x, hz: z, idle: true, fallT: 0, ph0: rand(0, 40), gun: 'fuzil', hostT: 0, shotT: rand(1, 2), talkCd: 0, guard: true });
   }
 }
 function enterMansion(d) {
-  if (!isAdm()) { toast(`👑 Mansão do chefe ${CHIEF}. Os seguranças só deixam o chefe entrar.`, 'bad'); const gd = (city.thugs || []).find(o => o.guard); if (gd) bubble(gd.g, 'Aqui só entra o chefe!', 2.5); return; }
+  if (!isAdm() && !admLibCheck()) { toast(`👑 Mansão do chefe ${CHIEF}. Os seguranças só deixam o chefe entrar (ou quem ele liberar pelo ID: ${myCode() || '—'}).`, 'bad'); const gd = (city.thugs || []).find(o => o.guard); if (gd) bubble(gd.g, 'Aqui só entra o chefe!', 2.5); return; }
   enterShop(Object.assign({}, d, { kind: 'mansao1', label: 'Mansão do Ajbz' }));
 }
 function goFloor(n) {
@@ -11513,7 +11574,7 @@ function updateEntourage(E, own, dt, t) {
   }
 }
 /* filhas em casa (no quintal da mansão) quando não estão com o pai */
-function girlsHomeSpot() { if (!city.morro) return null; const [x, z] = morroWorld(95.5, 2.5); return { x, z }; }
+function girlsHomeSpot() { if (!city.morro) return null; const [x, z] = morroWorld(91.2, mansT() + 6); return { x, z }; } // no quintal, na frente da mansão
 function updateGirlsHome(dt, t) {
   const H = city.girlsHome, want = (isAdm() || hasKids()) && !(S.filhas && S.filhas.comigo) && kidsHomeSpot();
   if (!want) { if (H) { for (const k of H.list) city.scene.remove(k.g); city.girlsHome = null; } return; }

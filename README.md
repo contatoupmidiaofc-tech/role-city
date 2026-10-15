@@ -695,3 +695,20 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 👑 **ADM libera pelo ID:** no painel de Segurança, o ADM digita o ID do jogador.
     - Quem for liberado **sobe o morro** e **entra na mansão do ADM**, mesmo com a casa fechada.
     - A liberação fica salva. O ADM pode tirar quando quiser.
+
+### Build 2026.10.15-68 (Favelas diferentes e mansões do AJBZ)
+  - 🏘️ **Cada favela com a sua cara** (no morro e nos quarteirões de favela da cidade):
+    - **São Paulo (Comunidade Vila Esperança):** mais bloco e tijolo aparente, cinza, casas mais altas (2 a 4 andares) e muitas caixas d'água azuis.
+    - **Rio (Morro da Alegria):** casas coloridas e vivas (rosa, amarelo, turquesa, verde-limão, roxo).
+    - **Salvador (Alto do Céu Azul):** tons coloniais em pastel e muitas casas com **telhado de barro**.
+  - 👑 **Mansão do AJBZ diferente em cada morro e em lugares diferentes do alto:**
+    - **Salvador:** a mansão dourada clássica, no centro do alto do morro.
+    - **Rio:** mansão **moderna**, branca, com paredes de vidro, brises de madeira, marquise e piscina de borda infinita, no lado esquerdo do alto.
+    - **São Paulo:** mansão **industrial**, de tijolo aparente com janelas de aço, pilares pretos, letreiro neon AJBZ, jardim no terraço e caixa d'água de ferro, no lado direito do alto.
+    - Todas têm o heliponto e a cobertura no teto, os seguranças na porta e quintal na frente.
+    - **A mansão agora é sólida:** ninguém atravessa as paredes. No teto, o heliponto continua funcionando.
+    - Quem o chefe liberou pelo ID também entra.
+  - 🔫 **Loja de Armas no lugar certo:** ela estava em cima do lote da casa (84,84). Agora fica no quarteirão 42,84 em São Paulo e **dentro da favela** no Rio (-84,-42) e em Salvador (84,-42).
+  - 🐛 **Correções:**
+    - No Rio e em Salvador não sobrava nenhum prédio comum. Agora os endereços de entrega também ficam nas calçadas das lojas, e as paredes de grafite também nas laterais e fundos das lojas.
+    - Os gatos não quebram mais a cidade quando falta parede.
