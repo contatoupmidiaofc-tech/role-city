@@ -861,6 +861,12 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - **Amarela** com letras verdes: "FLÁVIO BOLSONARO" e o **22** grande na frente; "FLÁVIO" e o **22** grande nas costas.
     - **Verde** com letras amarelas, mesmo desenho.
 
+### Build 2026.10.15-90 (Proteções — etapa 2, preparação do servidor)
+
+- O jogo agora lê a resposta do servidor depois de cada save e acompanha qualquer correção de tokens ou dinheiro feita lá (`cloudSave`).
+- Durante o resgate de uma compra (`mpResgatar`) o salvamento automático fica pausado, para um save antigo não apagar os tokens comprados.
+- Script do banco pronto em `supabase/migrations/20261015_guarda_economia_servidor.sql` (ainda **não aplicado**): o servidor vira dono do saldo de tokens (só sobe por compra aprovada ou bônus da caixa lendária), barra saltos de dinheiro acima de $ 20 milhões + $ 1 milhão por minuto, limita o nível do ranking a +3 por save e deixa a conta do ADM livre. Para aplicar: Supabase › SQL Editor › colar o arquivo › Run.
+
 ### Build 2026.10.15-89 (Proteções contra trapaça — etapa 1, sem mexer no banco)
 
 - **ADM verificado no servidor:** o e-mail do login é conferido pela Supabase (`auth.getUser`) e a marca de ADM fica fechada dentro do jogo (`ADMQ`). Mudar `NET.admin` pelo console do navegador não liga mais nada.

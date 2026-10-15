@@ -773,7 +773,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-89';
+const BUILD = '2026.10.15-90';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -16690,7 +16690,16 @@ async function cloudSave() {
   if (!NET.user || !S || NET.saving) return;
   NET.saving = true; NET.dirty = false;
   try {
-    const { error } = await NET.sb.from('jogadores').upsert({ id: NET.user.id, apelido: S.name, save: S, nivel: S.level, reputacao: S.rep, divisao: division().id, semana_id: S.week.id, semana_pts: S.week.pts, atualizado_em: new Date().toISOString() });
+    const sent = { t: +S.tokens || 0, c: +S.coins || 0 };
+    const { data, error } = await NET.sb.from('jogadores').upsert({ id: NET.user.id, apelido: S.name, save: S, nivel: S.level, reputacao: S.rep, divisao: division().id, semana_id: S.week.id, semana_pts: S.week.pts, atualizado_em: new Date().toISOString() }).select('save').maybeSingle();
+    // o servidor é o dono do saldo: se ele corrigiu tokens ou dinheiro, o jogo acompanha
+    const sv = data && data.save;
+    if (!error && sv) {
+      const dt = sent.t - (+sv.tokens || 0), dc = sent.c - (+sv.coins || 0);
+      if (dt > 0) S.tokens = Math.max(0, (+S.tokens || 0) - dt);
+      if (dc > 0) S.coins = Math.max(0, (+S.coins || 0) - dc);
+      if (dt > 0 || dc > 0) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); updateHUD(); toast('🛡️ O servidor corrigiu seu saldo.', 'bad'); } catch (e) { } }
+    }
     if (error) { if (error.code === '23505') toast('Esse apelido já é de outro jogador. Crie um personagem com outro nome.', 'bad'); else NET.dirty = true; }
   } catch (e) { NET.dirty = true; }
   NET.saving = false;
@@ -19029,8 +19038,12 @@ async function mpPagar() {
 }
 async function mpResgatar(silencio) {
   if (!NET.user || !NET.sb || !S) return 0;
+  // segura o salvamento automático enquanto resgata: um save antigo chegando depois apagaria a compra no servidor
+  for (let i = 0; i < 40 && NET.saving; i++) await new Promise(ok => setTimeout(ok, 250));
+  NET.saving = true;
   try {
     const { data, error } = await NET.sb.rpc('resgatar_tokens'); const n = error ? 0 : (+data || 0);
+    NET.saving = false;
     if (n > 0) {
       ECO.give(n); S.tokens += n; S.purchases = S.purchases || []; S.purchases.push(`${new Date().toLocaleDateString('pt-BR')} · +${fmt(n)} T · Mercado Pago`);
       persist(); try { updateHUD(); } catch (e) { } try { await cloudSave(); } catch (e) { }
@@ -19039,7 +19052,7 @@ async function mpResgatar(silencio) {
       if (panelKind === 'tokens') renderPanel();
     }
     return n;
-  } catch (e) { return 0; }
+  } catch (e) { NET.saving = false; return 0; }
 }
 const MP = { pend: 0, t: 0 };
 (function mpVolta() {
