@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.14-57';
+const BUILD = '2026.10.15-58';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -16149,6 +16149,7 @@ function netJoinPlaza() {
   NET.ch = ch;
 }
 function netLeavePlaza() {
+  areaLeave();
   if (!NET.ch) return; try { NET.sb.removeChannel(NET.ch); } catch (e) { }
   NET.ch = null; NET.online = false; for (const id in NET.peers) removePeer(id); updateOnlineChip();
 }
@@ -16184,7 +16185,7 @@ function peerParked(p, d) {
 function removePeer(id) { try { liveDrop(id); } catch (e) { } const p = NET.peers[id]; if (!p) return; city.scene.remove(p.g); if (p.veh) city.scene.remove(p.veh); if (p.pveh) city.scene.remove(p.pveh); delete NET.peers[id]; }
 function onPeerPos(d) {
   const p = NET.peers[d.id]; if (!p) return;
-  p.t = d; if (!p.seen) { p.seen = true; p.x = d.x; p.y = d.y; p.z = d.z; p.h = d.h; p.g.visible = true; }
+  p.t = d; p.tAt = performance.now(); if (!p.seen) { p.seen = true; p.x = d.x; p.y = d.y; p.z = d.z; p.h = d.h; p.g.visible = true; }
 }
 function onPeerChat(d) { const p = NET.peers[d.id]; if (p) bubble(p.g, d.msg, 6); pushChat(d.name, d.msg, false, true); }
 function netChat(msg) { if (NET.ch && NET.online) NET.ch.send({ type: 'broadcast', event: 'chat', payload: { id: NET.user.id, name: S.name, msg } }); }
@@ -16253,18 +16254,44 @@ function onPeerVoice(d) {
   }
 })();
 /* chamado todo quadro na cidade: envia posição ~8x por segundo e anima quem está online */
+/* ---- economia do online: a posição vai menos vezes, só quando muda, e em ritmo rápido só para quem está na mesma área da cidade ----
+   Cada mensagem recebida por cada jogador conta no plano do Supabase; parado = 1 a cada 2,5 s; andando = 4 por segundo só para a vizinhança. */
+const NETX = { cells: {}, cur: null, sig: '', acc: 0, gAcc: 0, lx: 0, ly: 0, lz: 0, lh: 0, sent: 0 };
+const AREA = 160;
+const areaKey = (cx, cz) => `pa_${cityId()}_${cx}_${cz}`;
+function areaSync() { // canais da área onde estou e das 8 vizinhas
+  if (!NET.online || !NET.sb || !NET.user) return;
+  const cx = Math.floor(P.x / AREA), cz = Math.floor(P.z / AREA), k = cityId() + ':' + cx + ',' + cz; if (k === NETX.cur) return; NETX.cur = k; NETX.own = areaKey(cx, cz);
+  const want = new Set(); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) want.add(areaKey(cx + i, cz + j));
+  for (const n in NETX.cells) if (!want.has(n)) { try { NET.sb.removeChannel(NETX.cells[n]); } catch (e) { } delete NETX.cells[n]; }
+  for (const n of want) if (!NETX.cells[n]) { const ch = NET.sb.channel(n, { config: { broadcast: { self: false } } }); ch.on('broadcast', { event: 'pos' }, ({ payload }) => onPeerPos(payload)).subscribe(); NETX.cells[n] = ch; }
+}
+function areaLeave() { for (const n in NETX.cells) { try { NET.sb.removeChannel(NETX.cells[n]); } catch (e) { } } NETX.cells = {}; NETX.cur = null; NETX.own = null; }
+function netSendTick(dt) {
+  if (!NET.ch) return; NETX.acc += dt; NETX.gAcc += dt; areaSync(); // parado também escuta a vizinhança
+  const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100, h = r2(((P.h % TAU) + TAU) % TAU);
+  const pay = { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h, v: r2(P.v), b: P.onBoard ? 1 : 0, sg: S.skateGuardado ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, vc: P.drive && P.drive.V.tc ? P.drive.V.tc : 0, vlo: P.drive && P.drive.V.low ? 1 : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), fk: (isAdm() || hasKids()) && S.filhas && S.filhas.comigo ? 1 : 0, pv: myParked(), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] };
+  const sig = [pay.b, pay.sg, pay.a, pay.f, pay.vh, pay.vc, pay.vlo, pay.dn, pay.wd, pay.rd, pay.vl, pay.bk, pay.lk, pay.fk, pay.em, pay.fp, pay.rm, pay.ps, JSON.stringify(pay.pv)].join('|');
+  const dh = Math.abs(Math.atan2(Math.sin(h - NETX.lh), Math.cos(h - NETX.lh)));
+  const moving = Math.abs(pay.v) > 0.3 || Math.hypot(pay.x - NETX.lx, pay.z - NETX.lz) > 0.06 || Math.abs(pay.y - NETX.ly) > 0.06 || dh > 0.05;
+  const changed = sig !== NETX.sig, hidden = document.hidden || !$('panel').hidden && !moving;
+  const step = Math.abs(pay.v) > 6 ? 0.25 : 0.34; // a pé 3 por segundo, veículo rápido 4 (o outro lado prevê o movimento entre uma e outra)
+  if (changed || NETX.gAcc >= (hidden ? 5 : 2.5)) { // todo mundo da cidade: mudanças de estado e o batimento lento
+    NET.ch.send({ type: 'broadcast', event: 'pos', payload: pay }); NETX.gAcc = 0; NETX.acc = 0;
+  } else if (moving && NETX.acc >= step) { // só a vizinhança: o movimento suave
+    const ch = NETX.cells[NETX.own]; (ch || NET.ch).send({ type: 'broadcast', event: 'pos', payload: pay }); NETX.acc = 0;
+  } else return;
+  NETX.sig = sig; NETX.lx = pay.x; NETX.ly = pay.y; NETX.lz = pay.z; NETX.lh = h; NETX.sent++;
+}
 function netTick(dt, t) {
   if (!NET.online) return;
   if ((NET.cvT || 0) < performance.now()) { NET.cvT = performance.now() + 500; try { casaVisitTick(); } catch (e) { } }
-  if ((NET.sendT -= dt) <= 0) {
-    NET.sendT = 0.12;
-    const br = boardRot(P) || {}, r2 = v => Math.round(v * 100) / 100;
-    NET.ch.send({ type: 'broadcast', event: 'pos', payload: { id: NET.user.id, x: r2(P.x), y: r2(P.y), z: r2(P.z), h: r2(((P.h % TAU) + TAU) % TAU), v: r2(P.v), b: P.onBoard ? 1 : 0, sg: S.skateGuardado ? 1 : 0, a: P.air ? 1 : 0, f: P.fallT > 0 ? 1 : 0, vh: P.drive ? P.drive.V.id : 0, vc: P.drive && P.drive.V.tc ? P.drive.V.tc : 0, vlo: P.drive && P.drive.V.low ? 1 : 0, dn: P.down ? 1 : 0, wd: P.wanted || 0, rd: P.ride ? P.ride.id : 0, vl: P.drive && P.drive.lights ? 1 : 0, bk: P.drive ? P.drive.blink || 0 : 0, lk: P.drive && S.vehLock ? 1 : 0, hp: Math.round(P.hp), fk: (isAdm() || hasKids()) && S.filhas && S.filhas.comigo ? 1 : 0, pv: myParked(), em: P.emote ? P.emote.id : 0, fp: P.fpc || 0, rm: roomKey(), ps: P.cuffBy ? 2 : P.stopT > 0 ? 1 : P.swim ? 3 : P.lie ? 4 : 0, r: [r2(br.x || 0), r2(br.y || 0), r2(br.z || 0)] } });
-  }
+  netSendTick(dt);
   const k = 1 - Math.exp(-12 * dt);
   for (const id in NET.peers) {
     const p = NET.peers[id], d = p.t; if (!d) continue;
-    p.x = lerp(p.x, d.x, k); p.y = lerp(p.y, d.y, k); p.z = lerp(p.z, d.z, k);
+    const age = d.rd || Math.abs(d.v || 0) < 0.4 ? 0 : Math.min(0.35, (performance.now() - (p.tAt || 0)) / 1000), tx = d.x + Math.sin(d.h) * d.v * age, tz = d.z + Math.cos(d.h) * d.v * age; // prevê o movimento entre uma mensagem e outra
+    p.x = lerp(p.x, tx, k); p.y = lerp(p.y, d.y, k); p.z = lerp(p.z, tz, k);
     p.h += Math.atan2(Math.sin(d.h - p.h), Math.cos(d.h - p.h)) * k;
     p.g.position.set(p.x, p.y, p.z); p.g.rotation.y = p.h;
     try { peerParked(p, d); } catch (e) { }

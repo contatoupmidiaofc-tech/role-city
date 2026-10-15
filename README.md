@@ -587,3 +587,11 @@ Quatro profissões novas na Agência de Empregos. Cada uma tem teste de entrada,
     - Chegando no Hospital, a vítima acorda lá dentro e o socorrista ganha o transporte (+$ 140 × cargo).
     - Sem ambulância por perto, continua como antes (vai direto para o Hospital). Se o socorrista sumir, a vítima vai para o Hospital sozinha depois de alguns minutos.
   - 🗺️ **Táxi pelo mapa:** na Central, "Escolher o destino no mapa" abre o mapa da cidade. O passageiro toca onde quer ir e volta para a Central com esse ponto já escolhido, com a estimativa de preço. Qualquer ponto marcado no mapa também aparece primeiro na lista de destinos.
+
+### Build 2026.10.15-58 (Economia do online: bem menos mensagens no Supabase)
+O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador recebe. Antes, cada jogador mandava a posição 8 vezes por segundo para a cidade inteira, parado ou não.
+  - **Só quando muda:** parado, a posição vai 1 vez a cada 2,5 s (com o menu aberto, a cada 5 s). Mudanças de estado (entrar no carro, cair, soco, emote) continuam indo na hora para todos.
+  - **Ritmo rápido só para a vizinhança:** a cidade é dividida em áreas de 160 m. O movimento suave (3 por segundo a pé, 4 de carro) vai só para quem está na mesma área ou nas 8 vizinhas. Quem está longe recebe o batimento lento, o que basta para o mapa, a Central e o GPS.
+  - **Previsão de movimento:** entre uma mensagem e outra, o jogo calcula para onde a pessoa está indo (pela velocidade e direção), então os outros jogadores continuam andando liso na tela.
+  - Medição: andando caiu de 8,3 para 3,1 mensagens por segundo; parado, de 8,3 para 0,4; no menu, de 8,3 para 0,2.
+  - Estimativa: com 10 pessoas na mesma cidade, a conta mensal cai de 70% a 85%, conforme o quanto elas estão espalhadas e paradas. Com 20 pessoas espalhadas, cerca de 90%.
