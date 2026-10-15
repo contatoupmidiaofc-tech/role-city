@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-61';
+const BUILD = '2026.10.15-62';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -3206,6 +3206,61 @@ function cityDetail(sc, ground, wallMats, rng) {
     const im = new THREE.InstancedMesh(new THREE.CircleGeometry(0.5, 14).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ map: tex, polygonOffset: true, polygonOffsetFactor: -1 }), pts.length);
     pts.forEach(([x, z], i) => im.setMatrixAt(i, M.makeTranslation(x, 0.015, z))); im.receiveShadow = true; sc.add(im);
   }
+  streetProps(sc, rng);
+}
+/* mobília de rua: fiação entre os postes (com transformador), lixeiras, hidrantes, orelhões e placas de rua.
+   Cada tipo é um lote só (InstancedMesh), então a cidade inteira custa poucos desenhos a mais. */
+function streetProps(sc, rng) {
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), V = new THREE.Vector3(), S = new THREE.Vector3(), col = new THREE.Color();
+  const lot = (geo, mat, list, put, shadow) => { if (!list.length) return null; const im = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((it, i) => put(im, i, it)); if (shadow) im.castShadow = true; sc.add(im); return im; };
+  const doorNear = (x, z, r) => (city.doors || []).some(d => Math.hypot(d.x - x, d.z - z) < r);
+  const at = (x, y, z, ro = 0, sx = 1, sy = 1, sz = 1) => M.compose(V.set(x, y, z), Q.setFromAxisAngle(Y, ro), S.set(sx, sy, sz));
+  // fiação: dois fios caídos (catenária) de poste em poste, pelas calçadas e atravessando as ruas
+  const poleX = [], wires = [], tr = [];
+  for (const b of BLOCKS) poleX.push(b - 14, b + 14);
+  const span = (ax, line, a0, a1) => { const L = a1 - a0, sag = 0.18 + L * 0.018, N = L > 20 ? 8 : 5;
+    for (const [h, sg] of [[5.25, sag], [4.85, sag * 1.15]]) for (let k = 0; k < N; k++) {
+      const t0 = k / N, t1 = (k + 1) / N, y0 = h - sg * 4 * t0 * (1 - t0), y1 = h - sg * 4 * t1 * (1 - t1), u0 = a0 + L * t0, u1 = a0 + L * t1, len = Math.hypot(u1 - u0, y1 - y0);
+      wires.push([ax, line, (u0 + u1) / 2, (y0 + y1) / 2, len, Math.atan2(y1 - y0, u1 - u0)]);
+    } };
+  for (const line of poleX) for (let i = 0; i + 1 < poleX.length; i++) { span('x', line, poleX[i], poleX[i + 1]); span('z', line, poleX[i], poleX[i + 1]); }
+  const E = new THREE.Euler();
+  lot(new THREE.CylinderGeometry(0.018, 0.018, 1, 4).rotateZ(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x17181b }), wires, (im, i, [ax, line, u, y, len, a]) => {
+    if (ax === 'x') { E.set(0, 0, a, 'YZX'); V.set(u, y, line); } else { E.set(0, -Math.PI / 2, a, 'YZX'); V.set(line, y, u); }
+    im.setMatrixAt(i, M.compose(V, Q.setFromEuler(E), S.set(len, 1, 1)));
+  });
+  for (const x of poleX) for (const z of poleX) if (rng() < 0.22) tr.push([x, z]);
+  lot(CYL(0.28, 0.28, 0.8, 8), lam(0x8d939b), tr, (im, i, [x, z]) => { const a = Math.atan2(-x, -z); im.setMatrixAt(i, at(x - Math.sin(a) * 0.32, 4.15, z - Math.cos(a) * 0.32)); }, true);
+  // calçadas: lixeira, hidrante e orelhão (longe das portas e das árvores), com colisão
+  const bins = [], hyd = [], phones = [], free = (x, z) => !doorNear(x, z, 3) && !collide(x, z, 0.45);
+  for (const cx of BLOCKS) for (const cz of BLOCKS) {
+    if (cx === 0 && cz === 0) continue; // praça central
+    for (const [nx, nz] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+      const tx = nz !== 0 ? 1 : 0, tz = 1 - tx, pt = (k, off) => [cx + nx * off + tx * k, cz + nz * off + tz * k];
+      if (rng() < 0.55) { const k = rng() < 0.5 ? -8 : 8, [x, z] = pt(k, 14.45); if (free(x, z)) bins.push([x, z, Math.atan2(nx, nz)]); }
+      if (rng() < 0.3) { const k = rng() < 0.5 ? -10 : 10, [x, z] = pt(k, 14.55); if (free(x, z)) hyd.push([x, z]); }
+      if (rng() < 0.16) { const k = rng() < 0.5 ? -0.5 : 0.5, [x, z] = pt(k, 14.55); if (free(x, z)) phones.push([x, z, Math.atan2(nx, nz)]); }
+    }
+  }
+  const binCol = [0xf08a1d, 0x2e8b57, 0xf08a1d, 0x2f6db5];
+  lot(CYL(0.035, 0.035, 0.95, 5), lam(0x55585e), bins, (im, i, [x, z]) => im.setMatrixAt(i, at(x, 0.475, z)));
+  const bi = lot(CYL(0.22, 0.17, 0.5, 10), lam(0xffffff), bins, (im, i, [x, z, a]) => { im.setMatrixAt(i, at(x - Math.sin(a) * 0.05, 0.78, z - Math.cos(a) * 0.05, a)); im.setColorAt(i, col.setHex(binCol[i % binCol.length])); }, true);
+  const hy = lot(CYL(0.11, 0.14, 0.6, 8), lam(0xc8262c), hyd, (im, i, [x, z]) => im.setMatrixAt(i, at(x, 0.3, z)), true);
+  lot(new THREE.SphereGeometry(0.12, 8, 5, 0, TAU, 0, Math.PI / 2), lam(0xd8d2c4), hyd, (im, i, [x, z]) => im.setMatrixAt(i, at(x, 0.6, z)));
+  lot(boxGeo(0.34, 0.1, 0.1), lam(0xa81f24), hyd, (im, i, [x, z]) => im.setMatrixAt(i, at(x, 0.42, z, (x + z) % 2 ? 0 : Math.PI / 2)));
+  // orelhão: a concha laranja ou azul em cima do poste, aberta para a calçada
+  lot(CYL(0.05, 0.05, 1.95, 6), lam(0x9aa0a8), phones, (im, i, [x, z]) => im.setMatrixAt(i, at(x, 0.975, z)), true);
+  const shell = new THREE.SphereGeometry(0.55, 14, 9, Math.PI * 0.3, Math.PI * 1.4, 0, Math.PI * 0.78);
+  lot(shell, new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }), phones, (im, i, [x, z, a]) => { im.setMatrixAt(i, at(x - Math.sin(a) * 0.25, 1.62, z - Math.cos(a) * 0.25, a - Math.PI / 2, 1, 1.25, 1)); im.setColorAt(i, col.setHex(i % 3 ? 0xf08a1d : 0x2f6db5)); }, true);
+  lot(boxGeo(0.22, 0.34, 0.12), lam(0x2a2c31), phones, (im, i, [x, z, a]) => im.setMatrixAt(i, at(x - Math.sin(a) * 0.1, 1.45, z - Math.cos(a) * 0.1, a)));
+  for (const [x, z] of bins) city.colliders.push({ x0: x - .25, x1: x + .25, z0: z - .25, z1: z + .25 });
+  for (const [x, z] of hyd) city.colliders.push({ x0: x - .18, x1: x + .18, z0: z - .18, z1: z + .18 });
+  for (const [x, z] of phones) city.colliders.push({ x0: x - .3, x1: x + .3, z0: z - .3, z1: z + .3 });
+  // placas de rua azuis nos postes da esquina, uma para cada rua
+  const tex = canvasTex(128, 32, g => { g.fillStyle = '#1d4f9c'; g.fillRect(0, 0, 128, 32); g.strokeStyle = '#fff'; g.lineWidth = 2; g.strokeRect(3, 3, 122, 26); g.fillStyle = '#fff'; g.font = 'bold 15px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('R. ROLÊ CITY', 64, 17); });
+  const signs = []; for (const x of poleX) for (const z of poleX) { signs.push([x, z, 0]); signs.push([x, z, Math.PI / 2]); }
+  lot(new THREE.PlaneGeometry(0.9, 0.24), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }), signs, (im, i, [x, z, r]) => im.setMatrixAt(i, at(x, 2.75 + (r ? 0.28 : 0), z, r)));
+  city.props = { wires: wires.length, bins: bins.length, hyd: hyd.length, phones: phones.length, tr: tr.length, signs: signs.length };
 }
 /* ---- dia e noite (relógio global: todos os jogadores veem a mesma hora) ---- */
 function buildDayNight(sc) {

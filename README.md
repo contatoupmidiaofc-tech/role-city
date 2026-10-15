@@ -623,3 +623,13 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 🚰 **Calhas** descendo pelos prédios.
   - ⚫ **Bueiros** nas ruas.
   - ⚡ **Desempenho:** tudo é feito de um jeito leve, com uma textura pequena aplicada direto pela placa de vídeo e os objetos desenhados em lote. A cidade inteira ganhou só +3 chamadas de desenho (466 → 469).
+
+### Build 2026.10.15-62 (Gráficos, fase 3b: objetos na rua)
+  - 🔌 **Fiação entre os postes:** dois fios caídos de poste em poste, pelas calçadas e atravessando as ruas, com transformadores em alguns postes.
+  - 🗑️ **Lixeiras** laranja, verde e azul nas calçadas.
+  - 🚒 **Hidrantes** vermelhos perto do meio-fio.
+  - ☎️ **Orelhões** laranja e azul, com o telefone dentro.
+  - 🪧 **Placas de rua** azuis nos postes das esquinas.
+  - Os objetos ficam longe das portas e das árvores, têm colisão e não atrapalham o caminho dos pedestres.
+  - Aparecem nas 3 cidades. Na praça central não há objetos.
+  - ⚡ **Desempenho:** cada tipo de objeto é desenhado num lote só. A cidade inteira ganhou +13 chamadas de desenho (469 → 482).
