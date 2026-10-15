@@ -771,7 +771,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-81';
+const BUILD = '2026.10.15-82';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -3136,7 +3136,7 @@ function cityExtras(sc) {
   buildMorro(sc);
   buildSkatepark(sc);
   { const [bx, bz] = parkWorld(50, -24), sh = new THREE.Shape(); sh.moveTo(-600, -600); sh.lineTo(600, -600); sh.lineTo(600, 600); sh.lineTo(-600, 600); const ho = new THREE.Path(); ho.absarc(bx, -bz, 7.6, 0, TAU, true); sh.holes.push(ho); city.far.geometry.dispose(); city.far.geometry = new THREE.ShapeGeometry(sh, 32); }
-  buildRoles(sc); mansionGuards(sc); buildTourExtras(sc); buildSea(sc); buildAirport(sc);
+  buildRoles(sc); mansionGuards(sc); buildTourExtras(sc); try { buildTourExtras2(sc); } catch (e) { console.warn('tour2', e); } buildSea(sc); buildAirport(sc);
   buildRegFavelas(sc); buildPoliceLot(sc); buildKids(sc); soundCars(); buildTattooShop(sc); for (const o of city.cops || []) attachBaton(o.g);
   { const [bx, bz] = morroWorld(17.6, 10), [sx, sz] = morroWorld(17.6, 15); partyAt(sc, bx, bz, 7, 4); speakerStack(sc, sx, sz, morroHd(17.6), 0, 2); const [ax, az] = morroWorld(-2, 3); usersFor(sc, [ax, az, city.boca[0], city.boca[1]], 2); }
   try { city.milQ = null; city.milQ = milSpot(); } catch (e) { city.milQ = null; }
@@ -7878,6 +7878,84 @@ function buildTourExtras(sc) {
       noFog(g, 0.9); }
   }
 }
+/* =========================================================
+   CARTÕES-POSTAIS NOVOS (pesquisados nas cidades reais e colocados no lado certo do mapa)
+   SP: Edifício Copan e Mercadão no centro velho, Beco do Batman na Vila Madalena (zona oeste)
+   RJ: Catedral Metropolitana do lado dos Arcos da Lapa, Museu do Amanhã na Praça Mauá (baía), Lagoa Rodrigo de Freitas entre Leblon e Gávea
+   Salvador: Arena Fonte Nova do lado do Dique do Tororó, Cristo da Barra na orla da Barra, Forte de São Marcelo no mar em frente ao Mercado Modelo
+   ========================================================= */
+TOUR.sp.push(
+  { id: 'copan', ly: 40, cd: 95, n: 'Edifício Copan', d: 'O prédio ondulado de Oscar Niemeyer no centro de São Paulo, com 1.160 apartamentos.', x: 20, z: -244, y: 0.06, r: 14, fee: 50, lk: [20, -268] },
+  { id: 'mercadao', ly: 12, cd: 55, n: 'Mercado Municipal (Mercadão)', d: 'Os vitrais e o sanduíche de mortadela mais famoso de SP.', x: 250, z: -150, y: 0.06, r: 15, fee: 50, lk: [250, -172] },
+  { id: 'batman', ly: 6, cd: 30, n: 'Beco do Batman', d: 'O beco todo grafitado da Vila Madalena: arte de rua a céu aberto.', x: -170, z: 4, y: 0.06, r: 12, fee: 40, lk: [-170, -20] },
+);
+TOUR.rj.push(
+  { id: 'catedral', ly: 20, cd: 70, n: 'Catedral Metropolitana', d: 'O cone de concreto de 75 m com quatro vitrais gigantes, do lado dos Arcos da Lapa.', x: -110, z: -186, y: 0.06, r: 15, fee: 50, lk: [-110, -206] },
+  { id: 'amanha', ly: 14, cd: 70, n: 'Museu do Amanhã', d: 'O museu branco de Santiago Calatrava na Praça Mauá, de frente para a Baía de Guanabara.', x: 240, z: -64, y: 0.06, r: 16, fee: 50, lk: [262, -64] },
+  { id: 'lagoa', ly: 16, cd: 75, n: 'Lagoa Rodrigo de Freitas', d: 'A lagoa entre Ipanema, Leblon e Gávea, com o Cristo lá no alto.', x: -228, z: 128, y: 0.06, r: 10, fee: 40, lk: [-268, 128] },
+);
+TOUR.ssa.push(
+  { id: 'fontenova', ly: 16, cd: 80, n: 'Arena Fonte Nova', d: 'O estádio do Bahia, do lado do Dique do Tororó.', x: 190, z: -186, y: 0.06, r: 14, fee: 60, lk: [190, -222] },
+  { id: 'cristobarra', ly: 14, cd: 40, n: 'Cristo da Barra', d: 'A estátua do Cristo no Morro da Barra, de frente para o mar.', x: -96, z: 138, y: 0.06, r: 9, fee: 40, lk: [-96, 152] },
+);
+function buildTourExtras2(sc) {
+  const id = cityId(), M = (c, r = 0.8, mt = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: mt });
+  const add = (g, geo, m, x, y, z, ry = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.y = ry; o.castShadow = o.receiveShadow = true; g.add(o); return o; };
+  const L = (lx, lz) => { const g = new THREE.Group(); g.position.set(lx, 0, lz); sc.add(g); return g; };
+  const solid = (x, z, w, d) => city.colliders.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
+  const sign = (g, txt, bg, fg, y, z = 0) => { const s = textSprite(txt, { bg, fg, size: 44, scale: [Math.min(12, txt.length * 0.45 + 2), 1.4, 1] }); s.position.set(0, y, z); g.add(s); };
+  if (id === 'sp') {
+    // Edifício Copan: fachada em "S" com as faixas horizontais de quebra-sol
+    { const g = L(20, -268), N = 26, wv = M(0xffffff, 0.7), dk = M(0x8a9098, 0.6);
+      for (let i = 0; i < N; i++) { const t = i / (N - 1), x = -24 + t * 48, z = Math.sin(t * Math.PI * 1.6) * 9, a = Math.atan2(Math.cos(t * Math.PI * 1.6) * 9 * Math.PI * 1.6 / 48, 1);
+        add(g, boxGeo(2.1, 58, 9), dk, x, 29, z, -a); for (let f = 0; f < 29; f++) add(g, boxGeo(2.3, 1.1, 0.7), wv, x, 1.5 + f * 2, z + 4.7, -a); }
+      add(g, boxGeo(52, 6, 16), M(0xd8d2c4), 0, 3, 2); sign(g, 'EDIFÍCIO COPAN', '#15161a', '#ffffff', 64); solid(20, -268, 52, 26); noFog(g, 0.9); }
+    // Mercadão: prédio de tijolinho com cúpulas e vitrais
+    { const g = L(250, -172), br = M(0xb5651d, 0.85);
+      add(g, boxGeo(40, 12, 26), br, 0, 6, 0); for (const x of [-18, 18]) { add(g, boxGeo(6, 18, 6), br, x, 9, 12); add(g, SPH(3.2, 12, 8, 0, TAU, 0, Math.PI / 2), M(0x3d7a5a, 0.5), x, 18, 12); }
+      add(g, SPH(6, 16, 10, 0, TAU, 0, Math.PI / 2), M(0x3d7a5a, 0.5), 0, 12, 0);
+      for (let k = 0; k < 6; k++) { const v = add(g, new THREE.PlaneGeometry(3.4, 5), new THREE.MeshBasicMaterial({ map: paintTex(k % 2 ? 'abstrato' : 'pelo') }), -12.5 + k * 5, 6.5, 13.05); }
+      sign(g, 'MERCADO MUNICIPAL', '#b5651d', '#ffffff', 22, 13); solid(250, -172, 42, 28); noFog(g, 0.9); }
+    // Beco do Batman: viela com os muros todos grafitados
+    { const g = L(-170, -20);
+      for (const s of [-1, 1]) for (let k = 0; k < 5; k++) { const w = add(g, new THREE.PlaneGeometry(6, 4.2), new THREE.MeshBasicMaterial({ map: graffitiTex((k + (s > 0 ? 3 : 0)) % 6), side: THREE.DoubleSide }), s * 4, 2.1, -12 + k * 6, s * Math.PI / 2); add(g, boxGeo(0.4, 4.4, 6), M(0xd9d2c3), s * 4.25, 2.2, -12 + k * 6); solid(-170 + s * 4.25, -20 - 12 + k * 6, 0.6, 6); }
+      sign(g, 'BECO DO BATMAN', '#15161a', '#ffcf3a', 6.5, 14); noFog(g, 0.9); }
+  } else if (id === 'rj') {
+    // Catedral Metropolitana: cone de concreto com 4 vitrais do chão ao topo
+    { const g = L(-110, -206), cone = add(g, new THREE.CylinderGeometry(9, 19, 34, 4, 6), M(0xa8a39a, 0.95), 0, 17, 0, Math.PI / 4);
+      for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2, v = add(g, new THREE.PlaneGeometry(2.6, 33), new THREE.MeshBasicMaterial({ map: canvasTex(16, 128, (c, w, h) => { const cs = ['#2f6db5', '#ffcf3a', '#3ddc84', '#d8202f']; for (let i = 0; i < 16; i++) { c.fillStyle = cs[(i + k) % 4]; c.fillRect(0, i * 8, w, 8); } }) }), Math.sin(a) * 10.1, 17, Math.cos(a) * 10.1, a); v.rotation.order = 'YXZ'; v.rotation.set(-0.205, a, 0); }
+      add(g, boxGeo(3, 4, 0.4), M(0x15161a), 0, 34.5, 0); add(g, boxGeo(0.4, 4, 3), M(0x15161a), 0, 34.5, 0); sign(g, 'CATEDRAL METROPOLITANA', '#15161a', '#ffffff', 40); solid(-110, -206, 32, 32); noFog(g, 0.9); }
+    // Museu do Amanhã: corpo branco comprido com as "asas" que abrem para o céu e o espelho d'água
+    { const g = L(262, -64), wh = M(0xf4f4f0, 0.4);
+      add(g, boxGeo(14, 6, 50), wh, 0, 3, 0); for (let k = 0; k < 13; k++) { const z = -24 + k * 4, sw = 1 - Math.abs(k - 6) / 9; for (const s of [-1, 1]) { const f = add(g, boxGeo(0.5, 10 * sw + 3, 3.2), wh, s * 6 * sw, 6 + (10 * sw + 3) / 2 - 1, z); f.rotation.z = -s * 0.5; } }
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(10, 46), M(0x4fa3d8, 0.1, 0.3)); pool.rotation.x = -Math.PI / 2; pool.position.set(-13, 0.05, 0); g.add(pool);
+      sign(g, 'MUSEU DO AMANHÃ', '#15161a', '#4fc3ff', 18); solid(262, -64, 16, 52); noFog(g, 0.9); }
+    // Lagoa Rodrigo de Freitas: espelho d'água com ciclovia e pedalinhos de cisne
+    { const g = L(-268, 128), lake = new THREE.Mesh(new THREE.CircleGeometry(22, 40), M(0x2f7fb0, 0.08, 0.2)); lake.rotation.x = -Math.PI / 2; lake.scale.set(0.85, 0.5, 1); lake.position.y = 0.05; g.add(lake);
+      const rim = new THREE.Mesh(new THREE.RingGeometry(22, 30, 40), M(0x4f8a3a, 0.95)); rim.rotation.x = -Math.PI / 2; rim.scale.set(0.85, 0.5, 1); rim.position.y = 0.06; g.add(rim);
+      for (let k = 0; k < 4; k++) { const sw = new THREE.Group(), a = k * 1.6; add(sw, boxGeo(1.4, 0.7, 2.2), M(0xffffff, 0.5), 0, 0.4, 0); add(sw, CYL(0.15, 0.2, 1.4, 6), M(0xffffff), 0, 1.2, 0.9); add(sw, SPH(0.3, 8, 6), M(0xffffff), 0, 1.9, 1.0); add(sw, new THREE.ConeGeometry(0.12, 0.4, 6), M(0xff7a1a), 0, 1.9, 1.35).rotation.x = Math.PI / 2; sw.position.set(Math.cos(a) * 10, 0, Math.sin(a) * 5); sw.rotation.y = a; g.add(sw); }
+      solid(-268, 128, 40, 24); sign(g, 'LAGOA RODRIGO DE FREITAS', '#15161a', '#4fc3ff', 6, -14); noFog(g, 0.9); }
+  } else if (id === 'ssa') {
+    // Arena Fonte Nova: anel branco aberto de um lado (virado para o Dique do Tororó)
+    { const g = L(190, -222), bowl = new THREE.Mesh(new THREE.CylinderGeometry(30, 26, 15, 48, 1, true, 0.5, TAU - 1), new THREE.MeshStandardMaterial({ color: 0xf4f4f0, side: THREE.DoubleSide, roughness: 0.6 })); bowl.position.y = 7.5; g.add(bowl);
+      const stands = new THREE.Mesh(new THREE.CylinderGeometry(26, 18, 11, 48, 1, true, 0.5, TAU - 1), new THREE.MeshStandardMaterial({ color: 0xd8202f, side: THREE.DoubleSide })); stands.position.y = 5.5; g.add(stands);
+      const roof = new THREE.Mesh(new THREE.RingGeometry(22, 31, 48, 1, 0.5, TAU - 1), new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })); roof.rotation.x = -Math.PI / 2; roof.position.y = 15.2; g.add(roof);
+      const field = new THREE.Mesh(new THREE.PlaneGeometry(26, 17), new THREE.MeshLambertMaterial({ color: 0x3f9a3c })); field.rotation.x = -Math.PI / 2; field.position.y = 0.06; g.add(field);
+      sign(g, 'ARENA FONTE NOVA', '#1f4fbf', '#ffffff', 21, -28); solid(190, -222, 52, 50); noFog(g, 0.9); }
+    // Cristo da Barra: estátua branca no morrinho da orla
+    { const g = L(-96, 152), mound = new THREE.Mesh(new THREE.SphereGeometry(7, 14, 8, 0, TAU, 0, Math.PI / 2), M(0x5d8c45, 0.95)); mound.scale.y = 0.5; g.add(mound);
+      const st = M(0xf2f0ea, 0.6); add(g, boxGeo(2.2, 2.4, 2.2), M(0xd9d2c3), 0, 4.4, 0); add(g, CYL(0.55, 0.8, 4.4, 10), st, 0, 7.8, 0); add(g, boxGeo(4.4, 0.55, 0.5), st, 0, 9.3, 0); add(g, SPH(0.45, 10, 8), st, 0, 10.4, 0);
+      solid(-96, 152, 9, 9); sign(g, 'CRISTO DA BARRA', '#15161a', '#ffffff', 13); noFog(g, 0.9); }
+    // Forte de São Marcelo: o forte redondo no mar, em frente ao Mercado Modelo
+    { const g = L(150, 214), st = M(0xb8ad94, 0.95); add(g, CYL(13, 14, 8, 32), st, 0, 3, 0); add(g, CYL(8, 9, 6, 28), st, 0, 9, 0); add(g, CYL(3, 3, 3, 16), M(0xe8e2d6), 0, 13.5, 0);
+      for (let k = 0; k < 16; k++) { const a = k / 16 * TAU; add(g, boxGeo(1, 1.2, 0.6), st, Math.cos(a) * 13.2, 7.6, Math.sin(a) * 13.2, -a); }
+      const fl = add(g, boxGeo(0.12, 4, 0.12), M(0x333333), 0, 17, 0); add(g, boxGeo(2, 1.2, 0.05), M(0x2f6db5), 1, 18.4, 0);
+      city.colliders.push({ x0: 136, x1: 164, z0: 200, z1: 228 }); sign(g, 'FORTE DE SÃO MARCELO', '#15161a', '#f2c94c', 22); noFog(g, 0.9); }
+  }
+}
+for (const id in TOUR) for (const T of TOUR[id]) if (!LANDMARKS[id].some(l => l[2].split(' ')[0] === T.n.split(' ')[0])) LANDMARKS[id].push([T.lk[0], T.lk[1], T.n.split(' (')[0].split(' · ')[0]]);
+if (!LANDMARKS.ssa.some(l => l[2] === 'Forte de São Marcelo')) LANDMARKS.ssa.push([150, 214, 'Forte de São Marcelo']);
+
 function tourGo(id) {
   const T = tourSpot(id); if (!T) return; const fee = isAdm() || city.tourFree ? 0 : T.fee; city.tourFree = false;
   if (S.coins < fee) return toast(`A taxa do Bonde do AJBZ para visitar é $ ${fee}.`, 'bad');
@@ -15570,7 +15648,7 @@ const PANELS = {
     if (!hasV) html += `<p class="muted">Compre um carro ou moto na Concessionária para viajar de graça.</p>`;
     if (beachCity()) html += `<div class="card"><h4>⛵ De barco (Rio ↔ Salvador)</h4><p>Pelo mar, seguindo a costa, na escuna ($ ${fmt(BOAT_FARE)}) ou pilotando o seu jet-ski ou lancha. Sai da Marina na praia.</p><div class="row"><button class="btn ghost sm" data-act="gps-marina">📍 GPS até a Marina</button></div></div>`;
     html += `<div class="card"><h4>✈️ Aeroporto e Hangar AJBZ</h4><p>Voos para ${Object.keys(CITY_DEFS).filter(k => k !== cur).map(k => CITY_DEFS[k].name).join(' e ')} passando por cima das cidades. No Hangar AJBZ tem avião e helicóptero à venda.</p><div class="row"><button class="btn" data-act="go-airport">Ir ao aeroporto</button>${Object.keys(CITY_DEFS).filter(k => k !== cur).map(k => `<button class="btn ghost" data-act="trip" data-id="${k}" data-how="voo" ${S.coins < airFare(k) ? 'disabled' : ''}>✈️ ${CITY_DEFS[k].name} $ ${fmt(airFare(k))}</button>`).join('')}</div></div>`;
-    html += `<div class="card"><h4>🗺️ Pontos turísticos</h4><p>${{ sp: 'MASP, Ponte Estaiada, Ibirapuera, Catedral da Sé e Theatro Municipal.', rj: 'Cristo Redentor, Pão de Açúcar, Maracanã, Selarón e Arcos da Lapa.', ssa: 'Pelourinho, Elevador Lacerda, Farol da Barra, Mercado Modelo, Bonfim e Dique do Tororó.' }[cur]} Taxa do Bonde do AJBZ.</p><div class="row"><button class="btn" data-act="open-turismo">Ver pontos turísticos</button></div></div>`;
+    html += `<div class="card"><h4>🗺️ Pontos turísticos</h4><p>${{ sp: 'MASP, Ponte Estaiada, Ibirapuera, Catedral da Sé, Theatro Municipal, Edifício Copan, Mercadão e Beco do Batman.', rj: 'Cristo Redentor, Pão de Açúcar, Maracanã, Selarón, Arcos da Lapa, Catedral Metropolitana, Museu do Amanhã e Lagoa Rodrigo de Freitas.', ssa: 'Pelourinho, Elevador Lacerda, Farol da Barra, Mercado Modelo, Bonfim, Dique do Tororó, Arena Fonte Nova, Cristo da Barra e Forte de São Marcelo.' }[cur]} Taxa do Bonde do AJBZ.</p><div class="row"><button class="btn" data-act="open-turismo">Ver pontos turísticos</button></div></div>`;
     return { title: 'Rodoviária', html };
   },
   teste(id) {
