@@ -770,7 +770,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-74';
+const BUILD = '2026.10.15-75';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -15595,6 +15595,7 @@ function act(a, ds, el) {
     case 'open-base': openPanel('base'); break;
     case 'boat-buy': boatBuy(ds.id, ds.cur); break;
     case 'boat-rent': boatRent(); break;
+    case 'kid-wear': kidWear(+ds.i, +ds.l); break;
     case 'boat-trip': startBoatTrip(ds.d, ds.id); break;
     case 'gps-marina': { closePanel(); const d = city.doors.find(d => d.kind === 'marina'); if (d) setGps(d.x, d.z, 'Marina'); else toast('Esta cidade não tem mar: barco só no Rio e em Salvador.', 'bad'); break; }
     case 'boat-use': closePanel(); spawnBoat(VEH[ds.id], 'marina'); break;
@@ -16788,6 +16789,83 @@ function boatArrive(T) {
   if (T.pax || !q) { if (q) { P.x = q.px; P.z = q.z1 - 3; P.y = q.y; } toast(`⚓ Chegou em ${CITY_DEFS[T.dest].name}! Desembarque na marina.`, 'good'); return; }
   spawnBoat(T.V, 'marina'); const mv = city.myVeh; if (mv) { P.x = mv.x; P.z = mv.z; enterVehicle(); } toast(`⚓ Chegou em ${CITY_DEFS[T.dest].name} de ${T.V.name}! A marina fica do lado.`, 'good');
 }
+
+/* ---- coleção nova: mais roupas para homens e mulheres, e a Moda Infantil para vestir os filhos ---- */
+const N9_WEAR = [
+  // masculino
+  I('shirt', 'n9_polo_verde', 'Camisa Polo Verde-Bandeira', 0x1a8a3a, 240, null, 'comum', { pat: 'plain', polo: true }),
+  I('shirt', 'n9_polo_listra', 'Camisa Polo Listrada Marinho', 0x1b2a4a, 260, null, 'comum', { pat: 'stripes', polo: true }),
+  I('shirt', 'n9_social_branca', 'Camisa Social Branca', 0xf6f6f2, 320, null, 'comum', { pat: 'plain', polo2: true }),
+  I('shirt', 'n9_social_azul', 'Camisa Social Azul-Clara', 0xa8c9e8, 320, null, 'comum', { pat: 'plain', polo2: true }),
+  I('shirt', 'n9_xadrez', 'Camisa Xadrez Vermelha', 0xb3262e, 300, null, 'comum', { pat: 'flannel' }),
+  I('shirt', 'n9_puffer', 'Jaqueta Puffer Preta', 0x15161a, 900, 30, 'raro', { pat: 'puffer' }),
+  I('shirt', 'n9_regata_cinza', 'Regata de Academia Cinza', 0x8d9097, 160, null, 'comum', { pat: 'plain', tank: true }),
+  I('shirt', 'n9_time_verde', 'Camisa de Time Verde e Branca', 0x1a8a3a, 280, null, 'comum', { pat: 'tm_h_ffffff_1a8a3a', team: true }),
+  I('shirt', 'n9_time_tricolor', 'Camisa de Time Tricolor', 0x7a1f2b, 280, null, 'comum', { pat: 'tm_band_ffffff_1a6a3a', team: true }),
+  I('shirt', 'n9_degrade', 'Camiseta Degradê Pôr do Sol', 0xff7a1a, 420, 28, 'raro', { pat: 'gradient' }),
+  I('pants', 'n9_bermuda_cargo', 'Bermuda Cargo Cáqui', 0x8a7a55, 200, null, 'comum', { pat: 'plain', short: true }),
+  I('pants', 'n9_bermuda_jeans', 'Bermuda Jeans', 0x3b5a8f, 200, null, 'comum', { pat: 'denim', short: true }),
+  I('pants', 'n9_calca_social', 'Calça Social Preta', 0x15161a, 300, null, 'comum', { pat: 'plain' }),
+  I('pants', 'n9_calca_cargo', 'Calça Cargo Verde-Oliva', 0x4b5a32, 320, null, 'comum', { pat: 'plain', baggy: true }),
+  I('pants', 'n9_jogger', 'Calça Jogger Cinza', 0x6d717a, 260, null, 'comum', { pat: 'sidestripe' }),
+  I('shoes', 'n9_tenis_branco', 'Tênis Branco Clássico', 0xf4f4f0, 280, null, 'comum', { pat: 'plain' }),
+  I('shoes', 'n9_tenis_neon', 'Tênis de Corrida Neon', 0x3ddc84, 340, null, 'comum', { pat: 'sidestripe' }),
+  I('shoes', 'n9_sapato', 'Sapato Social Preto', 0x15161a, 380, null, 'comum', { pat: 'plain', shine: true }),
+  I('shoes', 'n9_botina', 'Botina Marrom', 0x6b4a2f, 360, null, 'comum', { pat: 'plain' }),
+  I('cap', 'n9_bone_verde', 'Boné Verde-Bandeira', 0x1a8a3a, 140, null, 'comum', { hat: 'cap' }),
+  I('cap', 'n9_bucket_bege', 'Bucket Bege', 0xd9c7a0, 180, null, 'comum', { hat: 'bucket' }),
+  I('cap', 'n9_gorro_vinho', 'Gorro Vinho', 0x7a1f2b, 150, null, 'comum', { hat: 'beanie' }),
+  I('cap', 'n9_panama', 'Chapéu Panamá', 0xe8dcb5, 260, null, 'comum', { hat: 'straw' }),
+  // feminino
+  I('shirt', 'n9_vd_listrado', 'Vestido Listrado Marinheiro', 0x1b2a4a, 420, null, 'comum', { pat: 'stripes', tank: true, dress: 'midi' }),
+  I('shirt', 'n9_vd_xadrez', 'Vestido Xadrez de Festa Junina', 0xb3262e, 380, null, 'comum', { pat: 'check', dress: 'mini' }),
+  I('shirt', 'n9_vd_lilas', 'Vestido Lilás', 0xb58ad6, 420, null, 'comum', { pat: 'plain', tank: true, dress: 'midi' }),
+  I('shirt', 'n9_vd_girassol', 'Vestido Longo Girassol', 0xffd23f, 620, null, 'comum', { pat: 'plain', tank: true, dress: 'longo' }),
+  I('shirt', 'n9_vd_tiedye', 'Vestido Tie-dye', 0x2fb6e8, 700, 30, 'raro', { pat: 'tiedye', tank: true, dress: 'mini' }),
+  I('shirt', 'n9_vd_estrelas', 'Vestido Longo de Estrelas', 0x22252b, null, 90, 'lendario', { pat: 'stars', tank: true, dress: 'longo' }),
+  I('shirt', 'n9_cropped_branco', 'Cropped Branco', 0xf6f6f2, 180, null, 'comum', { pat: 'plain', tank: true }),
+  I('shirt', 'n9_cropped_rosa', 'Cropped Rosa', 0xff7aa8, 180, null, 'comum', { pat: 'plain', tank: true }),
+  I('shirt', 'n9_blusa_floral', 'Blusa Floral', 0xff9ccf, 240, null, 'comum', { pat: 'floral', tank: true }),
+  I('pants', 'n9_sa_couro', 'Saia de Couro Preta', 0x15161a, 380, null, 'comum', { pat: 'plain', trunk: true, skirt: 'mini', shine: true }),
+  I('pants', 'n9_sa_amarela', 'Saia Midi Amarela', 0xffd23f, 280, null, 'comum', { pat: 'plain', trunk: true, skirt: 'midi' }),
+  I('pants', 'n9_shortinho', 'Shortinho Jeans', 0x3b5a8f, 200, null, 'comum', { pat: 'denim', short: true }),
+  I('pants', 'n9_legging', 'Legging Preta', 0x15161a, 180, null, 'comum', { pat: 'plain' }),
+  I('shoes', 'n9_sl_rosa', 'Salto Rosa', 0xff7aa8, 440, null, 'comum', { pat: 'plain', heel: true }),
+  I('shoes', 'n9_sl_azul', 'Sandália de Salto Azul', 0x2f6db5, 440, null, 'comum', { pat: 'sandal', heel: true }),
+  I('bolsa', 'n9_bo_palha', 'Bolsa de Palha', 0xd9b45a, 320, null, 'comum', { bk: 'ombro' }),
+  I('bolsa', 'n9_bo_vermelha', 'Bolsa de Mão Vermelha', 0xc8102e, 380, null, 'comum', { bk: 'mao' }),
+  I('ear', 'n9_ea_estrela', 'Brinco Estrela Dourada', 0xd4a017, 300, null, 'comum', { ek: 'drop' }),
+];
+N9_WEAR.forEach(i => { ITEMS.push(i); ITEM[i.id] = i; });
+/* moda infantil: conjuntos prontos para os filhos (quem casou na igreja) */
+const KID_LOOKS = [
+  ['🎒 Uniforme da Escola', 250, { shirt: 'shirt_basic', pants: 'sh_bermuda', shoes: 'shoes_white' }],
+  ['🇧🇷 Seleção Brasileira', 300, { shirt: 'tm_bra', pants: 'sh_bra', shoes: 'shoes_white' }],
+  ['🦸 Super-herói', 350, { shirt: 'ct_chamas', pants: 'sh_red', shoes: 'shoes_basic' }],
+  ['👑 Princesa', 380, { shirt: 'vd_rosa', pants: 'sh_white', shoes: 'shoes_white' }, 'f'],
+  ['🌸 Vestidinho Floral', 340, { shirt: 'vd_floral', pants: 'sh_white', shoes: 'shoes_white' }, 'f'],
+  ['💙 Vestidinho Azul', 340, { shirt: 'vd_azul', pants: 'sh_white', shoes: 'shoes_white' }, 'f'],
+  ['⭐ Pijama de Estrelinhas', 220, { shirt: 'ct_estrelas', pants: 'sh_tactel', shoes: 'shoes_basic' }],
+  ['🏖️ Dia de Praia', 200, { shirt: 'shirt_sky', pants: 'sh_floral', shoes: 'shoes_chinelo' }],
+  ['🏀 Basquete', 260, { shirt: 'rg_basquete', pants: 'sh_red', shoes: 'shoes_white' }],
+  ['🎨 Grafiteiro Mirim', 320, { shirt: 'ct_grafite', pants: 'sh_tactel', shoes: 'shoes_basic' }],
+  ['🧡 Laranjinha', 200, { shirt: 'ct_laranja', pants: 'sh_white', shoes: 'shoes_basic' }],
+  ['🪖 Soldadinho', 300, { shirt: 'shirt_camo', pants: 'pants_camo', shoes: 'shoes_basic' }],
+].map(([n, c, eq, g]) => [n, c, Object.fromEntries(Object.entries(eq).filter(([, v]) => ITEM[v])), g]);
+function kidShopHtml() {
+  const kids = isAdm() ? [] : (S.kids || []);
+  let h = `<h3>🧒 Moda Infantil</h3><p class="muted">Conjuntos para vestir os seus filhos. ${kids.length ? 'Escolha para qual criança é.' : 'Para quem tem filhos: case na igreja e crie a criança no painel da família.'}</p><div class="grid-items">`;
+  KID_LOOKS.forEach(([n, c, eq, g], li) => { const L = kids.map((k, i) => [k, i]).filter(([k]) => !g || k.g === g);
+    h += `<div class="item-card r-comum"><div class="swatch ico" style="--sw:${hex((ITEM[eq.shirt] || {}).color || 0xffffff)}">👕</div><div class="item-info"><b>${esc(n)}</b><span class="muted">${Object.values(eq).map(v => esc(ITEM[v].name)).join(' · ')}${g === 'f' ? ' (meninas)' : ''}</span><div class="row">${L.length ? L.map(([k, i]) => `<button class="btn sm" data-act="kid-wear" data-i="${i}" data-l="${li}" ${S.coins < c ? 'disabled' : ''}>${esc(k.n)} · $ ${fmt(c)}</button>`).join('') : `<span class="pill">$ ${fmt(c)}</span>`}</div></div></div>`; });
+  return h + '</div>';
+}
+function kidWear(i, li) {
+  const k = (S.kids || [])[i], L = KID_LOOKS[li]; if (!k || !L) return; if (S.coins < L[1]) return toast('Grana insuficiente.', 'bad');
+  S.coins -= L[1]; k.eq = Object.assign({}, L[2]); persist(); updateHUD(); netTrack && netTrack(); sfx('coin');
+  const E = ENT.me; if (E && E.girls) { entGirls(E, false); entGirls(E, true, S.skin, P.x, P.z, myKidDefs()); }
+  toast(`👕 ${k.n} está de roupa nova: ${L[0]}!`, 'good'); renderPanel();
+}
+{ const _shop = PANELS.shop; PANELS.shop = function (kind) { const r = _shop.apply(this, arguments); if (kind === 'roupas' && r) r.html += kidShopHtml(); return r; }; }
 
 /* ---- trampo com figurantes: ir até o ponto e segurar Ação ---- */
 function s6Task(id, lv) {

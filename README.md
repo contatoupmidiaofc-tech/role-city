@@ -770,3 +770,8 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
   - 🧭 **GPS do mar:** boias amarelas marcam o canal de navegação o caminho todo. Se sair do canal, o GPS avisa e não deixa encalhar na costa. O painel mostra por onde você está passando, a próxima cidade e quantos km faltam.
   - No caminho, a **costa de verdade** com Mata Atlântica: Niterói e a saída da Baía de Guanabara, Campos dos Goytacazes, Vitória (ES), o **Arquipélago de Abrolhos**, Porto Seguro, Ilhéus e a **Baía de Todos os Santos**; outros barcos e navios passando.
   - Na **Rodoviária** (Rio e Salvador) tem a opção "De barco" com **GPS até a Marina**.
+
+### Build 2026.10.15-75 (Roupas novas e Moda Infantil)
+  - 👔 **Masculino:** camisas polo (verde-bandeira e listrada), **camisa social** branca e azul, camisa xadrez, **jaqueta puffer**, regata de academia, camisas de time (verde e branca, tricolor), camiseta degradê; bermuda cargo e jeans, **calça social**, calça cargo, jogger; tênis branco, tênis de corrida neon, **sapato social**, botina; boné verde, bucket bege, gorro vinho e **chapéu panamá**.
+  - 👗 **Feminino:** vestido listrado, xadrez de festa junina, lilás, longo girassol, tie-dye e longo de estrelas; **cropped** branco e rosa, blusa floral; **saia de couro**, saia midi amarela, **shortinho jeans**, legging; salto rosa e sandália de salto azul; bolsa de palha e bolsa vermelha; brinco de estrela.
+  - 🧒 **Moda Infantil** (na Drip Store): 12 conjuntos para vestir os seus filhos (Uniforme da Escola, Seleção Brasileira, Super-herói, Princesa, Vestidinhos, Pijama de Estrelinhas, Dia de Praia, Basquete, Grafiteiro Mirim, Soldadinho…). Escolha para qual criança é e ela aparece com a roupa nova na hora (e para quem estiver online).
