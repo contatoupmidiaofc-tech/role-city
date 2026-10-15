@@ -771,7 +771,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.15-82';
+const BUILD = '2026.10.15-83';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -4532,6 +4532,13 @@ function buildShop(sc, cx, cz, info, addBuilding) {
   const ring = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: info.color, transparent: true, opacity: .8, side: THREE.DoubleSide }));
   ring.position.set(dx, 0.13, dz); sc.add(ring);
   city.doors.push({ kind: info.kind, label: info.label, x: dx, z: dz, ring });
+  if (info.kind === 'crew') { // Estúdio Rolê Records: porta do lado do prédio da Garagem da Crew
+    const px = xFace ? 0 : -1, pz = xFace ? -1 : 0, hx = cx + px * 12, hz = cz + pz * 12;
+    const hr = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xa66bff, transparent: true, opacity: .85, side: THREE.DoubleSide })); hr.position.set(hx, 0.13, hz); sc.add(hr);
+    const hs = textSprite('🎙️ ESTÚDIO ROLÊ RECORDS', { bg: '#15161a', fg: '#ff4fd8', size: 54, scale: [11, 1.7, 1], stroke: '#a66bff' }); hs.position.set(hx + px * 0.5, 7.6, hz + pz * 0.5); sc.add(hs);
+    const dr = new THREE.Mesh(boxGeo(px ? 0.3 : 3.2, 3.2, px ? 3.2 : 0.3), new THREE.MeshLambertMaterial({ color: 0x2a1f3d, emissive: 0x2a0f3d })); dr.position.set(cx + px * 10.1, 1.6, cz + pz * 10.1); sc.add(dr);
+    city.doors.push({ kind: 'estudio', label: '🎙️ Estúdio Rolê Records', x: hx, z: hz, ring: hr });
+  }
   if (info.kind === moveisHost()) {
     const px = xFace ? 0 : 1, pz = xFace ? 1 : 0, hx = cx + px * 12, hz = cz + pz * 12;
     const hr = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.25, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0xc98a4a, transparent: true, opacity: .85, side: THREE.DoubleSide })); hr.position.set(hx, 0.13, hz); sc.add(hr);
@@ -6664,7 +6671,7 @@ Object.assign(SPECIAL, {
 Object.assign(CITY_SHOPS.rj, { mecanica: '-84,0', armas: '-84,-42' }); Object.assign(CITY_SHOPS.ssa, { mecanica: '-84,-42', armas: '84,-42' });
 Object.assign(CITY_SHOPS.rj, { hospital: '42,84', prefeitura: '84,-42', igreja: '-42,84' });
 Object.assign(CITY_SHOPS.ssa, { hospital: '84,0', prefeitura: '0,-84', igreja: '-42,-84' });
-Object.assign(DOOR_COL, { moveis: '#c98a4a', hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6', biz: '#ffcf3a', mansao: '#ffd700', hangar: '#d4a017' });
+Object.assign(DOOR_COL, { moveis: '#c98a4a', estudio: '#a66bff', hospital: '#e53935', prefeitura: '#c9a227', igreja: '#b58ad6', biz: '#ffcf3a', mansao: '#ffd700', hangar: '#d4a017' });
 UNI_ITEMS.push(I('shirt', 'uni_samu', 'Macacão do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('pants', 'uni_samu_p', 'Calça do SAMU', 0xe2502a, 0, null, 'comum', { pat: 'tm_band_eef2f5_cfd3d8' }), I('shirt', 'uni_med', 'Jaleco de Médico', 0xf4f6f8, 0, null, 'comum', { pat: 'plain' }), I('pants', 'uni_med_p', 'Calça Hospitalar', 0x3fa7a0, 0, null, 'comum', { pat: 'plain' }));
 UNI_ITEMS.forEach(i => ITEM[i.id] = i);
 Object.assign(UNIFORM, { socorrista: { shirt: 'uni_samu', pants: 'uni_samu_p' }, medico: { shirt: 'uni_med', pants: 'uni_med_p' } });
@@ -6912,7 +6919,7 @@ function raceHurt(n) {
    LOJAS E PRÉDIOS POR DENTRO: entra pela porta, anda lá dentro e fala no balcão
    ========================================================= */
 const SHOPIN = { x: 950, z: 600 };
-const INSIDE_KINDS = ['armas', 'roupas', 'skate', 'celular', 'arena', 'tokens', 'crew', 'agencia', 'imobiliaria', 'viagem', 'concessionaria', 'delegacia', 'bombeiros', 'reciclagem', 'hospital', 'prefeitura', 'igreja', 'moveis'];
+const INSIDE_KINDS = ['armas', 'roupas', 'skate', 'celular', 'arena', 'tokens', 'crew', 'agencia', 'imobiliaria', 'viagem', 'concessionaria', 'delegacia', 'bombeiros', 'reciclagem', 'hospital', 'prefeitura', 'igreja', 'moveis', 'estudio'];
 function doorPanel(k) {
   if (k === 'armas') openPanel('armas');
   else if (k === 'roupas' || k === 'skate' || k === 'celular') openPanel('shop:' + k);
@@ -6920,7 +6927,7 @@ function doorPanel(k) {
   else if (k === 'qg') { openPanel('faccao'); gangsFetch(); }
   else openPanel(k);
 }
-const ROOM_SIZE = { armas: [14, 16], concessionaria: [26, 18], igreja: [14, 24], bombeiros: [18, 14], viagem: [20, 14], arena: [18, 14], moveis: [22, 16] };
+const ROOM_SIZE = { armas: [14, 16], concessionaria: [26, 18], igreja: [14, 24], bombeiros: [18, 14], viagem: [20, 14], arena: [18, 14], moveis: [22, 16], estudio: [22, 16] };
 /* retângulo do cômodo atual (casa, loja, hospital, cadeia) para a câmera não sair pela parede */
 function inRoomXZ(x, z) {
   let r = null;
@@ -6935,7 +6942,7 @@ function enterShop(d) {
   });
 }
 function exitShop() {
-  const it = city.shopIn; if (!it) return;
+  const it = city.shopIn; if (!it) return; if (it.kind === 'estudio') { studioRecStop(); studioStop(); }
   fadeTo(() => {
     city.scene.remove(it.g); for (const n of it.npcs) city.scene.remove(n); city.colliders = city.colliders.filter(c => !c.shop); city.shopIn = null;
     const d = it.door, len = Math.hypot(d.x, d.z) || 1; if (d.out) { P.x = d.out[0]; P.z = d.out[1]; P.h = d.out[2]; P.y = groundH(P.x, P.z); } else { P.x = d.x + d.x / len * 1.5; P.z = d.z + d.z / len * 1.5; P.y = 0; P.h = Math.atan2(d.x, d.z); } city.camYaw = P.h; city.zoom = 1; city.camSnap = true;
@@ -12792,12 +12799,154 @@ function shopDecoEnter(it) {
 }
 /* todo comércio fica mais de verdade: quadros nas paredes e plantas na entrada */
 function shopDecoBasics(it, add, W, D, H, k) {
-  if (k.startsWith('mansao') || k === 'igreja' || k === 'moveis') return;
+  if (k.startsWith('mansao') || k === 'igreja' || k === 'moveis' || k === 'estudio') return;
   const pics = ['q_abstrato', 'q_mar', 'q_cristo', 'q_pelo', 'q_role', 'q_familia'], h = k.length * 7 + k.charCodeAt(0);
   const put = (id, x, y, z, r) => { const m = furnMesh(id); m.position.set(x, y, z); m.rotation.y = r; it.g.add(m); };
   put(pics[h % 6], -W / 2 + 0.05, Math.min(2.1, H - 0.9), D / 2 - 3.2, Math.PI / 2); put(pics[(h + 2) % 6], W / 2 - 0.05, Math.min(2.1, H - 0.9), D / 2 - 3.2, -Math.PI / 2);
   for (const s of [-1, 1]) put('planta', s * (W / 2 - 0.5), 0, D / 2 - 0.5, 0);
 }
+
+
+/* =========================================================
+   ESTÚDIO ROLÊ RECORDS (um em cada cidade, no prédio da Garagem da Crew)
+   Igual a um estúdio de verdade: sala técnica (mesa de som, monitores, computador com o programa de gravação)
+   separada por vidro da sala de gravação (cabine de voz com microfone, pop filter e fone; bateria; espuma acústica).
+   Quem entra escolhe o beat, grava a voz pelo microfone do aparelho, ouve, baixa e lança a música.
+   ========================================================= */
+EXTRA_SHOPS.estudio = { kind: 'estudio', label: 'Estúdio Rolê Records', sub: 'ESTÚDIO DE MÚSICA', color: 0x2a1f3d, css: '#a66bff' };
+const foamTex = () => canvasTex(64, 64, (g, w, h) => { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { const v = (i + j) % 2; const gr = v ? g.createLinearGradient(i * 16, 0, i * 16 + 16, 0) : g.createLinearGradient(0, j * 16, 0, j * 16 + 16); gr.addColorStop(0, '#1b1c22'); gr.addColorStop(0.5, '#3a3c46'); gr.addColorStop(1, '#14151a'); g.fillStyle = gr; g.fillRect(i * 16, j * 16, 16, 16); } });
+const dawTex = () => canvasTex(256, 144, (g, w, h) => {
+  g.fillStyle = '#1c1e26'; g.fillRect(0, 0, w, h); g.fillStyle = '#2b2e3a'; g.fillRect(0, 0, w, 14); g.fillStyle = '#ffcf3a'; g.font = 'bold 10px sans-serif'; g.fillText('ROLÊ RECORDS · DAW', 6, 10);
+  const cs = ['#ff4f7b', '#4fc3ff', '#3ddc84', '#ffcf3a', '#a66bff', '#ff7a1a'];
+  for (let t = 0; t < 6; t++) { const y = 20 + t * 20; g.fillStyle = '#262934'; g.fillRect(40, y, w - 44, 17); g.fillStyle = cs[t]; g.fillRect(2, y, 34, 17); g.fillStyle = cs[t] + '99';
+    for (let x = 42; x < w - 6; x += 2) { const a = Math.abs(Math.sin(x * 0.11 + t) * Math.sin(x * 0.031 * (t + 1))) * 7 + 1; g.fillRect(x, y + 8.5 - a, 1.5, a * 2); } }
+  g.fillStyle = '#fff'; g.fillRect(150, 16, 1.5, h);
+});
+const discTex = (gold) => canvasTex(64, 80, (g, w, h) => { g.fillStyle = '#15161a'; g.fillRect(0, 0, w, h); const gr = g.createRadialGradient(32, 32, 2, 32, 32, 26); gr.addColorStop(0, gold ? '#fff2b0' : '#ffffff'); gr.addColorStop(1, gold ? '#c9a227' : '#9aa3ad'); g.fillStyle = gr; g.beginPath(); g.arc(32, 32, 24, 0, TAU); g.fill(); g.fillStyle = '#15161a'; g.beginPath(); g.arc(32, 32, 4, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.font = 'bold 8px sans-serif'; g.textAlign = 'center'; g.fillText(gold ? 'DISCO DE OURO' : 'PLATINA', 32, 70); });
+EXTRA_INT.estudio = (h) => {
+  const { add, box, solid, spot, W, D, H, it } = h;
+  const foam = new THREE.MeshStandardMaterial({ map: (() => { const t = foamTex(); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 2); return t; })(), roughness: 1 });
+  const zG = -1.6; // parede de vidro entre a sala técnica (frente) e a sala de gravação (fundo)
+  // espuma acústica nas paredes da sala de gravação e bass traps nos cantos
+  for (const [x, z, w, ry] of [[0, -D / 2 + 0.06, W - 0.4, 0], [-W / 2 + 0.06, (zG - D / 2) / 2, D / 2 + zG - 0.4, Math.PI / 2], [W / 2 - 0.06, (zG - D / 2) / 2, D / 2 + zG - 0.4, -Math.PI / 2]]) add(new THREE.PlaneGeometry(w, H - 0.6), foam, x, H / 2, z, ry);
+  for (const s of [-1, 1]) box(0.9, H - 0.2, 0.9, 0x22232a, s * (W / 2 - 0.45), H / 2, -D / 2 + 0.45, Math.PI / 4, 1);
+  // vidro com porta no meio (moldura escura)
+  const glass = new THREE.MeshStandardMaterial({ color: 0x9fd6ff, transparent: true, opacity: 0.22, roughness: 0.05, metalness: 0.2 });
+  for (const s of [-1, 1]) { const w = W / 2 - 1.1, x = s * (1.1 + w / 2); add(boxGeo(w, H - 1.2, 0.08), glass, x, (H - 1.2) / 2 + 0.6, zG); box(w, 0.6, 0.3, 0x2a2d34, x, 0.3, zG); box(w, 0.12, 0.3, 0x2a2d34, x, H - 0.6, zG); h.col(x, zG, w, 0.3); }
+  box(0.12, H, 0.3, 0x2a2d34, -1.1, H / 2, zG); box(0.12, H, 0.3, 0x2a2d34, 1.1, H / 2, zG);
+  const onAir = textSprite('● GRAVANDO', { bg: '#15161a', fg: '#ff3b3b', size: 40, scale: [1.6, 0.35, 1] }); onAir.position.set(0, H - 0.35, zG + 0.2); it.g.add(onAir); it.onAir = onAir; onAir.visible = false;
+  // cabine de voz: microfone condensador com pop filter, pedestal e fone pendurado
+  const bx = -W / 4 - 0.5, bz = -D / 2 + 2.6;
+  add(new THREE.CircleGeometry(1.6, 28), new THREE.MeshStandardMaterial({ color: 0x5a2d6b, roughness: 1 }), bx, 0.02, bz, 0, -Math.PI / 2);
+  box(0.05, 1.6, 0.05, 0x15161a, bx, 0.8, bz + 0.6, 0, 0.4, 0.6); box(0.6, 0.04, 0.04, 0x15161a, bx, 0.03, bz + 0.6);
+  add(CYL(0.06, 0.06, 0.22, 14), std(0xd4d4d8, 0.25, 0.9), bx, 1.62, bz + 0.6); add(SPH(0.065, 12, 10), std(0x8a8f99, 0.4, 0.8), bx, 1.75, bz + 0.6);
+  const pop = add(new THREE.CircleGeometry(0.13, 20), new THREE.MeshStandardMaterial({ color: 0x15161a, transparent: true, opacity: 0.55, side: THREE.DoubleSide }), bx, 1.7, bz + 0.88);
+  const ph = add(new THREE.TorusGeometry(0.11, 0.025, 6, 14, Math.PI), std(0x15161a, 0.5), bx + 0.25, 1.4, bz + 0.6); ph.rotation.z = Math.PI;
+  const mt = textSprite('🎙️ CABINE DE VOZ', { bg: '#a66bff', fg: '#15161a', size: 40, scale: [2.4, 0.45, 1] }); mt.position.set(bx, 2.6, bz - 0.8); it.g.add(mt);
+  spot('🎙️ Cabine: cantar e gravar a voz', bx, bz + 1.5, () => openPanel('estudio'));
+  // bateria acústica
+  const dx = W / 4 + 0.6, dz = -D / 2 + 2.5, red = std(0xc8102e, 0.35, 0.3), chrome = std(0xd4d4d8, 0.2, 0.9);
+  { const k = add(CYL(0.42, 0.42, 0.45, 20), red, dx, 0.45, dz); k.rotation.x = Math.PI / 2; } add(CYL(0.25, 0.25, 0.2, 18), red, dx - 0.6, 0.65, dz + 0.3); add(CYL(0.2, 0.2, 0.2, 18), red, dx + 0.3, 0.95, dz - 0.05); add(CYL(0.2, 0.2, 0.2, 18), red, dx - 0.3, 0.95, dz - 0.05); add(CYL(0.3, 0.3, 0.35, 18), red, dx + 0.75, 0.45, dz + 0.3);
+  for (const [x, y] of [[-1.0, 1.15], [1.1, 1.35], [0.4, 1.55]]) { add(CYL(0.32, 0.32, 0.015, 20), std(0xd4a017, 0.3, 0.9), dx + x, y, dz); box(0.03, y, 0.03, 0x9aa0a8, dx + x, y / 2, dz); }
+  add(CYL(0.2, 0.2, 0.06, 14), std(0x15161a), dx + 0.1, 0.55, dz + 0.9); h.col(dx, dz, 2.4, 1.6);
+  // guitarra e baixo no suporte, teclado
+  for (const [x, c] of [[W / 2 - 0.6, 0xe0b06a], [W / 2 - 1.2, 0x15161a]]) { const gtr = new THREE.Group(); const bd = new THREE.Mesh(SPH(0.22, 12, 10), std(c, 0.3)); bd.scale.set(1, 1.3, 0.3); bd.position.y = 0.45; gtr.add(bd); const nk = new THREE.Mesh(boxGeo(0.06, 0.8, 0.04), std(0x5a3d26)); nk.position.y = 1.0; gtr.add(nk); gtr.position.set(x, 0, zG - 1.2); gtr.rotation.y = -Math.PI / 2; it.g.add(gtr); }
+  box(1.3, 0.08, 0.35, 0x15161a, -W / 2 + 1.4, 0.85, zG - 1.0); for (let k = 0; k < 14; k++) box(0.08, 0.02, 0.22, 0xffffff, -W / 2 + 0.85 + k * 0.085, 0.9, zG - 0.97); box(0.04, 0.85, 0.04, 0x15161a, -W / 2 + 1.4, 0.42, zG - 1.0);
+  // sala técnica: mesa de som grande virada para o vidro, monitores, computador com a DAW, rack e cadeira do produtor
+  const cz = zG + 1.6;
+  solid(4.4, 0.85, 1.1, 0x2a2018, 0, 0.42, cz); const desk = add(boxGeo(4.2, 0.12, 0.9), std(0x15161a, 0.5), 0, 0.92, cz + 0.05); desk.rotation.x = -0.18;
+  for (let i = 0; i < 24; i++) { box(0.03, 0.05, 0.3, 0xd4d4d8, -1.9 + i * 0.165, 0.99, cz + 0.12 + (i % 2) * 0.02); for (let k = 0; k < 3; k++) box(0.05, 0.05, 0.05, [0xff4f7b, 0x4fc3ff, 0xffcf3a][k], -1.9 + i * 0.165, 1.0, cz - 0.25 + k * 0.08); }
+  for (const s of [-1, 1]) { box(0.3, 1.1, 0.3, 0x15161a, s * 2.6, 0.55, cz - 0.3); const mon = box(0.36, 0.55, 0.36, 0x15161a, s * 2.6, 1.38, cz - 0.3, s * -0.35, 0.5); add(CYL(0.12, 0.12, 0.02, 16), std(0xffcf3a, 0.4), s * 2.6 + s * -0.06, 1.3, cz - 0.11, s * -0.35, Math.PI / 2); }
+  const scr = add(new THREE.PlaneGeometry(1.5, 0.85), new THREE.MeshBasicMaterial({ map: dawTex() }), 0, 1.55, cz - 0.35); box(1.6, 0.95, 0.05, 0x15161a, 0, 1.55, cz - 0.39); box(0.08, 0.5, 0.08, 0x15161a, 0, 1.12, cz - 0.39);
+  solid(0.6, 1.6, 0.6, 0x15161a, -W / 2 + 0.6, 0.8, cz + 0.4); for (let k = 0; k < 6; k++) box(0.55, 0.08, 0.02, [0x3ddc84, 0xff4f7b, 0x4fc3ff][k % 3], -W / 2 + 0.6, 0.3 + k * 0.22, cz + 0.71);
+  box(0.6, 0.1, 0.6, 0x15161a, 0, 0.5, cz + 1.3); box(0.6, 0.6, 0.08, 0x15161a, 0, 0.85, cz + 1.6); box(0.05, 0.45, 0.05, 0x9aa0a8, 0, 0.25, cz + 1.3);
+  spot('🎛️ Mesa de som: beats e mixagem', 0, cz + 2.0, () => openPanel('estudio'));
+  // sofá da galera, discos de ouro e platina, letreiro neon
+  solid(3, 0.5, 1, 0x3a2a4a, W / 2 - 2.2, 0.25, D / 2 - 1.6); box(3, 0.6, 0.25, 0x3a2a4a, W / 2 - 2.2, 0.75, D / 2 - 1.15);
+  for (let k = 0; k < 4; k++) add(new THREE.PlaneGeometry(0.7, 0.88), new THREE.MeshBasicMaterial({ map: discTex(k % 2 === 0) }), -W / 2 + 0.04, 1.8, zG + 1.4 + k * 1.0, Math.PI / 2);
+  const neon = textSprite('ROLÊ RECORDS', { bg: '#15161a', fg: '#ff4fd8', size: 56, scale: [4.2, 0.8, 1], stroke: '#a66bff' }); neon.position.set(W / 2 - 2.2, 2.3, D / 2 - 0.15); it.g.add(neon);
+  const lp = new THREE.PointLight(0xa66bff, 0.8, 9); lp.position.set(0, 2.4, zG - 2.5); it.g.add(lp);
+};
+/* ---------- som: beats feitos no próprio jogo (Web Audio), sem baixar nada ---------- */
+const BEATS = {
+  funk: { n: 'Funk (tamborzão)', bpm: 130, k: 'x..x..x...x..x..', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.', p: '..x...x..x...x..', b: [36, 0, 0, 36, 0, 0, 39, 0, 0, 0, 36, 0, 0, 34, 0, 0] },
+  bregafunk: { n: 'Brega funk', bpm: 170, k: 'x...x...x...x...', s: '..x...x...x..xx.', h: 'xxxxxxxxxxxxxxxx', p: 'x..x..x.x..x..x.', b: [38, 0, 0, 38, 0, 0, 41, 0, 38, 0, 0, 38, 0, 0, 36, 0] },
+  trap: { n: 'Trap', bpm: 140, k: 'x......x..x.....', s: '........x.......', h: 'x.x.xxx.x.x.x.xx', p: '................', b: [31, 0, 0, 0, 0, 0, 0, 31, 0, 0, 34, 0, 0, 0, 29, 0], pad: [55, 58, 62] },
+  rap: { n: 'Rap (boom bap)', bpm: 90, k: 'x.....x...x.....', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.', p: '................', b: [36, 0, 0, 0, 0, 0, 36, 0, 0, 0, 39, 0, 0, 0, 0, 0], pad: [60, 63, 67] },
+  pagode: { n: 'Pagode', bpm: 96, k: 'x.......x.......', s: '..x..x....x..x..', h: '.x.x.x.x.x.x.x.x', p: 'x.xx.x.xx.xx.x.x', b: [41, 0, 0, 0, 45, 0, 0, 0, 43, 0, 0, 0, 48, 0, 0, 0], pad: [65, 69, 72] },
+  piseiro: { n: 'Piseiro', bpm: 150, k: 'x...x...x...x...', s: '....x.......x...', h: '..x...x...x...x.', p: 'x.x.x.x.x.x.x.x.', b: [40, 0, 47, 0, 40, 0, 47, 0, 45, 0, 52, 0, 43, 0, 50, 0], pad: [64, 67, 71] },
+  arrocha: { n: 'Arrocha', bpm: 120, k: 'x.....x.x.......', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.', p: '..x...x...x...x.', b: [40, 0, 0, 0, 0, 0, 40, 0, 45, 0, 0, 0, 43, 0, 0, 0], pad: [64, 68, 71] },
+};
+const ST = { g: 'funk', bpm: 130, on: false, step: 0, next: 0, timer: null, bus: null, vb: 0.9, vv: 1.0, rec: null, chunks: [], takes: [], mic: null, micOwn: false, recT: 0, remote: false };
+const midiF = n => 440 * Math.pow(2, (n - 69) / 12);
+let _stNoise = null;
+function stBus() { const ac = audioCtx(); if (!ac) return null; if (!ST.bus) { ST.bus = ac.createGain(); ST.bus.gain.value = ST.vb; ST.bus.connect(ac.destination); } if (!_stNoise) { _stNoise = ac.createBuffer(1, ac.sampleRate * 0.5, ac.sampleRate); const d = _stNoise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } return ac; }
+function stHit(kind, t, note) {
+  const ac = audioCtx(), out = ST.bus; if (!ac || !out) return; const g = ac.createGain(); g.connect(out);
+  if (kind === 'k') { const o = ac.createOscillator(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12); g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35); o.connect(g); o.start(t); o.stop(t + 0.4); }
+  else if (kind === 'b') { const o = ac.createOscillator(), lp = ac.createBiquadFilter(); o.type = 'sine'; o.frequency.setValueAtTime(midiF(note), t); lp.type = 'lowpass'; lp.frequency.value = 400; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.7, t + 0.01); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5); o.connect(lp); lp.connect(g); o.start(t); o.stop(t + 0.55); }
+  else if (kind === 'pad') { for (const n of note) { const o = ac.createOscillator(), lp = ac.createBiquadFilter(); o.type = 'sawtooth'; o.frequency.value = midiF(n); lp.type = 'lowpass'; lp.frequency.value = 1100; const gg = ac.createGain(); gg.gain.setValueAtTime(0.0001, t); gg.gain.linearRampToValueAtTime(0.05, t + 0.08); gg.gain.linearRampToValueAtTime(0.0001, t + 60 / ST.bpm * 3.8); o.connect(lp); lp.connect(gg); gg.connect(out); o.start(t); o.stop(t + 60 / ST.bpm * 4); } }
+  else { const s = ac.createBufferSource(), f = ac.createBiquadFilter(); s.buffer = _stNoise; const dur = kind === 'h' ? 0.05 : kind === 's' ? 0.18 : 0.08; f.type = kind === 'h' ? 'highpass' : 'bandpass'; f.frequency.value = kind === 'h' ? 7000 : kind === 's' ? 1800 : 3200; g.gain.setValueAtTime(kind === 'h' ? 0.25 : kind === 's' ? 0.8 : 0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); s.connect(f); f.connect(g); s.start(t); s.stop(t + dur + 0.02);
+    if (kind === 's') { const o = ac.createOscillator(), g2 = ac.createGain(); o.frequency.value = 190; g2.gain.setValueAtTime(0.4, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.1); o.connect(g2); g2.connect(out); o.start(t); o.stop(t + 0.12); } }
+}
+function stTick() {
+  const ac = audioCtx(); if (!ac || !ST.on) return; const B = BEATS[ST.g], sd = 60 / ST.bpm / 4;
+  while (ST.next < ac.currentTime + 0.12) { const i = ST.step % 16, t = ST.next;
+    if (B.k[i] === 'x') stHit('k', t); if (B.s[i] === 'x') stHit('s', t); if (B.h[i] === 'x') stHit('h', t); if (B.p[i] === 'x') stHit('p', t); if (B.b[i]) stHit('b', t, B.b[i]); if (B.pad && i === 0) stHit('pad', t, B.pad);
+    ST.next += sd; ST.step++; }
+}
+function studioPlay(g, bpm, remote) {
+  if (!stBus()) return toast('Seu aparelho não liberou o som. Toque na tela e tente de novo.', 'bad');
+  if (g && BEATS[g]) ST.g = g; ST.bpm = clamp(bpm || ST.bpm || BEATS[ST.g].bpm, 60, 190); ST.on = true; ST.remote = !!remote; ST.step = 0; ST.next = audioCtx().currentTime + 0.08;
+  clearInterval(ST.timer); ST.timer = setInterval(stTick, 25);
+  if (!remote && NET.ch && NET.online) ccSend0('studio', { k: 'beat', on: true, g: ST.g, bpm: ST.bpm, from: ccMe(), name: S.name, cid: cityId() });
+}
+function studioStop(remote) { ST.on = false; clearInterval(ST.timer); ST.timer = null; if (!remote && NET.ch && NET.online && city.shopIn && city.shopIn.kind === 'estudio') ccSend0('studio', { k: 'beat', on: false, from: ccMe(), cid: cityId() }); }
+/* quem está no mesmo estúdio ouve o beat que a outra pessoa soltou (a voz vai pelo Fone) */
+function onStudio(d) {
+  if (!d || d.from === ccMe() || d.cid !== cityId() || !city.shopIn || city.shopIn.kind !== 'estudio') return;
+  if (d.k === 'beat') { if (d.on) { if (ST.rec) return; studioPlay(d.g, d.bpm, true); toast(`🎧 ${d.name || 'Alguém'} soltou um beat de ${BEATS[d.g] ? BEATS[d.g].n : 'música'} no estúdio.`, 'pink'); } else if (ST.remote) studioStop(true); if (panelKind === 'estudio') renderPanel(); }
+  else if (d.k === 'pub') toast(`🎵 ${d.name} acabou de gravar "${d.t}" aqui no estúdio!`, 'good');
+}
+/* gravação: voz do microfone + beat juntos, num arquivo de áudio */
+async function studioRec() {
+  if (ST.rec) return; if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast('Seu navegador não deixa gravar áudio.', 'bad');
+  const ac = stBus(); if (!ac) return;
+  try { if (VC.on && VC.st) { ST.mic = VC.st; ST.micOwn = false; } else { ST.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); ST.micOwn = true; } }
+  catch (e) { return toast('Precisa permitir o microfone para gravar. Toque no cadeado da barra de endereço e libere o microfone.', 'bad'); }
+  const dest = ac.createMediaStreamDestination(), src = ac.createMediaStreamSource(ST.mic), vg = ac.createGain(); vg.gain.value = ST.vv; src.connect(vg); vg.connect(dest); ST.bus.connect(dest); ST.recNodes = [src, vg, dest];
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find(m => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || '';
+  ST.chunks = []; ST.rec = new MediaRecorder(dest.stream, mime ? { mimeType: mime } : undefined);
+  ST.rec.ondataavailable = e => { if (e.data && e.data.size) ST.chunks.push(e.data); };
+  ST.rec.onstop = () => { const type = ST.rec.mimeType || mime || 'audio/webm', blob = new Blob(ST.chunks, { type }); const n = ST.takes.length + 1, dur = Math.round((Date.now() - ST.recT) / 1000);
+    ST.takes.push({ n, blob, url: URL.createObjectURL(blob), g: ST.g, bpm: ST.bpm, dur, ext: /mp4/.test(type) ? 'm4a' : /ogg/.test(type) ? 'ogg' : 'webm', t: `Faixa ${n}` });
+    try { ST.bus.disconnect(ST.recNodes[2]); ST.recNodes[0].disconnect(); } catch (e) { } if (ST.micOwn && ST.mic) ST.mic.getTracks().forEach(t => t.stop()); ST.mic = null; ST.rec = null; if (city.shopIn && city.shopIn.onAir) city.shopIn.onAir.visible = false;
+    toast(`💿 Faixa ${n} gravada (${dur}s). Ouça, baixe ou lance!`, 'good'); if (panelKind === 'estudio') renderPanel(); };
+  if (!ST.on) studioPlay(); ST.rec.start(500); ST.recT = Date.now(); if (city.shopIn && city.shopIn.onAir) city.shopIn.onAir.visible = true; sfx('ui');
+  toast('🔴 Gravando! Cante no microfone. Use fone de ouvido para o beat não vazar na voz.', 'pink'); if (panelKind === 'estudio') renderPanel();
+}
+function studioRecStop() { if (ST.rec && ST.rec.state !== 'inactive') ST.rec.stop(); studioStop(); }
+let _stAudio = null;
+function studioListen(i) { const T = ST.takes[i]; if (!T) return; if (_stAudio) _stAudio.pause(); _stAudio = new Audio(T.url); _stAudio.play().catch(() => { }); }
+function studioDownload(i) { const T = ST.takes[i]; if (!T) return; const a = document.createElement('a'); a.href = T.url; a.download = `${(T.t || 'musica').replace(/[^\wÀ-ú -]/g, '').trim() || 'musica'} - ${S.name} (Rolê Records).${T.ext}`; document.body.appendChild(a); a.click(); a.remove(); toast('💾 Música baixada no seu aparelho.', 'good'); }
+function studioDel(i) { const T = ST.takes[i]; if (!T) return; URL.revokeObjectURL(T.url); ST.takes.splice(i, 1); renderPanel(); }
+function studioName(i) { const T = ST.takes[i]; if (!T) return; const n = prompt('Nome da música:', T.t); if (n && n.trim()) { T.t = n.trim().slice(0, 40); renderPanel(); } }
+function studioPub(i) {
+  const T = ST.takes[i]; if (!T || T.pub) return; T.pub = true; S.musicas = (S.musicas || 0) + 1; persist();
+  postFeed(`🎵 Lancei a música "${T.t}" (${BEATS[T.g].n}) no Estúdio Rolê Records de ${CITY().name}!`); const d = gameDay(); if (S.studioDay !== d) { S.studioDay = d; addXP(40); toast('🎵 Música lançada no feed! +40 XP', 'good'); } else toast('🎵 Música lançada no feed!', 'good');
+  if (NET.ch && NET.online) ccSend0('studio', { k: 'pub', from: ccMe(), name: S.name, t: T.t, cid: cityId() }); sfx('level'); renderPanel();
+}
+PANELS_MOV.estudio = function () {
+  const B = BEATS[ST.g];
+  let html = `<p class="muted">Igual a um estúdio de verdade: escolha o beat na mesa de som, entre na cabine e grave a sua voz. Para quem está no estúdio ouvir você cantando ao vivo, ligue o <b>🎧 Fone</b>. Use fone de ouvido para o beat não vazar na gravação.</p>`;
+  html += `<h3>🥁 Beat</h3><div class="row">${Object.entries(BEATS).map(([k, b]) => `<button class="btn ${k === ST.g ? '' : 'ghost'} sm" data-act="st-beat" data-g="${k}">${b.n}</button>`).join('')}</div>`;
+  html += `<div class="row"><button class="btn sm" data-act="${ST.on ? 'st-stop' : 'st-play'}">${ST.on ? '⏹ Parar beat' : '▶ Tocar beat'}</button><button class="btn ghost sm" data-act="st-bpm" data-d="-5">− BPM</button><b style="align-self:center">${ST.bpm} BPM</b><button class="btn ghost sm" data-act="st-bpm" data-d="5">+ BPM</button></div>`;
+  html += `<div class="row"><span class="muted" style="align-self:center">Volume do beat ${Math.round(ST.vb * 100)}%</span><button class="btn ghost sm" data-act="st-vol" data-w="b" data-d="-0.1">−</button><button class="btn ghost sm" data-act="st-vol" data-w="b" data-d="0.1">+</button><span class="muted" style="align-self:center">Voz ${Math.round(ST.vv * 100)}%</span><button class="btn ghost sm" data-act="st-vol" data-w="v" data-d="-0.1">−</button><button class="btn ghost sm" data-act="st-vol" data-w="v" data-d="0.1">+</button></div>`;
+  html += `<h3>🎙️ Gravação</h3>${ST.rec ? `<div class="note">🔴 Gravando em cima do beat de ${esc(B.n)}... <button class="btn sm" data-act="st-recstop">⏹ Parar gravação</button></div>` : `<button class="btn" data-act="st-rec">🔴 Gravar voz em cima do beat</button>`}`;
+  html += `<h3>💿 Minhas faixas desta sessão (${ST.takes.length})</h3>${ST.takes.length ? ST.takes.map((T, i) => `<div class="item-card r-comum"><div class="item-info"><b>${esc(T.t)}</b><span class="muted">${esc(BEATS[T.g].n)} · ${T.bpm} BPM · ${T.dur}s${T.pub ? ' · lançada' : ''}</span><div class="row"><button class="btn sm" data-act="st-ouvir" data-i="${i}">▶ Ouvir</button><button class="btn ghost sm" data-act="st-nome" data-i="${i}">✏️ Nome</button><button class="btn ghost sm" data-act="st-baixar" data-i="${i}">💾 Baixar</button>${T.pub ? '' : `<button class="btn ghost sm" data-act="st-lancar" data-i="${i}">🚀 Lançar no feed</button>`}<button class="btn ghost sm" data-act="st-apagar" data-i="${i}">🗑️</button></div></div></div>`).join('') : '<p class="muted">Nenhuma faixa ainda. As faixas ficam até você sair do jogo: baixe as que quiser guardar.</p>'}`;
+  html += `<p class="muted">Músicas lançadas: <b>${S.musicas || 0}</b>.</p>`;
+  return { title: '🎛️ Estúdio Rolê Records', html };
+};
 
 EXTRA_INT.sorveteria = (h) => {
   cleanShopSeats(); const { box, add, D, W } = h;
@@ -16003,6 +16152,18 @@ function act(a, ds, el) {
     case 'deco-del': decoRemove(+ds.i); break;
     case 'deco-wall': decoWall(ds.c); break;
     case 'deco-open': openPanel('decorar'); break;
+    case 'st-beat': ST.g = ds.g; ST.bpm = BEATS[ds.g].bpm; if (ST.on && !ST.rec) studioPlay(); renderPanel(); break;
+    case 'st-play': studioPlay(); renderPanel(); break;
+    case 'st-stop': studioStop(); renderPanel(); break;
+    case 'st-bpm': ST.bpm = clamp(ST.bpm + +ds.d, 60, 190); if (ST.on && !ST.rec) studioPlay(); renderPanel(); break;
+    case 'st-vol': if (ds.w === 'b') { ST.vb = clamp(+(ST.vb + +ds.d).toFixed(1), 0, 1.5); if (ST.bus) ST.bus.gain.value = ST.vb; } else ST.vv = clamp(+(ST.vv + +ds.d).toFixed(1), 0, 2); renderPanel(); break;
+    case 'st-rec': studioRec(); break;
+    case 'st-recstop': studioRecStop(); break;
+    case 'st-ouvir': studioListen(+ds.i); break;
+    case 'st-nome': studioName(+ds.i); break;
+    case 'st-baixar': studioDownload(+ds.i); break;
+    case 'st-lancar': studioPub(+ds.i); break;
+    case 'st-apagar': studioDel(+ds.i); break;
     case 'vc-toggle': vcToggle(); break;
     case 'mil-op': milOpOpen(ds.t); break;
     case 'mil-join': milOpJoin(); break;
@@ -18160,7 +18321,7 @@ function netJoinPlaza() {
     .on('broadcast', { event: 'carona_nao' }, ({ payload }) => onRideMsg('carona_nao', payload))
     .on('broadcast', { event: 'carona_sair' }, ({ payload }) => onRideMsg('carona_sair', payload))
     .on('broadcast', { event: 'horn' }, ({ payload }) => { const p = NET.peers[payload.id]; if (p) { const dd = Math.hypot(p.x - P.x, p.z - P.z); if (dd < 60) hornSound(payload.m, Math.max(0.15, 1 - dd / 60)); } })
-    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 'mil' }, ({ payload }) => onMil(payload)).on('broadcast', { event: 'vc' }, ({ payload }) => onVC(payload)).on('broadcast', { event: 'deco' }, ({ payload }) => onDeco(payload)).on('broadcast', { event: 'adm_pg' }, ({ payload }) => onAdmPg(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'samu_emb' }, ({ payload }) => onSamuEmb(payload)).on('broadcast', { event: 'samu_hosp' }, ({ payload }) => onSamuHosp(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
+    .on('broadcast', { event: 'cc_new' }, ({ payload }) => onCC('cc_new', payload)).on('broadcast', { event: 'cc_take' }, ({ payload }) => onCC('cc_take', payload)).on('broadcast', { event: 'cc_conf' }, ({ payload }) => onCC('cc_conf', payload)).on('broadcast', { event: 'cc_cancel' }, ({ payload }) => onCC('cc_cancel', payload)).on('broadcast', { event: 'cc_cancel_take' }, ({ payload }) => onCC('cc_cancel_take', payload)).on('broadcast', { event: 'cc_arrive' }, ({ payload }) => onCC('cc_arrive', payload)).on('broadcast', { event: 'cc_done' }, ({ payload }) => onCC('cc_done', payload)).on('broadcast', { event: 'cc_radio' }, ({ payload }) => onCC('cc_radio', payload)).on('broadcast', { event: 'cc_preso' }, ({ payload }) => onCC('cc_preso', payload)).on('broadcast', { event: 'cura' }, ({ payload }) => onCura(payload)).on('broadcast', { event: 'cura_ok' }, ({ payload }) => onCuraOk(payload)).on('broadcast', { event: 'entrega' }, ({ payload }) => onEntrega(payload)).on('broadcast', { event: 'entrega_ok' }, ({ payload }) => onEntregaOk(payload)).on('broadcast', { event: 'taxi_m' }, ({ payload }) => onTaxiM(payload)).on('broadcast', { event: 'taxi_fim' }, ({ payload }) => onTaxiFim(payload)).on('broadcast', { event: 'taxi_pago' }, ({ payload }) => onTaxiPago(payload)).on('broadcast', { event: 'fogo_p' }, ({ payload }) => onFogo('fogo_p', payload)).on('broadcast', { event: 'fogo_entrou' }, ({ payload }) => onFogo('fogo_entrou', payload)).on('broadcast', { event: 'fogo_fim' }, ({ payload }) => onFogo('fogo_fim', payload)).on('broadcast', { event: 'ct' }, ({ payload }) => onCT(payload)).on('broadcast', { event: 'denuncia' }, ({ payload }) => onDenuncia(payload)).on('broadcast', { event: 's5' }, ({ payload }) => onS5(payload)).on('broadcast', { event: 's6' }, ({ payload }) => onS6(payload)).on('broadcast', { event: 'mil' }, ({ payload }) => onMil(payload)).on('broadcast', { event: 'vc' }, ({ payload }) => onVC(payload)).on('broadcast', { event: 'deco' }, ({ payload }) => onDeco(payload)).on('broadcast', { event: 'studio' }, ({ payload }) => onStudio(payload)).on('broadcast', { event: 'adm_pg' }, ({ payload }) => onAdmPg(payload)).on('broadcast', { event: 's7' }, ({ payload }) => onS7(payload)).on('broadcast', { event: 'samu_emb' }, ({ payload }) => onSamuEmb(payload)).on('broadcast', { event: 'samu_hosp' }, ({ payload }) => onSamuHosp(payload)).on('broadcast', { event: 'ent_saiu' }, ({ payload }) => { if (NET.user && payload.to === NET.user.id) toast(`🛵 ${payload.by} retirou seu pedido e está a caminho!`, 'good'); })
     .on('presence', { event: 'sync' }, () => onPresence(ch.presenceState()))
     .subscribe(async st => {
       if (st === 'SUBSCRIBED') { NET.online = true; try { await ch.track(myPresence()); } catch (e) { } updateOnlineChip(); }
