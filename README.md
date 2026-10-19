@@ -861,6 +861,17 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - **Amarela** com letras verdes: "FLÁVIO BOLSONARO" e o **22** grande na frente; "FLÁVIO" e o **22** grande nas costas.
     - **Verde** com letras amarelas, mesmo desenho.
 
+### Build 2026.10.19-93 (Motorista visível e Missões de História estilo GTA)
+
+- **Motorista visível nos carros:** o vidro dos carros virou fumê (dá pra ver dentro). Dirigindo, seu personagem aparece sentado no banco do motorista (lado esquerdo, como no Brasil) com as mãos no volante. Os carros do trânsito da cidade também têm motorista.
+- **📖 História do Rolê (5 capítulos):** cada capítulo tem um personagem com marcador colorido no mapa (letra inicial). Chegando perto começa a **cena de conversa**: faixas pretas de cinema, câmera alternando entre quem fala, legendas com o nome e os botões **Continuar** e **⏭ Pular**. Depois aparecem os objetivos no topo da tela com GPS, tempo e, em alguns, polícia para despistar. No fim tem a cena de encerramento e o pagamento.
+  1. **Marmita Quente** (Dona Cida) – levar marmitas para a obra antes de esfriarem. $ 600.
+  2. **Panfleto do Baile** (MC Pretinho) – colar panfletos em 4 pontos da cidade. $ 900.
+  3. **A Peça do Tonhão** (Tonhão, mecânico) – buscar a peça no ferro-velho e despistar a polícia. $ 1.400.
+  4. **Festa na Laje** (Bia) – bolo, gelo e som para a festa surpresa da vó. $ 1.800.
+  5. **Respeito se Conquista** (Ajbz) – levar o convite do campeonato de futsal aos 3 líderes de bairro. $ 5.000.
+- Painel **📖 História** (toque na caixa da missão): lista os capítulos, deixa **rever as cenas** já vistas e desistir da missão atual.
+
 ### Build 2026.10.19-92 (Pacote estilo GTA 2)
 
 - **Semáforos:** 36 cruzamentos com semáforo (vermelho, amarelo e verde). As ruas no sentido leste–oeste e norte–sul se alternam num ciclo de 24 s, igual para todos os jogadores. Os carros da cidade freiam aos poucos até a faixa, param no vermelho, fazem fila sem bater na traseira e saem no verde. Viaturas em serviço passam direto.

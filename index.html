@@ -248,6 +248,8 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #h-hp.low i{animation:blink .8s steps(1) infinite}
 #hurt{position:fixed;inset:0;pointer-events:none;z-index:13;opacity:0;background:radial-gradient(circle,rgba(229,57,53,0) 45%,rgba(229,57,53,.75))}
 #h-wanted{color:#ff5a5a;font-weight:700;margin-left:6px;letter-spacing:1px;text-shadow:0 0 6px rgba(255,90,90,.6)}
+#cut{position:fixed;inset:0;z-index:70;pointer-events:auto;cursor:pointer}#cut[hidden]{display:none}#cut .bar{position:absolute;left:0;right:0;background:#000}#cut .top{top:0;height:11vh}#cut .bot{bottom:0;min-height:17vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 16px calc(env(safe-area-inset-bottom,0px) + 10px);gap:8px}#cut .sub{max-width:760px;text-align:center;color:#fff;font:600 clamp(16px,2.4vw,22px)/1.3 'Barlow Condensed',sans-serif;text-shadow:0 2px 4px #000}#cut .cbt{display:flex;gap:10px}#cut .cbt button{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;padding:6px 14px;font:700 13px 'Barlow Condensed',sans-serif}body.in-cut #touch,body.in-cut #hud-tr,body.in-cut #mission-box,body.in-cut #car-radio{visibility:hidden}
+#story-box{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 100px);z-index:29;max-width:min(92vw,420px);padding:6px 14px;border-radius:12px;border:2px solid #ffcf3a;background:rgba(15,17,22,.88);color:#fff;font:600 14px/1.25 'Barlow Condensed',sans-serif;text-align:center}#story-box[hidden]{display:none}#story-box small{display:block;color:#ffcf3a;font-size:11px;letter-spacing:.5px}#story-box b{color:#3ddc84}#story-box b.low{color:#ff5a5a}
 #h-wanted.blink{animation:wblink .6s steps(2) infinite}@keyframes wblink{50%{opacity:.15}}
 #wwheel{position:fixed;inset:0;z-index:60;background:rgba(8,9,12,.55);display:flex;align-items:center;justify-content:center}#wwheel[hidden]{display:none}#wwheel .ring{position:relative;width:min(78vw,340px);height:min(78vw,340px);border-radius:50%;background:radial-gradient(circle,rgba(20,22,28,.4) 32%,rgba(20,22,28,.92) 33%);border:2px solid rgba(255,207,58,.5)}#wwheel button{position:absolute;width:74px;height:74px;margin:-37px 0 0 -37px;border-radius:50%;border:2px solid #444;background:#1b1d24;color:#fff;font:700 12px 'Barlow Condensed',sans-serif;line-height:1.05;padding:4px}#wwheel button[aria-pressed=true]{border-color:#ffcf3a;background:#3a3216}#wwheel button b{display:block;font-size:24px}#wwheel .mid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#ffcf3a;font:700 18px 'Barlow Condensed',sans-serif;text-align:center}
 .emoji-grid{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
@@ -778,7 +780,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.19-92';
+const BUILD = '2026.10.19-93';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -3114,6 +3116,7 @@ function buildCity() {
   [[21, 1, 0], [21, 1, 0.5], [63, -1, 0], [63, -1, 0.33], [63, -1, 0.66], [21, 1, 0.25]].forEach(([r, dir, ph], i) => {
     // trânsito com os mesmos carros detalhados da concessionária
     const base = pick(VEHICLES.filter(v => v.kind === 'car' && v.model !== 'super')), m = makeVehicleMesh(Object.assign({}, base, { color: pick([0x2f6db5, 0xe74c3c, 0xf1c40f, 0xecf0f1, 0x27ae60, 0x8e44ad, 0x15161a, 0x9aa3ad]) }));
+    try { const dv = makeRealPed(Math.random() < 0.4); dv.traverse(o => { o.castShadow = false; }); m.add(dv); seatDriver(dv, m, i * 3.1); m.userData.driver = dv; } catch (e) { }
     sc.add(m); city.cars.push({ m, r: r + (dir > 0 ? 2.8 : -2.8), dir, u: ph * 8 * r, x: 0, z: 0, h: 0, spd: 11, lights: [] });
   });
   // (as motos figurantes do trânsito foram retiradas: o piloto era simples demais perto do resto)
@@ -3787,6 +3790,13 @@ function carWheel(r, w, alloy) {
   return wg;
 }
 function makeVehicleMesh(V) { if (V.boat) return makeBoatMesh(V); if (V.tank) return makeTankMesh(V); if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.low && V.kind === 'car') vehLower(m, V.low); if (V.deco) vehDeco(m, V); if (V.kind === 'car' && V.deco !== 'paredao') { try { const u = m.userData, keep = new Set([].concat(u.siren || [])); mergeByMaterial(m, keep); mergeDeep(m, keep); } catch (e) { console.warn('juntar carro', e); } } return m; }
+/* MOTORISTA VISÍVEL (como no GTA): posição do banco do motorista no carro (lado esquerdo, como no Brasil) */
+function carSeatOK(V) { return !!V && V.kind === 'car' && !V.tank && !V.heli && !V.boat && !V.plane && !V.bus; }
+function carSeat(m) { const u = m.userData, W = Math.max(1.2, ((u.radius || 1.1) - 0.2) * 2), L = u.len || 4.4; return new THREE.Vector3(W * 0.21, Math.max(-0.4, (u.roof || 1.45) - 1.42), L * 0.02); }
+const DRIVE_FP = { lArmFwd: 1.3, rArmFwd: 1.3, lElbow: 0.5, rElbow: 0.5, lArmDown: 1.25, rArmDown: 1.25, headX: 0.05 };
+function seatDriver(g, m, t, look) { // coloca o personagem sentado no banco, mãos no volante
+  const sv = carSeat(m); g.position.copy(sv); g.rotation.set(0, 0, 0); animSkater(g, { walk: true, v: 0, fallT: 0, emote: 'sit', fp: DRIVE_FP }, t);
+}
 function makeVehicleMesh0(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
   const paint = vmat('paint', V.color), add = (geo, m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, P = g) => { const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.rotation.set(rx, ry, rz); k.castShadow = true; k.receiveShadow = true; P.add(k); return k; };
@@ -4027,7 +4037,7 @@ function carGlassTex(M, color) {
         else if (z > s.zF - 0.04 || z < s.zR + 0.03) c = cK;
       } else if (z > s.zF - 0.06) c = cB;                 // base do para-brisa (palhetas)
       const sheen = side ? 0 : (v > 0.35 && v < 0.65 ? 8 : 0), o = (py * Wt + px) * 4;
-      d[o] = Math.min(255, c[0] + (c === cG ? sheen : 0)); d[o + 1] = Math.min(255, c[1] + (c === cG ? sheen : 0)); d[o + 2] = Math.min(255, c[2] + (c === cG ? sheen + 4 : 0)); d[o + 3] = 255;
+      d[o] = Math.min(255, c[0] + (c === cG ? sheen : 0)); d[o + 1] = Math.min(255, c[1] + (c === cG ? sheen : 0)); d[o + 2] = Math.min(255, c[2] + (c === cG ? sheen + 4 : 0)); d[o + 3] = c === cG ? (side ? 120 : 150) : 255; // vidro fumê: dá pra ver quem está dentro
     }
     g.putImageData(im, 0, 0);
   });
@@ -4108,7 +4118,7 @@ function carBodyMat(M, color) {
 }
 function carGlassMat(M, color) {
   const key = 'ghm_' + M + '_' + color; if (VMAT[key]) return VMAT[key];
-  return (VMAT[key] = new THREE.MeshPhysicalMaterial({ map: carGlassTex(M, color), metalness: 0.35, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03 }));
+  return (VMAT[key] = new THREE.MeshPhysicalMaterial({ map: carGlassTex(M, color), metalness: 0.35, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, transparent: true }));
 }
 /* junta as peças paradas de um grupo numa malha só por material (muito menos trabalho para o celular desenhar) */
 /* junta também as peças que ficam dentro de subgrupos (frisos, cromados, para-choques, lanternas…),
@@ -4287,7 +4297,7 @@ function enterVehicle() {
   const mv = city.myVeh; if (!mv) return;
   for (const k of ['horn', 'lights', 'blinkL', 'blinkR', 'act']) input.pressed[k] = false;
   P.drive = { V: mv.V, m: mv.m }; P.onBoard = false; P.emote = null; P.x = mv.x; P.z = mv.z; P.h = mv.h; P.v = 0; P.y = mv.V.heli ? mv.m.position.y : 0; P.air = false;
-  city.player.visible = mv.V.kind === 'moto'; city.zoom = 1; sfx('ui');
+  city.player.visible = mv.V.kind === 'moto' || carSeatOK(mv.V); city.zoom = 1; sfx('ui');
   if (mv.V.boat) return toast(`🌊 Pilotando: ${mv.V.name}. ${IS_TOUCH ? 'Joystick acelera e vira · Buzina' : 'W acelera · S dá ré · A/D vira · H buzina'} · perto do cais, Ação sobe no cais; longe, você pula na água.`);
   toast(`${mv.V.kind === 'car' ? 'Dirigindo' : 'Pilotando'}: ${mv.V.name}. ${IS_TOUCH ? 'Joystick acelera e vira · Buzina, Farol e Setas nos botões.' : 'W acelera · S freia · A/D vira · H buzina · L farol · Z/X setas · E sai.'}`);
 }
@@ -4677,7 +4687,7 @@ function inRamp(x, z) { return city.ramps.some(c => x > c.x0 && x < c.x1 && z > 
 
 let camYaw = 0;
 function updateCity(dt, t) {
-  const blocked = uiBlocking() || !!P.down || P.stopT > 0 || !!P.cuffBy;
+  const blocked = uiBlocking() || !!city.cut || !!P.down || P.stopT > 0 || !!P.cuffBy;
   const ax = blocked || P.ride || P.sportLock ? { x: 0, y: 0 } : axis();
   if (P.onBoard && !skateOut()) P.onBoard = false;
   if (!blocked && tap('board')) {
@@ -4776,6 +4786,7 @@ function updateCity(dt, t) {
     if (side === 0) { c.x = f; c.z = -Rr; c.h = Math.PI / 2; } else if (side === 1) { c.x = Rr; c.z = f; c.h = 0; } else if (side === 2) { c.x = -f; c.z = Rr; c.h = -Math.PI / 2; } else { c.x = -Rr; c.z = -f; c.h = Math.PI; }
     if (c.dir < 0) c.h += Math.PI;
     c.m.position.set(c.x, 0, c.z); c.m.rotation.y = c.h;
+    { const dv = c.m.userData.driver; if (dv) { const near = Math.hypot(c.x - P.x, c.z - P.z) < 45; dv.visible = near; if (near) animSkater(dv, { walk: true, v: 0, fallT: 0, emote: 'sit', fp: DRIVE_FP }, t + (c.r || 0)); } }
     const dx = P.x - c.x, dz = P.z - c.z, lx = dx * Math.cos(c.h) - dz * Math.sin(c.h), lz = dx * Math.sin(c.h) + dz * Math.cos(c.h);
     if (!driving && P.fallT <= 0 && P.y < 1.2 && Math.abs(lx) < (c.moto ? 0.7 : 1.4) && Math.abs(lz) < (c.moto ? 1.3 : 2.5)) { P.fallT = 1.6; P.v = -9; P.knockT = 0.9; P.trick = null; P.combo = []; sfx('hit'); scream(0, S.gender === 'f'); hurt(c.moto ? 20 : 34, 'atropelado'); if (!P.down) toast((c.moto ? 'Atropelado por uma moto!' : 'Atropelado! Cuidado com os carros.') + ` Vida ${Math.round(P.hp)}%`, 'bad'); playerFell('car'); }
   }
@@ -4787,12 +4798,14 @@ function updateCity(dt, t) {
   if (P.ride) rideTick();
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
+  else if (driving && carSeatOK(P.drive.V) && g.visible) { const m = P.drive.m, sv = carSeat(m).applyAxisAngle(new THREE.Vector3(0, 1, 0), m.rotation.y); g.position.set(m.position.x + sv.x, m.position.y + sv.y, m.position.z + sv.z); g.rotation.set(0, m.rotation.y, 0); animSkater(g, { walk: true, v: 0, fallT: 0, emote: 'sit', fp: DRIVE_FP }, t); }
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
   else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: skateOut() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow() || (S.equip.acc === 'pol_bandeira22' && S.owned.includes('pol_bandeira22') ? 'bandeira22' : null), wpProp: P.wpShowT > 0 ? handNow() : null, aimP: P.aim ? clamp(-city.camPitch * 0.9, -0.7, 0.8) : 0, emote: P.emote && P.emote.id }, t);
   if (!driving && !P.ride) beachPose(g); else g.rotation.x = 0;
   // arremessado pelo carro: sobe, gira no ar e cai (física simples tipo GTA)
   if (P.knockT > 0 && !driving) { P.knockT -= dt; const k = 1 - Math.max(0, P.knockT) / 0.9; g.position.y += Math.sin(k * Math.PI) * 1.5; g.rotation.x = -Math.sin(k * Math.PI) * 2.6; if (P.knockT <= 0) g.rotation.x = 0; }
   try { tlTick(); carFmTick(dt); } catch (e) { }
+  try { storyTick(dt, t); } catch (e) { console.warn('historia', e); }
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
   recordFrame(dt);
@@ -4809,10 +4822,11 @@ function updateCity(dt, t) {
 
   // câmera
   const shop = panelKind && (panelKind.startsWith('shop') || panelKind === 'oficina' || panelKind === 'perfil');
-  if (g.userData.tag) g.userData.tag.visible = !shop && !city.shopIn && !city.interior && !city.hospIn && !city.jail; // em lugar fechado a câmera fica perto e a etiqueta tapava a visão
+  if (g.userData.tag) g.userData.tag.visible = !city.cut && !shop && !city.shopIn && !city.interior && !city.hospIn && !city.jail; // em lugar fechado a câmera fica perto e a etiqueta tapava a visão
   const hb = g.userData.R && g.userData.R.B.Head, head = hb ? hb.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(P.x, P.y + 1.6, P.z);
   if (city.faceCam && (Math.abs(ax.y) > 0.3 || P.onBoard && Math.abs(P.v) > 2)) { city.faceCam = false; }
-  if (city.faceCam) {
+  if (city.cut && cutCam(dt, head)) { }
+  else if (city.faceCam) {
     // câmera de rosto: na frente do personagem, orbitando devagar
     camYaw += dt * 0.25; const a = P.h + Math.sin(camYaw) * 0.6 + city.faceOrbit, d = city.faceDist;
     camera.position.lerp(new THREE.Vector3(head.x + Math.sin(a) * d, head.y + 0.05 + city.faceH, head.z + Math.cos(a) * d), 1 - Math.exp(-4 * dt));
@@ -5131,6 +5145,7 @@ function drawCityMapOn(cv, cx, cz, Rad, mini) {
   if (city.route && city.route.length > 1) { g.strokeStyle = 'rgba(21,22,26,.8)'; g.lineWidth = Math.max(5, W * 0.016); g.lineJoin = 'round'; g.beginPath(); city.route.forEach((p, k) => k ? g.lineTo(X(p[0]), Z(p[1])) : g.moveTo(X(p[0]), Z(p[1]))); g.stroke(); g.strokeStyle = '#4fc3ff'; g.lineWidth = Math.max(3, W * 0.009); g.stroke(); }
   if (S.gps) { g.fillStyle = '#4fc3ff'; g.strokeStyle = '#15161a'; g.lineWidth = 2; g.beginPath(); g.arc(X(S.gps.x), Z(S.gps.z), Math.max(6, W * 0.02), 0, TAU); g.fill(); g.stroke(); }
   if (P.wanted > 0 && city.wantS && !city.wantS.seen) { const Wz = city.wantS, Rr = (45 + P.wanted * 25) * s, ph = Math.sin(performance.now() / 260) * 0.5 + 0.5; g.fillStyle = `rgba(${ph > 0.5 ? '255,60,60' : '60,120,255'},.22)`; g.strokeStyle = ph > 0.5 ? '#ff4f4f' : '#4f8cff'; g.lineWidth = 2; g.beginPath(); g.arc(X(Wz.x), Z(Wz.z), Rr, 0, TAU); g.fill(); g.stroke(); }
+  try { const sc0 = S.story && !S.story.cur && storyNext(); if (sc0) { const [sx, sz] = storyPos(sc0.spot), rr = Math.max(7, W * 0.04); g.fillStyle = sc0.cor; g.strokeStyle = '#15161a'; g.lineWidth = 3; g.beginPath(); g.arc(X(sx), Z(sz), rr, 0, TAU); g.fill(); g.stroke(); g.fillStyle = '#15161a'; g.font = `800 ${Math.round(rr * 1.3)}px "Barlow Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(sc0.ini, X(sx), Z(sz) + 1); g.textAlign = 'start'; g.textBaseline = 'alphabetic'; } } catch (e) { }
   const tg = missionTarget(); if (tg) { g.strokeStyle = '#ffcf3a'; g.lineWidth = 3; g.beginPath(); g.arc(X(tg[0]), Z(tg[1]), dr + 3 + Math.sin(performance.now() / 200) * 2, 0, TAU); g.stroke(); }
   g.save(); g.translate(X(P.x), Z(P.z)); g.rotate(-P.h + Math.PI); g.fillStyle = '#ffcf3a'; g.strokeStyle = '#15161a'; g.lineWidth = 2; const k = Math.max(7, W * 0.045); g.beginPath(); g.moveTo(0, -k); g.lineTo(k * 0.7, k * 0.7); g.lineTo(-k * 0.7, k * 0.7); g.closePath(); g.fill(); g.stroke(); g.restore();
   if (!mini) drawLandmarks(g, cityId(), X, Z, W);
@@ -12938,6 +12953,204 @@ const cleanShopSeats = () => { city.xspots = (city.xspots || []).filter(o => !o.
    Quem tem casa ou comércio decora: coloca e tira móveis, quadros, plantas e muda a cor das paredes.
    ========================================================= */
 const PANELS_MOV = {};
+/* ============ MISSÕES DE HISTÓRIA (estilo GTA) ============
+   Cada capítulo tem um personagem com marcador no mapa. Chegando perto começa a cena: faixas de cinema,
+   câmera alternando entre quem fala, legendas e o botão Pular. Depois vêm os objetivos com GPS e a cena final. */
+const STORY_LOOK = (eq, g, sk, hs) => lookOf(eq, SKINS[sk] || SKINS[0], HAIRS[0], g, null, hs ? { hs } : null);
+const STORY = [
+  { id: 'c1', cap: 1, n: 'Marmita Quente', who: 'Dona Cida', ini: 'C', cor: '#ff8a3d', spot: [0, 42, 'n'],
+    look: () => STORY_LOOK({ shirt: 'vd_tubinho', pants: 'pants_basic', shoes: 'shoes_white', ear: 'ea_argolao' }, 'f', 2, 'coque'),
+    intro: [
+      ['npc', 'Ô, {eu}! Chegou agora no Rolê City, né? Tá com cara de quem precisa de um trampo.'],
+      ['eu', 'Tô precisando mesmo, Dona Cida. Qualquer coisa serve.'],
+      ['npc', 'Então escuta: a obra lá do outro lado tá esperando 20 marmitas e meu motoboy sumiu.'],
+      ['npc', 'Pega as marmitas no meu carrinho e leva voando. Comida fria peão não come, viu?'],
+      ['eu', 'Deixa comigo. Chego lá antes do almoço acabar.'],
+    ],
+    steps: [
+      { t: 'go', k: 'carrinho', at: [0, 42, 'e'], txt: 'Pegue as marmitas no carrinho da Dona Cida' },
+      { t: 'go', k: 'obra', at: [-84, -42, 's'], txt: 'Entregue as marmitas na obra', time: 90 },
+      { t: 'talk', k: 'obra', at: [-84, -42, 's'], who: 'Mestre de obras', look: () => STORY_LOOK({ shirt: 'shirt_basic', pants: 'pants_jeans', shoes: 'shoes_basic', cap: 'cap_black' }, 'm', 3), lines: [
+        ['npc', 'Opa! Marmita quentinha ainda! Tu é rápido, hein.'],
+        ['npc', 'Fala pra Cida que amanhã tem mais encomenda. E toma aqui uma gorjeta.'],
+      ] },
+    ],
+    outro: [['npc', 'Valeu, {eu}. Quem é trabalhador aqui no Rolê sempre acha caminho.']], pay: 600, xp: 120 },
+  { id: 'c2', cap: 2, n: 'Panfleto do Baile', who: 'MC Pretinho', ini: 'P', cor: '#a62bd9', spot: [42, 0, 'w'],
+    look: () => STORY_LOOK({ shirt: 'gm_gg', pants: 'gm_cargo_preta', shoes: 'gm_cano_alto', cap: 'gm_bone_neon', acc: 'ac_chain' }, 'm', 4, 'twists'),
+    intro: [
+      ['npc', 'Salve, {eu}! A Dona Cida falou que tu é de confiança.'],
+      ['npc', 'Sábado tem o maior baile que essa cidade já viu e ninguém tá sabendo ainda.'],
+      ['eu', 'E tu quer que eu espalhe a notícia.'],
+      ['npc', 'Isso! Cola esses panfletos nos 4 pontos mais movimentados. Rapidinho, antes da prefeitura tirar.'],
+    ],
+    steps: [
+      { t: 'go', k: 'p1', at: [-42, 0, 'n'], txt: 'Cole o panfleto 1 de 4', time: 140 },
+      { t: 'go', k: 'p2', at: [0, -42, 'e'], txt: 'Cole o panfleto 2 de 4', keepTime: true },
+      { t: 'go', k: 'p3', at: [84, 0, 'w'], txt: 'Cole o panfleto 3 de 4', keepTime: true },
+      { t: 'go', k: 'p4', at: [0, 84, 'n'], txt: 'Cole o panfleto 4 de 4', keepTime: true },
+      { t: 'go', k: 'volta', at: [42, 0, 'w'], txt: 'Volte e fale com o MC Pretinho' },
+    ],
+    outro: [['npc', 'A cidade inteira já tá comentando! Tu tá convidado pro camarote, parceria.'], ['eu', 'Tô dentro. Bora fazer esse baile acontecer.']], pay: 900, xp: 160 },
+  { id: 'c3', cap: 3, n: 'A Peça do Tonhão', who: 'Tonhão', ini: 'T', cor: '#4fc3ff', spot: [-42, 42, 'e'],
+    look: () => STORY_LOOK({ shirt: 'shirt_basic', pants: 'pants_jeans', shoes: 'shoes_basic', cap: 'cap_black' }, 'm', 5),
+    intro: [
+      ['npc', 'Chega mais, {eu}. Sou o Tonhão, o mecânico do bairro.'],
+      ['npc', 'Tô com o carro de um cliente parado faz uma semana. Falta uma peça só.'],
+      ['npc', 'O Seu Zé do ferro-velho guardou ela pra mim. Vai buscar?'],
+      ['eu', 'Fácil. Mas por que tu não vai?'],
+      ['npc', 'Porque a viatura tá de olho em mim por causa de uma multa antiga. Tu é cara nova, ninguém te conhece.'],
+    ],
+    steps: [
+      { t: 'go', k: 'ferro', at: [84, 84, 'w'], txt: 'Vá até o ferro-velho do Seu Zé' },
+      { t: 'talk', k: 'ferro', at: [84, 84, 'w'], who: 'Seu Zé', look: () => STORY_LOOK({ shirt: 'shirt_basic', pants: 'pants_basic', shoes: 'shoes_basic' }, 'm', 1), lines: [
+        ['npc', 'É pro Tonhão? Toma. Mas olha... tinha uma viatura rondando aqui agora mesmo.'],
+        ['npc', 'Se te pararem com peça sem nota vai dar dor de cabeça. Some daqui rapidinho!'],
+      ] },
+      { t: 'escape', stars: 2, txt: 'A polícia viu você com a peça! Despiste a polícia' },
+      { t: 'go', k: 'oficina', at: [-42, 42, 'e'], txt: 'Leve a peça até o Tonhão' },
+    ],
+    outro: [['npc', 'Hahaha, despistou a viatura? Tu é dos meus! Carro do cliente vai rodar hoje ainda.'], ['npc', 'Precisando de conserto, minha oficina é tua.']], pay: 1400, xp: 220 },
+  { id: 'c4', cap: 4, n: 'Festa na Laje', who: 'Bia', ini: 'B', cor: '#ff4f9a', spot: [-84, 0, 'e'],
+    look: () => STORY_LOOK({ shirt: 'gm_corta_rosa', pants: 'gm_cargo_preta', shoes: 'gm_neon_rosa', ear: 'ea_argolao', bolsa: 'bo_grife' }, 'f', 3, 'box_braids'),
+    intro: [
+      ['npc', 'Ei, {eu}! Tu que ajudou o Pretinho com o baile? Sou a Bia.'],
+      ['npc', 'Hoje é aniversário da minha vó e eu prometi uma festa surpresa na laje.'],
+      ['npc', 'Só que falta o bolo, o gelo e o som. E ela chega em poucos minutos!'],
+      ['eu', 'Então bora correr. Onde eu pego tudo?'],
+      ['npc', 'Bolo na padaria, gelo no mercadinho, e o som tá emprestado com o DJ da praça. Te espero lá!'],
+    ],
+    steps: [
+      { t: 'go', k: 'padaria', at: [42, -42, 'w'], txt: 'Pegue o bolo na padaria', time: 150 },
+      { t: 'go', k: 'mercado', at: [-42, -42, 'e'], txt: 'Pegue o gelo no mercadinho', keepTime: true },
+      { t: 'go', k: 'dj', at: [0, 0, 's'], txt: 'Pegue a caixa de som com o DJ da praça', keepTime: true },
+      { t: 'go', k: 'laje', at: [-84, 0, 'e'], txt: 'Leve tudo até a Bia antes da vó chegar', keepTime: true },
+    ],
+    outro: [['npc', 'Deu tempo!! Ela vai amar. Fica pra festa, {eu}, tu já é de casa.'], ['eu', 'Só se tiver um pedaço desse bolo pra mim.'], ['npc', 'O maior pedaço é teu!']], pay: 1800, xp: 260 },
+  { id: 'c5', cap: 5, n: 'Respeito se Conquista', who: 'Ajbz', ini: 'A', cor: '#ffcf3a', spot: [84, -42, 'w'],
+    look: () => lookOf({ acc: 'ac_goldchain', cap: 'cap_ajbz', ear: 'ea_esmeralda', pants: 'pants_side', shirt: 'ct_listra_pb', shoes: 'shoes_white', wrist: 'wr_cravejado', glasses: 'gl_dark', tats: { peito: 'n157', bracoE: 'n157', pescoco: 'coroa' }, tn: 'Ajbz' }, 9066036, 1708557, 'm', null, { h: 'alto', w: 'magro', hs: 'coque' }),
+    intro: [
+      ['npc', 'Então tu é o tal do {eu}. A cidade inteira tá falando de ti.'],
+      ['npc', 'Ajudou a Cida, fez o baile do Pretinho, livrou o Tonhão e salvou a festa da Bia.'],
+      ['eu', 'Só fiz o que precisava ser feito.'],
+      ['npc', 'É assim que se ganha respeito aqui. Agora quero ver se tu aguenta uma missão de verdade.'],
+      ['npc', 'Domingo tem o campeonato de futsal das quebradas. Leva o convite pros três líderes de bairro.'],
+      ['npc', 'Se os três toparem, essa cidade vai parar pra ver. Vai lá.'],
+    ],
+    steps: [
+      { t: 'go', k: 'l1', at: [-84, 84, 'e'], txt: 'Leve o convite ao líder da Zona Norte', time: 160 },
+      { t: 'talk', k: 'l1', at: [-84, 84, 'e'], who: 'Neguinho da Norte', look: () => STORY_LOOK({ shirt: 'gm_jersey_neon', pants: 'sh_black', shoes: 'gm_cano_alto' }, 'm', 4, 'twists'), lines: [['npc', 'Convite do Ajbz? Então a Norte vai com o time completo!']] },
+      { t: 'go', k: 'l2', at: [84, 84, 'w'], txt: 'Leve o convite à líder da Zona Leste', keepTime: true },
+      { t: 'talk', k: 'l2', at: [84, 84, 'w'], who: 'Rose da Leste', look: () => STORY_LOOK({ shirt: 'gm_afk', pants: 'gm_jogger_rosa', shoes: 'gm_neon_rosa' }, 'f', 2, 'puffs'), lines: [['npc', 'Futsal das quebradas? A Leste nunca perdeu um. Pode marcar a gente!']] },
+      { t: 'go', k: 'l3', at: [-84, -84, 'e'], txt: 'Leve o convite ao líder da Zona Sul', keepTime: true },
+      { t: 'talk', k: 'l3', at: [-84, -84, 'e'], who: 'Mestre Dida da Sul', look: () => STORY_LOOK({ shirt: 'gm_jersey_roxo', pants: 'sh_white', shoes: 'shoes_white' }, 'm', 1, 'afro_curto'), lines: [['npc', 'Se o Ajbz chamou, a Sul tá dentro. Vai ser histórico!']] },
+      { t: 'go', k: 'volta5', at: [84, -42, 'w'], txt: 'Volte e conte ao Ajbz' },
+    ],
+    outro: [['npc', 'Os três toparam? Eu sabia que tu ia conseguir.'], ['npc', 'A partir de hoje tu é do Bonde, {eu}. Bem-vindo de verdade ao Rolê City.'], ['eu', 'Tamo junto, chefe. Isso aqui é só o começo.']], pay: 5000, xp: 500 },
+];
+// ponto na calçada de um quarteirão (n/s/e/w), sem cair dentro de parede
+function storyPos(at) {
+  const key = cityId() + ':' + at.join(','); city.storyPos = city.storyPos || {}; if (city.storyPos[key]) return city.storyPos[key];
+  const [bx, bz, sd] = at, o = { n: [0, -16.5], s: [0, 16.5], e: [16.5, 0], w: [-16.5, 0] }[sd] || [0, 16.5];
+  let best = [bx + o[0], bz + o[1]];
+  for (const k of [0, 3, -3, 6, -6, 9, -9]) { const x = bx + o[0] + (o[1] ? k : 0), z = bz + o[1] + (o[0] ? k : 0); if (!collide(x, z, 0.6)) { best = [x, z]; break; } }
+  return (city.storyPos[key] = best);
+}
+const storyById = id => STORY.find(c => c.id === id);
+function storyNext() { const d = (S.story && S.story.done) || []; return STORY.find(c => !d.includes(c.id)) || null; }
+const storyName = s => String(s).replace(/\{eu\}/g, S.name || 'parceria');
+/* ---- personagem da cena ---- */
+function storyNpc(key, look, x, z, label) {
+  city.storyNpcs = city.storyNpcs || {}; let o = city.storyNpcs[key];
+  if (!o || o.g.parent !== city.scene) { const g = makeSkater(look(), label, '#ffcf3a'); city.scene.add(g); o = city.storyNpcs[key] = { g, x, z, h: 0 }; }
+  o.x = x; o.z = z; o.g.position.set(x, groundH(x, z), z); o.g.visible = true; return o;
+}
+function storyNpcClear(keep) { for (const k in city.storyNpcs || {}) if (k !== keep) { const o = city.storyNpcs[k]; city.scene.remove(o.g); delete city.storyNpcs[k]; } }
+/* ---- cena de conversa (cutscene) ---- */
+function cutStart(lines, npc, who, onEnd) {
+  city.cut = { lines, i: 0, t: 0, npc, who, onEnd, ang: Math.random() < 0.5 ? 1 : -1 };
+  P.v = 0; P.emote = null; if (P.drive) { /* conversa pela janela */ }
+  let el = $('cut'); if (!el) { el = document.createElement('div'); el.id = 'cut'; el.innerHTML = '<div class="bar top"></div><div class="bar bot"><div class="sub"><b></b><span></span></div><div class="cbt"><button type="button" data-c="next">Continuar ▸</button><button type="button" data-c="skip">⏭ Pular</button></div></div>'; document.body.appendChild(el);
+    el.addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.c === 'skip') return cutEnd(); cutAdvance(); }); }
+  el.hidden = false; document.body.classList.add('in-cut'); cutShow();
+}
+function cutShow() {
+  const C = city.cut; if (!C) return; const [w, txt] = C.lines[C.i], el = $('cut');
+  el.querySelector('.sub b').textContent = (w === 'eu' ? S.name : C.who) + ':'; el.querySelector('.sub b').style.color = w === 'eu' ? '#7fe3ff' : '#ffcf3a';
+  el.querySelector('.sub span').textContent = ' ' + storyName(txt); C.t = 0; C.dur = Math.max(2.8, storyName(txt).length * 0.065);
+}
+function cutAdvance() { const C = city.cut; if (!C) return; if (++C.i >= C.lines.length) return cutEnd(); cutShow(); sfx('ui'); }
+function cutEnd() { const C = city.cut; if (!C) return; city.cut = null; try { if (C.npc && C.npc.g.userData.tag) C.npc.g.userData.tag.visible = true; } catch (e) { } const el = $('cut'); if (el) el.hidden = true; document.body.classList.remove('in-cut'); city.camSnap = true; if (C.onEnd) C.onEnd(); }
+function cutTick(dt, t) {
+  const C = city.cut; if (!C) return; C.t += dt; if (C.t > C.dur) cutAdvance(); if (!city.cut) return;
+  const o = C.npc; if (o && o.g.userData.tag) o.g.userData.tag.visible = false; if (o) { o.h = Math.atan2(P.x - o.x, P.z - o.z); o.g.rotation.y = o.h; animSkater(o.g, { walk: true, v: 0, fallT: 0, emote: C.lines[C.i][0] === 'npc' && Math.sin(t * 1.3) > 0.2 ? 'apontar' : null }, t); if (!P.drive) P.h = Math.atan2(o.x - P.x, o.z - P.z); }
+}
+// câmera de cinema: por cima do ombro de quem escuta, olhando quem fala
+function cutCam(dt, head) {
+  const C = city.cut, o = C.npc; if (!o) return false; const spk = C.lines[C.i][0] === 'npc';
+  const a = [P.x, (P.drive ? 1.3 : head.y) , P.z], b = [o.x, groundH(o.x, o.z) + 1.6, o.z];
+  const [fx, fy, fz] = spk ? a : b, [tx, ty, tz] = spk ? b : a, dx = tx - fx, dz = tz - fz, L = Math.hypot(dx, dz) || 1, sx = -dz / L * C.ang, sz = dx / L * C.ang;
+  const pos = new THREE.Vector3(fx - dx / L * 1.4 + sx * 0.75, fy + 0.25, fz - dz / L * 1.4 + sz * 0.75);
+  camera.position.lerp(pos, city.camSnap ? 1 : 1 - Math.exp(-3.5 * dt)); city.camSnap = false; camera.lookAt(tx, ty - 0.05, tz); return true;
+}
+/* ---- andamento ---- */
+function storyBox() {
+  let el = $('story-box'); if (!el) { el = document.createElement('button'); el.id = 'story-box'; el.type = 'button'; document.body.appendChild(el); el.addEventListener('click', () => openPanel('historia')); }
+  const cur = S.story && S.story.cur, c = cur && storyById(cur.id); el.hidden = !c || !!city.cut;
+  if (c && cur.step >= 0) { const st = c.steps[cur.step]; el.innerHTML = `<small>📖 Cap. ${c.cap} · ${esc(c.n)}</small>${esc(st ? st.txt : 'Volte e fale com ' + c.who)}${cur.time != null ? ` <b class="${cur.time < 15 ? 'low' : ''}">${Math.ceil(cur.time)}s</b>` : ''}`; }
+}
+function storyAccept(c) {
+  S.story = S.story || { done: [] }; S.story.cur = { id: c.id, step: 0, time: null }; persist();
+  toast(`📖 Capítulo ${c.cap}: ${c.n}`, 'pink'); sfx('level'); storyStepBegin();
+}
+function storyStepBegin() {
+  const cur = S.story.cur, c = storyById(cur.id), st = c.steps[cur.step]; if (!st) return;
+  if (st.time) cur.time = st.time; else if (!st.keepTime) cur.time = null;
+  if (st.t === 'escape') { P.wanted = Math.max(P.wanted || 0, st.stars); P.crimes = (P.crimes || []).concat('peça sem nota'); if (city.wantS) { city.wantS.x = P.x; city.wantS.z = P.z; city.wantS.seen = true; city.wantS.t = 14 + P.wanted * 7; } S.gps = null; }
+  else if (st.at) { const [x, z] = storyPos(st.at); S.gps = { x, z, label: st.txt }; city.gpsT = 0; }
+  persist();
+}
+function storyStepDone() {
+  const cur = S.story.cur, c = storyById(cur.id); sfx('coin'); cur.step++;
+  if (cur.step >= c.steps.length) {
+    // cena final com quem passou a missão
+    const [x, z] = storyPos(c.spot), npc = storyNpc('giver', c.look, x, z, c.who); S.gps = null;
+    return cutStart(c.outro, npc, c.who, () => { S.story.done.push(c.id); S.story.cur = null; const got = earn(c.pay); addXP(c.xp); S.stats.missions++; persist(); updateHUD();
+      toast(`✅ Capítulo ${c.cap} concluído: ${c.n}  +$${fmt(got)}`, 'good'); sfx('level'); const nx = storyNext(); if (nx) setTimeout(() => toast(`📖 Novo contato no mapa: ${nx.who} (Cap. ${nx.cap})`, 'pink'), 1800); else setTimeout(() => toast('🏆 Você terminou a História do Rolê!', 'pink'), 1800); });
+  }
+  storyStepBegin();
+}
+function storyFail(why) { const cur = S.story.cur, c = storyById(cur.id); toast(`❌ Missão falhou: ${why}. Fale com ${c.who} para tentar de novo.`, 'bad'); S.story.cur = null; S.gps = null; persist(); }
+function storyTick(dt, t) {
+  if (!S || !city.scene || city.interior || city.shopIn || city.jail) { const b = $('story-box'); if (b) b.hidden = true; return; }
+  S.story = S.story || { done: [] };
+  if (city.cut) { cutTick(dt, t); storyBox(); return; }
+  const cur = S.story.cur;
+  if (!cur) {
+    const c = storyNext(); if (!c) { storyNpcClear(); storyBox(); return; }
+    const [x, z] = storyPos(c.spot), npc = storyNpc('giver', c.look, x, z, `📖 ${c.who}`); storyNpcClear('giver');
+    npc.h = Math.atan2(P.x - x, P.z - z); if (Math.hypot(P.x - x, P.z - z) < 12) npc.g.rotation.y = npc.h; animSkater(npc.g, { walk: true, v: 0, fallT: 0 }, t);
+    if (Math.hypot(P.x - x, P.z - z) < 3 && !P.drive && !uiBlocking() && !(P.wanted > 0)) { cutStart(c.intro, npc, c.who, () => storyAccept(c)); }
+    storyBox(); return;
+  }
+  const c = storyById(cur.id); if (!c) { S.story.cur = null; return; }
+  const st = c.steps[cur.step];
+  if (cur.time != null) { cur.time -= dt; if (cur.time <= 0) return storyFail('o tempo acabou'); }
+  if (st.t === 'go') { const [x, z] = storyPos(st.at); if (Math.hypot(P.x - x, P.z - z) < (P.drive ? 6 : 3.2)) storyStepDone(); }
+  else if (st.t === 'talk') { const [x, z] = storyPos(st.at), npc = storyNpc('talk_' + st.k, st.look, x, z, st.who); animSkater(npc.g, { walk: true, v: 0, fallT: 0 }, t); if (Math.hypot(P.x - x, P.z - z) < 4) cutStart(st.lines, npc, st.who, () => { storyNpcClear('giver'); storyStepDone(); }); }
+  else if (st.t === 'escape') { if (!(P.wanted > 0)) storyStepDone(); }
+  if (P.jailT > 0) return storyFail('você foi preso');
+  storyBox();
+}
+function storyReplay(id) { const c = storyById(id); if (!c || city.cut) return; closePanel(); const x = P.x + Math.sin(P.h) * 2.2, z = P.z + Math.cos(P.h) * 2.2, npc = storyNpc('replay', c.look, x, z, c.who); cutStart(c.intro.concat(c.outro), npc, c.who, () => storyNpcClear(S.story.cur ? null : 'giver')); }
+PANELS_MOV.historia = function () {
+  S.story = S.story || { done: [] }; const cur = S.story.cur, nx = storyNext();
+  let html = '<p class="muted">Cinco capítulos com personagens da cidade. Procure o marcador 📖 no mapa, chegue perto e veja a conversa (ou pule). Missões com tempo e polícia como no GTA.</p>';
+  for (const c of STORY) { const done = S.story.done.includes(c.id), on = cur && cur.id === c.id, next = nx === c;
+    html += `<div class="row" style="justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.08);padding:6px 0"><div><b style="color:${c.cor}">Cap. ${c.cap} · ${esc(c.n)}</b><br><small class="muted">${esc(c.who)} · $ ${fmt(c.pay)} · ${done ? '✅ concluído' : on ? '▶ em andamento' : next ? '📍 disponível no mapa' : '🔒 bloqueado'}</small></div>${done ? `<button class="btn ghost sm" onclick="storyReplay('${c.id}')">Rever cena</button>` : on ? `<button class="btn ghost sm" onclick="(function(){ if (confirm('Desistir desta missão?')) { storyFail('você desistiu'); closePanel(); } })()">Desistir</button>` : ''}</div>`; }
+  return { title: '📖 História do Rolê', html };
+};
+
 const FURN_CATS = [['sala', '🛋️ Sala'], ['quarto', '🛏️ Quarto'], ['cozinha', '🍳 Cozinha'], ['banheiro', '🛁 Banheiro'], ['decor', '🖼️ Quadros e decoração'], ['comercio', '🏪 Para comércio'], ['lazer', '🎱 Lazer']];
 const FURN = {};
 const F = (id, n, cat, c, build, o) => FURN[id] = Object.assign({ id, n, cat, c, build }, o || {});
