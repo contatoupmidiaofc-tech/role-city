@@ -780,7 +780,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.19-95';
+const BUILD = '2026.10.19-96';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2088,7 +2088,7 @@ function loadModels(onProgress) {
       loader.parse(buf.buffer, '', g => res([k, g]), rej);
     }))));
   return Promise.race([Promise.all([one('f'), one('m')]).catch(fromPack), new Promise((_, rej) => setTimeout(() => rej(new Error('tempo esgotado')), 60000))])
-    .then(async list => { const M = {}; for (const [k, g] of list) { let nt = null; try { nt = await g.parser.getDependency('texture', 0); nt.flipY = false; } catch (e) { } M[k] = prepModel(k, g, nt); } return M; })
+    .then(async list => { const M = {}; for (const [k, g] of list) { let nt = null; try { nt = await g.parser.getDependency('texture', 0); nt.flipY = false; } catch (e) { } M[k] = prepModel(k, g, nt); } rpmHdLoad(M); return M; })
     .catch(e => { console.warn('Modelos 3D indisponíveis, usando personagens simples:', e); return null; });
 }
 /* carregamento por partes: os personagens começam a baixar já no menu (enquanto a pessoa digita o nome), e o Jogar só espera o que faltar */
@@ -10395,7 +10395,7 @@ function buildTattooShop(sc) {
   LANDMARKS[cityId()] && !LANDMARKS[cityId()].some(l => l[2] === 'Tattoo') && LANDMARKS[cityId()].push([x, z, 'Tattoo']);
 }
 function updateRP20(dt, t) {
-  if (city.player && city.player.userData.real && !city.player.userData.hiRes) { city.player.userData.hiRes = true; applyLook(city.player, myLook()); }
+  if (city.player && city.player.userData.real && !city.player.userData.hiRes) { const M = MODELS && MODELS[city.player.userData.k]; if (!M || !M.rpm || M.hdImg || M.hdFail) { city.player.userData.hiRes = true; applyLook(city.player, myLook()); } } // espera a textura HD (até 8 s) para montar uma vez só
   P.drawnT = (P.drawnT || 0) - dt; if (P.drawnT <= 0 && P.wasDrawn) { P.wasDrawn = false; netTrack && netTrack(); } if (P.drawnT > 0) P.wasDrawn = true;
   const hol = holsterNow(); if (hol !== city.holK) { city.holK = hol; if (city.player) applyLook(city.player, myLook()); }
   if (city.tatNpc) { const tn = city.tatNpc, d = Math.hypot(P.x - tn.position.x, P.z - tn.position.z); if (d < 30) { tn.rotation.y = Math.atan2(P.x - tn.position.x, P.z - tn.position.z); animSkater(tn, { walk: true, v: 0, fallT: 0 }, t); tickBubble(tn, dt); } }
@@ -10603,8 +10603,8 @@ const RPM_BLOCKS = {
 };
 const RPM_SIZE = 512;
 const inBlk = (b, u, v) => u >= b[0] && u < b[2] && v >= b[1] && v < b[3];
-function prepAtlasRPM(img, k) {
-  const W = RPM_SIZE, H = RPM_SIZE, c = document.createElement('canvas'); c.width = W; c.height = H;
+function prepAtlasRPM(img, k, size) {
+  const W = size || RPM_SIZE, H = W, c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d'); g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H), p = d.data, BL = RPM_BLOCKS[k];
   const n = W * H, cls = new Uint8Array(n), lum = new Float32Array(n);
   for (let j = 0, i = 0; j < n; j++, i += 4) lum[j] = (0.3 * p[i] + 0.59 * p[i + 1] + 0.11 * p[i + 2]) / 255;
@@ -10619,6 +10619,12 @@ function prepAtlasRPM(img, k) {
     else if (inBlk(BL.head, u, v)) { kc = dist(i, hairRef) < dist(i, skinRef) * 0.8 ? 5 : 3; const by = (v - BL.head[1]) / (BL.head[3] - BL.head[1]); if (kc === 5 && by >= 0.285) kc = by < 0.36 ? 6 : 3; } // olhos ficam como estão (6); narinas, lábios e sombra do queixo são pele (antes viravam "barba" da cor do cabelo)
     cls[j] = kc;
   }
+  // o rosto do molde vem mais claro e menos corado que o resto da pele ("rosto pálido"): leva a cabeça para o tom do bloco de pele do corpo, mantendo o desenho
+  { const hb = BL.head, by = y => (y / H - hb[1]) / (hb[3] - hb[1]), mean = (b0, b1) => { const s3 = [0, 0, 0]; let m = 0; for (let y = 0; y < H; y++) { const b = by(y); if (b < b0 || b > b1) continue; for (let x = Math.floor((hb[0] + (hb[2] - hb[0]) * 0.35) * W); x < (hb[0] + (hb[2] - hb[0]) * 0.65) * W; x++) { const j = y * W + x; if (cls[j] !== 3) continue; const i = j * 4; s3[0] += p[i]; s3[1] += p[i + 1]; s3[2] += p[i + 2]; m++; } } return m > 50 ? s3.map(v => v / m) : null; };
+    const L3 = c3 => 0.3 * c3[0] + 0.59 * c3[1] + 0.11 * c3[2], fR = mean(0.1, 0.75), tc = skinRef.map(v => v / L3(skinRef)), gr0 = fR ? fR[1] / fR[0] : 0;
+    if (fR) for (let y = 0; y < H; y++) { if (by(y) < 0 || by(y) > 1) continue;
+      for (let x = Math.floor(hb[0] * W); x < hb[2] * W; x++) { const j = y * W + x; if (cls[j] !== 3) continue; const i = j * 4, L = L3([p[i], p[i + 1], p[i + 2]]), w = clamp(1 - Math.abs(p[i + 1] / Math.max(1, p[i]) - gr0) * 5, 0, 1); // lábios e olhos (tom bem diferente) ficam como estão
+        for (let q = 0; q < 3; q++) p[i + q] = Math.min(255, p[i + q] * (1 - w) + tc[q] * L * 0.97 * w); lum[j] = (0.3 * p[i] + 0.59 * p[i + 1] + 0.11 * p[i + 2]) / 255; } } }
   // luminância "limpa" das roupas: some com a logomarca e mantém as dobras
   const R = 5, clean = new Float32Array(n), tmp = new Float32Array(n);
   for (let y = 0; y < H; y++) { let s = 0; for (let x = -R; x <= R; x++) s += lum[y * W + clamp(x, 0, W - 1)]; for (let x = 0; x < W; x++) { tmp[y * W + x] = s / (2 * R + 1); s += lum[y * W + clamp(x + R + 1, 0, W - 1)] - lum[y * W + clamp(x - R, 0, W - 1)]; } }
@@ -10659,7 +10665,7 @@ function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi, defer) {
       if (bd && v < A.blk.head[3]) { const ba = beardA(u / A.blk.head[2], v / A.blk.head[3], bd); if (ba > 0) { const nz = (Math.sin((j % W) * 12.9898 + (((j / W) | 0) >> 1) * 78.233) * 43758.5453) % 1, aa = ba * (0.6 + 0.4 * Math.abs(nz)), sh = clamp(A.rawLum[j] / ref[3], 0.6, 1.2); for (let q = 0; q < 3; q++) p[i + q] = p[i + q] * (1 - aa) + bc[q] * sh * aa; } }
       continue; }
     if (kc === 5 && look.hair0 != null && A.blk && !inBlk(A.blk.hair, u, v)) { put(i, rgbA(look.hair0), clamp(A.rawLum[j] / ref[5], 0.45, 1.8)); continue; } // tintura: sobrancelha fica na cor natural
-    if (kc === 5) { const hl = look.hl && (!A.blk || inBlk(A.blk.hair, u, v)) && (Math.sin(u * W * 0.55 + v * H * 0.08) > 0.45 || Math.sin(u * W * 0.21 + 1.3) > 0.8); put(i, hl ? rgbA(look.hl) : hair, clamp(A.rawLum[j] / ref[5], 0.45, 1.8)); continue; }
+    if (kc === 5) { const hl = look.hl && (!A.blk || inBlk(A.blk.hair, u, v)) && (Math.sin(u * 512 * 0.55 + v * 512 * 0.08) > 0.45 || Math.sin(u * 512 * 0.21 + 1.3) > 0.8); put(i, hl ? rgbA(look.hl) : hair, clamp(A.rawLum[j] / ref[5], 0.45, 1.8)); continue; }
     const x0 = j % W, y0 = (j / W) | 0, f = clamp(A.lum[j] / ref[kc], 0.42, 1.38) * (kc === 1 || kc === 2 ? 1 + ((((x0 * 7 + y0 * 13) & 7) / 7) - 0.5) * 0.05 : 1); // dobras mais marcadas e trama fina do tecido
     if (kc === 1) { if (pantsMask && pantsMask[j]) put(i, skin, clamp(f, 0.75, 1.1) * 0.95); else put(i, pp === 'plain' ? cP : patColor(pp, u * 1.6, v * 1.6, cP, skin), f); }
     else if (kc === 2) { if (topMask && topMask[j]) { if (topMask.nm === 'nude' && A.torso) { const sf = A.torso[j]; p[i] = Math.min(255, skin[0] * sf * 0.93); p[i + 1] = Math.min(255, skin[1] * sf * 0.93); p[i + 2] = Math.min(255, skin[2] * sf * 0.93); } else put(i, skin, clamp(f, 0.8, 1.08) * 0.95); } else put(i, sp === 'plain' ? cS : patColor(sp, u * 1.6, v * 1.6, cS, skin), f); }
@@ -10676,23 +10682,12 @@ function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi, defer) {
 function prepRPM(info, scene, k, normalTex) {
   let mesh = null; scene.traverse(o => { if (o.isMesh && /Wolf3D_Avatar/.test(o.material.name)) mesh = o; }); if (!mesh) return false;
   info.rpm = true; info.avatarMat = mesh.material.name; info.normal = normalTex || null;
-  const map = mesh.material.map; info.atlas = prepAtlasRPM(map.image, k);
+  const map = mesh.material.map; info.atlas = prepAtlasRPM(map.image, k); info.srcImg = map.image;
   // cabelo (coque) separado num grupo próprio para poder esconder (careca) e trocar de penteado
   const geo = mesh.geometry, uv = geo.attributes.uv, idx = geo.index, BL = RPM_BLOCKS[k], body = [], hairT = [];
   for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2), u = (uv.getX(a) + uv.getX(b) + uv.getX(c)) / 3, v = (uv.getY(a) + uv.getY(b) + uv.getY(c)) / 3; (inBlk(BL.hair, u, v) ? hairT : body).push(a, b, c); }
   if (hairT.length) { geo.setIndex([...body, ...hairT]); geo.clearGroups(); geo.addGroup(0, body.length, 0); geo.addGroup(body.length, hairT.length, 1); info.hairGroup = true; }
-  // máscaras no espaço da textura
-  const W = info.atlas.w, H = info.atlas.h, wp = n => { let b = null; scene.traverse(o => { if (o.isBone && new RegExp(n + '$').test(o.name)) b = o; }); return b ? b.getWorldPosition(new THREE.Vector3()) : null; };
-  const knee = wp('LeftLeg'), hip = wp('LeftUpLeg'), foot = wp('LeftFoot'), arm = wp('LeftArm'), neck = wp('Neck');
-  if (knee && hip && foot) {
-    const ky = knee.y, hy = hip.y, fy = foot.y + 0.1;
-    info.legMask = legMask(mesh, W, H, ky + (hy - ky) * 0.25, false); info.legMask.nm = 'short';
-    info.trunkMask = legMask(mesh, W, H, 0, false, y => y < hy - 0.055 && y > fy); info.trunkMask.nm = 'trunk';
-    info.longMask = legMask(mesh, W, H, 0, false, y => y < ky - (ky - fy) * 0.4); info.longMask.nm = 'long';
-  }
-  if (arm) { const ax = Math.abs(arm.x) * 1.05, ny = neck ? neck.y : 99, hy2 = hip ? hip.y : 0.9; info.tankMask = legMask(mesh, W, H, 0, false, (y, x) => (Math.abs(x) > ax && y > hy2 + (ny - hy2) * 0.45) || y > ny); info.tankMask.nm = 'tank'; }
-  if (arm) { const sy = arm.y; info.braMask = legMask(mesh, W, H, 0, false, (y, x) => y < sy - (k === 'f' ? 0.24 : 0.2) || y > sy - 0.06 || Math.abs(x) > Math.abs(arm.x) * 0.95); info.braMask.nm = 'bra'; }
-  info.nudeMask = new Uint8Array(W * H).fill(1); info.nudeMask.nm = 'nude';
+  info.mesh = mesh; info.scene = scene; rpmMasks(info, mesh, scene, k);
   info.k = k; try { rpmTorsoDetail(info, mesh, scene); } catch (e) { console.warn('tronco', e); }
   try { rpmBakeAO(mesh); } catch (e) { console.warn('ao', e); }
   try { rpmLodLoad(info, mesh.geometry, k); } catch (e) { console.warn('lod', e); }
@@ -10721,6 +10716,20 @@ function rpmBakeAO(mesh) {
     ao[i] = tot ? 1 - hit / tot : 1;
   }
   geo.setAttribute('aAO', new THREE.BufferAttribute(ao, 1));
+}
+/* máscaras no espaço da textura (shorts, sunga, calça comprida, regata, top, sem camisa), no tamanho do atlas T.atlas */
+function rpmMasks(T, mesh, scene, k) {
+  const W = T.atlas.w, H = T.atlas.h, wp = n => { let b = null; scene.traverse(o => { if (o.isBone && new RegExp(n + '$').test(o.name)) b = o; }); return b ? b.getWorldPosition(new THREE.Vector3()) : null; };
+  const knee = wp('LeftLeg'), hip = wp('LeftUpLeg'), foot = wp('LeftFoot'), arm = wp('LeftArm'), neck = wp('Neck');
+  if (knee && hip && foot) {
+    const ky = knee.y, hy = hip.y, fy = foot.y + 0.1;
+    T.legMask = legMask(mesh, W, H, ky + (hy - ky) * 0.25, false); T.legMask.nm = 'short';
+    T.trunkMask = legMask(mesh, W, H, 0, false, y => y < hy - 0.055 && y > fy); T.trunkMask.nm = 'trunk';
+    T.longMask = legMask(mesh, W, H, 0, false, y => y < ky - (ky - fy) * 0.4); T.longMask.nm = 'long';
+  }
+  if (arm) { const ax = Math.abs(arm.x) * 1.05, ny = neck ? neck.y : 99, hy2 = hip ? hip.y : 0.9; T.tankMask = legMask(mesh, W, H, 0, false, (y, x) => (Math.abs(x) > ax && y > hy2 + (ny - hy2) * 0.45) || y > ny); T.tankMask.nm = 'tank'; }
+  if (arm) { const sy = arm.y; T.braMask = legMask(mesh, W, H, 0, false, (y, x) => y < sy - (k === 'f' ? 0.24 : 0.2) || y > sy - 0.06 || Math.abs(x) > Math.abs(arm.x) * 0.95); T.braMask.nm = 'bra'; }
+  T.nudeMask = new Uint8Array(W * H).fill(1); T.nudeMask.nm = 'nude';
 }
 /* NÍVEL DE DETALHE DOS PERSONAGENS (como nos jogos de celular): de perto o corpo completo (11 mil triângulos),
    a meia distância uma versão com 3,9 mil e lá longe uma com 1,7 mil. Mesma textura, mesmo esqueleto e mesma roupa:
@@ -10772,14 +10781,30 @@ function rpmShade(m, M) {
   return m;
 }
 function rpmBodyMat(M) { const m = new THREE.MeshStandardMaterial({ map: M.atlas.base || (M.atlas.base = (() => { const t = new THREE.CanvasTexture(M.atlas.c); t.flipY = false; t.encoding = THREE.sRGBEncoding; return t; })()), normalMap: M.normal, roughness: 0.78, metalness: 0 }); m.name = M.avatarMat; if (M.normal) m.normalScale.set(0.95, 0.95); return rpmShade(m, M); }
+/* ATLAS EM ALTA: o seu personagem e a vitrine da loja usam a textura do corpo em resolução cheia
+   (1024, ou 2048 na qualidade Ultra); os figurantes continuam na versão leve para não pesar no celular */
+/* textura HD do rosto e do cabelo (aumentada com o Real-ESRGAN: ferramentas/rosto_hd.py): baixa depois dos modelos, sem atrasar a entrada */
+function rpmHdLoad(MS) {
+  for (const k of ['f', 'm']) { const M = MS[k]; if (!M || !M.rpm) continue; const im = new Image();
+    im.onload = () => { M.hdImg = im; M.hiS = {}; try { const pl = city.player; if (pl && pl.userData.real && pl.userData.k === k && pl.userData.hiRes) applyLook(pl, myLook()); } catch (e) { } };
+    im.onerror = () => { M.hdFail = true; }; setTimeout(() => { if (!M.hdImg) M.hdFail = true; }, 8000); // sem a HD (ou demorando): segue com a normal
+    im.src = `modelos/rpm_${k}_hd.jpg?v=${ASSET_V}`; }
+}
+function rpmHiSize(M) { const q = S && S.settings && S.settings.quality; return q === 'baixa' ? 0 : q === 'ultra' && M.hdImg ? 2048 : 1024; }
+function rpmHi(M) {
+  const size = rpmHiSize(M); if (!size || !M.mesh) return null; M.hiS = M.hiS || {}; if (M.hiS[size] !== undefined) return M.hiS[size];
+  try { const T = { k: M.k, atlas: prepAtlasRPM(M.hdImg || M.srcImg, M.k, size) }; rpmMasks(T, M.mesh, M.scene, M.k); rpmTorsoDetail(T, M.mesh, M.scene); return (M.hiS[size] = T); }
+  catch (e) { console.warn('atlas hd', e); return (M.hiS[size] = null); }
+}
 function applyRpmLook(u, look) {
   const M = MODELS[u.k], m = u.mats[M.avatarMat]; if (!m) return;
   const bald = ['careca', 'moicano'].includes(look.body && look.body.hs); // moicano: laterais raspadas, só a crista
-  const pm = look.pants.trunk && M.trunkMask ? M.trunkMask : look.pants.long && !look.pants.baggy && M.longMask ? M.longMask : (look.pants.short || look.pants.baggy) ? M.legMask : null;
-  const tm = look.shirt.nude ? (u.k === 'f' ? M.braMask : M.nudeMask) : look.shirt.bra ? M.braMask : look.shirt.tank ? M.tankMask : null;
+  const T = (u.hiRes && rpmHi(M)) || M, A = T.atlas;
+  const pm = look.pants.trunk && T.trunkMask ? T.trunkMask : look.pants.long && !look.pants.baggy && T.longMask ? T.longMask : (look.pants.short || look.pants.baggy) ? T.legMask : null;
+  const tm = look.shirt.nude ? (u.k === 'f' ? T.braMask : T.nudeMask) : look.shirt.bra ? T.braMask : look.shirt.tank ? T.tankMask : null;
   // figurantes: se a roupa ainda não foi montada, entra na fila (os mais perto da câmera primeiro) e fica com a textura atual até lá
-  const tex = rpmAtlasTex(M.atlas, look, pm, tm, bald, !!u.hiRes, ATLASQ.on && !u.hiRes && !!m.map);
-  if (!tex) { u.atlasJob = [M.atlas, look, pm, tm, bald]; if (!u.atlasQ) { u.atlasQ = true; ATLASQ.list.push(u); } }
+  const tex = rpmAtlasTex(A, look, pm, tm, bald, !!u.hiRes, ATLASQ.on && !u.hiRes && !!m.map);
+  if (!tex) { u.atlasJob = [A, look, pm, tm, bald]; if (!u.atlasQ) { u.atlasQ = true; ATLASQ.list.push(u); } }
   else { u.atlasJob = null; m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; } }
   if (M.normal) { const nn = look.shirt.nude ? 0.25 : 0.8; m.normalScale.set(nn, nn); }
   if (u.hairMat2) { const hs = (look.body && look.body.hs) || 'padrao'; u.hairMat2.visible = !['careca', 'moicano', 'black'].includes(hs) && !FEM_HAIR_KEYS.includes(hs) && !HAIR_OWN.includes(hs); }

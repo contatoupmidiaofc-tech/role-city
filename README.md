@@ -926,3 +926,10 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - **Sombra do próprio corpo (oclusão ambiente):** ao carregar o modelo, o jogo calcula onde o corpo faz sombra em si mesmo: embaixo do queixo, no pescoço, nas orelhas, nas axilas, entre as pernas e nas dobras da roupa. Essas partes recebem menos luz, como nos jogos de console. O cálculo leva cerca de 30 ms por modelo, uma vez só, e fica guardado no próprio modelo, então não pesa durante o jogo.
 - **Luz de destaque nos personagens:** uma luz suave, que vem do lado da câmera, dá volume ao rosto (nariz, maçãs, mandíbula) e ao corpo, sem estourar o branco. Ela diminui no fim da tarde e fica fraca à noite, acompanhando o horário do jogo.
 - Vale para o seu personagem, os outros jogadores, os figurantes e a vitrine das lojas.
+
+### Build 2026.10.19-96 (Rosto em alta definição)
+
+- **Textura do corpo com o dobro de resolução no seu personagem:** o sistema de roupas reduzia a textura para 512 pixels (e para 256 nos figurantes). Agora o seu personagem e a vitrine das lojas usam 1024 pixels, ou 2048 na qualidade Ultra. Os figurantes continuam na versão leve para não pesar no celular.
+- **Rosto e cabelo aumentados por IA:** os arquivos `modelos/rpm_m_hd.jpg` e `modelos/rpm_f_hd.jpg` (2048×2048, cerca de 400 KB cada) têm o rosto e o cabelo aumentados 4× pelo Real-ESRGAN, de código aberto (licença BSD-3). Isso deixa sobrancelhas, cílios, olhos e fios de cabelo nítidos. Eles baixam depois dos modelos, sem atrasar a entrada no jogo. Se demorarem mais de 8 segundos, o jogo segue com a textura normal. Para refazer: `ferramentas/rosto_hd.py`, que usa `ferramentas/esrgan_np.py`, a rede do Real-ESRGAN em numpy, sem precisar de placa de vídeo.
+- **Fim do "rosto pálido":** o molde original tinha o rosto mais claro e amarelado que o resto da pele. Agora cada pixel de pele da cabeça recebe o tom da pele do corpo e mantém o próprio brilho. Lábios, olhos e sobrancelhas ficam como estão. Vale também para os figurantes.
+- Montar a textura do seu personagem leva cerca de 0,5 s, uma vez, ao entrar. Trocar de roupa leva cerca de 40 ms (medido no computador).
