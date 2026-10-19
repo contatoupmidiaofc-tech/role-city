@@ -779,8 +779,8 @@ canvas.swatch{background:#333}
 <script>if (!window.THREE) document.write(window.__T147); /* se a r186 não carregar, usa a r147 */</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-/* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.19-96';
+/* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho, recarrega sozinho só no menu; jogando, mostra um aviso para atualizar quando quiser */
+const BUILD = '2026.10.19-97';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -794,7 +794,14 @@ addEventListener('DOMContentLoaded', () => { const v = document.getElementById('
     if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.update())).catch(() => { });
     // apaga só a cópia da página; modelos, animações e bibliotecas continuam guardados (cada um tem a sua versão no endereço)
     if (window.caches) caches.keys().then(ks => ks.forEach(k2 => { if (!/assets/.test(k2)) caches.delete(k2); })).catch(() => { });
-    setTimeout(() => location.replace(location.pathname + '?v=' + m[1]), 400);
+    const doIt = () => { try { if (typeof persist === 'function') persist(); } catch (e) { } setTimeout(() => location.replace(location.pathname + '?v=' + m[1]), 400); };
+    // no meio da partida NÃO recarrega sozinho (antes derrubava quem estava jogando a cada atualização): avisa e a pessoa atualiza quando quiser
+    if (typeof mode === 'undefined' || mode === 'menu') return doIt();
+    if (document.getElementById('upd-bar')) return;
+    const b = document.createElement('button'); b.id = 'upd-bar'; b.type = 'button';
+    b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 8px);z-index:60;padding:7px 14px;border-radius:999px;border:2px solid #3ddc84;background:rgba(15,17,22,.92);color:#fff;font:600 13px system-ui,sans-serif;max-width:92vw';
+    b.textContent = '🔄 Versão nova do jogo pronta. Toque para atualizar (seu progresso fica salvo)';
+    b.onclick = doIt; document.body.appendChild(b); setTimeout(() => { b.style.opacity = '0.55'; }, 15000);
   }).catch(() => { });
   if (location.protocol.startsWith('http')) { addEventListener('load', go); setInterval(go, 5 * 60 * 1000); }
 })();
@@ -3795,6 +3802,13 @@ function makeVehicleMesh(V) { if (V.boat) return makeBoatMesh(V); if (V.tank) re
 function carSeatOK(V) { return !!V && V.kind === 'car' && !V.tank && !V.heli && !V.boat && !V.plane && !V.bus; }
 function carSeat(m) { const u = m.userData, W = Math.max(1.2, ((u.radius || 1.1) - 0.2) * 2), L = u.len || 4.4; const z = u.zF != null ? Math.min(L * 0.02, (u.zF + u.zRF) / 2 - 0.45) : L * 0.02; return new THREE.Vector3(W * 0.18, Math.max(-0.4, (u.roof || 1.45) - 1.42), z); }
 const DRIVE_FP = { lArmFwd: 0.95, rArmFwd: 0.95, lElbow: 0.9, rElbow: 0.9, lArmDown: 1.75, rArmDown: 1.75, lThigh: 1.4, rThigh: 1.4, lKnee: 0.45, rKnee: 0.45, lSpread: 0.05, rSpread: 0.05, twist: 0, side: 0, lean: 0.04, headX: 0.04, headY: 0 };
+/* trava de segurança: o topo da cabeça do motorista nunca passa do teto (corpo mais alto, personagem simples, pose que não assentou...) */
+const _dfv = new THREE.Vector3();
+function driverFit(g, m) {
+  const u = g.userData, R = u.R, hb = R && (R.B.HeadTop_End || R.B.Head) || u.head; if (!hb) return;
+  g.updateMatrixWorld(true); const top = m.position.y + (m.userData.roof || 1.45) - 0.07, hy = hb.getWorldPosition(_dfv).y + (R && R.B.HeadTop_End ? 0.02 : 0.2);
+  if (hy > top) g.position.y -= Math.min(1.5, hy - top);
+}
 function seatDriver(g, m, t, look) { // coloca o personagem sentado no banco, mãos no volante
   const sv = carSeat(m); g.position.copy(sv); g.rotation.set(0, 0, 0); animSkater(g, { walk: true, v: 0, fallT: 0, emote: 'sit', drive: true, fp: DRIVE_FP }, t);
 }
@@ -4787,7 +4801,7 @@ function updateCity(dt, t) {
     if (side === 0) { c.x = f; c.z = -Rr; c.h = Math.PI / 2; } else if (side === 1) { c.x = Rr; c.z = f; c.h = 0; } else if (side === 2) { c.x = -f; c.z = Rr; c.h = -Math.PI / 2; } else { c.x = -Rr; c.z = -f; c.h = Math.PI; }
     if (c.dir < 0) c.h += Math.PI;
     c.m.position.set(c.x, 0, c.z); c.m.rotation.y = c.h;
-    { const dv = c.m.userData.driver; if (dv) { const near = Math.hypot(c.x - P.x, c.z - P.z) < 45; dv.visible = near; if (near) animSkater(dv, { walk: true, v: 0, fallT: 0, emote: 'sit', drive: true, fp: DRIVE_FP }, t + (c.r || 0)); } }
+    { const dv = c.m.userData.driver; if (dv) { const near = Math.hypot(c.x - P.x, c.z - P.z) < 45; dv.visible = near; if (near) { dv.position.y = carSeat(c.m).y; animSkater(dv, { walk: true, v: 0, fallT: 0, emote: 'sit', drive: true, fp: DRIVE_FP }, t + (c.r || 0)); driverFit(dv, c.m); } } }
     const dx = P.x - c.x, dz = P.z - c.z, lx = dx * Math.cos(c.h) - dz * Math.sin(c.h), lz = dx * Math.sin(c.h) + dz * Math.cos(c.h);
     if (!driving && P.fallT <= 0 && P.y < 1.2 && Math.abs(lx) < (c.moto ? 0.7 : 1.4) && Math.abs(lz) < (c.moto ? 1.3 : 2.5)) { P.fallT = 1.6; P.v = -9; P.knockT = 0.9; P.trick = null; P.combo = []; sfx('hit'); scream(0, S.gender === 'f'); hurt(c.moto ? 20 : 34, 'atropelado'); if (!P.down) toast((c.moto ? 'Atropelado por uma moto!' : 'Atropelado! Cuidado com os carros.') + ` Vida ${Math.round(P.hp)}%`, 'bad'); playerFell('car'); }
   }
@@ -4799,7 +4813,7 @@ function updateCity(dt, t) {
   if (P.ride) rideTick();
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
-  else if (driving && carSeatOK(P.drive.V) && g.visible) { const m = P.drive.m, sv = carSeat(m).applyAxisAngle(new THREE.Vector3(0, 1, 0), m.rotation.y); g.position.set(m.position.x + sv.x, m.position.y + sv.y, m.position.z + sv.z); g.rotation.set(0, m.rotation.y, 0); animSkater(g, { walk: true, v: 0, fallT: 0, emote: 'sit', drive: true, fp: DRIVE_FP }, t); }
+  else if (driving && carSeatOK(P.drive.V) && g.visible) { const m = P.drive.m, sv = carSeat(m).applyAxisAngle(new THREE.Vector3(0, 1, 0), m.rotation.y); g.position.set(m.position.x + sv.x, m.position.y + sv.y, m.position.z + sv.z); g.rotation.set(0, m.rotation.y, 0); animSkater(g, { walk: true, v: 0, fallT: 0, emote: 'sit', drive: true, fp: DRIVE_FP }, t); driverFit(g, m); }
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
   else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: skateOut() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow() || (S.equip.acc === 'pol_bandeira22' && S.owned.includes('pol_bandeira22') ? 'bandeira22' : null), wpProp: P.wpShowT > 0 ? handNow() : null, aimP: P.aim ? clamp(-city.camPitch * 0.9, -0.7, 0.8) : 0, emote: P.emote && P.emote.id }, t);
   if (!driving && !P.ride) beachPose(g); else g.rotation.x = 0;
@@ -10625,13 +10639,24 @@ function prepAtlasRPM(img, k, size) {
     if (fR) for (let y = 0; y < H; y++) { if (by(y) < 0 || by(y) > 1) continue;
       for (let x = Math.floor(hb[0] * W); x < hb[2] * W; x++) { const j = y * W + x; if (cls[j] !== 3) continue; const i = j * 4, L = L3([p[i], p[i + 1], p[i + 2]]), w = clamp(1 - Math.abs(p[i + 1] / Math.max(1, p[i]) - gr0) * 5, 0, 1); // lábios e olhos (tom bem diferente) ficam como estão
         for (let q = 0; q < 3; q++) p[i + q] = Math.min(255, p[i + q] * (1 - w) + tc[q] * L * 0.97 * w); lum[j] = (0.3 * p[i] + 0.59 * p[i + 1] + 0.11 * p[i + 2]) / 255; } } }
-  // luminância "limpa" das roupas: some com a logomarca e mantém as dobras
+  // careca: quanto cada pixel da cabeça é cabelo (0 a 255), com a borda da linha do cabelo suave; rosto (sobrancelhas e olhos) fica de fora
+  const hairA = new Uint8Array(n), hb2 = BL.head; let fr = [0, 0, 0], fm = 0;
+  for (let y = 0; y < H; y++) { const by = (y / H - hb2[1]) / (hb2[3] - hb2[1]); if (by < 0 || by > 1) continue;
+    for (let x = Math.floor(hb2[0] * W); x < hb2[2] * W; x++) { const bx = (x / W - hb2[0]) / (hb2[2] - hb2[0]), j = y * W + x, i = j * 4;
+      if (cls[j] === 3 && Math.abs(bx - 0.5) < 0.12 && by > 0.17 && by < 0.23) { fr[0] += p[i]; fr[1] += p[i + 1]; fr[2] += p[i + 2]; fm++; } // testa (referência do couro cabeludo)
+      if (Math.abs(bx - 0.5) < 0.17 && by > 0.21 || by > 0.62 || cls[j] === 6) continue;
+      const dS = Math.sqrt(dist(i, skinRef)), dH = Math.sqrt(dist(i, hairRef)), t = clamp((dS / (dS + dH + 1e-3) - 0.32) / 0.3, 0, 1); hairA[j] = Math.round(t * t * (3 - 2 * t) * 255); } }
+  const foreRef = fm > 30 ? fr.map(v => v / fm) : skinRef;
+  { const r = Math.max(2, Math.round(W / 200)), tmp2 = new Float32Array(n), x0 = Math.floor(hb2[0] * W), x1 = Math.ceil(hb2[2] * W) - 1, y0 = Math.max(0, Math.floor(hb2[1] * H)), y1 = Math.min(H - 1, Math.ceil(hb2[3] * H) - 1); // borda macia (a linha do cabelo do molde é feita de fios e ficava serrilhada)
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { let sm = 0; for (let k = -r; k <= r; k++) sm += hairA[y * W + clamp(x + k, x0, x1)]; tmp2[y * W + x] = sm / (2 * r + 1); }
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const j = y * W + x; if (!hairA[j] && cls[j] !== 5 && tmp2[j] < 1) continue; let sm = 0; for (let k = -r; k <= r; k++) sm += tmp2[clamp(y + k, y0, y1) * W + x]; const by = (y / H - hb2[1]) / (hb2[3] - hb2[1]), bx = (x / W - hb2[0]) / (hb2[2] - hb2[0]); if (Math.abs(bx - 0.5) < 0.17 && by > 0.21 || cls[j] === 6) continue; hairA[j] = Math.min(255, Math.max(hairA[j], sm / (2 * r + 1) * 1.6)); } }
+
   const R = 5, clean = new Float32Array(n), tmp = new Float32Array(n);
   for (let y = 0; y < H; y++) { let s = 0; for (let x = -R; x <= R; x++) s += lum[y * W + clamp(x, 0, W - 1)]; for (let x = 0; x < W; x++) { tmp[y * W + x] = s / (2 * R + 1); s += lum[y * W + clamp(x + R + 1, 0, W - 1)] - lum[y * W + clamp(x - R, 0, W - 1)]; } }
   for (let x = 0; x < W; x++) { let s = 0; for (let y = -R; y <= R; y++) s += tmp[clamp(y, 0, H - 1) * W + x]; for (let y = 0; y < H; y++) { const bl = s / (2 * R + 1), j = y * W + x; clean[j] = clamp(lum[j], bl * 0.88, bl * 1.12); s += tmp[clamp(y + R + 1, 0, H - 1) * W + x] - tmp[clamp(y - R, 0, H - 1) * W + x]; } }
   const ref = [0, 0, 0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0, 0, 0]; for (let j = 0; j < n; j++) { const kc = cls[j]; ref[kc] += kc === 1 || kc === 2 || kc === 4 ? clean[j] : lum[j]; cnt[kc]++; }
   for (let kk = 0; kk < 6; kk++) ref[kk] /= Math.max(1, cnt[kk]);
-  return { rpm: true, c, d, cls, lum: clean, rawLum: lum, ref, skinRef, hairRef, w: W, h: H, cache: {}, blk: BL };
+  return { rpm: true, c, d, cls, lum: clean, rawLum: lum, ref, skinRef, hairRef, hairA, foreRef, w: W, h: H, cache: {}, blk: BL };
 }
 const BEARDS = { none: 'Sem barba', bigode: 'Bigode', cavanhaque: 'Cavanhaque', rala: 'Barba rala', cheia: 'Barba cheia', lenhador: 'Barba lenhador' };
 /* barba pintada na textura do rosto (coordenadas do molde do rosto; mesmo molde no masculino e no feminino) */
@@ -10660,7 +10685,7 @@ function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi, defer) {
   for (let j = 0, i = 0; j < W * H; j++, i += 4) {
     const kc = A.cls[j]; if (!kc || kc === 6) continue;
     const u = (j % W) / W, v = Math.floor(j / W) / H;
-    if (kc === 5 && bald) { put(i, skin, 0.92); continue; }
+    if (kc === 5 && bald && !(A.hairA && inBlk(A.blk.head, u, v) && !A.hairA[j])) { put(i, skin, 0.92); continue; } // sobrancelha (fora da área do cabelo) continua
     if (kc === 3) { p[i] = Math.min(255, src[i] * kr[0]); p[i + 1] = Math.min(255, src[i + 1] * kr[1]); p[i + 2] = Math.min(255, src[i + 2] * kr[2]);
       if (bd && v < A.blk.head[3]) { const ba = beardA(u / A.blk.head[2], v / A.blk.head[3], bd); if (ba > 0) { const nz = (Math.sin((j % W) * 12.9898 + (((j / W) | 0) >> 1) * 78.233) * 43758.5453) % 1, aa = ba * (0.6 + 0.4 * Math.abs(nz)), sh = clamp(A.rawLum[j] / ref[3], 0.6, 1.2); for (let q = 0; q < 3; q++) p[i + q] = p[i + q] * (1 - aa) + bc[q] * sh * aa; } }
       continue; }
@@ -10671,11 +10696,15 @@ function rpmAtlasTex(A, look, pantsMask, topMask, bald, hi, defer) {
     else if (kc === 2) { if (topMask && topMask[j]) { if (topMask.nm === 'nude' && A.torso) { const sf = A.torso[j]; p[i] = Math.min(255, skin[0] * sf * 0.93); p[i + 1] = Math.min(255, skin[1] * sf * 0.93); p[i + 2] = Math.min(255, skin[2] * sf * 0.93); } else put(i, skin, clamp(f, 0.8, 1.08) * 0.95); } else put(i, sp === 'plain' ? cS : patColor(sp, u * 1.6, v * 1.6, cS, skin), f); }
     else if (kc === 4) put(i, bare ? skin : so && !plainPat(so) && !['sandal', 'gradient'].includes(so.pat) ? patColor(so.pat, u * 2, v * 2, cF, skin) : cF, f);
   }
+  if (bald && A.hairA) { const sc = [0, 1, 2].map(q => Math.min(255, A.foreRef[q] * kr[q] * 0.96)); // couro cabeludo no tom da testa, emendando suave na linha do cabelo
+    for (let j = 0, i = 0; j < W * H; j++, i += 4) { const a = A.hairA[j]; if (!a) continue; const f = a / 255; for (let q = 0; q < 3; q++) p[i + q] = p[i + q] * (1 - f) + sc[q] * f; } }
   try { rpmPrintGfx(A, p, sh, topMask); } catch (e) { console.warn('estampa', e); }
   let c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').putImageData(out, 0, 0);
   if (!hi) { const c2 = document.createElement('canvas'); c2.width = W / 2; c2.height = H / 2; const g2 = c2.getContext('2d'); g2.imageSmoothingQuality = 'high'; g2.drawImage(c, 0, 0, W / 2, H / 2); c = c2; }
   const t = new THREE.CanvasTexture(c); t.flipY = false; t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
-  const keys = Object.keys(A.cache); if (keys.length > 120) { A.cache[keys[0]].dispose(); delete A.cache[keys[0]]; }
+  // guarda poucas texturas grandes (cada roupa testada na loja gerava uma nova e o celular ficava sem memória); a que está vestida não sai
+  const big = W > RPM_SIZE, lim = big ? 4 : 120, keys = Object.keys(A.cache); let nk = keys.length;
+  for (let q = 0; q < keys.length && nk > lim; q++) { const tx = A.cache[keys[q]]; if (big && tx.userData.rc > 0) continue; tx.dispose(); delete A.cache[keys[q]]; nk--; }
   return (A.cache[key] = t);
 }
 /* prepara o corpo novo: material com luz e relevo, textura de roupas, cabelo separado e máscaras (short, regata, biquíni...) */
@@ -10805,7 +10834,7 @@ function applyRpmLook(u, look) {
   // figurantes: se a roupa ainda não foi montada, entra na fila (os mais perto da câmera primeiro) e fica com a textura atual até lá
   const tex = rpmAtlasTex(A, look, pm, tm, bald, !!u.hiRes, ATLASQ.on && !u.hiRes && !!m.map);
   if (!tex) { u.atlasJob = [A, look, pm, tm, bald]; if (!u.atlasQ) { u.atlasQ = true; ATLASQ.list.push(u); } }
-  else { u.atlasJob = null; m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; } }
+  else { u.atlasJob = null; if (u.hiRes && u.hiTex !== tex) { if (u.hiTex) u.hiTex.userData.rc = Math.max(0, (u.hiTex.userData.rc || 1) - 1); tex.userData.rc = (tex.userData.rc || 0) + 1; u.hiTex = tex; } m.map = tex; m.needsUpdate = true; if (u.hairMat2) { u.hairMat2.map = tex; u.hairMat2.needsUpdate = true; } }
   if (M.normal) { const nn = look.shirt.nude ? 0.25 : 0.8; m.normalScale.set(nn, nn); }
   if (u.hairMat2) { const hs = (look.body && look.body.hs) || 'padrao'; u.hairMat2.visible = !['careca', 'moicano', 'black'].includes(hs) && !FEM_HAIR_KEYS.includes(hs) && !HAIR_OWN.includes(hs); }
 }
