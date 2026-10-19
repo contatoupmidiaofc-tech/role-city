@@ -243,6 +243,8 @@ kbd{font-family:var(--cond);font-weight:700;background:var(--panel-2);border-rad
 #h-hp{position:relative;display:block;height:14px;margin-top:4px;border-radius:7px;background:rgba(0,0,0,.45);overflow:hidden;border:1px solid rgba(255,255,255,.2)}
 #h-hp i{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,#e53935,#ff6b6b);transition:width .3s}
 #h-hp b{position:relative;font-size:10px;line-height:14px;padding-left:6px;color:#fff;text-shadow:0 1px 2px #000}
+#h-stam{position:relative;display:block;height:5px;margin-top:3px;border-radius:3px;background:rgba(0,0,0,.45);overflow:hidden}#h-stam[hidden]{display:none}#h-stam i{position:absolute;left:0;top:0;bottom:0;width:100%;background:#4fc3ff;transition:width .2s}#h-stam.tired i{background:#ff9f43}
+#car-radio{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 54px);transform:translateX(-50%);z-index:31;padding:6px 14px;border-radius:10px;border:2px solid #ffcf3a;background:rgba(15,17,22,.88);color:#fff;font:700 15px 'Barlow Condensed',sans-serif;letter-spacing:.5px;text-align:center;line-height:1.1}#car-radio[hidden]{display:none}#car-radio small{display:block;color:#ffcf3a;font-size:11px;font-weight:600}
 #h-hp.low i{animation:blink .8s steps(1) infinite}
 #hurt{position:fixed;inset:0;pointer-events:none;z-index:13;opacity:0;background:radial-gradient(circle,rgba(229,57,53,0) 45%,rgba(229,57,53,.75))}
 #h-wanted{color:#ff5a5a;font-weight:700;margin-left:6px;letter-spacing:1px;text-shadow:0 0 6px rgba(255,90,90,.6)}
@@ -647,6 +649,7 @@ canvas.swatch{background:#333}
     <span class="xpbar"><i id="h-xp"></i></span>
     <span class="money"><span class="coin" id="h-coins">$ 0</span><span class="tokc" id="h-tokens">0 T</span><span class="plus" data-act="open-tokens" role="button" aria-label="Comprar tokens">+</span></span>
     <span id="h-hp" aria-label="Vida"><i></i><b>100%</b></span>
+    <span id="h-stam" aria-label="Fôlego" hidden><i></i></span>
   </button>
   <div class="hud-tr collapsed" id="hud-tr">
     <button class="hud-btn" id="hb-med" data-act="open-meds" aria-label="Tomar remédio" hidden style="background:#1d4d33;border-color:#3ddc84"><span style="font-size:17px">💊</span><span class="lbl">Remédio</span></button>
@@ -775,7 +778,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.19-91';
+const BUILD = '2026.10.19-92';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2700,7 +2703,7 @@ function animReal(u, o, t) {
 /* ---------------- INPUT ---------------- */
 const input = { held: {}, pressed: {}, hold: {}, joy: { x: 0, y: 0 }, tbtn: {} };
 addEventListener('mouseup', () => { input.hold = {}; });
-const KEYMAP = { KeyI: 'reload', KeyN: 'aim', KeyY: 'gunsw', KeyH: 'horn', KeyL: 'lights', KeyZ: 'blinkL', KeyX: 'blinkR', KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
+const KEYMAP = { KeyI: 'reload', KeyN: 'aim', KeyY: 'gunsw', KeyH: 'horn', KeyL: 'lights', KeyZ: 'blinkL', KeyX: 'blinkR', KeyV: 'veh', KeyC: 'chat', KeyG: 'weapon', KeyO: 'carradio', Space: 'jump', KeyF: 'punch', KeyJ: 'punch', KeyQ: 'item', KeyK: 'item', KeyE: 'act', Enter: 'act', KeyR: 'board', KeyP: 'phone', KeyT: 'emote', KeyM: 'map', Escape: 'esc' };
 addEventListener('keydown', e => {
   if (e.target.matches && e.target.matches('input,textarea')) { if (e.code === 'Escape') e.target.blur(); return; }
   input.held[e.code] = true;
@@ -3360,8 +3363,10 @@ function updateCritters(dt, t) {
     const dP = Math.hypot(p.x - P.x, p.z - P.z);
     const real = p.g.userData.real;
     if (real) p.g.userData.lod = Math.hypot(p.x - camera.position.x, p.z - camera.position.z) > 30;
-    if (p.fallT > 0) { p.fallT -= dt; if (real) animSkater(p.g, { walk: true, v: 0, fallT: 1 }, t + p.ph0); else animPed(p.g.userData, p.ph, 0, true); continue; }
-    if (dP < 0.95 && Math.abs(P.v) > 4.5 && P.y < 0.8) { p.fallT = 1.6; bubble(p.g, pick(['Ei! Olha por onde anda!', 'Que isso, mano?!', 'Ai! Cuidado!']), 2.5); sfx('hit'); P.v *= 0.5; continue; }
+    if (p.fallT > 0) { p.fallT -= dt; if (real) animSkater(p.g, { walk: true, v: 0, fallT: 1 }, t + p.ph0); else animPed(p.g.userData, p.ph, 0, true);
+      if (p.knockT > 0) { p.knockT -= dt; const k = 1 - Math.max(0, p.knockT) / 0.8; p.g.position.set(p.x + p.kx * k * 2.6, Math.sin(k * Math.PI) * 1.1, p.z + p.kz * k * 2.6); p.g.rotation.x = -Math.sin(k * Math.PI) * 2.4; if (p.knockT <= 0) { p.g.rotation.x = 0; } }
+      continue; }
+    if (dP < 0.95 && Math.abs(P.v) > 4.5 && P.y < 0.8) { { const d0 = Math.max(0.01, dP); p.kx = (p.x - P.x) / d0; p.kz = (p.z - P.z) / d0; p.knockT = Math.abs(P.v) > 7 ? 0.8 : 0; } p.fallT = 1.6; bubble(p.g, pick(['Ei! Olha por onde anda!', 'Que isso, mano?!', 'Ai! Cuidado!']), 2.5); sfx('hit'); P.v *= 0.5; continue; }
     p.stopT -= dt;
     const blocked = dP < 1.2;
     if (p.robbedT > 0) p.robbedT -= dt;
@@ -4707,7 +4712,8 @@ function updateCity(dt, t) {
   if (driving) updateDriving(dt, ax, blocked);
   else if (P.fallT > 0) { }
   else if (!P.onBoard) {
-    const maxV = P.swim ? 2.8 : P.lie ? 0 : 6.2 * (P.sprint || 1);
+    const runN = !P.swim && !P.lie && !P.sport && P.v > 4.6 && mag > 0.8; try { stamTick(dt, runN); } catch (e) { }
+    const maxV = P.swim ? 2.8 : P.lie ? 0 : 6.2 * (P.sprint || 1) * (P.tired && !P.sport ? 0.55 : 1);
     turnTo(9);
     P.v = lerp(P.v, mag > 0.12 ? maxV * mag : 0, 1 - Math.exp(-(mag > 0.12 ? 6 : 9) * dt));
     if (!blocked && P.swim && tap('jump')) { P.diveT = 3; if (!S.diveTip) { S.diveTip = 1; toast('🤿 Mergulhando! Olha os peixes.', 'pink'); } }
@@ -4764,13 +4770,14 @@ function updateCity(dt, t) {
   // carros
   for (const c of city.cars) {
     if (c.off) continue;
-    c.u = (c.u + c.dir * (c.spd || 11) * dt + 8 * c.r) % (8 * c.r);
+    { const want = Math.min(c.spd || 11, carMustStop(c)); c.cv = c.cv ?? want; c.cv = want < c.cv ? want : c.cv + (want - c.cv) * Math.min(1, dt * 1.6); }
+    c.u = (c.u + c.dir * c.cv * dt + 8 * c.r) % (8 * c.r);
     const Rr = c.r, side = Math.floor(c.u / (2 * Rr)), f = (c.u % (2 * Rr)) - Rr;
     if (side === 0) { c.x = f; c.z = -Rr; c.h = Math.PI / 2; } else if (side === 1) { c.x = Rr; c.z = f; c.h = 0; } else if (side === 2) { c.x = -f; c.z = Rr; c.h = -Math.PI / 2; } else { c.x = -Rr; c.z = -f; c.h = Math.PI; }
     if (c.dir < 0) c.h += Math.PI;
     c.m.position.set(c.x, 0, c.z); c.m.rotation.y = c.h;
     const dx = P.x - c.x, dz = P.z - c.z, lx = dx * Math.cos(c.h) - dz * Math.sin(c.h), lz = dx * Math.sin(c.h) + dz * Math.cos(c.h);
-    if (!driving && P.fallT <= 0 && P.y < 1.2 && Math.abs(lx) < (c.moto ? 0.7 : 1.4) && Math.abs(lz) < (c.moto ? 1.3 : 2.5)) { P.fallT = 1.6; P.v = -5; P.trick = null; P.combo = []; sfx('hit'); scream(0, S.gender === 'f'); hurt(c.moto ? 20 : 34, 'atropelado'); if (!P.down) toast((c.moto ? 'Atropelado por uma moto!' : 'Atropelado! Cuidado com os carros.') + ` Vida ${Math.round(P.hp)}%`, 'bad'); playerFell('car'); }
+    if (!driving && P.fallT <= 0 && P.y < 1.2 && Math.abs(lx) < (c.moto ? 0.7 : 1.4) && Math.abs(lz) < (c.moto ? 1.3 : 2.5)) { P.fallT = 1.6; P.v = -9; P.knockT = 0.9; P.trick = null; P.combo = []; sfx('hit'); scream(0, S.gender === 'f'); hurt(c.moto ? 20 : 34, 'atropelado'); if (!P.down) toast((c.moto ? 'Atropelado por uma moto!' : 'Atropelado! Cuidado com os carros.') + ` Vida ${Math.round(P.hp)}%`, 'bad'); playerFell('car'); }
   }
   // bots
   for (const o of city.bots) if (!o.off) updateCityBot(o, dt, t);
@@ -4783,6 +4790,9 @@ function updateCity(dt, t) {
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
   else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: skateOut() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow() || (S.equip.acc === 'pol_bandeira22' && S.owned.includes('pol_bandeira22') ? 'bandeira22' : null), wpProp: P.wpShowT > 0 ? handNow() : null, aimP: P.aim ? clamp(-city.camPitch * 0.9, -0.7, 0.8) : 0, emote: P.emote && P.emote.id }, t);
   if (!driving && !P.ride) beachPose(g); else g.rotation.x = 0;
+  // arremessado pelo carro: sobe, gira no ar e cai (física simples tipo GTA)
+  if (P.knockT > 0 && !driving) { P.knockT -= dt; const k = 1 - Math.max(0, P.knockT) / 0.9; g.position.y += Math.sin(k * Math.PI) * 1.5; g.rotation.x = -Math.sin(k * Math.PI) * 2.6; if (P.knockT <= 0) g.rotation.x = 0; }
+  try { tlTick(); carFmTick(dt); } catch (e) { }
   tickBubble(g, dt);
   city.pkg.visible = !!P.carry; if (P.carry) { city.pkg.position.set(P.x - Math.sin(P.h) * 0.3, P.y + 2.1, P.z - Math.cos(P.h) * 0.3); city.pkg.rotation.y = P.h; }
   recordFrame(dt);
@@ -5829,6 +5839,80 @@ function addWanted(n, why) {
   if (S.shift === 'policial' || isAdm()) return;
   const before = P.wanted || 0; P.wanted = clamp(before + n, 0, 3); P.wantedCalm = 45; P.crimes = (P.crimes || []).concat(why).slice(-6);
   if (P.wanted > before) { toast(`Procurado ${'★'.repeat(P.wanted)}: ${why}`, 'bad'); sfx('hit'); }
+}
+/* ============ PACOTE ESTILO GTA 2 ============ */
+/* SEMÁFOROS: todos os jogadores veem o mesmo ciclo (relógio). Ruas no eixo X e no eixo Z se alternam. */
+const TLC = { g: 0x2bff6e, y: 0xffc21a, r: 0xff2a2a };
+function tlState(axis) { const t = (Date.now() / 1000) % 24; if (axis === 'x') return t < 10 ? 'g' : t < 12 ? 'y' : 'r'; return t >= 12 && t < 22 ? 'g' : t >= 22 ? 'y' : 'r'; }
+function buildTL() {
+  const sc = city.scene; if (!sc) return; if (city.tl) { for (const m of city.tl.ms) sc.remove(m); }
+  const pts = []; for (const a of ROADS) for (const b of ROADS) pts.push([a + 6.6, b + 6.6]);
+  const n = pts.length, dummy = new THREE.Object3D();
+  const pole = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.08, 0.1, 4.6, 8), new THREE.MeshLambertMaterial({ color: 0x2b2d33 }), n);
+  const box = new THREE.InstancedMesh(new THREE.BoxGeometry(0.42, 0.42, 0.42), new THREE.MeshLambertMaterial({ color: 0x15161a }), n * 2);
+  const mX = new THREE.MeshBasicMaterial({ color: TLC.g }), mZ = new THREE.MeshBasicMaterial({ color: TLC.r });
+  const lx = new THREE.InstancedMesh(new THREE.SphereGeometry(0.15, 10, 8), mX, n * 2), lz = new THREE.InstancedMesh(new THREE.SphereGeometry(0.15, 10, 8), mZ, n * 2);
+  pts.forEach(([x, z], i) => {
+    dummy.position.set(x, 2.3, z); dummy.rotation.set(0, 0, 0); dummy.updateMatrix(); pole.setMatrixAt(i, dummy.matrix);
+    // cabeça que olha para quem vem pelo eixo X e cabeça que olha para quem vem pelo eixo Z
+    dummy.position.set(x, 4.4, z); dummy.updateMatrix(); box.setMatrixAt(i * 2, dummy.matrix); dummy.position.set(x, 3.9, z); dummy.updateMatrix(); box.setMatrixAt(i * 2 + 1, dummy.matrix);
+    dummy.position.set(x - 0.22, 4.4, z); dummy.updateMatrix(); lx.setMatrixAt(i * 2, dummy.matrix); dummy.position.set(x + 0.22, 4.4, z); dummy.updateMatrix(); lx.setMatrixAt(i * 2 + 1, dummy.matrix);
+    dummy.position.set(x, 3.9, z - 0.22); dummy.updateMatrix(); lz.setMatrixAt(i * 2, dummy.matrix); dummy.position.set(x, 3.9, z + 0.22); dummy.updateMatrix(); lz.setMatrixAt(i * 2 + 1, dummy.matrix);
+  });
+  const ms = [pole, box, lx, lz]; for (const m of ms) { m.instanceMatrix.needsUpdate = true; sc.add(m); }
+  pole.castShadow = true; city.tl = { sc, ms, mX, mZ };
+}
+function tlTick() {
+  if (!city.scene || city.interior || city.shopIn) return;
+  if (!city.tl || city.tl.sc !== city.scene) buildTL();
+  const T = city.tl; if (!T) return; T.mX.color.setHex(TLC[tlState('x')]); T.mZ.color.setHex(TLC[tlState('z')]);
+}
+/* o carro da cidade para no vermelho e não bate na traseira de quem está parado */
+function carMustStop(c) {
+  if (c.police || c.chase) return 99;
+  const Rr = c.r, L = 8 * Rr, side = Math.floor(c.u / (2 * Rr)), f = (c.u % (2 * Rr)) - Rr, axis = side % 2 === 0 ? 'x' : 'z', st = tlState(axis);
+  let cap = 99; // velocidade máxima permitida agora (freia aos poucos até a faixa)
+  if (st !== 'g') for (const q0 of ROADS) { const q = side >= 2 ? -q0 : q0; if (Math.abs(q) > Rr - 2) continue; const d = (q - f) * c.dir; if (d > 6.2 && d < 22 && !(st === 'y' && d < 9)) cap = Math.min(cap, d < 7.6 ? 0 : (d - 7.6) * 1.2); }
+  for (const o of city.cars) { if (o === c || o.off || o.r !== c.r || o.dir !== c.dir) continue; const du = (((o.u - c.u) * c.dir) % L + L) % L; if (du > 0 && du < 16) cap = Math.min(cap, Math.max(0, (du - 6.5) * 1.1) + (o.cv ?? 11) * 0.8); }
+  return cap;
+}
+/* RÁDIO DO CARRO (como no GTA): ao entrar no carro aparece a estação; troca na tecla O ou tocando no nome */
+const CARFM = { on: false, i: 1, el: null, shown: 0, list: [
+  { n: 'Rádio desligada', s: [] },
+  { n: 'Rolê FM 98.1', g: 'Funk', s: ['baile_do_morro', 'tamborzao_da_vila'] },
+  { n: 'Quebrada Rap 102.5', g: 'Rap', s: ['rap_de_quebrada', 'madrugada_na_favela'] },
+  { n: 'Trap do Chefe 89.9', g: 'Trap', s: ['trap_do_chefe', 'coroa_de_ouro'] },
+] };
+function carFmPlay() {
+  const st = CARFM.list[CARFM.i]; let a = CARFM.el;
+  if (!a) { a = CARFM.el = new Audio(); a.loop = false; a.addEventListener('ended', () => { if (CARFM.on) carFmPlay(); }); }
+  if (!st.s.length) { a.pause(); CARFM.on = false; return; }
+  // estação "ao vivo": a música e o ponto dependem do relógio, como uma rádio de verdade
+  const dur = (FM.list || []).reduce((m, x) => (m[x.id] = x.dur || 90, m), {}), tot = st.s.reduce((t, id) => t + (dur[id] || 90), 0);
+  let off = (Date.now() / 1000) % tot, k = 0; while (off > (dur[st.s[k]] || 90)) { off -= dur[st.s[k]] || 90; k = (k + 1) % st.s.length; }
+  a.src = 'musicas/' + st.s[k] + '.mp3'; a.volume = 0.75; a.currentTime = 0; a.addEventListener('loadedmetadata', function f() { a.removeEventListener('loadedmetadata', f); try { a.currentTime = off; } catch (e) { } });
+  a.play().catch(() => { }); CARFM.on = true;
+}
+function carFmShow() {
+  let el = $('car-radio'); if (!el) { el = document.createElement('button'); el.id = 'car-radio'; el.type = 'button'; document.body.appendChild(el); el.addEventListener('click', () => carFmNext()); }
+  const st = CARFM.list[CARFM.i]; el.innerHTML = `📻 ${esc(st.n)}<small>${st.g ? esc(st.g) + ' · ' : ''}${IS_TOUCH ? 'toque para trocar' : 'tecla O troca'}</small>`; el.hidden = false; CARFM.shown = 3.5;
+}
+function carFmNext() { CARFM.i = (CARFM.i + 1) % CARFM.list.length; try { localStorage.setItem('rc_carfm', CARFM.i); } catch (e) { } carFmPlay(); carFmShow(); sfx('ui'); }
+function carFmTick(dt) {
+  const inCar = !!(P.drive && P.drive.V && P.drive.V.kind !== 'moto' && !P.drive.V.bike);
+  if (inCar && !CARFM.in) { CARFM.in = true; try { const v = +localStorage.getItem('rc_carfm'); if (v >= 0 && v < CARFM.list.length) CARFM.i = v; } catch (e) { } carFmPlay(); carFmShow(); }
+  else if (!inCar && CARFM.in) { CARFM.in = false; if (CARFM.el) CARFM.el.pause(); CARFM.on = false; const el = $('car-radio'); if (el) el.hidden = true; }
+  if (inCar && tap('carradio')) carFmNext();
+  if (CARFM.shown > 0 && (CARFM.shown -= dt) <= 0) { const el = $('car-radio'); if (el && !IS_TOUCH) el.hidden = true; }
+}
+/* FÔLEGO: correr cansa; treinando (correndo) o fôlego aumenta e cansa menos */
+function stamTick(dt, running) {
+  if (P.stam == null) P.stam = 100; S.folego = S.folego || 0;
+  if (running) { P.stam = Math.max(0, P.stam - dt * (13 - S.folego * 0.09)); P.runAcc = (P.runAcc || 0) + dt; if (P.runAcc > 45 && S.folego < 100) { P.runAcc = 0; S.folego++; persist(); toast(`💨 Fôlego +1 (${S.folego}/100)`, 'good'); } }
+  else P.stam = Math.min(100, P.stam + dt * (P.v < 0.5 ? 22 : 12));
+  if (P.stam <= 0 && !P.tired) { P.tired = true; toast('😮‍💨 Sem fôlego! Ande um pouco para recuperar.', 'bad'); }
+  if (P.tired && P.stam > 35) P.tired = false;
+  const el = $('h-stam'); if (el) { el.hidden = P.stam >= 99.5; el.classList.toggle('tired', !!P.tired); const i = el.firstChild; if (i) i.style.width = P.stam.toFixed(0) + '%'; }
 }
 function updateWanted(dt) {
   const carrying = S.mission && S.mission.type === 'job_corre' && S.mission.stage === 1;
@@ -10718,7 +10802,7 @@ function radioTick(vol) {
   if (a.readyState >= 1 && (FM.seekNeed || Math.abs(a.currentTime - now.pos) > 2.5)) { try { a.currentTime = now.pos; } catch (e) { } FM.seekNeed = false; }
   // volume alto: passa pelo amplificador do jogo (ganho até 3x com limitador para não distorcer)
   if (!FM.g) { const ac = audioCtx(); if (ac) try { const src = ac.createMediaElementSource(a), g = ac.createGain(), cp = ac.createDynamicsCompressor(); cp.threshold.value = -10; cp.knee.value = 6; cp.ratio.value = 8; cp.attack.value = 0.003; cp.release.value = 0.2; src.connect(g); g.connect(cp); cp.connect(ac.destination); FM.g = g; } catch (e) { FM.g = 'x'; } }
-  const lv = Math.sqrt(clamp(vol, 0, 1));
+  const lv = Math.sqrt(clamp(vol, 0, 1)) * (CARFM.on ? 0 : 1);
   if (FM.g && FM.g !== 'x') { a.volume = 1; FM.g.gain.value = lv * 3.2 * FM.boost; } else a.volume = lv;
   // o chefe reenvia a programação de vez em quando (quem entrou depois fica sincronizado)
   if ((isAdm() || (S.shift === 'dj' && FM.anchor.by === S.name)) && FM.anchor.t0 && NET.ch && NET.online && (FM.sentT -= 1 / 30) <= 0) { FM.sentT = 600; NET.ch.send({ type: 'broadcast', event: 'fm', payload: FM.anchor }); }

@@ -861,6 +861,13 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - **Amarela** com letras verdes: "FLÁVIO BOLSONARO" e o **22** grande na frente; "FLÁVIO" e o **22** grande nas costas.
     - **Verde** com letras amarelas, mesmo desenho.
 
+### Build 2026.10.19-92 (Pacote estilo GTA 2)
+
+- **Semáforos:** 36 cruzamentos com semáforo (vermelho, amarelo e verde). As ruas no sentido leste–oeste e norte–sul se alternam num ciclo de 24 s, igual para todos os jogadores. Os carros da cidade freiam aos poucos até a faixa, param no vermelho, fazem fila sem bater na traseira e saem no verde. Viaturas em serviço passam direto.
+- **Queda realista:** atropelado por carro, o personagem é arremessado para trás, sobe, gira no ar e cai. Pedestre atingido em alta velocidade também voa alguns metros antes de cair.
+- **Fôlego:** correr gasta a barrinha azul embaixo da vida. Zerou, o personagem fica cansado e anda devagar até recuperar. A cada 45 s correndo o fôlego sobe +1 (até 100) e cansa menos.
+- **Rádio do carro:** ao entrar num carro aparece a estação no topo da tela (Rolê FM 98.1 · Funk, Quebrada Rap 102.5, Trap do Chefe 89.9 ou desligada). Troca tocando no nome ou com a tecla O. As estações são "ao vivo": a música segue tocando no tempo mesmo quando você sai e volta. Enquanto o rádio do carro toca, o som da cidade fica mudo.
+
 ### Build 2026.10.19-91 (Pacote estilo GTA 1)
 
 Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jogo da Rockstar):
