@@ -920,3 +920,9 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - **Banco no lugar certo:** o banco fica um pouco mais para o centro e para trás, calculado pelo para-brisa de cada modelo. Assim as mãos não atravessam o vidro em carros de cabine curta, como o Fusca.
 - **Pernas esticadas para os pedais:** os pés não aparecem mais embaixo da porta.
 - **Postura parada de motorista:** quem dirige não troca de pose sozinho (pernas cruzadas, pegar o celular etc.). Vale para o jogador e para os motoristas dos carros da cidade.
+
+### Build 2026.10.19-95 (Personagens com mais volume e profundidade)
+
+- **Sombra do próprio corpo (oclusão ambiente):** ao carregar o modelo, o jogo calcula onde o corpo faz sombra em si mesmo: embaixo do queixo, no pescoço, nas orelhas, nas axilas, entre as pernas e nas dobras da roupa. Essas partes recebem menos luz, como nos jogos de console. O cálculo leva cerca de 30 ms por modelo, uma vez só, e fica guardado no próprio modelo, então não pesa durante o jogo.
+- **Luz de destaque nos personagens:** uma luz suave, que vem do lado da câmera, dá volume ao rosto (nariz, maçãs, mandíbula) e ao corpo, sem estourar o branco. Ela diminui no fim da tarde e fica fraca à noite, acompanhando o horário do jogo.
+- Vale para o seu personagem, os outros jogadores, os figurantes e a vitrine das lojas.

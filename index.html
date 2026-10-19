@@ -780,7 +780,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.19-94';
+const BUILD = '2026.10.19-95';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -3591,6 +3591,7 @@ function updateDayNight(dt, force) {
   const ang = (h / 24) * TAU - Math.PI / 2, sx = Math.cos(ang), sy = Math.abs(Math.sin(ang));
   dn.sunDir = [sx * 60, Math.max(night > 0.5 ? 30 : 14, sy * 90), 30]; if (dn.skyU) dn.skyU.sunD.value.set(sx, Math.max(0.04, sy * 0.9), 0.3); // sol baixo = sombra comprida
   if (dn.sunSpr) { const moon = night > 0.5; dn.sunSpr.position.set((moon ? -sx : sx) * 300, Math.max(20, sy * 330), 160); dn.sunSpr.scale.setScalar(moon ? 40 : 90); dn.sunSpr.material.color.setRGB(moon ? 0.8 : 1, moon ? 0.85 : lerp(1, 0.75, dusk), moon ? 1 : lerp(1, 0.55, dusk)); }
+  CHARK.value = lerp(lerp(1, 0.8, dusk), 0.35, night) * (1 - wk * 0.3);
   const env = night > 0.55 ? dn.envNight : dn.envDay; if (city.scene.environment !== env) city.scene.environment = env;
   for (const m of city.winMats || []) m.emissiveIntensity = night * 0.9;
   dn.poolM.opacity = night * 0.85; if (dn.haloM) dn.haloM.opacity = night * 0.9;
@@ -10693,8 +10694,33 @@ function prepRPM(info, scene, k, normalTex) {
   if (arm) { const sy = arm.y; info.braMask = legMask(mesh, W, H, 0, false, (y, x) => y < sy - (k === 'f' ? 0.24 : 0.2) || y > sy - 0.06 || Math.abs(x) > Math.abs(arm.x) * 0.95); info.braMask.nm = 'bra'; }
   info.nudeMask = new Uint8Array(W * H).fill(1); info.nudeMask.nm = 'nude';
   info.k = k; try { rpmTorsoDetail(info, mesh, scene); } catch (e) { console.warn('tronco', e); }
+  try { rpmBakeAO(mesh); } catch (e) { console.warn('ao', e); }
   try { rpmLodLoad(info, mesh.geometry, k); } catch (e) { console.warn('lod', e); }
   return true;
+}
+/* SOMBRA DO PRÓPRIO CORPO (oclusão ambiente, como nos jogos de console): calculada uma vez ao carregar o modelo.
+   O corpo vira uma grade de cubinhos de 2 cm e de cada vértice saem raios para fora: quanto mais raios batem no próprio corpo
+   (embaixo do queixo, axilas, entre as pernas, orelhas, pescoço), mais escuro fica aquele ponto. Vai no vértice (aAO), sem custo por quadro. */
+function rpmBakeAO(mesh) {
+  const geo = mesh.geometry, pos = geo.attributes.position, nor = geo.attributes.normal, idx = geo.index, N = pos.count; if (!nor || !idx) return;
+  mesh.updateMatrixWorld(true); const mw = mesh.matrixWorld, nm = new THREE.Matrix3().getNormalMatrix(mw), v = new THREE.Vector3();
+  const P = new Float32Array(N * 3), Q = new Float32Array(N * 3), lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+  for (let i = 0; i < N; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(mw); P[i * 3] = v.x; P[i * 3 + 1] = v.y; P[i * 3 + 2] = v.z; for (let a = 0; a < 3; a++) { lo[a] = Math.min(lo[a], P[i * 3 + a]); hi[a] = Math.max(hi[a], P[i * 3 + a]); } v.fromBufferAttribute(nor, i).applyMatrix3(nm).normalize(); Q[i * 3] = v.x; Q[i * 3 + 1] = v.y; Q[i * 3 + 2] = v.z; }
+  const S = Math.max(0.012, (hi[1] - lo[1]) / 90), G = [0, 1, 2].map(a => Math.ceil((hi[a] - lo[a]) / S) + 3), occ = new Uint8Array(G[0] * G[1] * G[2]);
+  const cell = (x, y, z) => { const i = Math.floor((x - lo[0]) / S) + 1, j = Math.floor((y - lo[1]) / S) + 1, k = Math.floor((z - lo[2]) / S) + 1; return i < 0 || j < 0 || k < 0 || i >= G[0] || j >= G[1] || k >= G[2] ? -1 : (k * G[1] + j) * G[0] + i; };
+  for (let t = 0; t < idx.count; t += 3) {
+    const a = idx.getX(t) * 3, b = idx.getX(t + 1) * 3, c = idx.getX(t + 2) * 3, L = Math.max(Math.hypot(P[b] - P[a], P[b + 1] - P[a + 1], P[b + 2] - P[a + 2]), Math.hypot(P[c] - P[a], P[c + 1] - P[a + 1], P[c + 2] - P[a + 2]), Math.hypot(P[c] - P[b], P[c + 1] - P[b + 1], P[c + 2] - P[b + 2])), n = Math.max(1, Math.ceil(L / (S * 0.5)));
+    for (let u = 0; u <= n; u++) for (let w = 0; w <= n - u; w++) { const fu = u / n, fw = w / n, ci = cell(P[a] + (P[b] - P[a]) * fu + (P[c] - P[a]) * fw, P[a + 1] + (P[b + 1] - P[a + 1]) * fu + (P[c + 1] - P[a + 1]) * fw, P[a + 2] + (P[b + 2] - P[a + 2]) * fu + (P[c + 2] - P[a + 2]) * fw); if (ci >= 0) occ[ci] = 1; }
+  }
+  const D = [], ND = 40; for (let i = 0; i < ND; i++) { const y = 1 - (i + 0.5) / ND * 2, r = Math.sqrt(1 - y * y), th = i * 2.39996; D.push([Math.cos(th) * r, y, Math.sin(th) * r]); }
+  const ao = new Float32Array(N), off = S * 1.8, maxD = 0.32, steps = Math.ceil((maxD - off) / (S * 0.8));
+  for (let i = 0; i < N; i++) {
+    const px = P[i * 3], py = P[i * 3 + 1], pz = P[i * 3 + 2], nx = Q[i * 3], ny = Q[i * 3 + 1], nz = Q[i * 3 + 2]; let tot = 0, hit = 0;
+    for (const d of D) { const dn = d[0] * nx + d[1] * ny + d[2] * nz; if (dn < 0.08) continue; tot += dn;
+      for (let s2 = 0; s2 < steps; s2++) { const r = off + s2 * S * 0.8, ci = cell(px + nx * off + d[0] * r, py + ny * off + d[1] * r, pz + nz * off + d[2] * r); if (ci < 0) break; if (occ[ci]) { hit += dn * (1 - 0.55 * r / maxD); break; } } }
+    ao[i] = tot ? 1 - hit / tot : 1;
+  }
+  geo.setAttribute('aAO', new THREE.BufferAttribute(ao, 1));
 }
 /* NÍVEL DE DETALHE DOS PERSONAGENS (como nos jogos de celular): de perto o corpo completo (11 mil triângulos),
    a meia distância uma versão com 3,9 mil e lá longe uma com 1,7 mil. Mesma textura, mesmo esqueleto e mesma roupa:
@@ -10726,18 +10752,23 @@ function rpmClsTex(M) {
   for (let j = 0; j < W * H; j++) { const k = A.cls[j]; d[j * 4] = k === 3 ? 255 : 0; d[j * 4 + 1] = k === 1 || k === 2 ? 255 : 0; d[j * 4 + 2] = k === 5 ? 255 : 0; d[j * 4 + 3] = 255; }
   const t = new THREE.DataTexture(d, W, H, THREE.RGBAFormat); t.flipY = false; t.magFilter = t.minFilter = THREE.LinearFilter; t.needsUpdate = true; return (M.clsTex = t);
 }
+const CHARK = { value: 1 }, CHARAO = { value: 1 }; // luz de destaque dos personagens (cai à noite) e força da sombra do próprio corpo
 function rpmShade(m, M) {
   if (!M.atlas || !M.atlas.cls) return m; const tex = rpmClsTex(M), r186 = !!THREE.ShaderChunk.colorspace_fragment, uvN = r186 ? 'vMapUv' : 'vUv';
   m.onBeforeCompile = sh => {
-    sh.uniforms.clsMap = { value: tex };
-    sh.fragmentShader = 'uniform sampler2D clsMap;\n' + sh.fragmentShader
+    sh.uniforms.clsMap = { value: tex }; sh.uniforms.charKey = CHARK; sh.uniforms.charAO = CHARAO;
+    sh.vertexShader = 'attribute float aAO;\nvarying float vAO;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vAO = aAO;');
+    sh.fragmentShader = 'uniform sampler2D clsMap;\nuniform float charKey;\nuniform float charAO;\nvarying float vAO;\n' + sh.fragmentShader
+      .replace('#include <aomap_fragment>', `#include <aomap_fragment>
+  { float ao = mix(1.0, pow(clamp(vAO, 0.0, 1.0), 1.7), charAO); reflectedLight.indirectDiffuse *= ao; reflectedLight.indirectSpecular *= ao; reflectedLight.directDiffuse *= mix(1.0, ao, 0.6); reflectedLight.directSpecular *= ao; }`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>\n  vec3 cls = texture2D(clsMap, ${uvN}).rgb; roughnessFactor = mix(roughnessFactor, 0.52, cls.r); roughnessFactor = mix(roughnessFactor, 0.9, cls.g); roughnessFactor = mix(roughnessFactor, 0.42, cls.b);`)
       .replace(r186 ? '#include <opaque_fragment>' : '#include <output_fragment>', `{ float fr = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
   outgoingLight += diffuseColor.rgb * (vec3(0.55, 0.2, 0.13) * 0.16 + vec3(1.0, 0.5, 0.38) * fr * 0.35) * cls.r; // pele: calor por dentro e borda rosada
   outgoingLight += diffuseColor.rgb * fr * 0.22 * cls.g; } // tecido: brilho de fibra nas bordas
+  { float kl = max(dot(normal, normalize(vec3(-0.38, 0.42, 0.82))), 0.0); outgoingLight *= mix(1.0, 0.8 + 0.42 * kl * kl, charKey * 0.7); } // luz de destaque de personagem (dá volume ao rosto)
   ${r186 ? '#include <opaque_fragment>' : '#include <output_fragment>'}`);
   };
-  m.customProgramCacheKey = () => 'rpmshade';
+  m.customProgramCacheKey = () => 'rpmshade2';
   return m;
 }
 function rpmBodyMat(M) { const m = new THREE.MeshStandardMaterial({ map: M.atlas.base || (M.atlas.base = (() => { const t = new THREE.CanvasTexture(M.atlas.c); t.flipY = false; t.encoding = THREE.sRGBEncoding; return t; })()), normalMap: M.normal, roughness: 0.78, metalness: 0 }); m.name = M.avatarMat; if (M.normal) m.normalScale.set(0.95, 0.95); return rpmShade(m, M); }
