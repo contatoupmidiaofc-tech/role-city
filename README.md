@@ -913,3 +913,10 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
     - você **dirige na frente** e a carreta e o povo vão atrás seguindo o caminho do carro, em fileiras de 3;
     - quem estiver online na mesma cidade também vê a carreata passando e ouve o som;
     - tocar de novo (**Parar**) encerra a carreata.
+
+### Build 2026.10.19-94 (Motorista sentado de verdade dentro do carro)
+
+- **Braços dentro do carro:** a pose de dirigir foi refeita. Os braços ficam colados ao corpo, os cotovelos dobrados e as duas mãos juntas no volante, sem passar da porta ou da janela.
+- **Banco no lugar certo:** o banco fica um pouco mais para o centro e para trás, calculado pelo para-brisa de cada modelo. Assim as mãos não atravessam o vidro em carros de cabine curta, como o Fusca.
+- **Pernas esticadas para os pedais:** os pés não aparecem mais embaixo da porta.
+- **Postura parada de motorista:** quem dirige não troca de pose sozinho (pernas cruzadas, pegar o celular etc.). Vale para o jogador e para os motoristas dos carros da cidade.

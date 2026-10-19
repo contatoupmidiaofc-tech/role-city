@@ -780,7 +780,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho (cache velho), recarrega sozinho */
-const BUILD = '2026.10.19-93';
+const BUILD = '2026.10.19-94';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -2644,7 +2644,7 @@ function animReal(u, o, t) {
     if (e === 'wave') Object.assign(p, { rArmDown: -1.0, rElbow: 0.5 + Math.sin(t * 10) * 0.45 });
     else if (e === 'cheer') { Object.assign(p, { lArmDown: -1.3, rArmDown: -1.3, lElbow: 0.1, rElbow: 0.1 }); ry = Math.abs(Math.sin(t * 7)) * 0.18; }
     else if (e === 'dance') { const d = Math.sin(t * 8); Object.assign(p, { twist: d * 0.45, side: d * 0.1, headY: -d * 0.4, lArmFwd: 1.0 + d * 0.5, rArmFwd: 1.0 - d * 0.5, lElbow: 1.4, rElbow: 1.4, lThigh: 0.15 + Math.max(0, d) * 0.3, rThigh: 0.15 + Math.max(0, -d) * 0.3, lKnee: 0.35 + Math.max(0, d) * 0.5, rKnee: 0.35 + Math.max(0, -d) * 0.5, lSpread: 0.08, rSpread: 0.08 }); ry = -0.04 + Math.abs(d) * 0.05; rate = 24; }
-    else if (e === 'sit') { sitLife(u, o, t, dt, p); ry = -0.42; }
+    else if (e === 'sit') { if (o.drive) u.sitPhone = false; else sitLife(u, o, t, dt, p); ry = -0.42; }
     else if (e && EMOTES[e] && !EMOTES[e].free) { const yy = emoteBody(e, t, p); if (yy != null) ry = yy; }
     if (o.fp) Object.assign(p, o.fp); if (o.armL) Object.assign(p, o.armL); if (o.armR) Object.assign(p, o.armR);
     u.board.visible = !!o.carry && e !== 'sit';
@@ -3792,10 +3792,10 @@ function carWheel(r, w, alloy) {
 function makeVehicleMesh(V) { if (V.boat) return makeBoatMesh(V); if (V.tank) return makeTankMesh(V); if (V.heli) return makeAnyHeli(V); if (V.plane) return makePlaneMesh(V); const m = makeVehicleMesh0(V); if (V.low && V.kind === 'car') vehLower(m, V.low); if (V.deco) vehDeco(m, V); if (V.kind === 'car' && V.deco !== 'paredao') { try { const u = m.userData, keep = new Set([].concat(u.siren || [])); mergeByMaterial(m, keep); mergeDeep(m, keep); } catch (e) { console.warn('juntar carro', e); } } return m; }
 /* MOTORISTA VISÍVEL (como no GTA): posição do banco do motorista no carro (lado esquerdo, como no Brasil) */
 function carSeatOK(V) { return !!V && V.kind === 'car' && !V.tank && !V.heli && !V.boat && !V.plane && !V.bus; }
-function carSeat(m) { const u = m.userData, W = Math.max(1.2, ((u.radius || 1.1) - 0.2) * 2), L = u.len || 4.4; return new THREE.Vector3(W * 0.21, Math.max(-0.4, (u.roof || 1.45) - 1.42), L * 0.02); }
-const DRIVE_FP = { lArmFwd: 1.3, rArmFwd: 1.3, lElbow: 0.5, rElbow: 0.5, lArmDown: 1.25, rArmDown: 1.25, headX: 0.05 };
+function carSeat(m) { const u = m.userData, W = Math.max(1.2, ((u.radius || 1.1) - 0.2) * 2), L = u.len || 4.4; const z = u.zF != null ? Math.min(L * 0.02, (u.zF + u.zRF) / 2 - 0.45) : L * 0.02; return new THREE.Vector3(W * 0.18, Math.max(-0.4, (u.roof || 1.45) - 1.42), z); }
+const DRIVE_FP = { lArmFwd: 0.95, rArmFwd: 0.95, lElbow: 0.9, rElbow: 0.9, lArmDown: 1.75, rArmDown: 1.75, lThigh: 1.4, rThigh: 1.4, lKnee: 0.45, rKnee: 0.45, lSpread: 0.05, rSpread: 0.05, twist: 0, side: 0, lean: 0.04, headX: 0.04, headY: 0 };
 function seatDriver(g, m, t, look) { // coloca o personagem sentado no banco, mãos no volante
-  const sv = carSeat(m); g.position.copy(sv); g.rotation.set(0, 0, 0); animSkater(g, { walk: true, v: 0, fallT: 0, emote: 'sit', fp: DRIVE_FP }, t);
+  const sv = carSeat(m); g.position.copy(sv); g.rotation.set(0, 0, 0); animSkater(g, { walk: true, v: 0, fallT: 0, emote: 'sit', drive: true, fp: DRIVE_FP }, t);
 }
 function makeVehicleMesh0(V) {
   const g = new THREE.Group(), u = g.userData; u.wheels = [];
@@ -4224,7 +4224,7 @@ function buildCarHQ(g, V, add) {
   const style = s.steel ? 'steel' : M === 'sport' || M === 'super' ? 'sport' : M === 'suv' || M === 'pickup' ? 'suv' : 'alloy', wx = W / 2 - s.tw / 2 + (s.noArch ? 0.08 : 0.01);
   for (const sx of [1, -1]) for (const z of s.ax) { const w = carWheelHQ(s.R, s.tw, style, s.caliper); if (sx < 0) w.rotation.y = Math.PI; w.position.set(sx * wx, s.R, z); g.add(w); if (z > 0) w.userData.front = true; w.userData.side = sx; u.wheels.push(w); }
   g.add(carAO(s.L, W)); u.ao = true;
-  u.seatY = 0; u.camD = Math.max(7, s.L * 1.6); u.radius = W * 0.5 + 0.2; u.len = s.L; u.roof = kit.roof;
+  u.seatY = 0; u.camD = Math.max(7, s.L * 1.6); u.radius = W * 0.5 + 0.2; u.len = s.L; u.roof = kit.roof; u.zF = s.zF; u.zRF = s.zRF;
   u.hl = { y: hy, x: hw * 0.68, fz: (K.surfZ(hw * 0.68, hy, 1) || l) + 0.05, ty, rz: (K.surfZ(hw * 0.7, ty, -1) || -l) - 0.05 };
 }
 /* bicicleta: quadro de tubos, rodas raiadas, pedivela que gira, guidão e selim */
@@ -4786,7 +4786,7 @@ function updateCity(dt, t) {
     if (side === 0) { c.x = f; c.z = -Rr; c.h = Math.PI / 2; } else if (side === 1) { c.x = Rr; c.z = f; c.h = 0; } else if (side === 2) { c.x = -f; c.z = Rr; c.h = -Math.PI / 2; } else { c.x = -Rr; c.z = -f; c.h = Math.PI; }
     if (c.dir < 0) c.h += Math.PI;
     c.m.position.set(c.x, 0, c.z); c.m.rotation.y = c.h;
-    { const dv = c.m.userData.driver; if (dv) { const near = Math.hypot(c.x - P.x, c.z - P.z) < 45; dv.visible = near; if (near) animSkater(dv, { walk: true, v: 0, fallT: 0, emote: 'sit', fp: DRIVE_FP }, t + (c.r || 0)); } }
+    { const dv = c.m.userData.driver; if (dv) { const near = Math.hypot(c.x - P.x, c.z - P.z) < 45; dv.visible = near; if (near) animSkater(dv, { walk: true, v: 0, fallT: 0, emote: 'sit', drive: true, fp: DRIVE_FP }, t + (c.r || 0)); } }
     const dx = P.x - c.x, dz = P.z - c.z, lx = dx * Math.cos(c.h) - dz * Math.sin(c.h), lz = dx * Math.sin(c.h) + dz * Math.cos(c.h);
     if (!driving && P.fallT <= 0 && P.y < 1.2 && Math.abs(lx) < (c.moto ? 0.7 : 1.4) && Math.abs(lz) < (c.moto ? 1.3 : 2.5)) { P.fallT = 1.6; P.v = -9; P.knockT = 0.9; P.trick = null; P.combo = []; sfx('hit'); scream(0, S.gender === 'f'); hurt(c.moto ? 20 : 34, 'atropelado'); if (!P.down) toast((c.moto ? 'Atropelado por uma moto!' : 'Atropelado! Cuidado com os carros.') + ` Vida ${Math.round(P.hp)}%`, 'bad'); playerFell('car'); }
   }
@@ -4798,7 +4798,7 @@ function updateCity(dt, t) {
   if (P.ride) rideTick();
   const g = city.player; g.position.set(P.x, P.y, P.z); g.rotation.y = P.h; g.rotation.z = 0;
   if (P.ride) { const rp = NET.peers[P.ride.id]; if (P.ride.moto) { const vu = rp && rp.veh ? rp.veh.userData : { seatY: 0.95, lean: 0 }; g.position.y = P.y + vu.seatY - 1.02; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0 }, t); } }
-  else if (driving && carSeatOK(P.drive.V) && g.visible) { const m = P.drive.m, sv = carSeat(m).applyAxisAngle(new THREE.Vector3(0, 1, 0), m.rotation.y); g.position.set(m.position.x + sv.x, m.position.y + sv.y, m.position.z + sv.z); g.rotation.set(0, m.rotation.y, 0); animSkater(g, { walk: true, v: 0, fallT: 0, emote: 'sit', fp: DRIVE_FP }, t); }
+  else if (driving && carSeatOK(P.drive.V) && g.visible) { const m = P.drive.m, sv = carSeat(m).applyAxisAngle(new THREE.Vector3(0, 1, 0), m.rotation.y); g.position.set(m.position.x + sv.x, m.position.y + sv.y, m.position.z + sv.z); g.rotation.set(0, m.rotation.y, 0); animSkater(g, { walk: true, v: 0, fallT: 0, emote: 'sit', drive: true, fp: DRIVE_FP }, t); }
   else if (driving && P.drive.V.kind === 'moto') { const vu = P.drive.m.userData; g.position.y = P.y + vu.seatY - 1.07; g.rotation.z = vu.lean || 0; animSkater(g, { ride: true, walk: true, v: 0, fallT: 0, pedal: vu.bike ? vu.spin || 0 : null }, t); }
   else if (!driving) animSkater(g, { pose: P.cuffBy ? 'algema' : P.stopT > 0 ? 'maos' : P.swim ? 'nadar' : P.lie ? 'maos' : null, walk: !P.onBoard, carry: skateOut() && !P.sport, v: P.sportV != null ? P.sportV : P.v, fp: P.fp, armL: P.armL, armR: P.armR, air: P.air, brot: boardRot(P), fallT: P.fallT, punchT: P.punchT, pushing: mag > 0.15, turn: clamp(Math.atan2(Math.sin(wantH - P.h), Math.cos(wantH - P.h)) * (mag > 0.15 ? 1.5 : 0), -1, 1), vy: P.vy, spray: P.spray, wpHold: handNow() || (S.equip.acc === 'pol_bandeira22' && S.owned.includes('pol_bandeira22') ? 'bandeira22' : null), wpProp: P.wpShowT > 0 ? handNow() : null, aimP: P.aim ? clamp(-city.camPitch * 0.9, -0.7, 0.8) : 0, emote: P.emote && P.emote.id }, t);
   if (!driving && !P.ride) beachPose(g); else g.rotation.x = 0;
