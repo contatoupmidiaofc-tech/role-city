@@ -861,6 +861,14 @@ O plano do Supabase conta cada mensagem enviada e cada vez que outro jogador rec
     - **Amarela** com letras verdes: "FLÁVIO BOLSONARO" e o **22** grande na frente; "FLÁVIO" e o **22** grande nas costas.
     - **Verde** com letras amarelas, mesmo desenho.
 
+### Build 2026.10.19-91 (Pacote estilo GTA 1)
+
+Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jogo da Rockstar):
+
+- **Busca da polícia:** quando um policial ou o helicóptero te vê, as estrelas ficam fixas e o círculo de busca vai pra onde você está. Fora da vista as estrelas piscam e aparece um círculo vermelho/azul no mapa. Dentro do círculo a busca demora; fora dele acaba rápido e as estrelas zeram de uma vez ("Você despistou a polícia!").
+- **Pedestres reagem a tiros:** quem está a até 35 m corre pro lado oposto de quem atirou e grita ("Socorro!", "Corre que é tiro!"). Vale para tiros seus e de outros jogadores online.
+- **Roda de armas:** o botão de trocar arma (tecla Y) abre uma roda com todas as suas armas e "Mãos livres"; é só tocar para escolher.
+
 ### Build 2026.10.15-90 (Proteções — etapa 2, preparação do servidor)
 
 - O jogo agora lê a resposta do servidor depois de cada save e acompanha qualquer correção de tokens ou dinheiro feita lá (`cloudSave`).
