@@ -945,3 +945,7 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 
 - **Causa do "jogo não abre" (15/11):** o projeto do Supabase (banco de dados e login) foi **pausado** pelo próprio Supabase. No plano gratuito ele pausa os projetos que ficam um tempo sem uso. O projeto foi reativado e as contas e os saves estão lá (12 contas, 8 personagens; o último save é de 25/10).
 - **O jogo não fica mais preso na tela de entrada:** antes, com o servidor parado, a tela ficava em "Carregando seu progresso…" para sempre. Agora o login, o cadastro e o carregamento do save esperam no máximo 12 a 20 segundos. Depois disso aparece: "O servidor do jogo não respondeu agora. Você pode jogar sem conta (o progresso fica neste aparelho) e tentar entrar de novo daqui a pouco."
+
+### Robô que mantém o banco ativo
+
+- `.github/workflows/manter-supabase-ativo.yml` roda todo dia às 8h17 (horário de Brasília) e faz uma consulta simples no Supabase (vê se um apelido está livre). Assim o plano gratuito não pausa o banco por falta de uso. Ele usa só a chave pública que já está no `index.html`. Se o banco não responder, a execução aparece em vermelho na aba Actions do GitHub, com o aviso para reativar no painel do Supabase. Também dá para rodar na mão pela aba Actions, em "Run workflow".

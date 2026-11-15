@@ -1,0 +1,29 @@
+# Mantém o banco do jogo (Supabase) ativo: no plano gratuito ele pausa sozinho depois de alguns dias sem uso
+# e aí o jogo não abre. Uma vez por dia este robô faz uma consulta simples no banco (ver se um apelido está livre).
+# Usa a chave pública que já está no index.html (a mesma que qualquer navegador usa), nenhuma senha.
+name: Manter Supabase ativo
+
+on:
+  schedule:
+    - cron: '17 11 * * *' # todo dia, 8h17 no horário de Brasília
+  workflow_dispatch: {} # também dá para rodar na mão pela aba Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consulta no banco
+        run: |
+          URL=$(grep -o "const SUPA_URL = '[^']*'" index.html | cut -d"'" -f2)
+          KEY=$(grep -o "const SUPA_KEY = '[^']*'" index.html | cut -d"'" -f2)
+          for i in 1 2 3; do
+            code=$(curl -s -o resp.txt -w '%{http_code}' --max-time 60 -X POST "$URL/rest/v1/rpc/apelido_disponivel" \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+              -d '{"p_apelido":"robo-manter-ativo"}')
+            echo "tentativa $i: HTTP $code $(cat resp.txt)"
+            [ "$code" = 200 ] && exit 0
+            sleep 30
+          done
+          echo "::error::O banco do jogo não respondeu. Pode ter sido pausado: reative no painel do Supabase."
+          exit 1
