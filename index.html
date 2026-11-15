@@ -780,7 +780,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho, recarrega sozinho só no menu; jogando, mostra um aviso para atualizar quando quiser */
-const BUILD = '2026.10.19-97';
+const BUILD = '2026.11.15-98';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -17070,14 +17070,17 @@ function netInit() {
   if (!window.supabase || !window.supabase.createClient) return false;
   try { NET.sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, detectSessionInUrl: true } }); return true; } catch (e) { return false; }
 }
+/* servidor fora do ar ou pausado: não deixa a tela de entrada esperando para sempre */
+const netWait = (pr, ms = 12000) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('servidor_fora')), ms))]);
 async function netSession() {
   if (!netInit()) return null;
-  try { const { data } = await NET.sb.auth.getSession(); NET.user = data.session ? data.session.user : null; } catch (e) { NET.user = null; }
+  try { const { data } = await netWait(NET.sb.auth.getSession()); NET.user = data.session ? data.session.user : null; } catch (e) { NET.user = null; }
   return NET.user;
 }
 const netErr = e => {
   const m = (e && (e.message || e.error_description)) || String(e || '');
   if (/fetch|network|Failed/i.test(m)) NET.offlineOK = true;
+  if (/servidor_fora|paused|540|503|502/i.test(m)) { NET.offlineOK = true; return 'O servidor do jogo não respondeu agora. Você pode jogar sem conta (o progresso fica neste aparelho) e tentar entrar de novo daqui a pouco.'; }
   if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
   if (/rate limit|over_email_send_rate_limit|429/i.test(m)) return 'Muitos e-mails enviados agora. Se você já se cadastrou, procure o e-mail de confirmação também no Spam e em Promoções, ou entre com o Google.';
   if (/not confirmed/i.test(m)) return 'Confirme seu e-mail pelo link que enviamos (veja também Spam e Promoções) e tente de novo.';
@@ -17087,18 +17090,18 @@ const netErr = e => {
   return m;
 };
 async function netSignIn(email, pass) {
-  const { data, error } = await NET.sb.auth.signInWithPassword({ email, password: pass });
+  const { data, error } = await netWait(NET.sb.auth.signInWithPassword({ email, password: pass }), 20000);
   if (error) throw error; NET.user = data.user; return data.user;
 }
 async function netSignUp(email, pass) {
-  const { data, error } = await NET.sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: location.origin + location.pathname } });
+  const { data, error } = await netWait(NET.sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: location.origin + location.pathname } }), 20000);
   if (error) throw error;
   if (!data.session) return null; // precisa confirmar o e-mail
   NET.user = data.user; return data.user;
 }
 async function netSignOut() { try { await cloudSave(); await NET.sb.auth.signOut(); } catch (e) { } NET.user = null; }
 async function cloudLoad() {
-  const { data, error } = await NET.sb.from('jogadores').select('save').eq('id', NET.user.id).maybeSingle();
+  const { data, error } = await netWait(NET.sb.from('jogadores').select('save').eq('id', NET.user.id).maybeSingle(), 15000);
   if (error) throw error;
   return data && data.save && data.save.v ? data.save : null;
 }

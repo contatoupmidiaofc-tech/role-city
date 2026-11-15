@@ -940,3 +940,8 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - **Menos memória ao trocar de roupa:** cada roupa testada gerava uma textura nova e o jogo guardava até 120. Com a textura em alta do personagem, isso podia encher a memória do celular, e o navegador fechava o jogo. Agora ficam guardadas só 4 texturas em alta (a roupa vestida nunca sai). Teste: 30 trocas seguidas, cerca de 50 ms cada, sem acumular memória.
 - **Motorista sempre dentro do carro:** a cada quadro o jogo mede o topo da cabeça de quem dirige e, se passar do teto, abaixa o personagem até caber. Isso vale para personagem mais alto, personagem simples ou qualquer pose que não tenha assentado, e também para os motoristas dos carros da cidade.
 - **Careca sem emenda:** o couro cabeludo pega o tom da testa e a linha do cabelo é misturada de forma suave. As sobrancelhas não são mais apagadas pela careca.
+
+### Build 2026.11.15-98 (Jogo não fica travado quando o servidor está fora do ar)
+
+- **Causa do "jogo não abre" (15/11):** o projeto do Supabase (banco de dados e login) foi **pausado** pelo próprio Supabase. No plano gratuito ele pausa os projetos que ficam um tempo sem uso. O projeto foi reativado e as contas e os saves estão lá (12 contas, 8 personagens; o último save é de 25/10).
+- **O jogo não fica mais preso na tela de entrada:** antes, com o servidor parado, a tela ficava em "Carregando seu progresso…" para sempre. Agora o login, o cadastro e o carregamento do save esperam no máximo 12 a 20 segundos. Depois disso aparece: "O servidor do jogo não respondeu agora. Você pode jogar sem conta (o progresso fica neste aparelho) e tentar entrar de novo daqui a pouco."
