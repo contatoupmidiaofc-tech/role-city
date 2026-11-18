@@ -975,3 +975,11 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - **Janela dourada mais longa:** o clima de fim de tarde dura mais tempo no relógio do jogo, que se põe às 20h. Ele começa a esquentar por volta das 19h.
 - **Luz e neblina mais quentes:** a luz do sol e as cores da cidade ficam alaranjadas nessa hora, e a névoa do fundo acompanha o tom.
 - Em dia de chuva e à noite o efeito diminui sozinho, como antes.
+
+### Build 2026.11.18-103 (Casas mais realistas e reflexos)
+
+- **Casas da Vila Residencial:** agora têm telhado de duas águas (no lugar da pirâmide), janelas com moldura branca e peitoril, porta com batente e degrau na frente.
+- **Mansões:** as janelas também têm moldura e peitoril, e o vidro reflete o céu.
+- **Sombra no chão:** uma sombra macia embaixo de cada casa e mansão, para elas parecerem assentadas no lote.
+- **Vidros dos carros:** refletem mais o céu e os prédios.
+- Ainda não mexi nas casas de madeira e alvenaria do morro, nem nas janelas dos prédios da cidade. Elas usam uma textura simples, que mudaria a cara da cidade inteira e pesaria no celular.

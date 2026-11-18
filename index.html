@@ -783,7 +783,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho, recarrega sozinho só no menu; jogando, mostra um aviso para atualizar quando quiser */
-const BUILD = '2026.11.18-102';
+const BUILD = '2026.11.18-103';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -4139,7 +4139,7 @@ function carBodyMat(M, color) {
 }
 function carGlassMat(M, color) {
   const key = 'ghm_' + M + '_' + color; if (VMAT[key]) return VMAT[key];
-  return (VMAT[key] = new THREE.MeshPhysicalMaterial({ map: carGlassTex(M, color), metalness: 0.35, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, transparent: true }));
+  return (VMAT[key] = new THREE.MeshPhysicalMaterial({ map: carGlassTex(M, color), metalness: 0.35, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, transparent: true, envMapIntensity: 1.9 }));
 }
 /* junta as peças paradas de um grupo numa malha só por material (muito menos trabalho para o celular desenhar) */
 /* junta também as peças que ficam dentro de subgrupos (frisos, cromados, para-choques, lanternas…),
@@ -11090,6 +11090,23 @@ function buildCasas(sc) {
   if (L && free[0] && !L.some(l => l[2] === 'Condomínio Alto da Colina')) L.push([free[0][0], free[0][1], 'Condomínio Alto da Colina']);
   if (L && free[1] && !L.some(l => l[2] === 'Vila Nova')) L.push([free[1][0], free[1][1], 'Vila Nova']);
 }
+/* casas: vidro que reflete o céu, janela com moldura branca e peitoril, telhado de duas águas */
+let _blobM = null; const blobM = () => _blobM || (_blobM = new THREE.MeshBasicMaterial({ map: canvasTex(64, 64, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, 'rgba(0,0,0,.55)'); gr.addColorStop(0.6, 'rgba(0,0,0,.25)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }), transparent: true, depthWrite: false, opacity: 0.9 }));
+function contactBlob(add, w, d, cz) { const o = add(new THREE.PlaneGeometry(w, d), blobM(), 0, 0.05, cz); o.rotation.x = -Math.PI / 2; o.castShadow = o.receiveShadow = false; return o; }
+let _glassH = null; const glassH = () => _glassH || (_glassH = new THREE.MeshStandardMaterial({ color: 0x8fc7e8, roughness: 0.05, metalness: 0.55, envMapIntensity: 2.6, transparent: true, opacity: 0.88 }));
+function frameWin(add, px, py, pz, w, h) {
+  add(boxGeo(w, h, 0.08), glassH(), px, py, pz);
+  const fm = lam(0xf4f1ea);
+  add(boxGeo(w + 0.2, 0.1, 0.14), fm, px, py + h / 2 + 0.05, pz); add(boxGeo(w + 0.2, 0.1, 0.14), fm, px, py - h / 2 - 0.05, pz);
+  add(boxGeo(0.1, h, 0.14), fm, px - w / 2 - 0.05, py, pz); add(boxGeo(0.1, h, 0.14), fm, px + w / 2 + 0.05, py, pz);
+  add(boxGeo(w + 0.36, 0.08, 0.28), fm, px, py - h / 2 - 0.12, pz + 0.1);
+}
+function gableRoof(add, half, run, base, rise, depth, cz, color) {
+  const slope = Math.atan2(rise, half), len = Math.hypot(half, rise) + 0.25, m = lam(color);
+  const L = add(boxGeo(len, 0.22, depth), m, -half / 2, base + rise / 2 + 0.05, cz); L.rotation.z = slope;
+  const R = add(boxGeo(len, 0.22, depth), m, half / 2, base + rise / 2 + 0.05, cz); R.rotation.z = -slope;
+  add(boxGeo(0.25, 0.2, depth + 0.1), lam(0x5a2f1c), 0, base + rise + 0.05, cz);
+}
 function vilaLot(sc, pos, pre, nome, base) {
   const [vx, vz] = pos, cols = [0xf2c94c, 0x9bd1a8, 0xd98c5f, 0x7fb3e0, 0xf28ca0, 0xe8a87c];
   let n = 0;
@@ -11098,8 +11115,11 @@ function vilaLot(sc, pos, pre, nome, base) {
     const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
     add(boxGeo(9.6, 0.06, 15), lam(0x5f9a45), 0, 0.03, 0);
     add(boxGeo(7, 3.4, 6.4), lam(cols[n]), 0, 1.7, -1.6);
-    const roof = add(new THREE.ConeGeometry(5.6, 2.2, 4), lam(0xb5452f), 0, 4.5, -1.6); roof.rotation.y = Math.PI / 4; roof.scale.set(1, 1, 0.9);
-    add(boxGeo(1.1, 2.2, 0.12), lam(0x6b4a2f), 0, 1.1, 1.62); add(boxGeo(1.3, 1, 0.1), lam(0x1d232b), -2.2, 1.9, 1.62); add(boxGeo(1.3, 1, 0.1), lam(0x1d232b), 2.2, 1.9, 1.62);
+    contactBlob(add, 10.4, 9.6, -1.6);
+    gableRoof(add, 3.9, 0, 3.4, 2.0, 7.0, -1.6, 0xb5452f);
+    add(boxGeo(1.6, 2.5, 0.14), lam(0xf4f1ea), 0, 1.25, 1.6); add(boxGeo(1.1, 2.2, 0.12), lam(0x6b4a2f), 0, 1.1, 1.7);
+    frameWin(add, -2.2, 1.9, 1.66, 1.3, 1.0); frameWin(add, 2.2, 1.9, 1.66, 1.3, 1.0);
+    add(boxGeo(0.9, 0.12, 0.6), lam(0x9a9ca3), 0, 0.06, 2.1); // degrau da porta
     for (let k = -4.4; k <= 4.4; k += 0.55) add(boxGeo(0.08, 0.9, 0.08), lam(0xffffff), k, 0.45, 7.3); add(boxGeo(9, 0.08, 0.06), lam(0xffffff), 0, 0.85, 7.3);
     add(boxGeo(0.3, 1.1, 0.3), lam(0x6d6f76), 3.6, 0.55, 7.0);
     const numS = textSprite(`Nº ${num}`, { bg: '#15161a', fg: '#fff', size: 40, scale: [1.3, 0.45, 1] }); numS.position.set(0, 2.7, 1.75); g.add(numS);
@@ -11116,10 +11136,10 @@ function mansaoLot(sc, pos, pre, nome, base) {
   for (const side of [-1, 1]) for (const dz of [-8.6, 8.6]) {
     const hx = vx + side * 8.6, hz = vz + dz, key = pre + n, num = base + n, g = new THREE.Group(); g.position.set(hx, 0, hz); g.rotation.y = side < 0 ? -Math.PI / 2 : Math.PI / 2; sc.add(g);
     const add = (geo, m, px, py, pz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; g.add(o); return o; };
-    add(boxGeo(16.6, 0.06, 16.6), lam(0x4f8a3a), 0, 0.03, 0);
+    add(boxGeo(16.6, 0.06, 16.6), lam(0x4f8a3a), 0, 0.03, 0); contactBlob(add, 14.4, 10.6, -3.6);
     add(boxGeo(11, 4.2, 7), lam(cols[n % 4]), 0, 2.1, -3.6); add(boxGeo(7.5, 3.4, 6), lam(0xffffff), -1.2, 5.9, -3.9); add(boxGeo(11.4, 0.3, 7.4), lam(0x3b3e46), 0, 4.3, -3.6); add(boxGeo(7.9, 0.3, 6.4), lam(0x3b3e46), -1.2, 7.7, -3.9);
-    for (const wx of [-3.6, -1.2, 1.2, 3.6]) add(boxGeo(1.4, 1.6, 0.1), std(0x9fd3f0, 0.1, 0.5), wx, 2.6, -0.06);
-    for (const wx of [-3.6, -1.2, 1.2]) add(boxGeo(1.4, 1.8, 0.1), std(0x9fd3f0, 0.1, 0.5), wx, 6.0, -0.86);
+    for (const wx of [-3.6, -1.2, 1.2, 3.6]) frameWin(add, wx, 2.6, -0.02, 1.4, 1.6);
+    for (const wx of [-3.6, -1.2, 1.2]) frameWin(add, wx, 6.0, -0.84, 1.4, 1.8);
     add(boxGeo(1.4, 2.5, 0.14), lam(0x5a3a22), 4.4, 1.25, -0.05);
     const pool = add(boxGeo(6, 0.12, 3.2), new THREE.MeshStandardMaterial({ color: 0x2fb6e8, roughness: 0.05, metalness: 0.2, emissive: 0x0a3a50 }), -2.4, 0.09, 3.4); pool.castShadow = false;
     add(boxGeo(6.6, 0.18, 0.3), lam(0xffffff), -2.4, 0.1, 1.7); add(boxGeo(6.6, 0.18, 0.3), lam(0xffffff), -2.4, 0.1, 5.1);
