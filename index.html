@@ -783,7 +783,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho, recarrega sozinho só no menu; jogando, mostra um aviso para atualizar quando quiser */
-const BUILD = '2026.11.18-103';
+const BUILD = '2026.11.18-104';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -5619,7 +5619,7 @@ function buildMorro(sc) {
   const box = (o, x, z) => ax === 'x' ? [o.dd, o.w] : [o.w, o.dd];
   const brickM = new THREE.MeshLambertMaterial({ map: brickTex() }), paintM = new THREE.MeshLambertMaterial({ color: 0xffffff });
   const nB = H.filter(o => o.brick).length, hB = new THREE.InstancedMesh(boxGeo(1, 1, 1), brickM, nB), hP = new THREE.InstancedMesh(boxGeo(1, 1, 1), paintM, H.length - nB);
-  const nWin = H.reduce((a, o) => a + o.fl * 2, 0), win = new THREE.InstancedMesh(boxGeo(1, 1, 1), lam(0x1d232b), nWin), door = new THREE.InstancedMesh(boxGeo(1, 1, 1), lam(0x6b4a2f), H.length);
+  const nWin = H.reduce((a, o) => a + o.fl * 2, 0), win = new THREE.InstancedMesh(boxGeo(1, 1, 1), lam(0x1d232b), nWin), trim = new THREE.InstancedMesh(boxGeo(1, 1, 1), lam(0xf4f1ea), nWin), door = new THREE.InstancedMesh(boxGeo(1, 1, 1), lam(0x6b4a2f), H.length);
   const slab = new THREE.InstancedMesh(boxGeo(1, 1, 1), lam(0x9a968e), H.length), tanks = H.filter(o => o.tank), tm = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.6, 0.55, 0.95, 12), lam(0x2f6db5), tanks.length);
   let ib = 0, ip = 0, iw = 0, it = 0;
   const fwd = ax === 'x' ? [-MORRO_SIDE[id][1], 0] : [0, -MORRO_SIDE[id][1]]; // morro abaixo
@@ -5632,9 +5632,9 @@ function buildMorro(sc) {
     door.setMatrixAt(i, M4.compose(V(fx + (fwd[1] ? 0.8 : 0), gy + 1.0, fz + (fwd[0] ? 0.8 : 0)), Q0, V(fwd[0] ? 0.06 : 0.9, 2.0, fwd[1] ? 0.06 : 0.9)));
     for (let f = 0; f < o.fl; f++) {
       const y = o.top - (o.fl - f) * 2.8 + 1.6;
-      win.setMatrixAt(iw++, M4.compose(V(fx - (fwd[1] ? 0.7 : 0), y, fz - (fwd[0] ? 0.7 : 0)), Q0, V(fwd[0] ? 0.06 : 0.9, 0.9, fwd[1] ? 0.06 : 0.9)));
+      { const P1 = V(fx - (fwd[1] ? 0.7 : 0), y, fz - (fwd[0] ? 0.7 : 0)); win.setMatrixAt(iw, M4.compose(P1, Q0, V(fwd[0] ? 0.06 : 0.9, 0.9, fwd[1] ? 0.06 : 0.9))); trim.setMatrixAt(iw, M4.compose(P1, Q0, V(fwd[0] ? 0.03 : 1.12, 1.08, fwd[1] ? 0.03 : 1.12))); iw++; } // moldura branca em volta da janela
       const sd = o.t > 0 ? -1 : 1, wx = ax === 'x' ? x : x + sd * (o.w / 2 + 0.03), wz = ax === 'x' ? z + sd * (o.w / 2 + 0.03) : z;
-      win.setMatrixAt(iw++, M4.compose(V(wx, y, wz), Q0, V(ax === 'x' ? 0.9 : 0.06, 0.9, ax === 'x' ? 0.06 : 0.9)));
+      { const P2 = V(wx, y, wz); win.setMatrixAt(iw, M4.compose(P2, Q0, V(ax === 'x' ? 0.9 : 0.06, 0.9, ax === 'x' ? 0.06 : 0.9))); trim.setMatrixAt(iw, M4.compose(P2, Q0, V(ax === 'x' ? 1.12 : 0.03, 1.08, ax === 'x' ? 0.03 : 1.12))); iw++; }
     }
     if (o.tank) tm.setMatrixAt(it++, M4.compose(V(x + 0.6, o.top + 0.65, z - 0.6), Q0, V(1, 1, 1)));
     city.colliders.push({ x0: x - sx / 2, x1: x + sx / 2, z0: z - sz / 2, z1: z + sz / 2, morro: true });
@@ -5644,7 +5644,7 @@ function buildMorro(sc) {
   // telhado de barro (Salvador tem muito) em cima de algumas casas
   { const RF = H.filter(o => o.roof); if (RF.length) { const rf = new THREE.InstancedMesh(new THREE.ConeGeometry(0.75, 1, 4).rotateY(Math.PI / 4), lam(0xb5502e), RF.length); RF.forEach((o, i) => { const [x, z] = morroWorld(o.d, o.t), [sx, sz] = box(o); rf.setMatrixAt(i, M4.compose(V(x, o.top + 0.2 + 0.6, z), Q0, V(sx * 1.08, 1.2, sz * 1.08))); }); rf.castShadow = true; sc.add(rf); } }
   for (const m of [hB, hP, slab, tm]) { m.castShadow = true; m.receiveShadow = true; sc.add(m); }
-  sc.add(win); sc.add(door);
+  sc.add(win); sc.add(trim); sc.add(door);
   // antenas, bandeiras do Brasil nas lajes e bandeirão no alto
   const fT = brFlagTex(), flagM = new THREE.MeshLambertMaterial({ map: fT, side: THREE.DoubleSide }), poleM = lam(0xcfd3d8);
   city.flags = city.flags || [];

@@ -983,3 +983,8 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - **Sombra no chão:** uma sombra macia embaixo de cada casa e mansão, para elas parecerem assentadas no lote.
 - **Vidros dos carros:** refletem mais o céu e os prédios.
 - Ainda não mexi nas casas de madeira e alvenaria do morro, nem nas janelas dos prédios da cidade. Elas usam uma textura simples, que mudaria a cara da cidade inteira e pesaria no celular.
+
+### Build 2026.11.18-104 (Janelas das casas do morro com moldura)
+
+- **Casas do morro:** cada janela ganhou uma moldura branca em volta, como nas casas da Vila Residencial. O desenho continua em lote (uma única peça para todas as casas), então não pesa no celular.
+- A conferência visual dessas casas ainda não foi feita com uma foto de perto: os testes automáticos confirmaram que as 296 casas são montadas sem erro e com as molduras. Vale olhar no celular, andando pelo morro.
