@@ -962,3 +962,9 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - **Velocímetro ao dirigir:** ao entrar em carro, moto ou barco pela cidade, aparece embaixo, no centro da tela, um mostrador com km/h e a marcha (D para frente, R para ré). O arco vai enchendo com a velocidade e fica vermelho perto do máximo do veículo.
 - **Poeira:** ao frear forte ou fazer uma curva rápida, sai uma nuvem de poeira das rodas de trás.
 - **Faíscas:** quando o carro bate forte numa parede, saem faíscas que caem e somem.
+
+### Build 2026.11.18-101 (Chão molhado na chuva)
+
+- **Asfalto molhado:** quando chove, o chão da cidade escurece e aparecem poças que refletem a luz do céu. Quanto mais forte a chuva, mais molhado. Em dia seco nada muda.
+- O efeito sobe e desce aos poucos, acompanhando a intensidade da chuva, então não pesa de repente.
+- Usa a mesma textura de detalhe do chão que já existia, sem carregar arquivos novos e sem custo perceptível no celular.

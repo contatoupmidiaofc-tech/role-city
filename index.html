@@ -783,7 +783,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho, recarrega sozinho só no menu; jogando, mostra um aviso para atualizar quando quiser */
-const BUILD = '2026.11.18-100';
+const BUILD = '2026.11.18-101';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -3451,14 +3451,16 @@ function detTexs() {
   };
   return _det;
 }
+const WET = { value: 0 }; // chão molhado pela chuva (escurece o asfalto e aparecem poças brilhando)
 function detPatch(m, kind) { // injeta a textura de detalhe pela posição no mundo (não depende das coordenadas do modelo)
   const T = detTexs();
   m.onBeforeCompile = sh => {
-    sh.uniforms.detT = { value: kind === 'ground' ? T.ground : T.wall };
+    sh.uniforms.detT = { value: kind === 'ground' ? T.ground : T.wall }; if (kind === 'ground') sh.uniforms.wet = WET;
     sh.vertexShader = 'varying vec3 vWd;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n  vWd = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = 'uniform sampler2D detT; varying vec3 vWd;\n' + sh.fragmentShader.replace('#include <map_fragment>', kind === 'ground'
-      ? '#include <map_fragment>\n  vec3 dg = texture2D(detT, vWd.xz * 0.21).rgb * texture2D(detT, vWd.xz * 0.029 + 0.37).rgb; diffuseColor.rgb *= clamp(dg * 1.2, 0.0, 1.12);'
-      : '#include <map_fragment>\n  float gw = texture2D(detT, vec2((vWd.x + vWd.z) * 0.07, vWd.y * 0.031)).r; diffuseColor.rgb *= (0.56 + 0.44 * gw) * (1.0 - smoothstep(3.2, 0.3, vWd.y) * 0.35);');
+    sh.fragmentShader = 'uniform sampler2D detT; uniform float wet; varying vec3 vWd;\n' + sh.fragmentShader.replace('#include <map_fragment>', kind === 'ground'
+      ? '#include <map_fragment>\n  vec3 dg = texture2D(detT, vWd.xz * 0.21).rgb * texture2D(detT, vWd.xz * 0.029 + 0.37).rgb; diffuseColor.rgb *= clamp(dg * 1.2, 0.0, 1.12) * (1.0 - 0.3 * wet);'
+       : '#include <map_fragment>\n  float gw = texture2D(detT, vec2((vWd.x + vWd.z) * 0.07, vWd.y * 0.031)).r; diffuseColor.rgb *= (0.56 + 0.44 * gw) * (1.0 - smoothstep(3.2, 0.3, vWd.y) * 0.35);');
+  if (kind === 'ground') sh.fragmentShader = sh.fragmentShader.replace(/#include <(opaque_fragment|output_fragment)>/, (x) => '{ float pud = smoothstep(0.86, 0.98, texture2D(detT, vWd.xz * 0.05 + 0.2).r) * wet; outgoingLight += vec3(0.4, 0.46, 0.55) * pud * 0.45; }\n' + x);
   };
   m.customProgramCacheKey = () => 'det_' + kind; m.needsUpdate = true; return m;
 }
@@ -3583,6 +3585,7 @@ function updateDayNight(dt, force) {
   if (!force && (dn.tick = (dn.tick || 0) + dt) < 0.25) return; dn.tick = 0;
   if (S.day !== gameDay()) { S.day = gameDay(); chargeRent(); }
   const h = dn.hour = dayHour(), el = h >= 5 && h <= 20 ? Math.sin((h - 5) / 15 * Math.PI) : -Math.sin(((h + 4) % 24) / 9 * Math.PI), wk = city.wxK || 0;
+  WET.value += (wk - WET.value) * 0.5;
   const night = dn.night = clamp((0.12 - el) / 0.32, 0, 1), dusk = clamp(1 - Math.abs(el) / 0.4, 0, 1) * (1 - night * 0.6); // entardecer mais longo (hora dourada)
   const c = dn.tmp.copy(dn.cDay).lerp(dn.cDusk, dusk * 0.8).lerp(dn.cNight, night);
   c.lerp(dn.cStorm || (dn.cStorm = new THREE.Color(0x7d858f)), wk * 0.7 * (1 - night * 0.7)); city.scene.background.copy(c);
