@@ -537,6 +537,7 @@ canvas.swatch{background:#333}
 .toast:nth-last-child(n+3){display:none}
 .toast{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #feed div{font-size:11px!important;padding:2px 6px!important}
+#mcard{position:fixed;left:0;right:0;top:44%;transform:translateY(-50%) scaleY(.05);padding:16px 0 14px;text-align:center;background:linear-gradient(90deg,transparent,rgba(15,17,22,.92) 16%,rgba(15,17,22,.92) 84%,transparent);z-index:26;pointer-events:none;opacity:0;transition:transform .45s cubic-bezier(.2,.9,.3,1.1),opacity .3s}#mcard.on{transform:translateY(-50%) scaleY(1);opacity:1;pointer-events:auto;cursor:pointer}#mcard .mh{font:800 clamp(26px,6.5vw,50px)/1 var(--cond);letter-spacing:2px;color:#ffd76a;text-shadow:0 3px 0 #15161a,0 0 18px rgba(255,200,60,.35)}#mcard.bad .mh{color:#ff5a5a;text-shadow:0 3px 0 #15161a,0 0 18px rgba(255,60,60,.4)}#mcard .mt{font:700 16px var(--cond);color:#fff;margin-top:6px}#mcard .ml{font:700 15px var(--cond);color:#3ddc84;margin-top:2px}#mcard.bad .ml{color:#ffb4b4}
 #big-banner{left:128px!important;top:calc(env(safe-area-inset-top,0px) + 116px)!important;transform:none!important;font-size:14px!important;text-shadow:0 1px 2px #000!important;background:rgba(21,22,26,.8);padding:2px 8px;border-radius:6px}
 #big-banner.on{animation:bban2 2.4s ease-out forwards!important}
 @keyframes bban2{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}
@@ -780,7 +781,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho, recarrega sozinho só no menu; jogando, mostra um aviso para atualizar quando quiser */
-const BUILD = '2026.11.15-98';
+const BUILD = '2026.11.18-99';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -5360,7 +5361,7 @@ function completeMission() {
   const m = S.mission; S.mission = null; P.carry = null;
   if (m.job) { if (MIL_JOBS.includes(m.job)) try { milDutyMark('missoes'); } catch (e) { } return completeJobTask(m); }
   const got = earn(m.reward); addXP(m.xp); S.stats.missions++; addLeague(15); evProgress('mission', 1); persist();
-  toast(`Missão concluída: ${m.title}  +$${fmt(got)}`, 'good'); sfx('coin');
+  toast(`Missão concluída: ${m.title}  +$${fmt(got)}`, 'good'); sfx('coin'); missionCard(true, m.title, [`+$${fmt(got)}`, `+${m.xp} XP`]); moneyPop(got); confete(P.x, P.y + 2.2, P.z, 50);
   for (const t of TRICKS.filter(t => t.need === S.stats.missions && t.need > 0)) { setTimeout(() => toast(`Nova manobra liberada: ${t.name} (${DIR_LABEL[t.key]})`, 'pink'), 900); postFeed(`Liberei o ${t.name}!`); }
   if (!S.owned.some(id => ITEM[id].slot === 'skate')) giveFirstSkate();
   rebuildMissionObjs(); renderMissionBox();
@@ -13195,17 +13196,30 @@ function storyStepBegin() {
   else if (st.at) { const [x, z] = storyPos(st.at); S.gps = { x, z, label: st.txt }; city.gpsT = 0; }
   persist();
 }
+/* resultado da missão no estilo GTA: faixa escura que abre no meio da tela com MISSÃO CUMPRIDA / FALHOU e a recompensa */
+function missionCard(ok, title, lines) {
+  let el = $('mcard'); if (!el) { el = document.createElement('div'); el.id = 'mcard'; el.setAttribute('role', 'status'); el.onclick = () => el.classList.remove('on'); document.body.appendChild(el); }
+  el.className = ok ? 'ok' : 'bad';
+  el.innerHTML = `<div class="mh">${ok ? 'MISSÃO CUMPRIDA' : 'MISSÃO FALHOU'}</div><div class="mt">${esc(title)}</div>${(lines || []).map(l => `<div class="ml">${esc(l)}</div>`).join('')}`;
+  void el.offsetWidth; el.classList.add('on'); clearTimeout(missionCard.t); missionCard.t = setTimeout(() => el.classList.remove('on'), 4600);
+}
+/* "+$" que sobe do personagem e some (dinheiro que entra na hora) */
+function moneyPop(n, color = '#3ddc84') {
+  if (!city.scene || !n || !P) return;
+  const sp = textSprite(`+$${fmt(n)}`, { bg: color, fg: '#15161a', w: 384, h: 96 }); sp.position.set(P.x, (P.y || 0) + 2.6, P.z); sp.scale.multiplyScalar(0.9);
+  sp.material.transparent = true; sp.material.depthTest = false; sp.renderOrder = 6; city.scene.add(sp); city.fx.push({ m: sp, vx: 0, vy: 1.1, vz: 0, life: 1.6, max: 1.6 });
+}
 function storyStepDone() {
   const cur = S.story.cur, c = storyById(cur.id); sfx('coin'); cur.step++;
   if (cur.step >= c.steps.length) {
     // cena final com quem passou a missão
     const [x, z] = storyPos(c.spot), npc = storyNpc('giver', c.look, x, z, c.who); S.gps = null;
     return cutStart(c.outro, npc, c.who, () => { S.story.done.push(c.id); S.story.cur = null; const got = earn(c.pay); addXP(c.xp); S.stats.missions++; persist(); updateHUD();
-      toast(`✅ Capítulo ${c.cap} concluído: ${c.n}  +$${fmt(got)}`, 'good'); sfx('level'); const nx = storyNext(); if (nx) setTimeout(() => toast(`📖 Novo contato no mapa: ${nx.who} (Cap. ${nx.cap})`, 'pink'), 1800); else setTimeout(() => toast('🏆 Você terminou a História do Rolê!', 'pink'), 1800); });
+      toast(`✅ Capítulo ${c.cap} concluído: ${c.n}  +$${fmt(got)}`, 'good'); sfx('level'); missionCard(true, `Capítulo ${c.cap}: ${c.n}`, [`+$${fmt(got)}`, `+${c.xp} XP`]); moneyPop(got); confete(P.x, P.y + 2.2, P.z, 60); const nx = storyNext(); if (nx) setTimeout(() => toast(`📖 Novo contato no mapa: ${nx.who} (Cap. ${nx.cap})`, 'pink'), 1800); else setTimeout(() => toast('🏆 Você terminou a História do Rolê!', 'pink'), 1800); });
   }
   storyStepBegin();
 }
-function storyFail(why) { const cur = S.story.cur, c = storyById(cur.id); toast(`❌ Missão falhou: ${why}. Fale com ${c.who} para tentar de novo.`, 'bad'); S.story.cur = null; S.gps = null; persist(); }
+function storyFail(why) { const cur = S.story.cur, c = storyById(cur.id); toast(`❌ Missão falhou: ${why}. Fale com ${c.who} para tentar de novo.`, 'bad'); missionCard(false, c.n, [why[0].toUpperCase() + why.slice(1), `Fale com ${c.who} para tentar de novo`]); sfx('hit'); S.story.cur = null; S.gps = null; persist(); }
 function storyTick(dt, t) {
   if (!S || !city.scene || city.interior || city.shopIn || city.jail) { const b = $('story-box'); if (b) b.hidden = true; return; }
   S.story = S.story || { done: [] };

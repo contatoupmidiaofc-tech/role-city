@@ -949,3 +949,9 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 ### Robô que mantém o banco ativo
 
 - `.github/workflows/manter-supabase-ativo.yml` roda todo dia às 8h17 (horário de Brasília) e faz uma consulta simples no Supabase (vê se um apelido está livre). Assim o plano gratuito não pausa o banco por falta de uso. Ele usa só a chave pública que já está no `index.html`. Se o banco não responder, a execução aparece em vermelho na aba Actions do GitHub, com o aviso para reativar no painel do Supabase. Também dá para rodar na mão pela aba Actions, em "Run workflow".
+
+### Build 2026.11.18-99 (Resultado de missão no estilo GTA e dinheiro que aparece na hora)
+
+- **MISSÃO CUMPRIDA / MISSÃO FALHOU:** ao terminar uma missão (de história ou do quadro), uma faixa escura abre no meio da tela com o resultado, o nome da missão e a recompensa (+$ e XP). Se a missão falhar, a faixa fica vermelha e diz o motivo e com quem falar para tentar de novo. Some sozinha em poucos segundos, ou ao tocar nela.
+- **+$ subindo do personagem:** o valor recebido aparece acima da cabeça e sobe até sumir.
+- **Confete na conclusão** das missões, para o momento de vitória ser visível também de longe.
