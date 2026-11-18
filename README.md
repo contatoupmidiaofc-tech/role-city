@@ -988,3 +988,10 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 
 - **Casas do morro:** cada janela ganhou uma moldura branca em volta, como nas casas da Vila Residencial. O desenho continua em lote (uma única peça para todas as casas), então não pesa no celular.
 - A conferência visual dessas casas ainda não foi feita com uma foto de perto: os testes automáticos confirmaram que as 296 casas são montadas sem erro e com as molduras. Vale olhar no celular, andando pelo morro.
+
+### Build 2026.11.18-105 (Corpo inteiro com textura em alta resolução)
+
+- **Textura do corpo, roupa e rosto:** antes, só o rosto e o cabelo tinham o aumento por IA (Real-ESRGAN). Agora a textura inteira de cada personagem (corpo, roupa, pés e rosto) foi aumentada 2× pela mesma rede, em `modelos/rpm_m_hd.jpg` e `modelos/rpm_f_hd.jpg`. As bordas do desenho, como o logo da camiseta, ficam mais limpas e a pele mais suave.
+- O ganho é moderado: a textura original é pintada e já era suave. O que mudou de verdade é a nitidez das bordas e dos detalhes pequenos.
+- A geometria (número de triângulos) e o esqueleto não mudaram. Trocar isso exigiria novos modelos 3D.
+- O processo para refazer está em `ferramentas/esrgan_np.py`, e o script de montagem da textura inteira ficou só no ambiente de trabalho.
