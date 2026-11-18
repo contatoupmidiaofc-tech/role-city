@@ -955,3 +955,10 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - **MISSÃO CUMPRIDA / MISSÃO FALHOU:** ao terminar uma missão (de história ou do quadro), uma faixa escura abre no meio da tela com o resultado, o nome da missão e a recompensa (+$ e XP). Se a missão falhar, a faixa fica vermelha e diz o motivo e com quem falar para tentar de novo. Some sozinha em poucos segundos, ou ao tocar nela.
 - **+$ subindo do personagem:** o valor recebido aparece acima da cabeça e sobe até sumir.
 - **Confete na conclusão** das missões, para o momento de vitória ser visível também de longe.
+
+### Build 2026.11.18-100 (Estrelas de procurado, velocímetro, poeira e faíscas)
+
+- **Estrelas de procurado no estilo GTA:** agora são 5 estrelas. As que estão acesas ficam vermelhas e as restantes aparecem apagadas. Quando o nível sobe, as estrelas dão um pulso, para dar para perceber de longe.
+- **Velocímetro ao dirigir:** ao entrar em carro, moto ou barco pela cidade, aparece embaixo, no centro da tela, um mostrador com km/h e a marcha (D para frente, R para ré). O arco vai enchendo com a velocidade e fica vermelho perto do máximo do veículo.
+- **Poeira:** ao frear forte ou fazer uma curva rápida, sai uma nuvem de poeira das rodas de trás.
+- **Faíscas:** quando o carro bate forte numa parede, saem faíscas que caem e somem.
