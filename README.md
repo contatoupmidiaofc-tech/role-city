@@ -968,3 +968,10 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - **Asfalto molhado:** quando chove, o chão da cidade escurece e aparecem poças que refletem a luz do céu. Quanto mais forte a chuva, mais molhado. Em dia seco nada muda.
 - O efeito sobe e desce aos poucos, acompanhando a intensidade da chuva, então não pesa de repente.
 - Usa a mesma textura de detalhe do chão que já existia, sem carregar arquivos novos e sem custo perceptível no celular.
+
+### Build 2026.11.18-102 (Pôr do sol mais forte)
+
+- **Céu de pôr do sol:** o horizonte fica laranja forte e o topo roxo-rosado, com o disco do sol e o brilho ao redor mais visíveis perto do horizonte.
+- **Janela dourada mais longa:** o clima de fim de tarde dura mais tempo no relógio do jogo, que se põe às 20h. Ele começa a esquentar por volta das 19h.
+- **Luz e neblina mais quentes:** a luz do sol e as cores da cidade ficam alaranjadas nessa hora, e a névoa do fundo acompanha o tom.
+- Em dia de chuva e à noite o efeito diminui sozinho, como antes.
