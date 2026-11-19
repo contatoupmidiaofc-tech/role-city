@@ -1027,3 +1027,9 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - A deformação fica em `modelos/rosto_morph_m.json` (cerca de 58 KB) e é aplicada só no personagem que usa "Minha foto". Os outros personagens não mudam.
 - Ferramenta: `ferramentas/` (script de deformação gerado com a malha do modelo masculino).
 - Resultado parcial: de lado, a silhueta do rosto acompanha melhor a cabeça. Não é um rosto perfeito: para isso seria preciso um modelo 3D ajustado a fotos de frente bem iluminadas.
+
+### Build 2026.11.19-111 (Rosto desenhado para "Minha foto")
+
+- A opção "Minha foto" agora usa um **rosto desenhado** (estilo do jogo, cel-shading) no lugar da foto colada. Não aparece mais como máscara.
+- Traços medidos nas fotos: sobrancelhas, olhos, nariz, boca, bigode e barba. Cores da pele iguais às do corpo.
+- Limitação: é uma ilustração, não um retrato. A semelhança é limitada e alguns traços não estão perfeitamente alinhados ao modelo. Gerador: `ferramentas/desenha_rosto.py`.
