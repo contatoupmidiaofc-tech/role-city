@@ -1007,3 +1007,10 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 
 - Corrigido o encaixe da foto: a inclinação da cabeça foi endireitada e o rosto foi centralizado no molde, sem distorcer os olhos.
 - Antes, a foto ficava torta porque o encaixe cisalhava a imagem.
+
+### Build 2026.11.19-108 (Rosto da opção "Minha foto" com pontos detectados por IA)
+
+- O encaixe da foto agora usa 478 pontos do rosto, detectados automaticamente (MediaPipe Face Landmarker), em vez de três pontos marcados à mão. A foto é ajustada ao molde por mínimos quadrados, com erro médio de cerca de 28 px na textura de 2048.
+- A cor da pele é medida só nas bochechas, para não ficar amarelada, e a máscara ficou maior e mais suave, sem borda visível.
+- A foto usada é a frontal de rosto neutro. Fotos com outras pessoas não são usadas.
+- Limitação: o modelo 3D tem formato fixo, então a textura plana não encaixa perfeitamente. Para um rosto sem defeito seria preciso um modelo 3D da cabeça feito a partir de fotos.
