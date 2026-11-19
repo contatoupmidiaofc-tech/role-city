@@ -784,7 +784,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho, recarrega sozinho só no menu; jogando, mostra um aviso para atualizar quando quiser */
-const BUILD = '2026.11.19-108';
+const BUILD = '2026.11.19-109';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -1201,7 +1201,7 @@ function lookOf(equip, skin, hair, gender, board, body) {
 const botLook = b => lookOf(b.equip, b.skin, b.hair, b.gender);
 const hasSkate = () => !!(S.equip.skate && S.owned.includes(S.equip.skate));
 const skateOut = () => hasSkate() && !S.skateGuardado;
-const myLook = () => lookOf(Object.assign({ bag: S.shift === 'entregador' || S.shift === 'motoboy' }, S.equip, (typeof UNIFORM !== 'undefined' && UNIFORM[S.shift]) || {}, S.beachWear && typeof beachEquip === 'function' ? beachEquip() : {}, { tats: S.tats || null, tn: S.name, hol: typeof holsterNow === 'function' ? holsterNow() : null }), S.skin, S.hair, S.gender, S.board, S.body);
+const myLook = () => lookOf(Object.assign({ bag: S.shift === 'entregador' || S.shift === 'motoboy' }, S.equip, (typeof UNIFORM !== 'undefined' && UNIFORM[S.shift]) || {}, S.beachWear && typeof beachEquip === 'function' ? beachEquip() : {}, { tats: S.tats || null, tn: S.name, hol: typeof holsterNow === 'function' ? holsterNow() : null }), S.skin, S.hair, S.gender, S.board, (isAdm() && S.gender !== 'f' && !(S.body && S.body.rt) ? Object.assign({}, S.body, { rt: 'foto' }) : S.body));
 const phoneTier = () => ITEM[S.equip.phone].tier;
 function boardStats(equip, attr) {
   const k = ITEM[equip.skate] || ITEM.sk_basic, w = ITEM[equip.wheels] || ITEM.wh_basic, a = attr || { vel: 0, pop: 0, tec: 0, equ: 0 };

@@ -1014,3 +1014,9 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - A cor da pele é medida só nas bochechas, para não ficar amarelada, e a máscara ficou maior e mais suave, sem borda visível.
 - A foto usada é a frontal de rosto neutro. Fotos com outras pessoas não são usadas.
 - Limitação: o modelo 3D tem formato fixo, então a textura plana não encaixa perfeitamente. Para um rosto sem defeito seria preciso um modelo 3D da cabeça feito a partir de fotos.
+
+### Build 2026.11.19-109 (Rosto "Minha foto" automático na conta do chefe)
+
+- Na conta do chefe (ADM), o personagem masculino usa "Minha foto" por padrão, sem precisar escolher no menu. Quem já escolheu outra opção no menu mantém a escolha.
+- A foto ficou mais suave (menos nitidez e contraste) e a borda da máscara mais difusa, para ela se misturar melhor com a pele.
+- Limitação conhecida: a textura continua colada numa cabeça 3D de formato fixo. De lado, o rosto ainda parece uma máscara. Para parecer parte do corpo, a própria cabeça 3D precisaria ser deformada a partir das fotos (ajuste de malha), que é outro trabalho.
