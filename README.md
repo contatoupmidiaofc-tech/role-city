@@ -1020,3 +1020,10 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - Na conta do chefe (ADM), o personagem masculino usa "Minha foto" por padrão, sem precisar escolher no menu. Quem já escolheu outra opção no menu mantém a escolha.
 - A foto ficou mais suave (menos nitidez e contraste) e a borda da máscara mais difusa, para ela se misturar melhor com a pele.
 - Limitação conhecida: a textura continua colada numa cabeça 3D de formato fixo. De lado, o rosto ainda parece uma máscara. Para parecer parte do corpo, a própria cabeça 3D precisaria ser deformada a partir das fotos (ajuste de malha), que é outro trabalho.
+
+### Build 2026.11.19-110 (Cabeça deformada para o rosto da foto)
+
+- Na opção "Minha foto", a cabeça do modelo masculino é deformada para seguir os pontos do rosto detectados nas fotos (478 pontos). A deformação é suave, de até cerca de 2 cm, e só afeta o rosto (o cabelo de trás, o pescoço e o corpo não mudam).
+- A deformação fica em `modelos/rosto_morph_m.json` (cerca de 58 KB) e é aplicada só no personagem que usa "Minha foto". Os outros personagens não mudam.
+- Ferramenta: `ferramentas/` (script de deformação gerado com a malha do modelo masculino).
+- Resultado parcial: de lado, a silhueta do rosto acompanha melhor a cabeça. Não é um rosto perfeito: para isso seria preciso um modelo 3D ajustado a fotos de frente bem iluminadas.

@@ -784,7 +784,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho, recarrega sozinho só no menu; jogando, mostra um aviso para atualizar quando quiser */
-const BUILD = '2026.11.19-109';
+const BUILD = '2026.11.19-110';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -10809,8 +10809,19 @@ function rpmLodLoad(info, geo, k) {
   }).catch(() => { }));
 }
 // escolhe o nível pela distância da câmera (o seu personagem e a câmera de rosto sempre no completo)
+/* ROSTO SOB MEDIDA (opção Minha foto): a cabeça do modelo masculino é deformada para seguir os pontos do rosto da foto.
+   Os deslocamentos (em metros, no espaço do modelo) vêm de modelos/rosto_morph_m.json, gerados pela ferramenta de encaixe. */
+let FACE_MORPH = null, FACE_MORPH_P = null;
+function faceMorphLoad() { if (!FACE_MORPH_P) FACE_MORPH_P = fetch(`modelos/rosto_morph_m.json?v=${ASSET_V}`).then(r => r.ok ? r.json() : null).then(j => { FACE_MORPH = j; return j; }).catch(() => null); return FACE_MORPH_P; }
+function faceGeoFor(u, M) {
+  if (u.faceGeo) return u.faceGeo; if (!FACE_MORPH || !M.lods) return null;
+  const g = M.lods[0].clone(), pos = g.attributes.position, d = FACE_MORPH.d;
+  FACE_MORPH.idx.forEach((vi, k) => pos.setXYZ(vi, pos.getX(vi) + d[k][0], pos.getY(vi) + d[k][1], pos.getZ(vi)));
+  pos.needsUpdate = true; return (u.faceGeo = g);
+}
 function charLod(o, d) {
   const u = o.userData, av = u.avatar, M = av && MODELS && MODELS[u.k]; if (!M || !M.lods) return;
+  if (o === city.player && u.faceOn) { const fg = faceGeoFor(u, M); if (fg && av.geometry !== fg) av.geometry = fg; return; }
   const want = o === city.player || city.faceCam || d < 16 ? 0 : d < 45 ? 1 : 2, g = M.lods[want] || M.lods[want - 1] || M.lods[0];
   if (av.geometry !== g) av.geometry = g;
 }
@@ -10860,7 +10871,8 @@ function rpmHi(M) {
 }
 function applyRpmLook(u, look0) {
   const M0 = MODELS[u.k], m = M0 && u.mats[M0.avatarMat]; if (!m) return;
-  const foto = !!(look0.body && look0.body.rt === 'foto' && M0.fotoM && u.k === 'm'), look = foto ? Object.assign({}, look0, { body: Object.assign({}, look0.body, { bd: 'none' }) }) : look0, M = foto ? M0.fotoM : M0;
+  const foto = !!(look0.body && look0.body.rt === 'foto' && M0.fotoM && u.k === 'm'); u.faceOn = foto; if (foto) faceMorphLoad().then(() => { if (u.faceOn && u.avatar && FACE_MORPH) u.avatar.geometry = faceGeoFor(u, M0) || u.avatar.geometry; });
+  const look = foto ? Object.assign({}, look0, { body: Object.assign({}, look0.body, { bd: 'none' }) }) : look0, M = foto ? M0.fotoM : M0;
   const bald = ['careca', 'moicano'].includes(look.body && look.body.hs); // moicano: laterais raspadas, só a crista
   const T = (u.hiRes && rpmHi(M)) || M, A = T.atlas;
   const pm = look.pants.trunk && T.trunkMask ? T.trunkMask : look.pants.long && !look.pants.baggy && T.longMask ? T.longMask : (look.pants.short || look.pants.baggy) ? T.legMask : null;
