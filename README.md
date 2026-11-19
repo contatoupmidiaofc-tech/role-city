@@ -1033,3 +1033,8 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - A opção "Minha foto" agora usa um **rosto desenhado** (estilo do jogo, cel-shading) no lugar da foto colada. Não aparece mais como máscara.
 - Traços medidos nas fotos: sobrancelhas, olhos, nariz, boca, bigode e barba. Cores da pele iguais às do corpo.
 - Limitação: é uma ilustração, não um retrato. A semelhança é limitada e alguns traços não estão perfeitamente alinhados ao modelo. Gerador: `ferramentas/desenha_rosto.py`.
+
+### Build 2026.11.19-112 (Volta o rosto padrão na conta do chefe)
+
+- O rosto "Minha foto" deixou de ser aplicado automaticamente na conta do chefe. O personagem volta ao rosto padrão.
+- A opção "Minha foto" continua disponível no menu de aparência (Rosto → Minha foto), para quem quiser escolher.
