@@ -995,3 +995,10 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - O ganho é moderado: a textura original é pintada e já era suave. O que mudou de verdade é a nitidez das bordas e dos detalhes pequenos.
 - A geometria (número de triângulos) e o esqueleto não mudaram. Trocar isso exigiria novos modelos 3D.
 - O processo para refazer está em `ferramentas/esrgan_np.py`, e o script de montagem da textura inteira ficou só no ambiente de trabalho.
+
+### Build 2026.11.19-106 (Opção "Minha foto" para o rosto do personagem masculino)
+
+- **Nova opção "Rosto" na criação do personagem masculino:** "Padrão" (o rosto de sempre) ou "Minha foto". Com "Minha foto", o rosto do personagem usa a textura `modelos/rpm_m_rosto.jpg`, com a foto alinhada pelos olhos, nariz e boca. A barba já vem na foto, então a barba do menu fica desligada nesse caso.
+- A textura da foto só é carregada depois que o jogo entra, sem atrasar a entrada. Quem escolhe "Padrão" não baixa nada a mais.
+- A foto fica num arquivo público do site. Quem tiver o endereço do arquivo consegue ver a imagem. Se você não quiser isso, a opção pode ser removida e o arquivo apagado.
+- Limitação: o rosto do modelo tem proporções diferentes do rosto real, então a semelhança é parcial, principalmente de perto. Para ficar mais fiel seria preciso um modelo 3D feito a partir da foto.

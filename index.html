@@ -630,6 +630,7 @@ canvas.swatch{background:#333}
       <div class="field"><label>Cor do cabelo</label><div class="skins" id="hairs"></div></div>
       <div class="field"><label>Estilo do cabelo</label><div class="seg wrap" id="b-hs"></div></div>
       <div class="field"><label>Corpo</label><div class="seg" id="b-w"></div></div>
+      <div class="field"><label>Rosto</label><div class="seg" id="b-rt"></div></div>
       <div class="field"><label>Altura</label><div class="seg" id="b-h"></div></div>
       <p class="muted" style="margin:0">Você começa a pé, com roupa básica, o celular tijolão e zero grana. Ganhe seu primeiro skate completando uma missão ou comprando na Skate Shop.</p>
       <button class="btn" type="submit">Começar o rolê</button>
@@ -783,7 +784,7 @@ canvas.swatch{background:#333}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* versão do jogo: se o servidor tiver uma mais nova que a deste aparelho, recarrega sozinho só no menu; jogando, mostra um aviso para atualizar quando quiser */
-const BUILD = '2026.11.18-105';
+const BUILD = '2026.11.19-106';
 /* versão dos arquivos pesados (modelos, animações, músicas): só muda quando eles mudam, para o celular não baixar tudo de novo a cada atualização */
 const ASSET_V = '2';
 addEventListener('DOMContentLoaded', () => { const v = document.getElementById('build-ver'); if (v) v.textContent = 'versão ' + BUILD; });
@@ -5751,10 +5752,10 @@ function useRound(G) {
 function bodyButtons(cur) {
   const gen = S && mode !== 'menu' ? S.gender : selGender, hsList = gen === 'f' ? Object.assign({}, FEM_HAIR, HAIR_F2, { black: 'Black power', tranca: 'Tranças', careca: 'Careca' }) : Object.assign({ padrao: 'Padrão', careca: 'Careca', black: 'Black power', moicano: 'Moicano' }, HAIR_M, { rabo: 'Rabo de cavalo', coque: 'Coque' });
   const seg = (k, list) => Object.entries(list).map(([v, n]) => `<button type="button" data-act="body-sel" data-k="${k}" data-v="${v}" aria-pressed="${cur[k] === v}">${n}</button>`).join('');
-  const c2 = Object.assign({ bd: 'none', fc: 'normal' }, cur), seg2 = (k, list) => Object.entries(list).map(([v, n]) => `<button type="button" data-act="body-sel" data-k="${k}" data-v="${v}" aria-pressed="${c2[k] === v}">${n}</button>`).join('');
-  return { hs: seg('hs', hsList), w: seg('w', { magro: 'Magro', normal: 'Normal', forte: 'Forte', gordo: 'Gordo' }), h: seg('h', { baixinho: 'Baixinho', medio: 'Médio', alto: 'Alto' }), bd: seg2('bd', BEARDS), fc: seg2('fc', { fino: 'Fino', normal: 'Normal', largo: 'Largo' }) };
+  const c2 = Object.assign({ bd: 'none', fc: 'normal', rt: 'padrao' }, cur), seg2 = (k, list) => Object.entries(list).map(([v, n]) => `<button type="button" data-act="body-sel" data-k="${k}" data-v="${v}" aria-pressed="${c2[k] === v}">${n}</button>`).join('');
+  return { hs: seg('hs', hsList), w: seg('w', { magro: 'Magro', normal: 'Normal', forte: 'Forte', gordo: 'Gordo' }), h: seg('h', { baixinho: 'Baixinho', medio: 'Médio', alto: 'Alto' }), bd: seg2('bd', BEARDS), fc: seg2('fc', { fino: 'Fino', normal: 'Normal', largo: 'Largo' }), rt: seg2('rt', { padrao: 'Padrão', foto: 'Minha foto (masculino)' }) };
 }
-function renderBodySel() { const b = bodyButtons(selBody); if ($('b-hs')) { $('b-hs').innerHTML = b.hs; $('b-w').innerHTML = b.w; $('b-h').innerHTML = b.h; } }
+function renderBodySel() { const b = bodyButtons(selBody); if ($('b-hs')) { $('b-hs').innerHTML = b.hs; $('b-w').innerHTML = b.w; $('b-h').innerHTML = b.h; if ($('b-rt')) $('b-rt').innerHTML = b.rt; } }
 /* RODA DE ARMAS (como no GTA): abre com o botão de trocar arma (tecla Y) e escolhe tocando */
 function weaponWheel() {
   const L = GUNS.filter(g => g.gun !== 'none' && S.owned.includes(g.id)); if (!L.length) return nextGun();
@@ -10849,6 +10850,7 @@ function rpmHdLoad(MS) {
     im.onload = () => { M.hdImg = im; M.hiS = {}; try { const pl = city.player; if (pl && pl.userData.real && pl.userData.k === k && pl.userData.hiRes) applyLook(pl, myLook()); } catch (e) { } };
     im.onerror = () => { M.hdFail = true; }; setTimeout(() => { if (!M.hdImg) M.hdFail = true; }, 8000); // sem a HD (ou demorando): segue com a normal
     im.src = `modelos/rpm_${k}_hd.jpg?v=${ASSET_V}`; }
+  const M = MS.m; if (M && M.rpm) { const fi = new Image(); fi.onload = () => { M.fotoM = Object.assign({}, M, { srcImg: fi, hdImg: fi, hiS: {}, clsTex: null, atlas: prepAtlasRPM(fi, 'm'), fotoOn: true }); M.fotoM.atlas.base = null; try { const pl = city.player; if (pl && pl.userData.real && pl.userData.k === 'm' && pl.userData.hiRes && S && S.body && S.body.rt === 'foto') applyLook(pl, myLook()); } catch (e) { } }; fi.src = `modelos/rpm_m_rosto.jpg?v=${ASSET_V}`; }
 }
 function rpmHiSize(M) { const q = S && S.settings && S.settings.quality; return q === 'baixa' ? 0 : q === 'ultra' && M.hdImg ? 2048 : 1024; }
 function rpmHi(M) {
@@ -10856,8 +10858,9 @@ function rpmHi(M) {
   try { const T = { k: M.k, atlas: prepAtlasRPM(M.hdImg || M.srcImg, M.k, size) }; rpmMasks(T, M.mesh, M.scene, M.k); rpmTorsoDetail(T, M.mesh, M.scene); return (M.hiS[size] = T); }
   catch (e) { console.warn('atlas hd', e); return (M.hiS[size] = null); }
 }
-function applyRpmLook(u, look) {
-  const M = MODELS[u.k], m = u.mats[M.avatarMat]; if (!m) return;
+function applyRpmLook(u, look0) {
+  const M0 = MODELS[u.k], m = M0 && u.mats[M0.avatarMat]; if (!m) return;
+  const foto = !!(look0.body && look0.body.rt === 'foto' && M0.fotoM && u.k === 'm'), look = foto ? Object.assign({}, look0, { body: Object.assign({}, look0.body, { bd: 'none' }) }) : look0, M = foto ? M0.fotoM : M0;
   const bald = ['careca', 'moicano'].includes(look.body && look.body.hs); // moicano: laterais raspadas, só a crista
   const T = (u.hiRes && rpmHi(M)) || M, A = T.atlas;
   const pm = look.pants.trunk && T.trunkMask ? T.trunkMask : look.pants.long && !look.pants.baggy && T.longMask ? T.longMask : (look.pants.short || look.pants.baggy) ? T.legMask : null;
