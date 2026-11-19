@@ -1002,3 +1002,8 @@ Mecânicas inspiradas no GTA 5, feitas com código próprio (nada copiado do jog
 - A textura da foto só é carregada depois que o jogo entra, sem atrasar a entrada. Quem escolhe "Padrão" não baixa nada a mais.
 - A foto fica num arquivo público do site. Quem tiver o endereço do arquivo consegue ver a imagem. Se você não quiser isso, a opção pode ser removida e o arquivo apagado.
 - Limitação: o rosto do modelo tem proporções diferentes do rosto real, então a semelhança é parcial, principalmente de perto. Para ficar mais fiel seria preciso um modelo 3D feito a partir da foto.
+
+### Build 2026.11.19-107 (Rosto da opção "Minha foto" sem torção)
+
+- Corrigido o encaixe da foto: a inclinação da cabeça foi endireitada e o rosto foi centralizado no molde, sem distorcer os olhos.
+- Antes, a foto ficava torta porque o encaixe cisalhava a imagem.
